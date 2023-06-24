@@ -1,0 +1,17 @@
+# cache de Python
+**/__pycache__/
+# módulos instalados por pip
+Lib/
+# scripts del entorno virtual
+Scripts/
+# configuración del entorno
+pyvenv.cfg
+
+# archivo de recursos compilados
+resources/*.py
+# PDF generados
+resources/pdf/*
+# archivos generados por pyuic5
+src/**/Ui_*.py
+# carpetas generadas por nuitka
+PrintPOS.*
