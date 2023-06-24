@@ -39,9 +39,6 @@ class VentanaPrincipal(QMainWindow):
             event.ignore()
         else:
             self.session['conn'].close()
-            
-            # modificar closeEvent para permitir cierre
-            self.consultarPrecios.closeEvent = lambda e: e.accept()
             self.consultarPrecios.close()
             event.accept()
 
