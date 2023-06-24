@@ -155,7 +155,6 @@ def exportarXlsx(rutaArchivo, titulos, datos):
     wb.save(rutaArchivo)
 
 
-@run_in_thread
 def enviarAImpresora(ruta: str, prompt: int | bool):
     from configparser import ConfigParser
     import subprocess
@@ -170,6 +169,7 @@ def enviarAImpresora(ruta: str, prompt: int | bool):
     subprocess.run([acrobat, '/N', prompt_arg, ruta, printer])
 
 
+@run_in_thread
 def generarOrdenCompra(crsr, idx: int):
     """
     Genera un PDF con el orden de compra correspondiente a la venta con índice
@@ -317,6 +317,7 @@ def generarOrdenCompra(crsr, idx: int):
 ####################################
 # <FUNCIONES PARA GENERAR TICKETS> #
 ####################################
+@run_in_thread
 def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodoPago):
     """
     Función abstracta para generar el ticket de compra o presupuesto.

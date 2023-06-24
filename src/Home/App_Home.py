@@ -1,7 +1,10 @@
-from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtWidgets
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import (QDate, Qt, QPropertyAnimation,
-                          QRect, QEasingCurve)
+                          QRect, QEasingCurve, pyqtSignal)
+
+from mydecorators import run_in_thread
+import fdb
 
 
 class App_Home(QtWidgets.QMainWindow):
@@ -186,6 +189,8 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
     Backend para el módulo de consultar precios.
     No se puede cerrar hasta cerrar por completo el sistema.
     """
+    dataChanged = pyqtSignal()  # señal para actualizar tabla en hilo principal
+    
     def __init__(self, principal):
         from Home.Ui_ConsultarPrecios import Ui_ConsultarPrecios
         
@@ -195,6 +200,8 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)
+        
+        self.conn = principal.session['conn']
         
         lbAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
         lbAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
@@ -215,40 +222,14 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
             else:
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-
-        # llena la tabla de productos no gran formato
-        crsr = principal.session['conn'].cursor()
-        crsr.execute('''
-        SELECT  codigo,
-                descripcion || ', desde ' || ROUND(desde, 1) || ' unidades', 
-                precioConIVA 
-        FROM    ProductosIntervalos AS PInv
-                LEFT JOIN Productos AS P
-                       ON P.idProductos = PInv.idProductos
-        ORDER   BY P.idProductos, desde ASC;
-        ''')
-        
-        self.all_prod = crsr.fetchall()
-        
-        # llena la tabla de productos gran formato
-        crsr.execute('''
-        SELECT  codigo,
-                descripcion, 
-                min_ancho,
-                min_alto,
-                precio_m2
-        FROM    Productos_granformato AS P_gran
-                LEFT JOIN Productos AS P
-                       ON P.idProductos = P_gran.idProductos
-        ORDER   BY P.idProductos;
-        ''')
-        
-        self.all_gran = crsr.fetchall()
         
         # eventos para widgets
-        self.ui.searchBar.textChanged.connect(self.update_display)
-        self.ui.groupButtonFiltro.buttonClicked.connect(self.update_display)
-        self.ui.tabWidget.currentChanged.connect(lambda _: self.tabla_actual.resizeRowsToContents())
+        self.ui.searchBar.textChanged.connect(
+            lambda: self.update_display(False))
+        self.ui.groupButtonFiltro.buttonClicked.connect(
+            lambda: self.update_display(False))
+        self.ui.tabWidget.currentChanged.connect(
+            lambda: self.tabla_actual.resizeRowsToContents())
         
         self.ui.tabla_seleccionar.itemClicked.connect(self.calcularPrecio)
         self.ui.txtCantidad.textChanged.connect(self.calcularPrecio)
@@ -259,13 +240,26 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         self.ui.groupButtonAlto.buttonClicked.connect(self.calcularPrecio)
         self.ui.groupButtonAncho.buttonClicked.connect(self.calcularPrecio)
         
+        self.dataChanged.connect(
+            lambda: self.update_display(True))
+        
+        # evento de Firebird para escuchar cambios en productos
+        conn: fdb.Connection = principal.session['conn']
+        self.events = conn.event_conduit(['cambio_productos'])
+        self.events.begin()
+        
         self.showMinimized()
+        self.listenEvents()
     
     def showEvent(self, event):
-        self.update_display()
+        self.update_display(True)
     
     def closeEvent(self, event):
-        event.ignore()
+        if event.spontaneous():
+            event.ignore()
+        else:
+            self.events.close()
+            event.accept()
     
     # ==================
     #  FUNCIONES ÚTILES
@@ -274,12 +268,51 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
     def tabla_actual(self):
         return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][self.ui.tabWidget.currentIndex()]
     
-    def update_display(self):
+    @run_in_thread
+    def listenEvents(self):
+        """
+        Escucha trigger 'cambio_productos' en la base de datos.
+        Al suceder, se actualizan las tablas de productos.
+        """
+        while True:
+            if self.events.wait():
+                self.dataChanged.emit()
+                self.events.flush()
+    
+    def update_display(self, rescan: bool = False):
         """
         Actualiza la tabla y el contador de clientes.
         Acepta una cadena de texto para la búsqueda de clientes.
         También lee de nuevo la tabla de clientes, si se desea.
         """
+        if rescan:
+            crsr = self.conn.cursor()
+            crsr.execute('''
+            SELECT  codigo,
+                    descripcion || ', desde ' || ROUND(desde, 1) || ' unidades', 
+                    precioConIVA 
+            FROM    ProductosIntervalos AS PInv
+                    LEFT JOIN Productos AS P
+                        ON P.idProductos = PInv.idProductos
+            ORDER   BY P.idProductos, desde ASC;
+            ''')
+            
+            self.all_prod = crsr.fetchall()
+            
+            crsr.execute('''
+            SELECT  codigo,
+                    descripcion, 
+                    min_ancho,
+                    min_alto,
+                    precio_m2
+            FROM    Productos_granformato AS P_gran
+                    LEFT JOIN Productos AS P
+                        ON P.idProductos = P_gran.idProductos
+            ORDER   BY P.idProductos;
+            ''')
+        
+            self.all_gran = crsr.fetchall()
+        
         filtro = int(self.ui.btDescripcion.isChecked())
         txt_busqueda = self.ui.searchBar.text()
         

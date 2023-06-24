@@ -1,8 +1,9 @@
 from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtCore import Qt, QRegExp
+from PyQt5.QtCore import Qt, QRegExp, pyqtSlot, pyqtSignal
 
 from dataclasses import dataclass
 from mywidgets import VentanaPrincipal
+from mydecorators import run_in_thread
 
 import fdb
 
@@ -34,6 +35,8 @@ class App_Login(QtWidgets.QMainWindow):
     """
     Backend para la pantalla de inicio de sesión.
     """
+    validated = pyqtSignal(object, object)
+    
     def __init__(self):
         from Login.Ui_Login import Ui_Login
         
@@ -43,12 +46,15 @@ class App_Login(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
         
+        self.lock = False
+        
         # validador para nombre de usuario
         regexp = QRegExp(r'[a-zA-Z0-9_$]+')
         validador = QtGui.QRegExpValidator(regexp)
         self.ui.inputUsuario.setValidator(validador)
         
         self.ui.btIngresar.clicked.connect(self.verificar_info)
+        self.validated.connect(self.crearVentanaPrincipal)
 
         self.show()
     
@@ -56,22 +62,36 @@ class App_Login(QtWidgets.QMainWindow):
         if qKeyEvent.key() in {Qt.Key_Return, Qt.Key_Enter}: 
             self.verificar_info()
     
+    @pyqtSlot()
+    @run_in_thread
     def verificar_info(self):
         """
         Verifica datos ingresados consultando la tabla Usuarios.
         """
+        if self.lock:
+            return
+        else:
+            self.lock = True
+            
         usuario = self.ui.inputUsuario.text().upper()
         psswd = self.ui.inputContrasenia.text()
 
         if not (usuario and psswd):
             self.ui.lbAdvertencia.setText('')
+            self.lock = False
             return
         
-        conn_a = crear_conexion(usuario, psswd, 'ADMINISTRADOR')
-        conn_v = crear_conexion(usuario, psswd, 'VENDEDOR')
+        self.ui.lbAdvertencia.setStyleSheet('color: rgb(0, 0, 0);')
+        self.ui.lbAdvertencia.setText('Conectando a la base de datos...')
         
-        if not conn_a and not conn_v:
+        conn_a = crear_conexion(usuario, psswd, 'ADMINISTRADOR')
+        
+        if conn_a:
+            conn_v = crear_conexion(usuario, psswd, 'VENDEDOR')
+        else:
+            self.ui.lbAdvertencia.setStyleSheet('color: rgb(255, 0, 0);')
             self.ui.lbAdvertencia.setText('¡El usuario y contraseña no son válidos!')
+            self.lock = False
             return
         
         try:
@@ -88,6 +108,12 @@ class App_Login(QtWidgets.QMainWindow):
         result = crsr.fetchone()
         user = Usuario(*result)
         
+        self.validated.emit(conn, user)
+
+    def crearVentanaPrincipal(self, conn, user):
+        """
+        En método separado para regresar al hilo principal.
+        """
         self.close()
 
         # crear ventana principal del sistema
@@ -95,8 +121,6 @@ class App_Login(QtWidgets.QMainWindow):
         
         session = {'conn': conn, 'user': user}
         self.mainWindow = VentanaPrincipal(session, App_Home)
-        
-        self.conn = conn
 
 ########################
 # FUNCIONES DEL MÓDULO #
