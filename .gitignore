@@ -14,4 +14,4 @@ resources/pdf/*
 # archivos generados por pyuic5
 src/**/Ui_*.py
 # carpetas generadas por nuitka
-PrintPOS.*
+PrintPOS.*/
