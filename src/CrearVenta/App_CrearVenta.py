@@ -3,11 +3,11 @@ from PyQt5.QtCore import (QDate, QDateTime, QRegExp, Qt,
                           QPropertyAnimation, QRect, QEasingCurve)
 
 from dataclasses import dataclass
-from mydecorators import con_fondo, requiere_admin, run_in_thread
-from myutils import (clamp ,dimBackground, formatDate, generarOrdenCompra, 
-                     generarTicketCompra, generarTicketPresupuesto, 
-                     lbAdvertencia, son_similar)
-from mywidgets import SpeechBubble, WarningDialog
+from mydecorators import con_fondo, requiere_admin
+from myutils import (clamp, enviarWhatsApp, formatDate, 
+                     generarOrdenCompra,  generarTicketCompra, 
+                     generarTicketPresupuesto, son_similar)
+from mywidgets import DimBackground, LabelAdvertencia, SpeechBubble, WarningDialog
 
 import fdb
 
@@ -62,7 +62,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.session = parent.session # conexión y usuario actual
         self.fechaHoraActual = QDateTime.currentDateTime() # fecha y hora en que se abre esta ventana
         
-        lbAdvertencia(self.ui.tabla_productos, '¡Aún no hay productos!')
+        LabelAdvertencia(self.ui.tabla_productos, '¡Aún no hay productos!')
         
         # cuadro de texto para los descuentos del cliente
         self.dialogoDescuentos = SpeechBubble(self)
@@ -380,7 +380,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
                 'requiereFactura': self.ui.tickFacturaSi.isChecked()
             }
             
-            bg = dimBackground(self)
+            bg = DimBackground(self)
             self.new = App_ConfirmarVenta(self, ventaDatos)
 
 
@@ -403,8 +403,8 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
         self.first = first # referencia a la ventana de crear venta
-        lbAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
-        lbAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
+        LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
+        LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
 
         # dar formato a las tablas
         header = self.ui.tabla_seleccionar.horizontalHeader()
@@ -460,6 +460,9 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         self.ui.tabla_seleccionar.itemDoubleClicked.connect(self.done)
         self.ui.tabWidget.currentChanged.connect(lambda: self.tabla_actual.resizeRowsToContents())
         
+        self.ui.groupFiltro.buttonClicked.connect(
+            lambda: self.update_display(self.ui.searchBar.text()))
+        
         # validadores para datos numéricos
         regexp_numero = QRegExp(r'\d*\.?\d*')
         validador = QtGui.QRegExpValidator(regexp_numero)
@@ -487,13 +490,15 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         Acepta una cadena de texto para la búsqueda de clientes.
         También lee de nuevo la tabla de clientes, si se desea.
         """
+        filtro = int(self.ui.btDescripcion.isChecked())
+        
         # <tabla de productos normales>
         tabla = self.ui.tabla_seleccionar
         tabla.setRowCount(0)
 
         found = self.all_prod if not txt_busqueda else \
-                filter(lambda prod: prod[1] 
-                                    and son_similar(txt_busqueda, prod[1]), 
+                filter(lambda prod: prod[filtro] 
+                                    and son_similar(txt_busqueda, prod[filtro]), 
                        self.all_prod)
 
         for row, prod in enumerate(found):
@@ -512,8 +517,8 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         tabla.setRowCount(0)
 
         found = self.all_gran if not txt_busqueda else \
-                filter(lambda prod: prod[1] 
-                                    and son_similar(txt_busqueda, prod[1]), 
+                filter(lambda prod: prod[filtro] 
+                                    and son_similar(txt_busqueda, prod[filtro]), 
                        self.all_gran)
 
         for row, prod in enumerate(found):
@@ -543,13 +548,11 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
     def agregarSimple(self):
         selected = self.ui.tabla_seleccionar.selectedItems()
         
-        try:
-            codigo = selected[0].text()
-        except IndexError:
+        if not selected:
             return
         
         try:
-            cantidad = (float(self.ui.txtCantidad.text() or '1'))
+            cantidad = (float(self.ui.txtCantidad.text() or 1))
         except ValueError:
             QtWidgets.QMessageBox.warning(
                 self, 'Atención',
@@ -560,23 +563,35 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
             return
         
         # obtener información del producto
+        codigo = selected[0].text()
+        
         crsr = self.first.session['conn'].cursor()
         crsr.execute('SELECT idProductos FROM Productos WHERE codigo = ?;', (codigo,))
         
         idProducto, = crsr.fetchone()
         
         # obtener precio basado en cantidad
-        duplex_restrict = ', duplex ASC' if not self.ui.checkDuplex.isChecked() else ''
-        
-        crsr.execute(f'''
-        SELECT  FIRST 1 precioConIVA
-        FROM    ProductosIntervalos
-        WHERE   idProductos = ?
-                AND desde <= ?
-        ORDER   BY desde DESC {duplex_restrict};
-        ''', (idProducto, cantidad))
+        restrict = 'AND duplex' if self.ui.checkDuplex.isChecked() else ''
+
+        query = f'''
+        SELECT * FROM (
+            SELECT  FIRST 1 precioConIVA
+            FROM    ProductosIntervalos
+            WHERE   idProductos = ?
+                    AND desde <= ?
+                    {restrict}
+            ORDER   BY desde DESC)
+        UNION ALL
+        SELECT * FROM (
+            SELECT  FIRST 1 precioConIVA
+            FROM    ProductosIntervalos
+            WHERE   idProductos = ?
+                    AND desde <= ?
+            ORDER   BY desde DESC)
+        '''
         
         try:
+            crsr.execute(query, (idProducto, cantidad)*2)
             precio, = crsr.fetchone()
         except TypeError:
             QtWidgets.QMessageBox.warning(
@@ -681,7 +696,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
 
         self.first = first # referencia a la ventana de crear venta
         
-        lbAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún cliente!')
+        LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún cliente!')
 
         # dar formato a la tabla principal
         header = self.ui.tabla_seleccionar.horizontalHeader()
@@ -952,23 +967,6 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
     # FUNCIONES ÚTILES #
     # ================ #
     def enviarWhatsApp(self):
-        @run_in_thread
-        def accion(celular, mensaje):
-            import pywhatkit
-            
-            try:
-                pywhatkit.sendwhatmsg_instantly(celular, mensaje,
-                                                close_time=300, wait_time=300)
-                return
-            except pywhatkit.core.exceptions.CountryCodeException as err:
-                celular = '+52' + celular
-            
-            try:
-                pywhatkit.sendwhatmsg_instantly(celular, mensaje,
-                                                close_time=300, wait_time=300)
-            except Exception as err:
-                print(f'Unable to send WA: {str(err)}')
-
         mensaje = [
             '*COTIZACIÓN DE VENTA*',
             f'Cliente: *{self.first.ui.txtCliente.text()}*',
@@ -989,7 +987,7 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
         mensaje = '\n'.join(mensaje)
         celular = self.first.ui.txtTelefono.text()
         
-        accion(celular, mensaje)
+        enviarWhatsApp(celular, mensaje)
         self.close()
         
     def imprimirTicket(self):             
@@ -1271,11 +1269,18 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.', qm.Ok)
             generarOrdenCompra(conn.cursor(), self.idVentas)
         else:
-            ret = qm.question(self, 'Éxito',
-                            'Venta terminada. ¡Recuerde ofrecer el ticket de compra! ¿Desea imprimirlo?',
-                            qm.Yes | qm.No)
+            box = qm(qm.Icon.Question, 'Éxito',
+                     'Venta terminada. ¡Recuerde ofrecer el ticket de compra! ¿Desea imprimirlo?',
+                     qm.Yes | qm.No, self)
+            
+            box.button(qm.Yes).setText('Imprimir ticket')
+            box.button(qm.No).setText('Enviar por WhatsApp')
+            ret = box.exec()
+            
             if ret == qm.Yes:
                 generarTicketCompra(conn.cursor(), self.idVentas)
+            else:
+                print("enviar PDF por wa")
         
         self.goHome()
     

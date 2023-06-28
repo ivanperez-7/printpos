@@ -57,60 +57,6 @@ def son_similar(str1: str, str2: str) -> bool:
     return str1_clean in str2_clean
 
 
-def dimBackground(window: QMainWindow):
-    """
-    Crea un widget que ocupa la ventana entera, para poner énfasis en las ventanas nuevas.
-    """
-    from PyQt5.QtWidgets import QWidget
-    
-    bg = QWidget(parent=window)
-    bg.setFixedSize(window.size())
-    bg.setStyleSheet('background: rgba(64, 64, 64, 64);')
-    bg.show()
-
-    return bg
-
-
-def lbAdvertencia(parent: QTableWidget, msj: str):
-    """
-    Crea un label de advertencia para las tablas, ya que en Qt Designer no se puede.
-    Añade método `resizeEvent` al padre para posicionar el label en el centro.
-    Añade método al padre para actualizar el texto, que verifica si hay items o no en la tabla.
-    """
-    from PyQt5.QtWidgets import QLabel
-    from PyQt5.QtGui import QFont
-    from PyQt5.QtCore import QSize, Qt
-
-    w,h = 282, 52   # tamaño del QLabel, hardcoded
-    label = QLabel(parent)
-    label.setMinimumSize(QSize(w,h))
-
-    font = QFont()
-    font.setFamily('Arial')
-    font.setPointSize(14)
-
-    label.setFont(font)
-    label.setAlignment(Qt.AlignCenter)
-    label.setText(msj)
-
-    def relocate(event):
-        w_t, h_t = parent.width(), parent.height()
-        pm_x = (w_t - w) // 2
-        pm_y = (h_t - h) // 2
-
-        label.move(pm_x, pm_y)
-        QTableWidget.resizeEvent(parent, event)
-    
-    def actualizarLabel():
-        label.setText(msj if parent.rowCount() == 0 else '')
-    
-    parent.resizeEvent = relocate
-    parent.model().rowsInserted.connect(actualizarLabel)
-    parent.model().rowsRemoved.connect(actualizarLabel)
-    
-    return label
-
-
 def formatDate(date) -> str:
     """
     Da formato en texto a un dato QDateTime.
@@ -156,6 +102,24 @@ def exportarXlsx(rutaArchivo, titulos, datos):
     wb.save(rutaArchivo)
 
 
+def enviarWhatsApp(phone_no: str, message: str):
+    """
+    Enviar mensaje por WhatsApp abriendo el navegador de internet.
+    TODO:
+        - open("https://web.whatsapp.com/accept?code=" + receiver)
+    """
+    from urllib.parse import quote
+    import webbrowser as web
+
+    if '+' not in phone_no:     # agregar código de país de México
+        phone_no = '+52' + phone_no
+
+    try:
+        web.open_new_tab(f'https://web.whatsapp.com/send?phone={phone_no}&text={quote(message)}')
+    except Exception as err:
+        print('Could not open browser: ' + str(err))
+
+
 def enviarAImpresora(ruta: str, prompt: int | bool):
     from configparser import ConfigParser
     import subprocess
@@ -165,7 +129,7 @@ def enviarAImpresora(ruta: str, prompt: int | bool):
     
     acrobat = config['DEFAULT']['acrobat']
     prompt_arg = '/P' if prompt else '/T'
-    printer = config['IMPRESORAS']['tickets'] if not prompt else ''
+    printer = config['IMPRESORAS']['default'] if not prompt else ''
 
     subprocess.run([acrobat, '/N', prompt_arg, ruta, printer])
 
@@ -311,13 +275,13 @@ def generarOrdenCompra(crsr, idx: int):
     import os
     import uuid
     
-    if not os.path.exists('./tmp/'):
-        os.makedirs('./tmp/')
+    os.makedirs('./tmp/', exist_ok=True)
     
-    filename = '.\\tmp\\' + str(uuid.uuid4()) + '.pdf'
+    filename = f'.\\tmp\\{uuid.uuid4().hex}.pdf'
     
     writer.write(open(filename, 'wb'))
     enviarAImpresora(filename, True)
+
 
 
 ####################################
@@ -346,10 +310,9 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodoP
     import uuid
     
     # archivo y directorio temporales
-    if not os.path.exists('./tmp/'):
-        os.makedirs('./tmp/')
+    os.makedirs('./tmp/', exist_ok=True)
     
-    filename = '.\\tmp\\' + str(uuid.uuid4()) + '.pdf'
+    filename = f'.\\tmp\\{uuid.uuid4().hex}.pdf'
 
     doc = SimpleDocTemplate(filename,
                             pagesize=(80*mm, 297*mm),

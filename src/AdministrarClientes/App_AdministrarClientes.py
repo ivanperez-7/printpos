@@ -1,10 +1,9 @@
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import Qt, QDateTime, QRegExp, pyqtSignal
 
-from myutils import (exportarXlsx, formatDate, lbAdvertencia,
-                     ColorsEnum, son_similar)
+from myutils import (exportarXlsx, formatDate, ColorsEnum, son_similar)
 from mydecorators import con_fondo
-from mywidgets import WarningDialog
+from mywidgets import LabelAdvertencia, WarningDialog
 
 import fdb
 
@@ -23,7 +22,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         self.session = parent.session  # conexión y usuario actual
         self.filtro = 1
         
-        lbAdvertencia(self.ui.tabla_clientes, '¡No se encontró ningún cliente!')
+        LabelAdvertencia(self.ui.tabla_clientes, '¡No se encontró ningún cliente!')
 
         # añadir menú de opciones al botón para filtrar
         popup = QtWidgets.QMenu()

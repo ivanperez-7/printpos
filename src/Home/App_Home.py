@@ -182,7 +182,8 @@ class App_Home(QtWidgets.QMainWindow):
 ##################################
 # VENTANA PARA CONSULTAR PRECIOS #
 ##################################
-from myutils import lbAdvertencia, son_similar
+from myutils import son_similar
+from mywidgets import LabelAdvertencia
 
 class App_ConsultarPrecios(QtWidgets.QMainWindow):
     """
@@ -203,8 +204,8 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         
         self.conn = principal.session['conn']
         
-        lbAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
-        lbAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
+        LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
+        LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
 
         # dar formato a las tablas
         header = self.ui.tabla_seleccionar.horizontalHeader()
@@ -289,12 +290,13 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
             crsr = self.conn.cursor()
             crsr.execute('''
             SELECT  codigo,
-                    descripcion || ', desde ' || ROUND(desde, 1) || ' unidades', 
+                    descripcion || ', desde ' || ROUND(desde, 1) || ' unidades '
+                        || IIF(duplex, '[PRECIO DUPLEX]', ''), 
                     precioConIVA 
             FROM    ProductosIntervalos AS PInv
                     LEFT JOIN Productos AS P
                         ON P.idProductos = PInv.idProductos
-            ORDER   BY P.idProductos, desde ASC;
+            ORDER   BY P.idProductos, desde, duplex ASC;
             ''')
             
             self.all_prod = crsr.fetchall()

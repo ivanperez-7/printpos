@@ -26,4 +26,4 @@ pip_reinstall:
 	del requirements.txt
 	
 	py -m pip install --upgrade pip
-	pip install --upgrade fdb PyQt5 PyQtChart pypdf2 reportlab openpyxl pywhatkit nuitka ordered-set
+	pip install --upgrade fdb PyQt5 PyQtChart pypdf2 reportlab openpyxl nuitka ordered-set

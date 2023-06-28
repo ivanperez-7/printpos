@@ -76,20 +76,20 @@ class App_Login(QtWidgets.QMainWindow):
         psswd = self.ui.inputContrasenia.text()
 
         if not (usuario and psswd):
-            self.ui.lbAdvertencia.clear()
+            self.ui.lbEstado.clear()
             self.lock = False
             return
         
-        self.ui.lbAdvertencia.setStyleSheet('color: rgb(0, 0, 0);')
-        self.ui.lbAdvertencia.setText('Conectando a la base de datos...')
+        self.ui.lbEstado.setStyleSheet('color: rgb(0, 0, 0);')
+        self.ui.lbEstado.setText('Conectando a la base de datos...')
         
         conn_a = crear_conexion(usuario, psswd, 'ADMINISTRADOR')
         
         if conn_a:
             conn_v = crear_conexion(usuario, psswd, 'VENDEDOR')
         else:
-            self.ui.lbAdvertencia.setStyleSheet('color: rgb(255, 0, 0);')
-            self.ui.lbAdvertencia.setText('¡El usuario y contraseña no son válidos!')
+            self.ui.lbEstado.setStyleSheet('color: rgb(255, 0, 0);')
+            self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
             self.lock = False
             return
         

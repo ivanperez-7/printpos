@@ -1,9 +1,9 @@
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import Qt, QRegExp
 
-from myutils import formatDate, lbAdvertencia, son_similar
+from myutils import formatDate, son_similar
 from mydecorators import con_fondo
-from mywidgets import WarningDialog
+from mywidgets import LabelAdvertencia, WarningDialog
 
 import fdb
 
@@ -32,7 +32,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         self.session = parent.session  # conexión y usuario actual
         self.filtro = 0
         
-        lbAdvertencia(self.ui.tabla_usuarios, '¡No se encontró ningún usuario!')
+        LabelAdvertencia(self.ui.tabla_usuarios, '¡No se encontró ningún usuario!')
 
         # añadir menú de opciones al botón para filtrar
         popup = QtWidgets.QMenu()
