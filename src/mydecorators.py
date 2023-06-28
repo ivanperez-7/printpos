@@ -159,12 +159,12 @@ def con_fondo(modulo):
     orig_init = modulo.__init__
 
     def __init__(self, *args, **kws):
-        from myutils import dimBackground
+        from mywidgets import DimBackground
         
         orig_init(self, *args, **kws)
         
         parent = args[0]   # QMainWindow, parent widget
-        parent.bg = dimBackground(parent)
+        parent.bg = DimBackground(parent)
     
     def closeEvent(self, event):
         self.parentWidget().bg.close()

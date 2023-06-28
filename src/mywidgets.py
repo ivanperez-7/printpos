@@ -1,7 +1,7 @@
 """
 Módulo con widgets personalizados varios.
 """
-from PyQt5.QtWidgets import QMainWindow, QMessageBox, QWidget, QTextBrowser, QVBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QMessageBox, QWidget, QTextBrowser, QVBoxLayout, QTableWidget
 from PyQt5.QtGui import QPainter, QColor, QPolygon, QFont, QPainterPath, QIcon, QPixmap
 from PyQt5.QtCore import Qt, QRectF, QPoint
 
@@ -35,15 +35,67 @@ class VentanaPrincipal(QMainWindow):
         if self.en_venta and not self.session['user'].administrador:
             event.ignore()
         else:
-            import os
             import shutil
             
-            if os.path.exists('./tmp/'):
-                shutil.rmtree('./tmp/')
+            shutil.rmtree('./tmp/', ignore_errors=True)
             
             self.session['conn'].close()
             self.consultarPrecios.close()
             event.accept()
+
+
+def DimBackground(window: QMainWindow):
+    """
+    Crea un widget que ocupa la ventana entera, para poner énfasis en las ventanas nuevas.
+    """
+    from PyQt5.QtWidgets import QWidget
+    
+    bg = QWidget(parent=window)
+    bg.setFixedSize(window.size())
+    bg.setStyleSheet('background: rgba(64, 64, 64, 64);')
+    bg.show()
+
+    return bg
+
+
+def LabelAdvertencia(parent: QTableWidget, msj: str):
+    """
+    Crea un label de advertencia para las tablas, ya que en Qt Designer no se puede.
+    Añade método `resizeEvent` al padre para posicionar el label en el centro.
+    Añade método al padre para actualizar el texto, que verifica si hay items o no en la tabla.
+    """
+    from PyQt5.QtWidgets import QLabel
+    from PyQt5.QtGui import QFont
+    from PyQt5.QtCore import QSize, Qt
+
+    w,h = 282, 52   # tamaño del QLabel, hardcoded
+    label = QLabel(parent)
+    label.setMinimumSize(QSize(w,h))
+
+    font = QFont()
+    font.setFamily('Arial')
+    font.setPointSize(14)
+
+    label.setFont(font)
+    label.setAlignment(Qt.AlignCenter)
+    label.setText(msj)
+
+    def relocate(event):
+        w_t, h_t = parent.width(), parent.height()
+        pm_x = (w_t - w) // 2
+        pm_y = (h_t - h) // 2
+
+        label.move(pm_x, pm_y)
+        QTableWidget.resizeEvent(parent, event)
+    
+    def actualizarLabel():
+        label.setText(msj if parent.rowCount() == 0 else '')
+    
+    parent.resizeEvent = relocate
+    parent.model().rowsInserted.connect(actualizarLabel)
+    parent.model().rowsRemoved.connect(actualizarLabel)
+    
+    return label
 
 
 class SpeechBubble(QWidget):

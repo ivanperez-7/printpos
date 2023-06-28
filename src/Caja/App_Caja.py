@@ -2,8 +2,8 @@ from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QDateTime, QDate
 
 from mydecorators import run_in_thread
-from myutils import enviarAImpresora, formatDate, lbAdvertencia
-from mywidgets import WarningDialog
+from myutils import enviarAImpresora, formatDate
+from mywidgets import LabelAdvertencia, WarningDialog
 
 import fdb
 
@@ -27,8 +27,8 @@ class App_Caja(QtWidgets.QMainWindow):
     
         self.session = parent.session  # conexión y usuario actual
         
-        lbAdvertencia(self.ui.tabla_ingresos, '¡No se encontró ningún movimiento!')
-        lbAdvertencia(self.ui.tabla_egresos, '¡No se encontró ningún movimiento!')
+        LabelAdvertencia(self.ui.tabla_ingresos, '¡No se encontró ningún movimiento!')
+        LabelAdvertencia(self.ui.tabla_egresos, '¡No se encontró ningún movimiento!')
         
         # fechas por defecto
         hoy = QDate.currentDate()
@@ -258,10 +258,9 @@ class App_Caja(QtWidgets.QMainWindow):
         import uuid
         
         # archivo y directorio temporales
-        if not os.path.exists('./tmp/'):
-            os.makedirs('./tmp/')
+        os.makedirs('./tmp/', exist_ok=True)
         
-        filename = '.\\tmp\\' + str(uuid.uuid4()) + '.pdf'
+        filename = f'.\\tmp\\{uuid.uuid4().hex}.pdf'
 
         doc = SimpleDocTemplate(filename, pagesize=(5.5*inch, 8.5*inch),
                                 leftMargin=1*inch, rightMargin=1*inch)

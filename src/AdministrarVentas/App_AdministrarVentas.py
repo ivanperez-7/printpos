@@ -2,10 +2,10 @@ from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QDate, QDateTime, QModelIndex, QRegExp, Qt
 
 from math import ceil
-from myutils import (chunkify, clamp, formatDate, generarOrdenCompra, 
-                     generarTicketCompra, lbAdvertencia, ColorsEnum, son_similar)
-from mydecorators import con_fondo, run_in_thread
-from mywidgets import WarningDialog
+from myutils import (chunkify, clamp, enviarWhatsApp, formatDate, generarOrdenCompra, 
+                     generarTicketCompra, ColorsEnum, son_similar)
+from mydecorators import con_fondo
+from mywidgets import LabelAdvertencia, WarningDialog
 
 import fdb
 
@@ -31,8 +31,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.session = parent.session  # conexión a la base de datos y usuario actual
         self.filtro = 0
         
-        lbAdvertencia(self.ui.tabla_ventasDirectas, '¡No se encontró ninguna venta!')
-        lbAdvertencia(self.ui.tabla_pedidos, '¡No se encontró ningún pedido!')
+        LabelAdvertencia(self.ui.tabla_ventasDirectas, '¡No se encontró ninguna venta!')
+        LabelAdvertencia(self.ui.tabla_pedidos, '¡No se encontró ningún pedido!')
         
         # fechas por defecto
         hoy = QDate.currentDate()
@@ -429,20 +429,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             f'para concretar el pedido!\n\n¡Esperamos verle pronto! 😊'
         ])
         
-        self.abrir_whatsapp(celular, mensaje)
-    
-    @run_in_thread
-    def abrir_whatsapp(self, celular, mensaje):
-        """
-        En función separada para ejecutar en hilo separado.
-        """
-        import pywhatkit
-        
-        try:
-            pywhatkit.sendwhatmsg_instantly(celular, mensaje, 
-                                        close_time=300, wait_time=300)
-        except Exception as err:
-            print(err)
+        enviarWhatsApp(celular, mensaje)
         
     def terminarVenta(self, _):
         """

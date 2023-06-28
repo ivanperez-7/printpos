@@ -114,7 +114,7 @@ QLineEdit::placeholder {
      <string>Contraseña:</string>
     </property>
    </widget>
-   <widget class="QLabel" name="lbAdvertencia">
+   <widget class="QLabel" name="lbEstado">
     <property name="geometry">
      <rect>
       <x>63</x>

@@ -1,9 +1,9 @@
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import Qt, QRegExp
 
-from myutils import lbAdvertencia, ColorsEnum, son_similar
+from myutils import ColorsEnum, son_similar
 from mydecorators import con_fondo
-from mywidgets import WarningDialog
+from mywidgets import LabelAdvertencia, WarningDialog
 
 import fdb
 
@@ -24,7 +24,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         self.session = parent.session  # conexión y usuario actual
         self.filtro = 1
         
-        lbAdvertencia(self.ui.tabla_inventario, '¡No se encontró ningún elemento!')
+        LabelAdvertencia(self.ui.tabla_inventario, '¡No se encontró ningún elemento!')
 
         # añadir menú de opciones al botón para filtrar
         popup = QtWidgets.QMenu()
