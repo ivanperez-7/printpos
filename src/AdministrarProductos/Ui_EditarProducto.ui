@@ -399,9 +399,6 @@ QTableView:active {
             <property name="selectionMode">
              <enum>QAbstractItemView::SingleSelection</enum>
             </property>
-            <attribute name="horizontalHeaderMinimumSectionSize">
-             <number>155</number>
-            </attribute>
             <attribute name="horizontalHeaderStretchLastSection">
              <bool>true</bool>
             </attribute>
@@ -416,6 +413,11 @@ QTableView:active {
             <column>
              <property name="text">
               <string>Cuesta</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Es precio dúplex</string>
              </property>
             </column>
            </widget>

@@ -115,11 +115,33 @@
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_4">
-          <property name="spacing">
+         <layout class="QGridLayout" name="gridLayout_3">
+          <property name="horizontalSpacing">
            <number>20</number>
           </property>
-          <item alignment="Qt::AlignRight">
+          <property name="verticalSpacing">
+           <number>12</number>
+          </property>
+          <item row="0" column="0" colspan="2">
+           <widget class="QPushButton" name="btImprimir">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>35</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>Arial</family>
+              <pointsize>11</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Imprimir corte de caja</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
            <widget class="QPushButton" name="btIngreso">
             <property name="minimumSize">
              <size>
@@ -143,7 +165,7 @@ border: 0px;</string>
             </property>
            </widget>
           </item>
-          <item alignment="Qt::AlignRight">
+          <item row="1" column="1">
            <widget class="QPushButton" name="btEgreso">
             <property name="minimumSize">
              <size>

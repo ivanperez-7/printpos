@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtCore import Qt, QRegExp, pyqtSlot, pyqtSignal
+from PyQt5.QtCore import Qt, QRegExp, pyqtSignal
 
 from dataclasses import dataclass
 from mywidgets import VentanaPrincipal
@@ -53,7 +53,7 @@ class App_Login(QtWidgets.QMainWindow):
         validador = QtGui.QRegExpValidator(regexp)
         self.ui.inputUsuario.setValidator(validador)
         
-        self.ui.btIngresar.clicked.connect(self.verificar_info)
+        self.ui.btIngresar.clicked.connect(lambda: self.verificar_info())
         self.validated.connect(self.crearVentanaPrincipal)
 
         self.show()
@@ -62,7 +62,6 @@ class App_Login(QtWidgets.QMainWindow):
         if qKeyEvent.key() in {Qt.Key_Return, Qt.Key_Enter}: 
             self.verificar_info()
     
-    @pyqtSlot()
     @run_in_thread
     def verificar_info(self):
         """
@@ -70,14 +69,14 @@ class App_Login(QtWidgets.QMainWindow):
         """
         if self.lock:
             return
-        else:
-            self.lock = True
+        
+        self.lock = True
             
         usuario = self.ui.inputUsuario.text().upper()
         psswd = self.ui.inputContrasenia.text()
 
         if not (usuario and psswd):
-            self.ui.lbAdvertencia.setText('')
+            self.ui.lbAdvertencia.clear()
             self.lock = False
             return
         

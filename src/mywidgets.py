@@ -5,8 +5,6 @@ from PyQt5.QtWidgets import QMainWindow, QMessageBox, QWidget, QTextBrowser, QVB
 from PyQt5.QtGui import QPainter, QColor, QPolygon, QFont, QPainterPath, QIcon, QPixmap
 from PyQt5.QtCore import Qt, QRectF, QPoint
 
-from mydecorators import requiere_admin
-
 
 class VentanaPrincipal(QMainWindow):
     def __init__(self, session, modulo):
@@ -19,8 +17,7 @@ class VentanaPrincipal(QMainWindow):
         self.en_venta = False
         
         icon = QIcon()
-        icon.addPixmap(QPixmap(':/img/icon.ico'),
-                       QIcon.Normal, QIcon.Off)
+        icon.addPixmap(QPixmap(':/img/icon.ico'), QIcon.Normal, QIcon.Off)
         self.setWindowIcon(icon)
         
         central_widget = modulo(self)
@@ -38,6 +35,12 @@ class VentanaPrincipal(QMainWindow):
         if self.en_venta and not self.session['user'].administrador:
             event.ignore()
         else:
+            import os
+            import shutil
+            
+            if os.path.exists('./tmp/'):
+                shutil.rmtree('./tmp/')
+            
             self.session['conn'].close()
             self.consultarPrecios.close()
             event.accept()

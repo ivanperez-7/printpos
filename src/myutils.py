@@ -129,6 +129,7 @@ def formatDate(date) -> str:
     return date.toString("d 'de' MMMM yyyy, h:mm ap")
 
 
+@run_in_thread
 def exportarXlsx(rutaArchivo, titulos, datos):
     """
     Exporta una lista de tuplas a un archivo MS Excel, con extensión xlsx.
@@ -183,15 +184,13 @@ def generarOrdenCompra(crsr, idx: int):
         - Fecha de creación
         - Fecha de entrega
     """
-    from PyPDF2 import PdfReader, PdfWriter, PageObject, Transformation
+    from PyPDF2 import PdfReader, PdfWriter
 
     from reportlab.pdfgen.canvas import Canvas
     from reportlab.platypus import Paragraph
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 
     import io
-    
-    RUTA_PDF = r'resources\pdf\orden_temp.pdf'
 
     # leer venta con índice idx de la base de datos y datos principales
     crsr.execute('''
@@ -218,7 +217,7 @@ def generarOrdenCompra(crsr, idx: int):
     # datos para la tabla de productos
     crsr.execute('''
     SELECT  cantidad,
-            abreviado,
+            abreviado || IIF(duplex, ' (a doble cara)', ''),
             especificaciones,
             precio,
             importe AS importe
@@ -301,17 +300,24 @@ def generarOrdenCompra(crsr, idx: int):
 
         # crear variable para nuevo PDF y leer plantilla
         new_pdf = PdfReader(packet)
-        existing_pdf = PdfReader(open('resources/pdf/plantilla_orden.pdf', 'rb'))
+        existing_pdf = PdfReader(open('resources/pdf/orden_compra2023.pdf', 'rb'))
 
         # agregar trazados en el PDF de la plantilla
         page = existing_pdf.pages[0]
         page.merge_page(new_pdf.pages[0])
         writer.add_page(page)
     
-    writer.write(open(RUTA_PDF, "wb"))
-
-    # enviar a impresora
-    enviarAImpresora(RUTA_PDF, True)
+    # crear archivo temporal e imprimir
+    import os
+    import uuid
+    
+    if not os.path.exists('./tmp/'):
+        os.makedirs('./tmp/')
+    
+    filename = '.\\tmp\\' + str(uuid.uuid4()) + '.pdf'
+    
+    writer.write(open(filename, 'wb'))
+    enviarAImpresora(filename, True)
 
 
 ####################################
@@ -336,8 +342,16 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodoP
 
     from reportlab.platypus import (Table, TableStyle, SimpleDocTemplate,
                                     Paragraph, Spacer, Image)
+    import os
+    import uuid
+    
+    # archivo y directorio temporales
+    if not os.path.exists('./tmp/'):
+        os.makedirs('./tmp/')
+    
+    filename = '.\\tmp\\' + str(uuid.uuid4()) + '.pdf'
 
-    doc = SimpleDocTemplate('resources/pdf/ticket_temp.pdf',
+    doc = SimpleDocTemplate(filename,
                             pagesize=(80*mm, 297*mm),
                             rightMargin=0, leftMargin=0,
                             topMargin=0, bottomMargin=0)
@@ -455,14 +469,13 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodoP
     # Build the PDF document
     doc.build(elements)
     
-    # imprimir documento
+    # imprimir archivo temporal
     from configparser import ConfigParser
     
     config = ConfigParser(inline_comment_prefixes=';')
     config.read('config.ini')
     
-    enviarAImpresora(r'resources\pdf\ticket_temp.pdf',
-                     int(config['IMPRESORAS']['prompt_tickets']))
+    enviarAImpresora(filename, int(config['IMPRESORAS']['prompt_tickets']))
 
 
 def generarTicketCompra(crsr, idx):
@@ -472,7 +485,7 @@ def generarTicketCompra(crsr, idx):
     # obtener datos de la compra, de la base de datos
     crsr.execute('''
     SELECT	cantidad,
-            P.abreviado,
+            P.abreviado || IIF(VD.duplex, ' (a doble cara)', ''),
             precio,
             descuentoPrecio,
             importe
@@ -501,12 +514,9 @@ def generarTicketCompra(crsr, idx):
     vendedor, fechaCreacion, pagado, metodo = crsr.fetchone()
     
     # cambiar método de pago (abreviatura)
-    if metodo == 'Efectivo':
-        metodo = 'EFEC'
-    elif metodo == 'Transferencia bancaria':
-        metodo = 'TRF'
-    else:
-        metodo = 'TVP'
+    if metodo == 'Efectivo': metodo = 'EFEC'
+    elif metodo == 'Transferencia bancaria': metodo = 'TRF'
+    else: metodo = 'TVP'
     
     _generarTicketPDF(idx, productos, vendedor, fechaCreacion, pagado, metodo)
 
