@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>927</width>
+    <width>951</width>
     <height>623</height>
    </rect>
   </property>
@@ -290,6 +290,44 @@ background-color: rgb(255, 255, 255);</string>
          </layout>
         </widget>
        </item>
+       <item alignment="Qt::AlignRight">
+        <widget class="QRadioButton" name="btCodigo">
+         <property name="font">
+          <font>
+           <family>Arial</family>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Por código</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">groupFiltro</string>
+         </attribute>
+        </widget>
+       </item>
+       <item alignment="Qt::AlignRight">
+        <widget class="QRadioButton" name="btDescripcion">
+         <property name="font">
+          <font>
+           <family>Arial</family>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Por descripción</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">groupFiltro</string>
+         </attribute>
+        </widget>
+       </item>
       </layout>
      </widget>
     </item>
@@ -443,11 +481,55 @@ QTableView:active {
                <number>0</number>
               </property>
               <property name="bottomMargin">
-               <number>18</number>
+               <number>5</number>
               </property>
               <property name="horizontalSpacing">
                <number>20</number>
               </property>
+              <property name="verticalSpacing">
+               <number>12</number>
+              </property>
+              <item row="0" column="0">
+               <widget class="QGroupBox" name="groupBox">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>191</width>
+                  <height>61</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <family>Arial</family>
+                  <pointsize>11</pointsize>
+                 </font>
+                </property>
+                <property name="title">
+                 <string>Cantidad</string>
+                </property>
+                <widget class="QLineEdit" name="txtCantidad">
+                 <property name="geometry">
+                  <rect>
+                   <x>10</x>
+                   <y>30</y>
+                   <width>151</width>
+                   <height>20</height>
+                  </rect>
+                 </property>
+                 <property name="readOnly">
+                  <bool>false</bool>
+                 </property>
+                 <property name="placeholderText">
+                  <string>1</string>
+                 </property>
+                </widget>
+               </widget>
+              </item>
               <item row="0" column="1" alignment="Qt::AlignLeft">
                <widget class="QGroupBox" name="groupBox_2">
                 <property name="sizePolicy">
@@ -495,45 +577,16 @@ QTableView:active {
                 </widget>
                </widget>
               </item>
-              <item row="0" column="0">
-               <widget class="QGroupBox" name="groupBox">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>191</width>
-                  <height>61</height>
-                 </size>
-                </property>
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="checkDuplex">
                 <property name="font">
                  <font>
-                  <family>Arial</family>
                   <pointsize>11</pointsize>
                  </font>
                 </property>
-                <property name="title">
-                 <string>Cantidad</string>
+                <property name="text">
+                 <string>Producto a doble cara</string>
                 </property>
-                <widget class="QLineEdit" name="txtCantidad">
-                 <property name="geometry">
-                  <rect>
-                   <x>10</x>
-                   <y>30</y>
-                   <width>151</width>
-                   <height>20</height>
-                  </rect>
-                 </property>
-                 <property name="readOnly">
-                  <bool>false</bool>
-                 </property>
-                 <property name="placeholderText">
-                  <string>1</string>
-                 </property>
-                </widget>
                </widget>
               </item>
              </layout>
@@ -663,7 +716,7 @@ QTableView:active {
                <number>0</number>
               </property>
               <property name="bottomMargin">
-               <number>18</number>
+               <number>12</number>
               </property>
               <property name="horizontalSpacing">
                <number>20</number>
@@ -846,5 +899,6 @@ QTableView:active {
  <buttongroups>
   <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="groupFiltro"/>
  </buttongroups>
 </ui>

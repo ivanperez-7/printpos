@@ -25,6 +25,7 @@ class ItemVenta:
     descuento_unit: float # cantidad a descontar por unidad
     cantidad: int         # cantidad solicitada por el cliente
     notas: str            # especificaciones del producto
+    duplex: bool          # dicta si el producto es a doble cara
 
     @property
     def importe(self) -> float:
@@ -155,11 +156,14 @@ class App_CrearVenta(QtWidgets.QMainWindow):
                     cell = str(dato or '')
                 
                 tableItem = QtWidgets.QTableWidgetItem(cell)
-                if col == 2 and prod.cantidad > 0:
-                    tableItem.setFlags(tableItem.flags() | Qt.ItemFlag.ItemIsEditable)
-                else:
-                    tableItem.setFlags(tableItem.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                flags = tableItem.flags()
                 
+                if col == 2:
+                    flags |= Qt.ItemFlag.ItemIsEditable
+                else:
+                    flags &= ~Qt.ItemFlag.ItemIsEditable
+                
+                tableItem.setFlags(flags)
                 tabla.setItem(row, col, tableItem)
         # </llenar tabla>
         
@@ -345,26 +349,20 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             if not (cliente[correo] and cliente[direccion] and cliente[rfc]):
                 from AdministrarClientes import App_EditarCliente
                 
-                qm.warning(self, '¡Atención!', 
-                           'El cliente no tiene completos sus datos para la factura.\n'
-                           'Por favor, llene los datos como corresponde.',
-                           qm.Ok)
-
                 self.new = App_EditarCliente(self, cliente[id])
                 self.new.success.connect(
                     lambda:    self.ui.txtCliente.setText(self.new.ui.txtNombre.text())
                             or self.ui.txtTelefono.setText(self.new.numeroTelefono)
                             or self.ui.txtCorreo.setText(self.new.ui.txtCorreo.text()))
                 
+                qm.warning(self, '¡Atención!', 
+                           'El cliente no tiene completos sus datos para la factura.\n'
+                           'Por favor, llene los datos como corresponde.',
+                           qm.Ok)
                 return
         
         # todos los datos del cliente y fecha de entrega son correctos,
         # ahora se checa el monto total de la venta
-        montoTotal = float(self.ui.lbTotal.text().replace(',',''))
-        
-        if montoTotal < 0:
-            return
-
         ret = qm.question(self, 'Concluir venta',
                           'Verifique todos los datos ingresados.\n'
                           '¿Desea concluir la venta?',
@@ -373,7 +371,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         if ret == qm.Yes:
             ventaDatos = {
                 'productos': self.productosVenta,
-                'total': montoTotal,
+                'total': float(self.ui.lbTotal.text().replace(',','')),
                 'fechaEntrega': self.fechaEntrega,
                 'fechaCreacion': QDateTime.currentDateTime(),
                 'idCliente': cliente[id],
@@ -429,12 +427,13 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         crsr = first.session['conn'].cursor()
         crsr.execute('''
         SELECT  codigo,
-                descripcion || ', desde ' || ROUND(desde, 1) || ' unidades', 
+                descripcion || ', desde ' || ROUND(desde, 1) || ' unidades '
+                    || IIF(duplex, '[PRECIO DUPLEX]', ''), 
                 precioConIVA 
         FROM    ProductosIntervalos AS PInv
                 LEFT JOIN Productos AS P
                        ON P.idProductos = PInv.idProductos
-        ORDER   BY P.idProductos, desde ASC;
+        ORDER   BY P.idProductos, desde, duplex ASC;
         ''')
         
         self.all_prod = crsr.fetchall()
@@ -567,12 +566,14 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         idProducto, = crsr.fetchone()
         
         # obtener precio basado en cantidad
-        crsr.execute('''
+        duplex_restrict = ', duplex ASC' if not self.ui.checkDuplex.isChecked() else ''
+        
+        crsr.execute(f'''
         SELECT  FIRST 1 precioConIVA
         FROM    ProductosIntervalos
         WHERE   idProductos = ?
                 AND desde <= ?
-        ORDER   BY desde DESC;
+        ORDER   BY desde DESC {duplex_restrict};
         ''', (idProducto, cantidad))
         
         try:
@@ -585,10 +586,12 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
             return
 
         # insertar información del producto con cantidad y especificaciones
+        codigo += ' (a doble cara)' if self.ui.checkDuplex.isChecked() else ''
+        
         self.first.productosVenta.append(
             ItemVenta(
                 idProducto, codigo, precio, 0.0, cantidad, 
-                self.ui.txtNotas.text().strip()))
+                self.ui.txtNotas.text().strip(), self.ui.checkDuplex.isChecked()))
         
         self.first.colorearActualizar()
         self.close()
@@ -655,7 +658,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         self.first.productosVenta.append(
             ItemVenta(
                 idProducto, codigo, precio, 0.0, cantidad, 
-                self.ui.txtNotas_2.text().strip()))
+                self.ui.txtNotas_2.text().strip(), False))
         
         self.first.colorearActualizar()
         self.close()
@@ -1103,15 +1106,16 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 float(prod.precio_unit),
                 float(prod.descuento_unit),
                 prod.notas,
+                prod.duplex
             ) for prod in productos]
 
             crsr.executemany('''
             INSERT INTO VentasDetallado (
-                idVentas, idProductos, cantidad, 
-                precio, descuentoPrecio, especificaciones
+                idVentas, idProductos, cantidad, precio, 
+                descuentoPrecio, especificaciones, duplex
             ) 
             VALUES 
-                (?,?,?,?,?,?);
+                (?,?,?,?,?,?,?);
             ''', ventasDetallado_db_parametros)
 
             conn.commit()

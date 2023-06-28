@@ -40,7 +40,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         self.ui.lbEditar.mousePressEvent = self.editarProducto
         self.ui.lbQuitar.mousePressEvent = self.quitarProducto
         self.ui.lbRegresar.mousePressEvent = self.goHome
-        self.ui.searchBar.textChanged.connect(lambda : self.update_display())
+        self.ui.searchBar.textChanged.connect(lambda: self.update_display())
     
     def showEvent(self, event):
         self.update_display(rescan=True)

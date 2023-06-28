@@ -1,7 +1,8 @@
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QDateTime, QDate
 
-from myutils import formatDate, lbAdvertencia
+from mydecorators import run_in_thread
+from myutils import enviarAImpresora, formatDate, lbAdvertencia
 from mywidgets import WarningDialog
 
 import fdb
@@ -67,6 +68,7 @@ class App_Caja(QtWidgets.QMainWindow):
         self.ui.btHoy.clicked.connect(self.hoy_handle)
         self.ui.btEstaSemana.clicked.connect(self.semana_handle)
         self.ui.btEsteMes.clicked.connect(self.mes_handle)
+        self.ui.btImprimir.clicked.connect(self.confirmarImprimir)
 
     def showEvent(self, event):
         self.update_display(rescan=True)
@@ -217,6 +219,116 @@ class App_Caja(QtWidgets.QMainWindow):
                 
         self.ui.lbTotal.setText(
             f'Total del corte: ${total:,.2f}')
+    
+    def confirmarImprimir(self):
+        """
+        Ventana de confirmación para imprimir corte.
+        """
+        qm = QtWidgets.QMessageBox
+        ret = qm.question(self, 'Atención', 
+                          'Se procederá a imprimir el corte de caja entre '
+                          'las fechas proporcionadas. \n¿Desea continuar?',
+                          qm.Yes | qm.No)
+        
+        if ret == qm.Yes:
+            self.generarCortePDF()
+    
+    @run_in_thread
+    def generarCortePDF(self):
+        """
+        Función para generar el corte de caja, comprendido entre fechas dadas.
+        Contiene:
+            - Realizado el: (fecha)
+            - Nombre del usuario activo
+            - Fecha inicial y final
+            - Fondo inicial de caja
+            - Tabla de movimientos 
+                Fecha y hora | Descripción | Método de pago | Cantidad
+            - Tabla de resumen de movimientos
+                Método de pago -> Ingresos | Egresos
+        """
+        from reportlab.lib.units import mm, inch
+        from reportlab.lib import colors
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT
+
+        from reportlab.platypus import (Table, TableStyle, SimpleDocTemplate,
+                                        Paragraph, Spacer)
+        import os
+        import uuid
+        
+        # archivo y directorio temporales
+        if not os.path.exists('./tmp/'):
+            os.makedirs('./tmp/')
+        
+        filename = '.\\tmp\\' + str(uuid.uuid4()) + '.pdf'
+
+        doc = SimpleDocTemplate(filename, pagesize=(5.5*inch, 8.5*inch),
+                                leftMargin=1*inch, rightMargin=1*inch)
+
+        # Define styles for the document
+        styles = getSampleStyleSheet()
+        styles.add(ParagraphStyle(name='Title_', fontName='Helvetica-Bold', 
+                                fontSize=18, alignment=TA_CENTER))
+        styles.add(ParagraphStyle(name='Left', fontName='Helvetica',
+                                fontSize=8, alignment=TA_LEFT))
+
+        # contenido del PDF
+        fechaDesde = self.ui.dateDesde.date()
+        fechaHasta = self.ui.dateHasta.date()
+        
+        dateFromSecs = lambda s: QDateTime.fromSecsSinceEpoch(s).date()
+        
+        movimientos = [m for m in self.all_ingresos + self.all_egresos
+                       if fechaDesde <= dateFromSecs(m[0]) <= fechaHasta]
+
+        data = [['Fecha y hora', 'Descripción', 'Forma de pago', 'Monto', 'Responsable']]
+
+        for fechaHora, monto, descripcion, metodo, usuario in movimientos:
+            data.append([
+                formatDate(fechaHora),
+                Paragraph(descripcion, styles['Left']),
+                metodo,
+                monto,
+                usuario
+            ])
+
+        # productos de la compra
+        tabla_productos = Table(data)
+
+        tabla_productos.setStyle(TableStyle([
+            ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONT', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('LINEBELOW', (0, 0), (-1, 0), 0.4, colors.black),
+            ('LINEBELOW', (0, -1), (-1, -1), 0.4, colors.black)
+        ]))
+        
+        # elementos para constuir el PDF
+        elements = [
+            Paragraph('Resumen de corte de caja', styles['Title']),
+            Paragraph('Fracc. Residencial Pensiones', styles['Left']),
+            Spacer(1, 6),
+
+            Paragraph('Teléfono: 999 649 0443', styles['Left']),
+            Spacer(1, 6),
+
+            Paragraph('* '*40, styles['Left']),
+            Paragraph('* '*40, styles['Left']),
+            Paragraph(f'<b>Fecha</b>: {formatDate(QDateTime.currentDateTime())}', styles['Left']),
+            Spacer(1, 10),
+
+            tabla_productos]
+
+        # Build the PDF document
+        doc.build(elements)
+        
+        # imprimir archivo temporal        
+        enviarAImpresora(filename, True)
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES

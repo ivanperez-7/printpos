@@ -10,7 +10,7 @@ pyvenv.cfg
 # archivo de recursos compilados
 resources/*.py
 # PDF generados
-resources/pdf/*
+tmp/
 # archivos generados por pyuic5
 src/**/Ui_*.py
 # carpetas generadas por nuitka

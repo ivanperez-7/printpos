@@ -629,7 +629,7 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
         
         crsr.execute('''
         SELECT  cantidad,
-                codigo,
+                codigo || IIF(duplex, ' (a doble cara)', ''),
                 especificaciones,
                 precio,
                 descuentoPrecio,
@@ -762,7 +762,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         
         crsr.execute('''
         SELECT  cantidad,
-                codigo,
+                codigo || IIF(duplex, ' (a doble cara)', ''),
                 especificaciones,
                 precio,
                 descuentoPrecio,

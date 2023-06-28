@@ -791,8 +791,8 @@ QTableView:active {
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="groupButtonAncho"/>
   <buttongroup name="groupButtonAlto"/>
+  <buttongroup name="groupButtonAncho"/>
   <buttongroup name="groupButtonFiltro"/>
  </buttongroups>
 </ui>
