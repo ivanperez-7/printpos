@@ -20,7 +20,7 @@
    <string>Administrar inventario</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../resources.qrc">
+   <iconset resource="../../resources.qrc">
     <normaloff>:/img/icon.ico</normaloff>:/img/icon.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -155,7 +155,7 @@
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset resource="../resources.qrc">
+                <iconset resource="../../resources.qrc">
                  <normaloff>:/img/resources/images/filter.png</normaloff>:/img/resources/images/filter.png</iconset>
                </property>
                <property name="popupMode">
@@ -391,17 +391,32 @@ QTableView:active {
             </column>
             <column>
              <property name="text">
-              <string>Precio de compra</string>
+              <string>Tamaño de lote</string>
              </property>
             </column>
             <column>
              <property name="text">
-              <string>En existencia</string>
+              <string>Precio de lote</string>
              </property>
             </column>
             <column>
              <property name="text">
-              <string>Cantidad mínima</string>
+              <string>Cantidad mínima de lotes</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Unidades restantes</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Lotes restantes</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string/>
              </property>
             </column>
            </widget>
@@ -488,7 +503,7 @@ QTableView:active {
   </widget>
  </widget>
  <resources>
-  <include location="../resources.qrc"/>
+  <include location="../../resources.qrc"/>
  </resources>
  <connections/>
 </ui>

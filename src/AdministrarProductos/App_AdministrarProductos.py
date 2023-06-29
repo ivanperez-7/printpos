@@ -65,7 +65,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
             WITH CostoProduccion (idProductos, costo) AS (
             SELECT	P.idProductos,
                     SUM(
-                        COALESCE(PUI.utilizaInventario * I.precioCompra, 
+                        COALESCE(PUI.utilizaInventario * I.precioUnidad, 
                         0.0)
                     ) AS costo
             FROM  	Productos AS P

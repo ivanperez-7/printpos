@@ -40,10 +40,10 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         header = self.ui.tabla_inventario.horizontalHeader()
         
         for col in range(self.ui.tabla_inventario.columnCount()):
-            if col == 0:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-            else:
+            if col > 1:
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
+            else:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
 
         # añade eventos para los botones
         self.ui.lbAgregar.mousePressEvent = self.agregarInventario
@@ -62,18 +62,6 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def generarCodigoQR(self, lista: list[tuple]):
-        """
-        Genera un código QR que codifica una lista de tuplas.
-        Las tuplas contienen dos números: (idInventario, cantidad).
-        """
-        """import qrcode
-        
-        data = f't = {str(lista)}'
-        
-        img = qrcode.make(data)
-        img.save('MyQRCode1.png')"""
-    
     def cambiar_filtro(self, *args):
         ...
         self.update_display()
@@ -86,7 +74,16 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         """
         if rescan:
             crsr = self.session['conn'].cursor()
-            crsr.execute('SELECT * FROM Inventario;')
+            crsr.execute('''
+            SELECT  idInventario,
+                    nombre,
+                    tamanoLote,
+                    precioLote,
+                    minimoLotes,
+                    unidadesRestantes,
+                    lotesRestantes
+            FROM    Inventario;
+            ''')
 
             self.all = crsr.fetchall()
             self.ui.lbContador.setText(f'{len(self.all)} elementos en la base de datos.')
@@ -116,20 +113,85 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
                     cell = f'{dato:,.2f}'
                 else:
                     cell = str(dato or '')
+                
+                if col in {2, 5}: cell += ' unidades'
+                if col in {4, 6}: cell += ' lotes'
                 tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
             
             tabla.item(row, 1).setFont(bold)
             
+            btSurtir = QtWidgets.QPushButton('Surtir existencias')
+            btSurtir.clicked.connect(self.surtirExistencias)
+            tabla.setCellWidget(row, col+1, btSurtir)
+            
             # resaltar si hay menos cantidad que el mínimo
-            if item[3] < item[4]:
+            if item[6] < item[4]:
                 color = QtGui.QColor(ColorsEnum.ROJO)
-                tabla.item(row, 3).setBackground(color)
+                tabla.item(row, 6).setBackground(color)
 
         tabla.resizeRowsToContents()
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
+    def surtirExistencias(self):
+        from PyQt5 import QtCore, QtGui, QtWidgets
+        
+        Dialog = QtWidgets.QDialog(self)
+        Dialog.resize(354, 84)
+        Dialog.setWindowTitle("Surtir existencias")
+        Dialog.setWindowFlags(Dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+        gridLayout = QtWidgets.QGridLayout(Dialog)
+        gridLayout.setContentsMargins(-1, -1, -1, 9)
+        label = QtWidgets.QLabel(Dialog)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(10)
+        label.setFont(font)
+        label.setText("Suministrar ")
+        gridLayout.addWidget(label, 0, 0, 1, 1)
+        txtCantidad = QtWidgets.QLineEdit(Dialog)
+        txtCantidad.setFont(font)
+        gridLayout.addWidget(txtCantidad, 0, 1, 1, 1)
+        label_2 = QtWidgets.QLabel(Dialog)
+        label_2.setFont(font)
+        label_2.setText(" lotes para este elemento.")
+        gridLayout.addWidget(label_2, 0, 2, 1, 1)
+        buttonBox = QtWidgets.QDialogButtonBox(Dialog)
+        buttonBox.setFont(font)
+        buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        buttonBox.setCenterButtons(True)
+        gridLayout.addWidget(buttonBox, 1, 0, 1, 3, QtCore.Qt.AlignBottom)
+
+        buttonBox.accepted.connect(Dialog.accept) # type: ignore
+        buttonBox.rejected.connect(Dialog.reject) # type: ignore
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+        
+        def accept_handle():
+            conn = self.session['conn']
+            
+            try:
+                surtir = float(txtCantidad.text())
+                idx = self.ui.tabla_inventario.selectedItems()[0].text()
+                
+                crsr = conn.cursor()
+                
+                crsr.execute('''UPDATE  Inventario
+                                SET     unidadesRestantes = unidadesRestantes + tamanoLote * ?
+                                WHERE   idInventario = ?;''', (surtir, idx))
+                conn.commit()
+                
+                self.update_display(rescan=True)
+                Dialog.close()
+            except Exception as err:
+                conn.rollback()
+                print(str(err))
+                return
+            
+        Dialog.accept = accept_handle
+        Dialog.show()
+    
     def agregarInventario(self, _):
         self.new = App_EditarInventario(self)
     
@@ -190,12 +252,6 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         qm.information(self, 'Éxito', 'Se eliminó el elemento seleccionado.', qm.Ok)
         self.update_display(rescan=True)
     
-    def enviarLote(self):
-        ...
-    
-    def recibirLote(self):
-        ...
-    
     def goHome(self, _):
         """
         Cierra la ventana y regresa al inicio.
@@ -233,11 +289,18 @@ class App_EditarInventario(QtWidgets.QMainWindow):
             crsr = first.session['conn'].cursor()
             
             # datos de la primera página
-            crsr.execute('SELECT * FROM Inventario WHERE idInventario = ?;', (idx,))
+            crsr.execute('''SELECT  nombre,
+                                    tamanoLote, 
+                                    precioLote,
+                                    minimoLotes,
+                                    unidadesRestantes
+                            FROM    Inventario 
+                            WHERE   idInventario = ?;''', (idx,))
             
-            _, nombre, precio, existencia, minimo = crsr.fetchone()
+            nombre, tamano, precio, minimo, existencia = crsr.fetchone()
             
             self.ui.txtNombre.setText(nombre)
+            self.ui.txtTamano.setText(f'{tamano:,.2f}')
             self.ui.txtPrecioCompra.setText(f'{precio:.2f}')
             self.ui.txtExistencia.setText(f'{existencia:.2f}')
             self.ui.txtMinimo.setText(f'{minimo:.2f}')
@@ -264,13 +327,10 @@ class App_EditarInventario(QtWidgets.QMainWindow):
         self.ui.txtPrecioCompra.setValidator(validador)
         self.ui.txtExistencia.setValidator(validador)
         self.ui.txtMinimo.setValidator(validador)
-        self.ui.txtCantidadAgregar.setValidator(validador)
 
         # evento para botón de regresar
         self.ui.btAceptar.clicked.connect(self.done)
         self.ui.btAgregar.clicked.connect(lambda _: self.agregarProductoALista())
-        self.ui.btSumar.clicked.connect(self.sumar_existencia)
-        self.ui.btRestar.clicked.connect(self.restar_existencia)
         self.ui.lbRegresar.mousePressEvent = self.closeEvent
 
         self.show()
@@ -318,24 +378,6 @@ class App_EditarInventario(QtWidgets.QMainWindow):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def sumar_existencia(self):
-        try:
-            nueva_existencia = float(self.ui.txtExistencia.text()) \
-                               + float(self.ui.txtCantidadAgregar.text())
-                            
-            self.ui.txtExistencia.setText(f'{nueva_existencia:.2f}')
-        except ValueError:
-            return
-    
-    def restar_existencia(self):
-        try:
-            nueva_existencia = float(self.ui.txtExistencia.text()) \
-                               - float(self.ui.txtCantidadAgregar.text())
-                            
-            self.ui.txtExistencia.setText(f'{nueva_existencia:.2f}')
-        except ValueError:
-            return
-    
     def agregarProductoALista(self, codigo: str = '', cantidad: int = 1):
         # crear widget y agregar a la lista
         nuevo = self.widgetProducto()
@@ -372,9 +414,10 @@ class App_EditarInventario(QtWidgets.QMainWindow):
         try:
             inventario_db_parametros = (
                 self.ui.txtNombre.text().strip() or None,
+                float(self.ui.txtTamano.text()),
                 float(self.ui.txtPrecioCompra.text()),
-                float(self.ui.txtExistencia.text()),
-                float(self.ui.txtMinimo.text())
+                float(self.ui.txtMinimo.text()),
+                float(self.ui.txtExistencia.text())
             )
         except ValueError:
             qm.warning(self, 'Atención', '¡Verifique que los datos numéricos sean correctos!', qm.Ok)
@@ -388,19 +431,20 @@ class App_EditarInventario(QtWidgets.QMainWindow):
                 crsr.execute('''
                 UPDATE  Inventario
                 SET     nombre = ?,
-                        precioCompra = ?,
-                        enExistencia = ?,
-                        minimo = ?
+                        tamanoLote = ?,
+                        precioLote = ?,
+                        minimoLotes = ?,
+                        unidadesRestantes = ?
                 WHERE   idInventario = ?;
                 ''', (*inventario_db_parametros, self.idx))
             else:                   # actualizar elemento
                 crsr.execute('''
                 INSERT INTO Inventario (
-                    nombre, precioCompra,
-                    enExistencia, minimo
+                    nombre, tamanoLote, precioLote,
+                    minimoLotes, unidadesRestantes
                 )
                 VALUES
-                    (?,?,?,?)
+                    (?,?,?,?,?)
                 RETURNING
                     idInventario;
                 ''', inventario_db_parametros)
