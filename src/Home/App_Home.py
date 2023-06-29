@@ -173,7 +173,7 @@ class App_Home(QtWidgets.QMainWindow):
         parent.setCentralWidget(new)
     
     def exitApp(self):
-        from Login.App_Login import App_Login
+        from Login import App_Login
 
         self.login = App_Login()
         self.parentWidget().close()

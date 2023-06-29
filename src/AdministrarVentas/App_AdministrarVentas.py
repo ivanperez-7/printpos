@@ -424,7 +424,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         
         # mensaje a enviar
         mensaje = ' '.join([
-            f'*Apreciable {nombre}*:\nLe recordamos que ya puede pasar a Printcopy',
+            f'*Apreciable {nombre}*:\nLe informamos que ya puede pasar a Printcopy',
             f'a recoger su pedido con folio {idVenta}. ¡Recuerde traer su orden de compra',
             f'para concretar el pedido!\n\n¡Esperamos verle pronto! 😊'
         ])
