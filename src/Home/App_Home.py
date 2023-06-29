@@ -137,16 +137,16 @@ class App_Home(QtWidgets.QMainWindow):
 
         crsr.execute('''
         SELECT  nombre,
-                enExistencia,
-                minimo
+                lotesRestantes,
+                minimoLotes
         FROM    Inventario 
-        WHERE   enExistencia < minimo;
+        WHERE   lotesRestantes < minimoLotes;
         ''')
 
         for nombre, stock, minimo in crsr:
             items.append(
                 f'¡Hay que surtir el material {nombre}! ' +
-                f'Faltan {minimo-stock} unidades para cubrir el mínimo.'
+                f'Faltan {minimo-stock} lotes para cubrir el mínimo.'
             )
         
         items = items or ['¡No hay nuevas notificaciones!']
