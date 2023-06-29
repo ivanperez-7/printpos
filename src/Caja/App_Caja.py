@@ -267,10 +267,10 @@ class App_Caja(QtWidgets.QMainWindow):
 
         # Define styles for the document
         styles = getSampleStyleSheet()
-        styles.add(ParagraphStyle(name='Title_', fontName='Helvetica-Bold', 
-                                fontSize=18, alignment=TA_CENTER))
         styles.add(ParagraphStyle(name='Left', fontName='Helvetica',
                                 fontSize=8, alignment=TA_LEFT))
+        styles.add(ParagraphStyle(name='Cell', fontName='Helvetica',
+                                fontSize=8, alignment=TA_CENTER))
 
         # contenido del PDF
         fechaDesde = self.ui.dateDesde.date()
@@ -286,10 +286,10 @@ class App_Caja(QtWidgets.QMainWindow):
         for fechaHora, monto, descripcion, metodo, usuario in movimientos:
             data.append([
                 formatDate(fechaHora),
-                Paragraph(descripcion, styles['Left']),
-                metodo,
+                Paragraph(descripcion, styles['Cell']),
+                Paragraph(metodo, styles['Cell']),
                 monto,
-                usuario
+                Paragraph(usuario, styles['Cell']),
             ])
 
         # productos de la compra
@@ -316,7 +316,6 @@ class App_Caja(QtWidgets.QMainWindow):
             Paragraph('Teléfono: 999 649 0443', styles['Left']),
             Spacer(1, 6),
 
-            Paragraph('* '*40, styles['Left']),
             Paragraph('* '*40, styles['Left']),
             Paragraph(f'<b>Fecha</b>: {formatDate(QDateTime.currentDateTime())}', styles['Left']),
             Spacer(1, 10),

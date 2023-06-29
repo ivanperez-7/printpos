@@ -3,7 +3,7 @@ ARCHIVO PRINCIPAL.
 Inicia una QApplication y abre la ventana de iniciar sesión.
 """
 from PyQt5.QtWidgets import QApplication, QStyleFactory
-from Login.App_Login import App_Login
+from Login import App_Login
 
 def main():
     app = QApplication([])
