@@ -288,31 +288,11 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         """
         if rescan:
             crsr = self.conn.cursor()
-            crsr.execute('''
-            SELECT  codigo,
-                    descripcion || ', desde ' || ROUND(desde, 1) || ' unidades '
-                        || IIF(duplex, '[PRECIO DUPLEX]', ''), 
-                    precio_con_iva 
-            FROM    Productos_Intervalos AS P_Inv
-                    LEFT JOIN Productos AS P
-                        ON P.id_productos = P_Inv.id_productos
-            ORDER   BY P.id_productos, desde, duplex ASC;
-            ''')
             
+            crsr.execute('SELECT * FROM View_Productos_Simples;')
             self.all_prod = crsr.fetchall()
             
-            crsr.execute('''
-            SELECT  codigo,
-                    descripcion, 
-                    min_ancho,
-                    min_alto,
-                    precio_m2
-            FROM    Productos_Gran_Formato AS P_gran
-                    LEFT JOIN Productos AS P
-                        ON P.id_productos = P_gran.id_productos
-            ORDER   BY P.id_productos;
-            ''')
-        
+            crsr.execute('SELECT * FROM View_Gran_Formato;')
             self.all_gran = crsr.fetchall()
         
         filtro = int(self.ui.btDescripcion.isChecked())

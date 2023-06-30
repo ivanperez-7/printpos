@@ -466,6 +466,17 @@
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>txtNombre</tabstop>
+  <tabstop>txtLada</tabstop>
+  <tabstop>txtCelular</tabstop>
+  <tabstop>txtCorreo</tabstop>
+  <tabstop>txtRFC</tabstop>
+  <tabstop>txtDireccion</tabstop>
+  <tabstop>btRegistrar</tabstop>
+  <tabstop>txtDescuentos</tabstop>
+  <tabstop>checkDescuentos</tabstop>
+ </tabstops>
  <resources>
   <include location="../../resources.qrc"/>
  </resources>

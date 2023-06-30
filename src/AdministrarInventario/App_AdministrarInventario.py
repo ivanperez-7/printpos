@@ -169,13 +169,17 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         QtCore.QMetaObject.connectSlotsByName(Dialog)
         
         def accept_handle():
+            selected = self.ui.tabla_inventario.selectedItems()
+            
+            if not selected:
+                return
+            
             conn = self.session['conn']
+            crsr = conn.cursor()
             
             try:
                 surtir = float(txtCantidad.text())
-                idx = self.ui.tabla_inventario.selectedItems()[0].text()
-                
-                crsr = conn.cursor()
+                idx = selected[0].text()
                 
                 crsr.execute('''UPDATE  Inventario
                                 SET     unidades_restantes = unidades_restantes + tamano_lote * ?
@@ -184,10 +188,9 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
                 
                 self.update_display(rescan=True)
                 Dialog.close()
-            except Exception as err:
+            except (ValueError, fdb.Error) as err:
                 conn.rollback()
                 print(str(err))
-                return
             
         Dialog.accept = accept_handle
         Dialog.show()
@@ -327,6 +330,7 @@ class App_EditarInventario(QtWidgets.QMainWindow):
         self.ui.txtPrecioCompra.setValidator(validador)
         self.ui.txtExistencia.setValidator(validador)
         self.ui.txtMinimo.setValidator(validador)
+        self.ui.txtTamano.setValidator(validador)
 
         # evento para botón de regresar
         self.ui.btAceptar.clicked.connect(self.done)
@@ -410,7 +414,7 @@ class App_EditarInventario(QtWidgets.QMainWindow):
         """
         qm = QtWidgets.QMessageBox
         
-        # <tabla Inventario>
+        #### <tabla Inventario> ####
         try:
             if (tamanoLote := float(self.ui.txtTamano.text())) == 0:
                 return
@@ -431,6 +435,8 @@ class App_EditarInventario(QtWidgets.QMainWindow):
 
         try:
             if self.idx:        # el elemento no existe
+                idx = self.idx
+                
                 crsr.execute('''
                 UPDATE  Inventario
                 SET     nombre = ?,
@@ -439,7 +445,7 @@ class App_EditarInventario(QtWidgets.QMainWindow):
                         minimo_lotes = ?,
                         unidades_restantes = ?
                 WHERE   id_inventario = ?;
-                ''', (*inventario_db_parametros, self.idx))
+                ''', (*inventario_db_parametros, idx))
             else:                   # actualizar elemento
                 crsr.execute('''
                 INSERT INTO Inventario (
@@ -452,13 +458,14 @@ class App_EditarInventario(QtWidgets.QMainWindow):
                     id_inventario;
                 ''', inventario_db_parametros)
                 
-                self.idx, = crsr.fetchone()
+                idx, = crsr.fetchone()
         except fdb.Error as err:
+            conn.rollback()
             WarningDialog(self, '¡No se pudo editar el elemento!', str(err))
             return
-        # </tabla Inventario>
+        #### </tabla Inventario> ####
         
-        # <tabla Productos_Utiliza_Inventario>
+        #### <tabla Productos_Utiliza_Inventario> ####
         productos = self.ui.scrollAreaLista.children()[1:]  # QFrames
         productos = [prod.children() for prod in productos] # hijos de cada QFrame
         
@@ -466,6 +473,7 @@ class App_EditarInventario(QtWidgets.QMainWindow):
             productos = [(box.currentText(), float(line.text()))    # codigo y cantidad
                          for (box, _, _, _, line) in productos]
         except ValueError:
+            conn.rollback()
             qm.warning(self, 'Atención', '¡Verifique que los datos numéricos sean correctos!', qm.Ok)
             return
         
@@ -473,19 +481,20 @@ class App_EditarInventario(QtWidgets.QMainWindow):
             
         for codigo, cantidad in productos:
             if not codigo or cantidad < 1:
+                conn.rollback()
                 return
             
             crsr.execute('SELECT id_productos FROM Productos WHERE codigo = ?;', (codigo,))
             idProducto, = crsr.fetchone()
             
-            PUI_db_parametros.append((idProducto, self.idx, cantidad))
+            PUI_db_parametros.append((idProducto, idx, cantidad))
 
         try:
             # primero borrar las entradas existentes
             crsr.execute('''
             DELETE  FROM Productos_Utiliza_Inventario
             WHERE   id_inventario = ?;
-            ''', (self.idx,))
+            ''', (idx,))
             
             # nuevas entradas, introducidas por el usuario
             crsr.executemany('''
@@ -499,10 +508,9 @@ class App_EditarInventario(QtWidgets.QMainWindow):
             conn.commit()
         except fdb.Error as err:
             conn.rollback()
-            
             WarningDialog(self, '¡No se pudo editar el elemento!', str(err))
             return
-        # </tabla Productos_Utiliza_Inventario>
+        #### </tabla Productos_Utiliza_Inventario> ####
         
         qm.information(self, 'Éxito', '¡Se editó el elemento!', qm.Ok)
         

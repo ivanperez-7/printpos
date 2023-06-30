@@ -1738,6 +1738,28 @@ border-radius: 0px;</string>
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>txtCliente</tabstop>
+  <tabstop>txtCorreo</tabstop>
+  <tabstop>txtTelefono</tabstop>
+  <tabstop>btSeleccionar</tabstop>
+  <tabstop>btDescuentosCliente</tabstop>
+  <tabstop>btRegistrar</tabstop>
+  <tabstop>tabla_productos</tabstop>
+  <tabstop>txtComentarios</tabstop>
+  <tabstop>txtVendedor</tabstop>
+  <tabstop>tickDirectaSi</tabstop>
+  <tabstop>tickDirectaNo</tabstop>
+  <tabstop>tickFacturaSi</tabstop>
+  <tabstop>tickFacturaNo</tabstop>
+  <tabstop>btDescuento</tabstop>
+  <tabstop>btCotizacion</tabstop>
+  <tabstop>btEfectivo</tabstop>
+  <tabstop>btTarjeta</tabstop>
+  <tabstop>btTarjeta_2</tabstop>
+  <tabstop>btTransferencia</tabstop>
+  <tabstop>btListo</tabstop>
+ </tabstops>
  <resources>
   <include location="../../resources.qrc"/>
  </resources>

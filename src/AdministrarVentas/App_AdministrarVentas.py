@@ -477,7 +477,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             WarningDialog(self, '¡Hubo un error!', str(err))
             return
         
-        qm.information(self, 'Éxito', 'Se marcó como terminada la venta seleccionada.', qm.Ok)
+        qm.information(self, 'Éxito', 'Se marcó como terminada la venta seleccionada.')
         self.update_display(rescan=True)
             
     def cancelarVenta(self, _):
@@ -522,7 +522,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             WarningDialog(self, '¡Hubo un error!', str(err))
             return
         
-        qm.information(self, 'Éxito', 'Se marcó como cancelada la venta seleccionada.', qm.Ok)
+        qm.information(self, 'Éxito', 'Se marcó como cancelada la venta seleccionada.')
         self.update_display(rescan=True)
 
     def detallesVenta(self, idxs: QModelIndex):
@@ -851,7 +851,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         """
         try:
             pago = float(self.ui.txtPago.text())
-        except:
+        except ValueError:
             pago = 0.
         
         metodo_pago = self.ui.groupMetodo.checkedButton().text()
@@ -911,6 +911,6 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
 
         qm = QtWidgets.QMessageBox
         
-        qm.information(self, 'Éxito', 'La venta ha sido marcada como terminada.', qm.Ok)
+        qm.information(self, 'Éxito', 'La venta ha sido marcada como terminada.')
         self.first.update_display(rescan=True)
         self.close()

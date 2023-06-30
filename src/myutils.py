@@ -1,9 +1,10 @@
 """
 Provee varias funciones útiles utilizadas frecuentemente.
 """
-from PyQt5.QtWidgets import QMainWindow, QTableWidget, QMessageBox
-from PyQt5.QtGui import QIcon, QPixmap
+from contextlib import contextmanager
+from fdb import Connection, Error
 from mydecorators import run_in_thread
+
 
 class ColorsEnum:
     """
@@ -73,6 +74,21 @@ def formatDate(date) -> str:
         date = QDateTime.fromSecsSinceEpoch(date)
 
     return date.toString("d 'de' MMMM yyyy, h:mm ap")
+
+
+@contextmanager
+def manejar_transaccion(conn: Connection):
+    """
+    Context manager for handling transactions. Automatically rolls back
+    the transaction if an exception occurs, otherwise commits the changes.
+    """
+    try:
+        crsr = conn.cursor()
+        yield crsr
+        conn.commit()
+    except Error:
+        conn.rollback()
+        raise
 
 
 @run_in_thread
