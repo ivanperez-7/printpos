@@ -75,13 +75,13 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         if rescan:
             crsr = self.session['conn'].cursor()
             crsr.execute('''
-            SELECT  idInventario,
+            SELECT  id_inventario,
                     nombre,
-                    tamanoLote,
-                    precioLote,
-                    minimoLotes,
-                    unidadesRestantes,
-                    lotesRestantes
+                    tamano_lote,
+                    precio_lote,
+                    minimo_lotes,
+                    unidades_restantes,
+                    lotes_restantes
             FROM    Inventario;
             ''')
 
@@ -178,8 +178,8 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
                 crsr = conn.cursor()
                 
                 crsr.execute('''UPDATE  Inventario
-                                SET     unidadesRestantes = unidadesRestantes + tamanoLote * ?
-                                WHERE   idInventario = ?;''', (surtir, idx))
+                                SET     unidades_restantes = unidades_restantes + tamano_lote * ?
+                                WHERE   id_inventario = ?;''', (surtir, idx))
                 conn.commit()
                 
                 self.update_display(rescan=True)
@@ -207,7 +207,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         Primero se verifica si hay productos que lo utilizan.
         """
         try:
-            idInventario = self.ui.tabla_inventario.selectedItems()[0].text()
+            id_inventario = self.ui.tabla_inventario.selectedItems()[0].text()
         except IndexError:
             return
         
@@ -217,10 +217,10 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         crsr = conn.cursor()
         
         crsr.execute('''
-        SELECT	idProductos
-        FROM	ProductosUtilizaInventario
-        WHERE	idInventario = ?;
-        ''', (idInventario,))
+        SELECT	id_productos
+        FROM	Productos_Utiliza_Inventario
+        WHERE	id_inventario = ?;
+        ''', (id_inventario,))
         
         if crsr.fetchall():
             qm.warning(self, 'Atención', 
@@ -241,7 +241,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         
         # crea un cuadro que notifica el resultado de la operación
         try:
-            crsr.execute('DELETE FROM Inventario WHERE idInventario = ?;', (idInventario,))
+            crsr.execute('DELETE FROM Inventario WHERE id_inventario = ?;', (id_inventario,))
             conn.commit()
         except fdb.Error as err:
             conn.rollback()
@@ -290,12 +290,12 @@ class App_EditarInventario(QtWidgets.QMainWindow):
             
             # datos de la primera página
             crsr.execute('''SELECT  nombre,
-                                    tamanoLote, 
-                                    precioLote,
-                                    minimoLotes,
-                                    unidadesRestantes
+                                    tamano_lote, 
+                                    precio_lote,
+                                    minimo_lotes,
+                                    unidades_restantes
                             FROM    Inventario 
-                            WHERE   idInventario = ?;''', (idx,))
+                            WHERE   id_inventario = ?;''', (idx,))
             
             nombre, tamano, precio, minimo, existencia = crsr.fetchone()
             
@@ -308,11 +308,11 @@ class App_EditarInventario(QtWidgets.QMainWindow):
             # agregar productos de la segunda página
             crsr.execute('''
             SELECT	codigo,
-                    utilizaInventario
-            FROM	ProductosUtilizaInventario AS PUI
+                    utiliza_inventario
+            FROM	Productos_Utiliza_Inventario AS PUI
                     LEFT JOIN Productos AS P
-                           ON PUI.idProductos = P.idProductos
-            WHERE 	idInventario = ?;
+                           ON PUI.id_productos = P.id_productos
+            WHERE 	id_inventario = ?;
             ''', (idx,))
             
             productos = crsr.fetchall()
@@ -412,9 +412,12 @@ class App_EditarInventario(QtWidgets.QMainWindow):
         
         # <tabla Inventario>
         try:
+            if (tamanoLote := float(self.ui.txtTamano.text())) == 0:
+                return
+            
             inventario_db_parametros = (
                 self.ui.txtNombre.text().strip() or None,
-                float(self.ui.txtTamano.text()),
+                tamanoLote,
                 float(self.ui.txtPrecioCompra.text()),
                 float(self.ui.txtMinimo.text()),
                 float(self.ui.txtExistencia.text())
@@ -431,22 +434,22 @@ class App_EditarInventario(QtWidgets.QMainWindow):
                 crsr.execute('''
                 UPDATE  Inventario
                 SET     nombre = ?,
-                        tamanoLote = ?,
-                        precioLote = ?,
-                        minimoLotes = ?,
-                        unidadesRestantes = ?
-                WHERE   idInventario = ?;
+                        tamano_lote = ?,
+                        precio_lote = ?,
+                        minimo_lotes = ?,
+                        unidades_restantes = ?
+                WHERE   id_inventario = ?;
                 ''', (*inventario_db_parametros, self.idx))
             else:                   # actualizar elemento
                 crsr.execute('''
                 INSERT INTO Inventario (
-                    nombre, tamanoLote, precioLote,
-                    minimoLotes, unidadesRestantes
+                    nombre, tamano_lote, precio_lote,
+                    minimo_lotes, unidades_restantes
                 )
                 VALUES
                     (?,?,?,?,?)
                 RETURNING
-                    idInventario;
+                    id_inventario;
                 ''', inventario_db_parametros)
                 
                 self.idx, = crsr.fetchone()
@@ -455,7 +458,7 @@ class App_EditarInventario(QtWidgets.QMainWindow):
             return
         # </tabla Inventario>
         
-        # <tabla ProductosUtilizaInventario>
+        # <tabla Productos_Utiliza_Inventario>
         productos = self.ui.scrollAreaLista.children()[1:]  # QFrames
         productos = [prod.children() for prod in productos] # hijos de cada QFrame
         
@@ -472,7 +475,7 @@ class App_EditarInventario(QtWidgets.QMainWindow):
             if not codigo or cantidad < 1:
                 return
             
-            crsr.execute('SELECT idProductos FROM Productos WHERE codigo = ?;', (codigo,))
+            crsr.execute('SELECT id_productos FROM Productos WHERE codigo = ?;', (codigo,))
             idProducto, = crsr.fetchone()
             
             PUI_db_parametros.append((idProducto, self.idx, cantidad))
@@ -480,14 +483,14 @@ class App_EditarInventario(QtWidgets.QMainWindow):
         try:
             # primero borrar las entradas existentes
             crsr.execute('''
-            DELETE  FROM ProductosUtilizaInventario
-            WHERE   idInventario = ?;
+            DELETE  FROM Productos_Utiliza_Inventario
+            WHERE   id_inventario = ?;
             ''', (self.idx,))
             
             # nuevas entradas, introducidas por el usuario
             crsr.executemany('''
-            INSERT INTO ProductosUtilizaInventario (
-                idProductos, idInventario, utilizaInventario
+            INSERT INTO Productos_Utiliza_Inventario (
+                id_productos, id_inventario, utiliza_inventario
             )
             VALUES
                 (?,?,?);
@@ -499,7 +502,7 @@ class App_EditarInventario(QtWidgets.QMainWindow):
             
             WarningDialog(self, '¡No se pudo editar el elemento!', str(err))
             return
-        # </tabla ProductosUtilizaInventario>
+        # </tabla Productos_Utiliza_Inventario>
         
         qm.information(self, 'Éxito', '¡Se editó el elemento!', qm.Ok)
         

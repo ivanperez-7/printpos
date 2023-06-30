@@ -53,13 +53,13 @@ class App_Login(QtWidgets.QMainWindow):
         validador = QtGui.QRegExpValidator(regexp)
         self.ui.inputUsuario.setValidator(validador)
         
-        self.ui.btIngresar.clicked.connect(lambda: self.verificar_info())
+        self.ui.btIngresar.clicked.connect(lambda: self.verificar_info() if not self.lock else None)
         self.validated.connect(self.crearVentanaPrincipal)
 
         self.show()
     
     def keyPressEvent(self, qKeyEvent):
-        if qKeyEvent.key() in {Qt.Key_Return, Qt.Key_Enter}: 
+        if qKeyEvent.key() in {Qt.Key_Return, Qt.Key_Enter} and not self.lock: 
             self.verificar_info()
     
     @run_in_thread
@@ -67,9 +67,6 @@ class App_Login(QtWidgets.QMainWindow):
         """
         Verifica datos ingresados consultando la tabla Usuarios.
         """
-        if self.lock:
-            return
-        
         self.lock = True
             
         usuario = self.ui.inputUsuario.text().upper()

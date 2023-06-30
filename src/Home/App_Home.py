@@ -125,9 +125,9 @@ class App_Home(QtWidgets.QMainWindow):
         crsr.execute('''
         SELECT	COUNT(*)
         FROM	Ventas
-        WHERE	fechaHoraCreacion != fechaHoraEntrega
+        WHERE	fecha_hora_creacion != fecha_hora_entrega
                 AND estado LIKE 'Recibido%'
-                AND idUsuarios = ?;
+                AND id_usuarios = ?;
         ''', (self.session['user'].id,))
         
         numPendientes, = crsr.fetchone()
@@ -137,10 +137,10 @@ class App_Home(QtWidgets.QMainWindow):
 
         crsr.execute('''
         SELECT  nombre,
-                lotesRestantes,
-                minimoLotes
+                lotes_restantes,
+                minimo_lotes
         FROM    Inventario 
-        WHERE   lotesRestantes < minimoLotes;
+        WHERE   lotes_restantes < minimo_lotes;
         ''')
 
         for nombre, stock, minimo in crsr:
@@ -292,11 +292,11 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
             SELECT  codigo,
                     descripcion || ', desde ' || ROUND(desde, 1) || ' unidades '
                         || IIF(duplex, '[PRECIO DUPLEX]', ''), 
-                    precioConIVA 
-            FROM    ProductosIntervalos AS PInv
+                    precio_con_iva 
+            FROM    Productos_Intervalos AS P_Inv
                     LEFT JOIN Productos AS P
-                        ON P.idProductos = PInv.idProductos
-            ORDER   BY P.idProductos, desde, duplex ASC;
+                        ON P.id_productos = P_Inv.id_productos
+            ORDER   BY P.id_productos, desde, duplex ASC;
             ''')
             
             self.all_prod = crsr.fetchall()
@@ -307,10 +307,10 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
                     min_ancho,
                     min_alto,
                     precio_m2
-            FROM    Productos_granformato AS P_gran
+            FROM    Productos_Gran_Formato AS P_gran
                     LEFT JOIN Productos AS P
-                        ON P.idProductos = P_gran.idProductos
-            ORDER   BY P.idProductos;
+                        ON P.id_productos = P_gran.id_productos
+            ORDER   BY P.id_productos;
             ''')
         
             self.all_gran = crsr.fetchall()

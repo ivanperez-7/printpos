@@ -89,17 +89,17 @@ class App_Reportes(QtWidgets.QMainWindow):
         SELECT 	FIRST 10
                 Clientes.nombre,
                 COUNT (
-                    IIF(fechaHoraCreacion = fechaHoraEntrega, 1, NULL)
+                    IIF(fecha_hora_creacion = fecha_hora_entrega, 1, NULL)
                 ) AS numDirectas,
                 COUNT (
-                    IIF(fechaHoraCreacion != fechaHoraEntrega, 1, NULL)
+                    IIF(fecha_hora_creacion != fecha_hora_entrega, 1, NULL)
                 ) AS numPedidos
         FROM 	Ventas
                 LEFT JOIN Clientes
-                       ON Ventas.idClientes = Clientes.idClientes
+                       ON Ventas.id_clientes = Clientes.id_clientes
         WHERE	nombre != 'Público general'
-        GROUP	BY Ventas.idClientes
-        ORDER	BY COUNT(idVentas) DESC;
+        GROUP	BY Ventas.id_clientes
+        ORDER	BY COUNT(id_ventas) DESC;
         ''')
         
         categories = []
@@ -155,9 +155,9 @@ class App_Reportes(QtWidgets.QMainWindow):
                     cantidad * IIF(cantidad > 0, 1, NULL)
                 ) AS numVentas,
                 SUM(importe) AS ingresos
-        FROM	VentasDetallado AS VD
+        FROM	Ventas_Detallado AS VD
                 LEFT JOIN Productos AS P
-                       ON VD.idProductos = P.idProductos
+                       ON VD.id_productos = P.id_productos
         GROUP	BY 1
         ORDER	BY 2 DESC;
         '''
@@ -208,18 +208,18 @@ class App_Reportes(QtWidgets.QMainWindow):
 
 '''
 -- ingresos brutos por cliente
-SELECT  idClientes,
+SELECT  id_clientes,
         SUM(importe) AS ingreso_bruto
 FROM    Ventas as V
-        LEFT JOIN VentasDetallado as VD
-               ON V.idVentas = VD.idVentas
-GROUP   BY idClientes;
+        LEFT JOIN Ventas_Detallado as VD
+               ON V.id_ventas = VD.id_ventas
+GROUP   BY id_clientes;
 
 -- ingresos brutos por usuario
-SELECT  idUsuarios,
+SELECT  id_usuarios,
         SUM(importe) AS ingreso_bruto
 FROM    Ventas as V
-        LEFT JOIN VentasDetallado as VD
-               ON V.idVentas = VD.idVentas
-GROUP   BY idUsuarios;
+        LEFT JOIN Ventas_Detallado as VD
+               ON V.id_ventas = VD.id_ventas
+GROUP   BY id_usuarios;
 '''

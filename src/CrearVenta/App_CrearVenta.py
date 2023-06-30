@@ -375,9 +375,9 @@ class App_CrearVenta(QtWidgets.QMainWindow):
                 'fechaEntrega': self.fechaEntrega,
                 'fechaCreacion': QDateTime.currentDateTime(),
                 'idCliente': cliente[id],
-                'metodoPago': self.ui.btMetodoGrupo.checkedButton().text(),
+                'metodo_pago': self.ui.btMetodoGrupo.checkedButton().text(),
                 'comentarios': self.ui.txtComentarios.toPlainText().strip(),
-                'requiereFactura': self.ui.tickFacturaSi.isChecked()
+                'requiere_factura': self.ui.tickFacturaSi.isChecked()
             }
             
             bg = DimBackground(self)
@@ -429,11 +429,11 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         SELECT  codigo,
                 descripcion || ', desde ' || ROUND(desde, 1) || ' unidades '
                     || IIF(duplex, '[PRECIO DUPLEX]', ''), 
-                precioConIVA 
-        FROM    ProductosIntervalos AS PInv
+                precio_con_iva 
+        FROM    Productos_Intervalos AS P_Inv
                 LEFT JOIN Productos AS P
-                       ON P.idProductos = PInv.idProductos
-        ORDER   BY P.idProductos, desde, duplex ASC;
+                       ON P.id_productos = P_Inv.id_productos
+        ORDER   BY P.id_productos, desde, duplex ASC;
         ''')
         
         self.all_prod = crsr.fetchall()
@@ -445,10 +445,10 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
                 min_ancho,
                 min_alto,
                 precio_m2
-        FROM    Productos_granformato AS P_gran
+        FROM    Productos_Gran_Formato AS P_gran
                 LEFT JOIN Productos AS P
-                       ON P.idProductos = P_gran.idProductos
-        ORDER   BY P.idProductos;
+                       ON P.id_productos = P_gran.id_productos
+        ORDER   BY P.id_productos;
         ''')
         
         self.all_gran = crsr.fetchall()
@@ -566,7 +566,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         codigo = selected[0].text()
         
         crsr = self.first.session['conn'].cursor()
-        crsr.execute('SELECT idProductos FROM Productos WHERE codigo = ?;', (codigo,))
+        crsr.execute('SELECT id_productos FROM Productos WHERE codigo = ?;', (codigo,))
         
         idProducto, = crsr.fetchone()
         
@@ -575,17 +575,17 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
 
         query = f'''
         SELECT * FROM (
-            SELECT  FIRST 1 precioConIVA
-            FROM    ProductosIntervalos
-            WHERE   idProductos = ?
+            SELECT  FIRST 1 precio_con_iva
+            FROM    Productos_Intervalos
+            WHERE   id_productos = ?
                     AND desde <= ?
                     {restrict}
             ORDER   BY desde DESC)
         UNION ALL
         SELECT * FROM (
-            SELECT  FIRST 1 precioConIVA
-            FROM    ProductosIntervalos
-            WHERE   idProductos = ?
+            SELECT  FIRST 1 precio_con_iva
+            FROM    Productos_Intervalos
+            WHERE   id_productos = ?
                     AND desde <= ?
             ORDER   BY desde DESC)
         '''
@@ -642,7 +642,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         
         # obtener información del producto
         crsr = self.first.session['conn'].cursor()
-        crsr.execute('SELECT idProductos FROM Productos WHERE codigo = ?;', (codigo,))
+        crsr.execute('SELECT id_productos FROM Productos WHERE codigo = ?;', (codigo,))
         
         idProducto, = crsr.fetchone()
         
@@ -651,8 +651,8 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         SELECT  min_ancho,
                 min_alto,
                 precio_m2
-        FROM    Productos_GranFormato
-        WHERE   idProductos = ?;
+        FROM    Productos_Gran_Formato
+        WHERE   id_productos = ?;
         ''', (idProducto,))
         
         try:
@@ -774,7 +774,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
         # checar si el cliente es especial
         crsr = self.first.session['conn'].cursor()
         crsr.execute('''
-        SELECT  clienteEspecial,
+        SELECT  cliente_especial,
                 descuentos
         FROM    Clientes
         WHERE   nombre = ?
@@ -1077,28 +1077,28 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 ventaDatos['fechaCreacion'].toSecsSinceEpoch(),
                 fechaEntrega.toSecsSinceEpoch(),
                 ventaDatos['comentarios'].strip(),
-                ventaDatos['metodoPago'],
-                int(ventaDatos['requiereFactura']),
+                ventaDatos['metodo_pago'],
+                int(ventaDatos['requiere_factura']),
                 'No terminada'
             )
         
             crsr.execute('''
             INSERT INTO Ventas (
-                idClientes, idUsuarios, fechaHoraCreacion, 
-                fechaHoraEntrega, comentarios, metodoPago, 
-                requiereFactura, estado
+                id_clientes, id_usuarios, fecha_hora_creacion, 
+                fecha_hora_entrega, comentarios, metodo_pago, 
+                requiere_factura, estado
             ) 
             VALUES 
                 (?,?,?,?,?,?,?,?)
             RETURNING
-                idVentas;
+                id_ventas;
             ''', ventas_db_parametros)
 
-            self.idVentas, = crsr.fetchone() # ID de la venta que se acaba de insertar
+            self.id_ventas, = crsr.fetchone() # ID de la venta que se acaba de insertar
             productos = ventaDatos['productos']
 
-            ventasDetallado_db_parametros = [(
-                self.idVentas,
+            Ventas_Detallado_db_parametros = [(
+                self.id_ventas,
                 int(prod.id),
                 float(prod.cantidad),
                 float(prod.precio_unit),
@@ -1108,13 +1108,13 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             ) for prod in productos]
 
             crsr.executemany('''
-            INSERT INTO VentasDetallado (
-                idVentas, idProductos, cantidad, precio, 
-                descuentoPrecio, especificaciones, duplex
+            INSERT INTO Ventas_Detallado (
+                id_ventas, id_productos, cantidad, precio, 
+                descuento, especificaciones, duplex
             ) 
             VALUES 
                 (?,?,?,?,?,?,?);
-            ''', ventasDetallado_db_parametros)
+            ''', Ventas_Detallado_db_parametros)
 
             conn.commit()
         except fdb.Error as err:
@@ -1129,12 +1129,12 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 telefono,
                 correo
         FROM    Clientes
-        WHERE   idClientes = ?;
+        WHERE   id_clientes = ?;
         ''', (ventaDatos['idCliente'],))
 
         nombre, correo, telefono = crsr.fetchone()
 
-        self.ui.lbFolio.setText(f'{self.idVentas}')
+        self.ui.lbFolio.setText(f'{self.id_ventas}')
         self.ui.txtCliente.setText(nombre)
         self.ui.txtCorreo.setText(correo)
         self.ui.txtTelefono.setText(telefono)
@@ -1203,7 +1203,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         except ValueError:
             pago = 0.
         
-        pagoAceptado = pago >= self.paraPagar if self.ventaDatos['metodoPago'] == 'Efectivo' \
+        pagoAceptado = pago >= self.paraPagar if self.ventaDatos['metodo_pago'] == 'Efectivo' \
                        else pago == self.paraPagar
         
         if not pagoAceptado or not (self.total/2 <= self.paraPagar <= self.total):
@@ -1220,17 +1220,17 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             UPDATE  Ventas
             SET     estado = ?,
                     recibido = ?
-            WHERE   idVentas = ?;
-            ''', (estado, pago, self.idVentas))
+            WHERE   id_ventas = ?;
+            ''', (estado, pago, self.id_ventas))
             
             # registrar ingreso (sin cambio) en caja
             hoy = QDateTime.currentDateTime().toSecsSinceEpoch()
-            metodo = self.ventaDatos['metodoPago']
+            metodo = self.ventaDatos['metodo_pago']
             
             caja_db_parametros = [(
                 hoy,
                 pago,
-                f'Pago de venta con folio {self.idVentas}',
+                f'Pago de venta con folio {self.id_ventas}',
                 metodo,
                 self.session['user'].id
             )]
@@ -1240,7 +1240,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 caja_db_parametros.append((
                     hoy,
                     -cambio,
-                    f'Cambio de venta con folio {self.idVentas}',
+                    f'Cambio de venta con folio {self.id_ventas}',
                     metodo,
                     self.session['user'].id
                 ))
@@ -1248,8 +1248,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             if pago > 0.:
                 crsr.executemany('''
                 INSERT INTO Caja (
-                    fechaHora, monto,
-                    descripcion, metodo, idUsuarios
+                    fecha_hora, monto,
+                    descripcion, metodo, id_usuarios
                 )
                 VALUES
                     (?,?,?,?,?);
@@ -1267,7 +1267,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
 
         if not esDirecta:
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.', qm.Ok)
-            generarOrdenCompra(conn.cursor(), self.idVentas)
+            generarOrdenCompra(conn.cursor(), self.id_ventas)
         else:
             box = qm(qm.Icon.Question, 'Éxito',
                      'Venta terminada. ¡Recuerde ofrecer el ticket de compra! ¿Desea imprimirlo?',
@@ -1278,7 +1278,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             ret = box.exec()
             
             if ret == qm.Yes:
-                generarTicketCompra(conn.cursor(), self.idVentas)
+                generarTicketCompra(conn.cursor(), self.id_ventas)
             else:
                 print("enviar PDF por wa")
         
@@ -1294,8 +1294,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 crsr.execute('''
                 UPDATE  Ventas
                 SET     estado = 'Cancelada'
-                WHERE   idVentas = ?;
-                ''', (self.idVentas,))
+                WHERE   id_ventas = ?;
+                ''', (self.id_ventas,))
 
                 conn.commit()
                 
