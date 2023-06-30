@@ -17,7 +17,7 @@
    <string>Form</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../resources.qrc">
+   <iconset resource="../../resources.qrc">
     <normaloff>:/img/icon.ico</normaloff>:/img/icon.ico</iconset>
   </property>
   <widget class="QFrame" name="frame">
@@ -356,10 +356,16 @@
   <zorder>cambiarPsswd</zorder>
  </widget>
  <tabstops>
+  <tabstop>txtUsuario</tabstop>
+  <tabstop>txtNombre</tabstop>
+  <tabstop>txtPsswd</tabstop>
+  <tabstop>txtPsswdConf</tabstop>
+  <tabstop>boxPermisos</tabstop>
   <tabstop>btRegistrar</tabstop>
+  <tabstop>cambiarPsswd</tabstop>
  </tabstops>
  <resources>
-  <include location="../resources.qrc"/>
+  <include location="../../resources.qrc"/>
  </resources>
  <connections/>
 </ui>

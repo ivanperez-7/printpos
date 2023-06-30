@@ -316,8 +316,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         if not cliente:
             qm.warning(self, '¡Atención!', 
                        'No se encontró el cliente en la base de datos.\n'
-                       'Por favor, regístrelo como un nuevo cliente o seleccione "Público general".',
-                       qm.Ok)
+                       'Por favor, regístrelo como un nuevo cliente o seleccione "Público general".')
             return
 
         # indices para acceder a la tupla `cliente`
@@ -327,23 +326,20 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             if cliente[nombre] == 'Público general':
                 qm.warning(self, '¡Atención!', 
                            'No se puede generar un pedido a nombre de "Público general".\n'
-                           'Por favor, seleccione un cliente y/o regístrelo.',
-                           qm.Ok)
+                           'Por favor, seleccione un cliente y/o regístrelo.')
                 return
 
             if self.fechaHoraActual == self.fechaEntrega:
                 qm.warning(self, '¡Atención!', 
                            '¡La fecha de entrega del pedido no ha sido cambiada!\n'
-                           'Verifique que esta sea correcta.',
-                           qm.Ok)
+                           'Verifique que esta sea correcta.')
                 return
 
-        if not self.ui.btEfectivo.isChecked() and self.ui.tickFacturaSi.isChecked():
+        if self.ui.tickFacturaSi.isChecked():
             if cliente[nombre] == 'Público general':
                 qm.warning(self, '¡Atención!', 
                            'No se puede generar una factura a nombre de "Público general".\n'
-                           'Por favor, verifique que los datos del cliente sean correctos.',
-                           qm.Ok)
+                           'Por favor, verifique que los datos del cliente sean correctos.')
                 return
 
             if not (cliente[correo] and cliente[direccion] and cliente[rfc]):
@@ -357,8 +353,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
                 
                 qm.warning(self, '¡Atención!', 
                            'El cliente no tiene completos sus datos para la factura.\n'
-                           'Por favor, llene los datos como corresponde.',
-                           qm.Ok)
+                           'Por favor, llene los datos como corresponde.')
                 return
         
         # todos los datos del cliente y fecha de entrega son correctos,
@@ -425,32 +420,12 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
 
         # llena la tabla de productos no gran formato
         crsr = first.session['conn'].cursor()
-        crsr.execute('''
-        SELECT  codigo,
-                descripcion || ', desde ' || ROUND(desde, 1) || ' unidades '
-                    || IIF(duplex, '[PRECIO DUPLEX]', ''), 
-                precio_con_iva 
-        FROM    Productos_Intervalos AS P_Inv
-                LEFT JOIN Productos AS P
-                       ON P.id_productos = P_Inv.id_productos
-        ORDER   BY P.id_productos, desde, duplex ASC;
-        ''')
         
+        crsr.execute('SELECT * FROM View_Productos_Simples;')
         self.all_prod = crsr.fetchall()
         
         # llena la tabla de productos gran formato
-        crsr.execute('''
-        SELECT  codigo,
-                descripcion, 
-                min_ancho,
-                min_alto,
-                precio_m2
-        FROM    Productos_Gran_Formato AS P_gran
-                LEFT JOIN Productos AS P
-                       ON P.id_productos = P_gran.id_productos
-        ORDER   BY P.id_productos;
-        ''')
-        
+        crsr.execute('SELECT * FROM View_Gran_Formato;')
         self.all_gran = crsr.fetchall()
 
         # añade eventos para los botones
@@ -1266,7 +1241,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         qm = QtWidgets.QMessageBox
 
         if not esDirecta:
-            qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.', qm.Ok)
+            qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
             generarOrdenCompra(conn.cursor(), self.id_ventas)
         else:
             box = qm(qm.Icon.Question, 'Éxito',

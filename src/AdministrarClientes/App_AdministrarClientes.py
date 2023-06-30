@@ -247,7 +247,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
             WarningDialog(self, '¡No se pudo eliminar el cliente!', str(err))
             return
         
-        qm.information(self, 'Éxito', 'Se eliminaron los clientes seleccionados.', qm.Ok)
+        qm.information(self, 'Éxito', 'Se eliminaron los clientes seleccionados.')
         self.update_display(rescan=True)
     
     def goHome(self, _):
@@ -387,7 +387,7 @@ class App_EditarCliente(QtWidgets.QMainWindow):
             return
         
         qm = QtWidgets.QMessageBox
-        qm.information(self, 'Éxito', '¡Se editó el cliente!', qm.Ok)
+        qm.information(self, 'Éxito', '¡Se editó el cliente!')
         
         self.success.emit()
         self.close()

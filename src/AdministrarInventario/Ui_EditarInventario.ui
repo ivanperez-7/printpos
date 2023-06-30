@@ -561,6 +561,16 @@
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>txtNombre</tabstop>
+  <tabstop>txtTamano</tabstop>
+  <tabstop>txtExistencia</tabstop>
+  <tabstop>txtPrecioCompra</tabstop>
+  <tabstop>txtMinimo</tabstop>
+  <tabstop>btAceptar</tabstop>
+  <tabstop>btAgregar</tabstop>
+  <tabstop>scrollArea</tabstop>
+ </tabstops>
  <resources>
   <include location="../../resources.qrc"/>
  </resources>

@@ -212,7 +212,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
             WarningDialog(self, '¡Hubo un error!', str(err))
             return
         
-        qm.information(self, 'Éxito', 'Se dieron de baja los usuarios seleccionados.', qm.Ok)
+        qm.information(self, 'Éxito', 'Se dieron de baja los usuarios seleccionados.')
         self.update_display(rescan=True)
 
     def goHome(self, _):
@@ -373,7 +373,7 @@ class App_EditarUsuario(QtWidgets.QMainWindow):
             return
         
         qm = QtWidgets.QMessageBox
-        qm.information(self, 'Éxito', '¡Se editó el usuario!', qm.Ok)
+        qm.information(self, 'Éxito', '¡Se editó el usuario!')
         
         self.first.update_display(rescan=True)
         self.close()

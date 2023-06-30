@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QMessageBox, QDialog
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from functools import wraps
+import fdb
 
 
 ##############################################
@@ -86,7 +87,7 @@ def requiere_admin(func):
         try:
             crsr = conn.cursor()
             crsr.execute('SELECT permisos FROM Usuarios WHERE usuario = ?;', (usuario,))
-        except Exception as err:
+        except fdb.Error as err:
             print(str(err))
             
             dialog.close()

@@ -179,7 +179,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         if count > 0:
             qm.warning(self, 'Atención', 
                        'No se puede eliminar este producto debido '
-                       'a que hay ventas que lo incluyen.', qm.Ok)
+                       'a que hay ventas que lo incluyen.')
             return
         
         # abrir pregunta
@@ -204,7 +204,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
             WarningDialog(self, '¡No se pudo eliminar el producto!', str(err))
             return
         
-        qm.information(self, 'Éxito', 'Se eliminó el producto seleccionado.', qm.Ok)
+        qm.information(self, 'Éxito', 'Se eliminó el producto seleccionado.')
         self.update_display(rescan=True)        
     
     def goHome(self, _):
@@ -293,15 +293,12 @@ class App_EditarProducto(QtWidgets.QMainWindow):
             FROM    Productos_Gran_Formato
             WHERE 	id_productos = ?;
             ''', (idx,))
+        
+            min_ancho, min_alto, precio = crsr.fetchone()
             
-            try:
-                min_ancho, min_alto, precio = crsr.fetchone()
-                
-                self.ui.txtAnchoMin.setText(f'{min_ancho:,.2f}')
-                self.ui.txtAltoMin.setText(f'{min_alto:,.2f}')
-                self.ui.txtPrecio.setText(f'{precio:,.2f}')
-            except:
-                pass
+            self.ui.txtAnchoMin.setText(f'{min_ancho:,.2f}')
+            self.ui.txtAltoMin.setText(f'{min_alto:,.2f}')
+            self.ui.txtPrecio.setText(f'{precio:,.2f}')
         
         # agregar elementos de la segunda página
         crsr.execute('''
@@ -427,7 +424,7 @@ class App_EditarProducto(QtWidgets.QMainWindow):
         qm = QtWidgets.QMessageBox
         categoria = ['S','G'][self.ui.tabWidget.currentIndex()]
         
-        # <tabla Productos>
+        #### <tabla Productos> ####
         productos_db_parametros = (
             self.ui.txtCodigo.text().strip() or None,
             self.ui.txtDescripcion.toPlainText().strip() or None,
@@ -439,7 +436,7 @@ class App_EditarProducto(QtWidgets.QMainWindow):
         crsr = conn.cursor()
 
         try:
-            if self.idx:        # el producto no existe
+            if self.idx:        # actualizar producto
                 idx = self.idx
                 
                 crsr.execute('''
@@ -450,7 +447,7 @@ class App_EditarProducto(QtWidgets.QMainWindow):
                         categoria = ?
                 WHERE   id_productos = ?;
                 ''', (*productos_db_parametros, idx))
-            else:                   # actualizar producto
+            else:                # el producto no existe
                 crsr.execute('''
                 INSERT INTO Productos (
                     codigo, descripcion, abreviado, categoria
@@ -466,9 +463,9 @@ class App_EditarProducto(QtWidgets.QMainWindow):
             conn.rollback()
             WarningDialog(self, '¡No se pudo editar el producto!', str(err))
             return
-        # </tabla Productos>
+        #### </tabla Productos> ####
         
-        # <tabla Productos_Utiliza_Inventario>
+        #### <tabla Productos_Utiliza_Inventario> ####
         elementos = self.ui.scrollAreaLista.children()[1:]  # QFrames
         elementos = [elem.children() for elem in elementos] # hijos de cada QFrame
         
@@ -511,9 +508,9 @@ class App_EditarProducto(QtWidgets.QMainWindow):
             conn.rollback()
             WarningDialog(self, '¡No se pudo editar el producto!', str(err))
             return
-        # </tabla Productos_Utiliza_Inventario>
+        #### </tabla Productos_Utiliza_Inventario> ####
         
-        # <tabla Productos_Intervalos>
+        #### <tabla Productos_Intervalos> ####
         crsr.execute('DELETE FROM Productos_Intervalos WHERE id_productos = ?;', (idx,))
         crsr.execute('DELETE FROM Productos_Gran_Formato WHERE id_productos = ?;', (idx,))
         
@@ -566,16 +563,15 @@ class App_EditarProducto(QtWidgets.QMainWindow):
             '''
         
         try:
-            # nuevas entradas, introducidas por el usuario
             crsr.executemany(query, Prod_db_parametros)
             conn.commit()
         except fdb.Error as err:
             conn.rollback()
             WarningDialog(self, '¡No se pudo editar el producto!', str(err))
             return
-        # </tabla Productos_Intervalos>
+        #### </tabla Productos_Intervalos> ####
         
-        qm.information(self, 'Éxito', '¡Se editó el producto!', qm.Ok)
+        qm.information(self, 'Éxito', '¡Se editó el producto!')
         
         self.first.update_display(rescan=True)
         self.close()

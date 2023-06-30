@@ -94,7 +94,7 @@ class App_Login(QtWidgets.QMainWindow):
             conn = conn_a
             crsr = conn.cursor()
             crsr.execute('SELECT * FROM Usuarios WHERE usuario = ?;', (usuario,))
-        except Exception as err:
+        except fdb.Error as err:
             print(str(err))
             
             conn = conn_v
