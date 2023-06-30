@@ -110,10 +110,10 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
             SELECT  usuario,
                     nombre,
                     permisos,
-                    MAX(fechaHoraCreacion) AS ultimaVenta
+                    MAX(fecha_hora_creacion) AS ultimaVenta
             FROM    Usuarios AS U
                     LEFT JOIN Ventas AS V
-                           ON U.idUsuarios = V.idUsuarios
+                           ON U.id_usuarios = V.id_usuarios
             {filtrar}
             GROUP   BY 1, 2, 3
             ORDER   BY U.nombre ASC;

@@ -101,18 +101,18 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
             crsr = self.session['conn'].cursor()
 
             crsr.execute('''
-            SELECT  C.idClientes,
+            SELECT  C.id_clientes,
                     nombre,
                     telefono,
                     correo,
                     direccion,
                     RFC,
-                    MAX(fechaHoraCreacion) AS ultimaVenta
+                    MAX(fecha_hora_creacion) AS ultimaVenta
             FROM    Clientes AS C
                     LEFT JOIN Ventas AS V
-                           ON C.idClientes = V.idClientes
+                           ON C.id_clientes = V.id_clientes
             GROUP   BY 1, 2, 3, 4, 5, 6
-            ORDER   BY C.idClientes;
+            ORDER   BY C.id_clientes;
             ''')
 
             self.all = crsr.fetchall()
@@ -239,7 +239,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
 
         # crea un cuadro que notifica el resultado de la operación
         try:
-            crsr.executemany('DELETE FROM Clientes WHERE idClientes = ?;', values)
+            crsr.executemany('DELETE FROM Clientes WHERE id_clientes = ?;', values)
             conn.commit()
         except fdb.Error as err:
             conn.rollback()
@@ -289,7 +289,7 @@ class App_EditarCliente(QtWidgets.QMainWindow):
         # datos por defecto
         if idx:
             crsr = self.session['conn'].cursor()
-            crsr.execute('SELECT * FROM Clientes WHERE idClientes = ?;', (idx,))
+            crsr.execute('SELECT * FROM Clientes WHERE id_clientes = ?;', (idx,))
             cliente = crsr.fetchone()
             
             nombre = cliente[1]
@@ -365,15 +365,15 @@ class App_EditarCliente(QtWidgets.QMainWindow):
                         correo = ?,
                         direccion = ?,
                         RFC = ?,
-                        clienteEspecial = ?,
+                        cliente_especial = ?,
                         descuentos = ?
-                WHERE   idClientes = ?;
+                WHERE   id_clientes = ?;
                 ''', (*clientes_db_parametros, self.idx))
             else:               # crear nuevo cliente
                 crsr.execute('''
                 INSERT INTO Clientes (
                     nombre, telefono, correo, direccion,
-                    RFC, clienteEspecial, descuentos
+                    RFC, cliente_especial, descuentos
                 ) 
                 VALUES 
                     (?,?,?,?,?,?,?);

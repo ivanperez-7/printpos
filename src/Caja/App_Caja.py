@@ -34,7 +34,7 @@ class App_Caja(QtWidgets.QMainWindow):
         hoy = QDate.currentDate()
         fechaMin, = self.session['conn'] \
                     .cursor() \
-                    .execute('SELECT MIN(fechaHora) FROM Caja;') \
+                    .execute('SELECT MIN(fecha_hora) FROM Caja;') \
                     .fetchone()
         fechaMin = QDateTime.fromSecsSinceEpoch(fechaMin).date() if fechaMin else hoy
         
@@ -113,15 +113,15 @@ class App_Caja(QtWidgets.QMainWindow):
         if rescan:
             crsr = self.session['conn'].cursor()
             crsr.execute('''
-            SELECT 	fechaHora,
+            SELECT 	fecha_hora,
                     monto,
                     descripcion,
                     metodo,
                     U.nombre
             FROM 	Caja AS C
                     LEFT JOIN Usuarios AS U
-                           ON C.idUsuarios = U.idUsuarios
-            ORDER   BY fechaHora DESC;
+                           ON C.id_usuarios = U.id_usuarios
+            ORDER   BY fecha_hora DESC;
             ''')
 
             all_movimientos = crsr.fetchall()
@@ -283,9 +283,9 @@ class App_Caja(QtWidgets.QMainWindow):
 
         data = [['Fecha y hora', 'Descripción', 'Forma de pago', 'Monto', 'Responsable']]
 
-        for fechaHora, monto, descripcion, metodo, usuario in movimientos:
+        for fecha_hora, monto, descripcion, metodo, usuario in movimientos:
             data.append([
-                formatDate(fechaHora),
+                formatDate(fecha_hora),
                 Paragraph(descripcion, styles['Cell']),
                 Paragraph(metodo, styles['Cell']),
                 monto,
@@ -359,8 +359,8 @@ class App_Caja(QtWidgets.QMainWindow):
             try:
                 crsr.execute('''
                 INSERT INTO Caja (
-                    fechaHora, monto,
-                    descripcion, metodo, idUsuarios
+                    fecha_hora, monto,
+                    descripcion, metodo, id_usuarios
                 )
                 VALUES
                     (?,?,?,?,?);
@@ -408,8 +408,8 @@ class App_Caja(QtWidgets.QMainWindow):
             try:
                 crsr.execute('''
                 INSERT INTO Caja (
-                    fechaHora, monto,
-                    descripcion, metodo, idUsuarios
+                    fecha_hora, monto,
+                    descripcion, metodo, id_usuarios
                 )
                 VALUES
                     (?,?,?,?,?);

@@ -62,41 +62,39 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
             crsr = self.session['conn'].cursor()
             
             crsr.execute('''
-            WITH CostoProduccion (idProductos, costo) AS (
-            SELECT	P.idProductos,
+            WITH Costo_Produccion (id_productos, costo) AS (
+            SELECT	P.id_productos,
                     SUM(
-                        COALESCE(PUI.utilizaInventario * I.precioUnidad, 
-                        0.0)
+                        COALESCE(PUI.utiliza_inventario * I.precio_unidad, 
+                                0.0)
                     ) AS costo
             FROM  	Productos AS P
-                    LEFT JOIN ProductosUtilizaInventario AS PUI
-                           ON P.idProductos = PUI.idProductos
+                    LEFT JOIN Productos_Utiliza_Inventario AS PUI
+                           ON P.id_productos = PUI.id_productos
                     LEFT JOIN Inventario AS I
-                           ON PUI.idInventario = I.idInventario
-            GROUP	BY P.idProductos
-            ORDER	BY P.idProductos ASC
+                           ON PUI.id_inventario = I.id_inventario
+            GROUP	BY P.id_productos
+            ORDER	BY P.id_productos ASC
             )
 
-            SELECT  P.idProductos,
+            SELECT  P.id_productos,
                     P.codigo,
                     P.descripcion 
-                        || COALESCE(', desde ' || ROUND(PInv.desde, 1) || ' unidades', '')
-                        || IIF(PInv.duplex, ' [PRECIO DUPLEX]', ''),
+                        || COALESCE(', desde ' || ROUND(P_Inv.desde, 1) || ' unidades', '')
+                        || IIF(P_Inv.duplex, ' [PRECIO DUPLEX]', ''),
                     P.abreviado,
-                    COALESCE(P_gran.precio_m2, PInv.precioConIVA) AS precio_con_iva, 
-                    COALESCE(P_gran.precio_m2, PInv.precioConIVA) / 1.16 AS precio_sin_iva,
-                    CProd.costo,
-                    COALESCE(
-                        COALESCE(P_gran.precio_m2, PInv.precioConIVA) - CProd.costo, 
-                        0) AS utilidad
+                    COALESCE(P_gran.precio_m2, P_Inv.precio_con_iva) AS precio_con_iva, 
+                    COALESCE(P_gran.precio_m2, P_Inv.precio_con_iva) / 1.16 AS precio_sin_iva,
+                    C_Prod.costo,
+                    COALESCE(P_gran.precio_m2, P_Inv.precio_con_iva) - C_Prod.costo AS utilidad
             FROM    Productos AS P
-                    LEFT JOIN ProductosIntervalos AS PInv
-                           ON PInv.idProductos = P.idProductos
-                    LEFT JOIN Productos_Granformato AS P_gran
-                           ON P.idProductos = P_gran.idProductos
-                    LEFT JOIN CostoProduccion AS CProd
-                           ON P.idProductos = CProd.idProductos
-            ORDER   BY P.idProductos, desde ASC;
+                    LEFT JOIN Productos_Intervalos AS P_Inv
+                           ON P_Inv.id_productos = P.id_productos
+                    LEFT JOIN Productos_Gran_Formato AS P_gran
+                           ON P.id_productos = P_gran.id_productos
+                    LEFT JOIN Costo_Produccion AS C_Prod
+                           ON P.id_productos = C_Prod.id_productos
+            ORDER   BY P.id_productos, desde ASC;
             ''')
 
             self.all = crsr.fetchall()
@@ -170,9 +168,9 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         crsr = conn.cursor()
         
         crsr.execute('''
-        SELECT	COUNT(idProductos)
-        FROM	VentasDetallado
-        WHERE	idProductos = ?;
+        SELECT	COUNT(id_productos)
+        FROM	Ventas_Detallado
+        WHERE	id_productos = ?;
         ''', (idProducto,))
         
         # numero de ventas que contienen este producto
@@ -194,9 +192,10 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
             return
         
         try:
-            crsr.execute('DELETE FROM ProductosUtilizaInventario WHERE idProductos = ?;', (idProducto,))
-            crsr.execute('DELETE FROM ProductosIntervalos WHERE idProductos = ?;', (idProducto,))
-            crsr.execute('DELETE FROM Productos WHERE idProductos = ?;', (idProducto,))
+            crsr.execute('DELETE FROM Productos_Utiliza_Inventario WHERE id_productos = ?;', (idProducto,))
+            crsr.execute('DELETE FROM Productos_Gran_Formato WHERE id_productos = ?;', (idProducto,))
+            crsr.execute('DELETE FROM Productos_Intervalos WHERE id_productos = ?;', (idProducto,))
+            crsr.execute('DELETE FROM Productos WHERE id_productos = ?;', (idProducto,))
             
             conn.commit()
         except fdb.Error as err:
@@ -241,10 +240,16 @@ class App_EditarProducto(QtWidgets.QMainWindow):
         self.session = first.session # conexión a la base de datos y usuario actual
         self.idx = idx  # id del elemento a editar
         
+        # formato tabla de precios
+        header = self.ui.tabla_precios.horizontalHeader()
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Fixed)
+        header.setSectionResizeMode(1, QtWidgets.QHeaderView.Fixed)
+        header.setSectionResizeMode(2, QtWidgets.QHeaderView.Fixed)
+        
         # eventos para botones
         self.ui.btAceptar.clicked.connect(self.done)
-        self.ui.btAgregar.clicked.connect(lambda _: self.agregarProductoALista())
-        self.ui.lbAgregar.mousePressEvent = self.agregarIntervalo
+        self.ui.btAgregar.clicked.connect(lambda: self.agregarProductoALista())
+        self.ui.lbAgregar.mousePressEvent = lambda _: self.agregarIntervalo(row=self.ui.tabla_precios.rowCount())
         self.ui.lbQuitar.mousePressEvent = self.quitarIntervalo
         self.ui.lbRegresar.mousePressEvent = self.closeEvent
         
@@ -255,7 +260,7 @@ class App_EditarProducto(QtWidgets.QMainWindow):
         crsr = first.session['conn'].cursor()
         
         # datos de la primera página
-        crsr.execute('SELECT * FROM Productos WHERE idProductos = ?;', (idx,))
+        crsr.execute('SELECT * FROM Productos WHERE id_productos = ?;', (idx,))
         
         _, codigo, descripcion, abreviado, categoria = crsr.fetchone()
         
@@ -269,32 +274,15 @@ class App_EditarProducto(QtWidgets.QMainWindow):
             # agregar intervalos de precios a la tabla
             crsr.execute('''
             SELECT	desde,
-                    precioConIVA,
+                    precio_con_iva,
                     duplex
-            FROM	ProductosIntervalos AS PInv
-            WHERE 	idProductos = ?
+            FROM	Productos_Intervalos AS P_Inv
+            WHERE 	id_productos = ?
             ORDER   BY desde ASC, duplex ASC;
             ''', (idx,))
             
-            for row, (intervalo, precio, duplex) in enumerate(crsr):
-                self.ui.tabla_precios.insertRow(row)
-                
-                item = QtWidgets.QTableWidgetItem(f'{intervalo:,.2f}')
-                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.ui.tabla_precios.setItem(row, 0, item)
-                
-                item = QtWidgets.QTableWidgetItem(f'{precio:,.2f}')
-                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.ui.tabla_precios.setItem(row, 1, item)
-
-                widget = QtWidgets.QWidget()
-                widget.setMinimumHeight(32)
-                layout = QtWidgets.QHBoxLayout(widget)
-                layout.setAlignment(Qt.AlignCenter)
-                checkbox = QtWidgets.QCheckBox(widget)
-                checkbox.setChecked(duplex)
-                layout.addWidget(checkbox)
-                self.ui.tabla_precios.setCellWidget(row, 2, widget)
+            for row, (desde, precio, duplex) in enumerate(crsr):
+                self.agregarIntervalo(row, desde, precio, duplex)
         elif categoria == 'G':
             self.ui.tabWidget.setCurrentIndex(1)
             
@@ -302,8 +290,8 @@ class App_EditarProducto(QtWidgets.QMainWindow):
             SELECT  min_ancho,
                     min_alto,
                     precio_m2
-            FROM    Productos_granformato
-            WHERE 	idProductos = ?;
+            FROM    Productos_Gran_Formato
+            WHERE 	id_productos = ?;
             ''', (idx,))
             
             try:
@@ -318,11 +306,11 @@ class App_EditarProducto(QtWidgets.QMainWindow):
         # agregar elementos de la segunda página
         crsr.execute('''
         SELECT	nombre,
-                utilizaInventario
-        FROM	ProductosUtilizaInventario AS PUI
+                utiliza_inventario
+        FROM	Productos_Utiliza_Inventario AS PUI
                 LEFT JOIN Inventario AS I
-                        ON PUI.idInventario = I.idInventario
-        WHERE 	idProductos = ?;
+                        ON PUI.id_inventario = I.id_inventario
+        WHERE 	id_productos = ?;
         ''', (idx,))
                 
         for nombre, cantidad in crsr:
@@ -373,23 +361,27 @@ class App_EditarProducto(QtWidgets.QMainWindow):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def agregarIntervalo(self, _):
-        tabla = self.ui.tabla_precios
+    def agregarIntervalo(self, row: int, desde: float = 0., 
+                         precio: float = 0., duplex: bool = False):
+        """
+        Agrega entrada a la tabla de precios.
+        """ 
+        self.ui.tabla_precios.insertRow(row)
         
-        if (idx := tabla.selectedIndexes()):
-            row = idx[0].row() + 1
-        else:
-            row = tabla.rowCount()    
-        tabla.insertRow(row)
+        cell = QtWidgets.QTableWidgetItem(f'{desde:,.2f}' if desde else '')
+        cell.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.ui.tabla_precios.setItem(row, 0, cell)
         
-        tabla.setItem(row, 0, QtWidgets.QTableWidgetItem(''))
-        tabla.setItem(row, 1, QtWidgets.QTableWidgetItem(''))
+        cell = QtWidgets.QTableWidgetItem(f'{precio:,.2f}' if precio else '')
+        cell.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.ui.tabla_precios.setItem(row, 1, cell)
         
         widget = QtWidgets.QWidget()
         widget.setMinimumHeight(32)
         layout = QtWidgets.QHBoxLayout(widget)
         layout.setAlignment(Qt.AlignCenter)
         checkbox = QtWidgets.QCheckBox(widget)
+        checkbox.setChecked(duplex)
         layout.addWidget(checkbox)
         self.ui.tabla_precios.setCellWidget(row, 2, widget)
     
@@ -433,7 +425,7 @@ class App_EditarProducto(QtWidgets.QMainWindow):
         Actualiza la base de datos y sale de la ventana.
         """
         qm = QtWidgets.QMessageBox
-        categoria = ['S', 'G'][self.ui.tabWidget.currentIndex()]
+        categoria = ['S','G'][self.ui.tabWidget.currentIndex()]
         
         # <tabla Productos>
         productos_db_parametros = (
@@ -448,14 +440,16 @@ class App_EditarProducto(QtWidgets.QMainWindow):
 
         try:
             if self.idx:        # el producto no existe
+                idx = self.idx
+                
                 crsr.execute('''
                 UPDATE  Productos
                 SET     codigo = ?,
                         descripcion = ?,
                         abreviado = ?,
                         categoria = ?
-                WHERE   idProductos = ?;
-                ''', (*productos_db_parametros, self.idx))
+                WHERE   id_productos = ?;
+                ''', (*productos_db_parametros, idx))
             else:                   # actualizar producto
                 crsr.execute('''
                 INSERT INTO Productos (
@@ -464,16 +458,17 @@ class App_EditarProducto(QtWidgets.QMainWindow):
                 VALUES
                     (?,?,?,?)
                 RETURNING
-                    idProductos;
+                    id_productos;
                 ''', productos_db_parametros)
                 
-                self.idx, = crsr.fetchone()
+                idx, = crsr.fetchone()
         except fdb.Error as err:
+            conn.rollback()
             WarningDialog(self, '¡No se pudo editar el producto!', str(err))
             return
         # </tabla Productos>
         
-        # <tabla ProductosUtilizaInventario>
+        # <tabla Productos_Utiliza_Inventario>
         elementos = self.ui.scrollAreaLista.children()[1:]  # QFrames
         elementos = [elem.children() for elem in elementos] # hijos de cada QFrame
         
@@ -481,47 +476,55 @@ class App_EditarProducto(QtWidgets.QMainWindow):
             elementos = [(box.currentText(), float(line.text()))    # codigo y cantidad
                          for (box, _, _, _, line) in elementos]
         except ValueError:
-            qm.warning(self, 'Atención', '¡Verifique que los datos en la lista de materia prima sean correctos!', qm.Ok)
+            conn.rollback()
+            qm.warning(self, 'Atención', '¡Verifique que los datos en la lista de materia prima sean correctos!')
             return
         
         PUI_db_parametros = []
             
         for nombre, cantidad in elementos:
             if not nombre or cantidad < 1:
+                conn.rollback()
                 return 
             
-            crsr.execute('SELECT idInventario FROM Inventario WHERE nombre = ?;', (nombre,))
-            idInventario, = crsr.fetchone()
+            crsr.execute('SELECT id_inventario FROM Inventario WHERE nombre = ?;', (nombre,))
+            id_inventario, = crsr.fetchone()
             
-            PUI_db_parametros.append((self.idx, idInventario, cantidad))
+            PUI_db_parametros.append((idx, id_inventario, cantidad))
 
         # primero borrar las entradas existentes
         crsr.execute('''
-        DELETE  FROM ProductosUtilizaInventario
-        WHERE   idProductos = ?;
-        ''', (self.idx,))
+        DELETE  FROM Productos_Utiliza_Inventario
+        WHERE   id_productos = ?;
+        ''', (idx,))
         
         try:    
             # nuevas entradas, introducidas por el usuario
             crsr.executemany('''
-            INSERT INTO ProductosUtilizaInventario (
-                idProductos, idInventario, utilizaInventario
+            INSERT INTO Productos_Utiliza_Inventario (
+                id_productos, id_inventario, utiliza_inventario
             )
             VALUES
                 (?,?,?);
             ''', PUI_db_parametros)
-        except fdb.Error as err:            
+        except fdb.Error as err:
+            conn.rollback()
             WarningDialog(self, '¡No se pudo editar el producto!', str(err))
             return
-        # </tabla ProductosUtilizaInventario>
+        # </tabla Productos_Utiliza_Inventario>
         
-        # <tabla ProductosIntervalos>
-        crsr.execute('DELETE FROM ProductosIntervalos WHERE idProductos = ?;', (self.idx,))
-        crsr.execute('DELETE FROM Productos_Granformato WHERE idProductos = ?;', (self.idx,))
+        # <tabla Productos_Intervalos>
+        crsr.execute('DELETE FROM Productos_Intervalos WHERE id_productos = ?;', (idx,))
+        crsr.execute('DELETE FROM Productos_Gran_Formato WHERE id_productos = ?;', (idx,))
         
         if categoria == 'S':
             tabla = self.ui.tabla_precios
             Prod_db_parametros = []
+            
+            if self.ui.tabla_precios.rowCount() == 0:
+                conn.rollback()
+                qm.warning(self, 'Atención', '¡Tabla de precios vacía!')
+                return
             
             for row in range(tabla.rowCount()):
                 desde = tabla.item(row, 0).text().replace(',', '')
@@ -529,28 +532,34 @@ class App_EditarProducto(QtWidgets.QMainWindow):
                 duplex = tabla.cellWidget(row, 2).children()[1].isChecked()
                 
                 try:
-                    Prod_db_parametros.append((self.idx, float(desde), float(precio), duplex))
+                    Prod_db_parametros.append((idx, float(desde), float(precio), duplex))
                 except ValueError:
-                    qm.warning(self, 'Atención', '¡Verifique que los datos en la tabla de precio sean correctos!', qm.Ok)
+                    conn.rollback()
+                    qm.warning(self, 'Atención', '¡Verifique que los datos en la tabla de precio sean correctos!')
                     return
             
             query = '''
-            INSERT INTO ProductosIntervalos (
-                idProductos, desde, precioConIVA, duplex
+            INSERT INTO Productos_Intervalos (
+                id_productos, desde, precio_con_iva, duplex
             )
             VALUES
                 (?,?,?,?);
             '''
         elif categoria == 'G':
-            Prod_db_parametros = [(
-                self.idx,
-                self.ui.txtAnchoMin.text(),
-                self.ui.txtAltoMin.text(),
-                self.ui.txtPrecio.text())]
+            try:
+                Prod_db_parametros = [(
+                    idx,
+                    float(self.ui.txtAnchoMin.text()),
+                    float(self.ui.txtAltoMin.text()),
+                    float(self.ui.txtPrecio.text()))]
+            except ValueError:
+                conn.rollback()
+                qm.warning(self, 'Atención', '¡Datos incorrectos!')
+                return
             
             query = '''
-            INSERT INTO Productos_Granformato (
-                idProductos, min_ancho, min_alto, precio_m2
+            INSERT INTO Productos_Gran_Formato (
+                id_productos, min_ancho, min_alto, precio_m2
             )
             VALUES
                 (?,?,?,?);
@@ -562,10 +571,9 @@ class App_EditarProducto(QtWidgets.QMainWindow):
             conn.commit()
         except fdb.Error as err:
             conn.rollback()
-            
             WarningDialog(self, '¡No se pudo editar el producto!', str(err))
             return
-        # </tabla ProductosIntervalos>
+        # </tabla Productos_Intervalos>
         
         qm.information(self, 'Éxito', '¡Se editó el producto!', qm.Ok)
         

@@ -38,7 +38,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         hoy = QDate.currentDate()
         fechaMin, = self.session['conn'] \
                     .cursor() \
-                    .execute('SELECT MIN(fechaHoraCreacion) FROM Ventas;') \
+                    .execute('SELECT MIN(fecha_hora_creacion) FROM Ventas;') \
                     .fetchone()
         fechaMin = QDateTime.fromSecsSinceEpoch(fechaMin).date() if fechaMin else hoy
         
@@ -221,54 +221,54 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             user = self.session['user']
             crsr = self.session['conn'].cursor()
             
-            restrict = f'AND Usuarios.idUsuarios = {user.id}' \
+            restrict = f'AND Usuarios.id_usuarios = {user.id}' \
                        if not user.administrador else ''
 
             crsr.execute(f'''
-            SELECT  Ventas.idVentas,
+            SELECT  Ventas.id_ventas,
                     Usuarios.nombre,
                     Clientes.nombre,
-                    fechaHoraCreacion,
+                    fecha_hora_creacion,
                     SUM(importe) AS total,
                     estado,
-                    metodoPago,
+                    metodo_pago,
                     comentarios
             FROM    Ventas
                     LEFT JOIN Usuarios
-                           ON Ventas.idUsuarios = Usuarios.idUsuarios
+                           ON Ventas.id_usuarios = Usuarios.id_usuarios
                     LEFT JOIN Clientes
-                           ON Ventas.idClientes = Clientes.idClientes
-                    LEFT JOIN VentasDetallado
-                           ON Ventas.idVentas = VentasDetallado.idVentas
-			WHERE   fechaHoraCreacion = fechaHoraEntrega
+                           ON Ventas.id_clientes = Clientes.id_clientes
+                    LEFT JOIN Ventas_Detallado
+                           ON Ventas.id_ventas = Ventas_Detallado.id_ventas
+			WHERE   fecha_hora_creacion = fecha_hora_entrega
                     {restrict}
             GROUP   BY 1, 2, 3, 4, 6, 7, 8
-            ORDER	BY Ventas.idVentas DESC;
+            ORDER	BY Ventas.id_ventas DESC;
             ''')
 
             self.all_directas = crsr.fetchall()
 
             crsr.execute(f'''
-            SELECT  Ventas.idVentas,
+            SELECT  Ventas.id_ventas,
                     Usuarios.nombre,
                     Clientes.nombre,
-                    fechaHoraCreacion,
-                    fechaHoraEntrega,
+                    fecha_hora_creacion,
+                    fecha_hora_entrega,
                     SUM(importe) AS total,
                     estado,
-                    metodoPago,
+                    metodo_pago,
                     comentarios
             FROM    Ventas
                     LEFT JOIN Usuarios
-                           ON Ventas.idUsuarios = Usuarios.idUsuarios
+                           ON Ventas.id_usuarios = Usuarios.id_usuarios
                     LEFT JOIN Clientes
-                           ON Ventas.idClientes = Clientes.idClientes
-                    LEFT JOIN VentasDetallado
-                           ON Ventas.idVentas = VentasDetallado.idVentas
-			WHERE   fechaHoraCreacion != fechaHoraEntrega
+                           ON Ventas.id_clientes = Clientes.id_clientes
+                    LEFT JOIN Ventas_Detallado
+                           ON Ventas.id_ventas = Ventas_Detallado.id_ventas
+			WHERE   fecha_hora_creacion != fecha_hora_entrega
                     {restrict}
             GROUP   BY 1, 2, 3, 4, 5, 7, 8, 9
-            ORDER	BY Ventas.idVentas DESC;
+            ORDER	BY Ventas.id_ventas DESC;
             ''')
             
             self.all_pedidos = crsr.fetchall()
@@ -416,8 +416,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                 C.telefono
         FROM    Ventas AS V
                 LEFT JOIN Clientes AS C
-                       ON V.idClientes = C.idClientes
-        WHERE   idVentas = ?;
+                       ON V.id_clientes = C.id_clientes
+        WHERE   id_ventas = ?;
         ''', (idVenta,))
         
         nombre, celular = crsr.fetchone()
@@ -467,7 +467,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             crsr.execute('''
             UPDATE  Ventas
             SET     estado = 'Terminada'
-            WHERE   idVentas = ?;
+            WHERE   id_ventas = ?;
             ''', (idVenta,))
 
             conn.commit()
@@ -512,7 +512,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             crsr.execute('''
             UPDATE  Ventas
             SET     estado = 'Cancelada'
-            WHERE   idVentas = ?;
+            WHERE   id_ventas = ?;
             ''', (idVenta,))
 
             conn.commit()
@@ -619,12 +619,12 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
                 codigo || IIF(duplex, ' (a doble cara)', ''),
                 especificaciones,
                 precio,
-                descuentoPrecio,
+                descuento,
                 importe
-        FROM    VentasDetallado
+        FROM    Ventas_Detallado
                 LEFT JOIN Productos
-                       ON VentasDetallado.idProductos = Productos.idProductos
-        WHERE   idVentas = ?;
+                       ON Ventas_Detallado.id_productos = Productos.id_productos
+        WHERE   id_ventas = ?;
         ''', (idx,))
 
         tabla = self.ui.tabla_productos
@@ -648,9 +648,9 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
         SELECT	SUM(importe) AS total,
                 estado
         FROM	Ventas AS V
-                LEFT JOIN VentasDetallado AS VD
-                       ON V.idVentas = VD.idVentas
-        WHERE	V.idVentas = ?
+                LEFT JOIN Ventas_Detallado AS VD
+                       ON V.id_ventas = VD.id_ventas
+        WHERE	V.id_ventas = ?
         GROUP   BY 2;
         ''', (idx,))
 
@@ -677,16 +677,16 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
         SELECT  Clientes.nombre,
                 correo,
                 telefono,
-                fechaHoraCreacion,
-                fechaHoraEntrega,
+                fecha_hora_creacion,
+                fecha_hora_entrega,
                 comentarios,
                 Usuarios.nombre
         FROM    Ventas
                 LEFT JOIN Clientes
-                       ON Ventas.idClientes = Clientes.idClientes
+                       ON Ventas.id_clientes = Clientes.id_clientes
                 LEFT JOIN Usuarios
-                       ON Ventas.idUsuarios = Usuarios.idUsuarios
-        WHERE   idVentas = ?;
+                       ON Ventas.id_usuarios = Usuarios.id_usuarios
+        WHERE   id_ventas = ?;
         ''', (idx,))
 
         nombreCliente, correo, telefono, fechaCreacion, \
@@ -732,7 +732,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         session = first.session # conexión a base de datos, y usuario
         
         self.first = first  # ventana de administrar ventas
-        self.idVentas = idx
+        self.id_ventas = idx
 
         # dar formato a la tabla principal
         header = self.ui.tabla_productos.horizontalHeader()
@@ -752,12 +752,12 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
                 codigo || IIF(duplex, ' (a doble cara)', ''),
                 especificaciones,
                 precio,
-                descuentoPrecio,
+                descuento,
                 importe
-        FROM    VentasDetallado
+        FROM    Ventas_Detallado
                 LEFT JOIN Productos
-                       ON VentasDetallado.idProductos = Productos.idProductos
-        WHERE   idVentas = ?;
+                       ON Ventas_Detallado.id_productos = Productos.id_productos
+        WHERE   id_ventas = ?;
         ''', (idx,))
 
         tabla = self.ui.tabla_productos
@@ -780,9 +780,9 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         SELECT	SUM(importe) AS total,
                 estado
         FROM	Ventas AS V
-                LEFT JOIN VentasDetallado AS VD
-                       ON V.idVentas = VD.idVentas
-        WHERE	V.idVentas = ?
+                LEFT JOIN Ventas_Detallado AS VD
+                       ON V.id_ventas = VD.id_ventas
+        WHERE	V.id_ventas = ?
         GROUP   BY 2;
         ''', (idx,))
 
@@ -796,12 +796,12 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         SELECT  Clientes.nombre,
                 correo,
                 telefono,
-                fechaHoraCreacion,
-                fechaHoraEntrega
+                fecha_hora_creacion,
+                fecha_hora_entrega
         FROM    Ventas
                 LEFT JOIN Clientes
-                       ON Ventas.idClientes = Clientes.idClientes
-        WHERE   idVentas = ?;
+                       ON Ventas.id_clientes = Clientes.id_clientes
+        WHERE   id_ventas = ?;
         ''', (idx,))
 
         nombreCliente, correo, telefono, \
@@ -854,8 +854,8 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         except:
             pago = 0.
         
-        metodoPago = self.ui.groupMetodo.checkedButton().text()
-        pagoAceptado = pago >= self.paraPagar if metodoPago == 'Efectivo' \
+        metodo_pago = self.ui.groupMetodo.checkedButton().text()
+        pagoAceptado = pago >= self.paraPagar if metodo_pago == 'Efectivo' \
                        else pago == self.paraPagar
                        
         if not pagoAceptado:
@@ -869,8 +869,8 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
             crsr.execute('''
             UPDATE  Ventas
             SET     estado = 'Terminada'
-            WHERE   idVentas = ?;
-            ''', (self.idVentas,))
+            WHERE   id_ventas = ?;
+            ''', (self.id_ventas,))
             
             # registrar ingreso (sin cambio) en caja
             hoy = QDateTime.currentDateTime().toSecsSinceEpoch()
@@ -878,8 +878,8 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
             caja_db_parametros = [(
                 hoy,
                 pago,
-                f'Pago de venta con folio {self.idVentas}',
-                metodoPago,
+                f'Pago de venta con folio {self.id_ventas}',
+                metodo_pago,
                 session['user'].id
             )]
             
@@ -888,15 +888,15 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
                 caja_db_parametros.append((
                     hoy,
                     -cambio,
-                    f'Cambio de venta con folio {self.idVentas}',
-                    metodoPago,
+                    f'Cambio de venta con folio {self.id_ventas}',
+                    metodo_pago,
                     session['user'].id
                 ))
             
             crsr.executemany('''
             INSERT INTO Caja (
-                fechaHora, monto,
-                descripcion, metodo, idUsuarios
+                fecha_hora, monto,
+                descripcion, metodo, id_usuarios
             )
             VALUES
                 (?,?,?,?,?);

@@ -158,19 +158,19 @@ def generarOrdenCompra(crsr, idx: int):
 
     # leer venta con índice idx de la base de datos y datos principales
     crsr.execute('''
-    SELECT  Ventas.idVentas,
+    SELECT  Ventas.id_ventas,
             nombre,
             telefono,
-            fechaHoraCreacion,
-            fechaHoraEntrega,
+            fecha_hora_creacion,
+            fecha_hora_entrega,
             estado,
             SUM(importe) AS importe
     FROM    Ventas
             LEFT JOIN Clientes
-                   ON Ventas.idClientes = Clientes.idClientes
-            LEFT JOIN VentasDetallado
-                   ON Ventas.idVentas = VentasDetallado.idVentas
-    WHERE   Ventas.idVentas = ?
+                   ON Ventas.id_clientes = Clientes.id_clientes
+            LEFT JOIN Ventas_Detallado
+                   ON Ventas.id_ventas = Ventas_Detallado.id_ventas
+    WHERE   Ventas.id_ventas = ?
     GROUP   BY 1, 2, 3, 4, 5, 6;
     ''', (idx,))
 
@@ -185,10 +185,10 @@ def generarOrdenCompra(crsr, idx: int):
             especificaciones,
             precio,
             importe AS importe
-    FROM    VentasDetallado
+    FROM    Ventas_Detallado
             LEFT JOIN Productos
-                   ON VentasDetallado.idProductos = Productos.idProductos
-    WHERE   idVentas = ?;
+                   ON Ventas_Detallado.id_productos = Productos.id_productos
+    WHERE   id_ventas = ?;
     ''', (idx,))
 
     # se dividen los productos de la orden en grupos de 6
@@ -288,7 +288,7 @@ def generarOrdenCompra(crsr, idx: int):
 # <FUNCIONES PARA GENERAR TICKETS> #
 ####################################
 @run_in_thread
-def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodoPago):
+def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_pago):
     """
     Función abstracta para generar el ticket de compra o presupuesto.
     Contiene:
@@ -385,7 +385,7 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodoP
         pie = '¡Muchas gracias por su compra!'
         
         folio= f'<b>Folio de venta</b>: {folio} ' \
-                  + '&nbsp; '*7 + f'<b>Método de pago</b>: {metodoPago}'
+                  + '&nbsp; '*7 + f'<b>Método de pago</b>: {metodo_pago}'
     else:
         titulo = 'COTIZACIÓN DE VENTA'
         pie = '¡Muchas gracias por su visita!'
@@ -450,12 +450,12 @@ def generarTicketCompra(crsr, idx):
     SELECT	cantidad,
             P.abreviado || IIF(VD.duplex, ' (a doble cara)', ''),
             precio,
-            descuentoPrecio,
+            descuento,
             importe
-    FROM	VentasDetallado AS VD
+    FROM	Ventas_Detallado AS VD
             LEFT JOIN Productos AS P
-                   ON VD.idProductos = P.idProductos
-    WHERE	idVentas = ?;
+                   ON VD.id_productos = P.id_productos
+    WHERE	id_ventas = ?;
     ''', (idx,))
 
     productos = crsr.fetchall()
@@ -463,15 +463,15 @@ def generarTicketCompra(crsr, idx):
     # más datos para el ticket
     crsr.execute('''
     SELECT	U.nombre,
-            fechaHoraCreacion,
+            fecha_hora_creacion,
             recibido,
-            metodoPago
-    FROM	VentasDetallado AS VD
+            metodo_pago
+    FROM	Ventas_Detallado AS VD
             LEFT JOIN Ventas AS V
-                   ON VD.idVentas = V.idVentas
+                   ON VD.id_ventas = V.id_ventas
             LEFT JOIN Usuarios AS U
-                   ON V.idUsuarios = U.idUsuarios
-    WHERE	VD.idVentas = ?;
+                   ON V.id_usuarios = U.id_usuarios
+    WHERE	VD.id_ventas = ?;
     ''', (idx,))
 
     vendedor, fechaCreacion, pagado, metodo = crsr.fetchone()
