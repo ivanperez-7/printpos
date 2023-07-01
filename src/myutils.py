@@ -2,7 +2,9 @@
 Provee varias funciones útiles utilizadas frecuentemente.
 """
 from contextlib import contextmanager
-from fdb import Connection, Error
+
+import fdb
+
 from mydecorators import run_in_thread
 
 
@@ -77,7 +79,7 @@ def formatDate(date) -> str:
 
 
 @contextmanager
-def manejar_transaccion(conn: Connection):
+def manejar_transaccion(conn: fdb.Connection):
     """
     Context manager for handling transactions. Automatically rolls back
     the transaction if an exception occurs, otherwise commits the changes.
@@ -86,7 +88,7 @@ def manejar_transaccion(conn: Connection):
         crsr = conn.cursor()
         yield crsr
         conn.commit()
-    except Error:
+    except fdb.Error:
         conn.rollback()
         raise
 

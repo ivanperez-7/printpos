@@ -1,12 +1,13 @@
+import fdb
+
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QFont, QColor, QPixmap, QCursor, QRegExpValidator
 from PyQt5.QtCore import Qt, QRegExp
 
-from myutils import ColorsEnum, son_similar
 from mydecorators import con_fondo
+from myutils import ColorsEnum, son_similar
 from mywidgets import LabelAdvertencia, WarningDialog
 
-import fdb
 
 class App_AdministrarInventario(QtWidgets.QMainWindow):
     """

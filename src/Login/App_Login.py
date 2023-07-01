@@ -1,12 +1,14 @@
+from dataclasses import dataclass
+
+import fdb
+
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtCore import Qt, QRegExp, pyqtSignal
 
-from dataclasses import dataclass
-from mywidgets import VentanaPrincipal
 from mydecorators import run_in_thread
+from mywidgets import VentanaPrincipal
 
-import fdb
 
 ##################
 # CLASE AUXILIAR #

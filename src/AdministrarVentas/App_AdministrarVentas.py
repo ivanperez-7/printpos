@@ -1,14 +1,15 @@
+from math import ceil
+
+import fdb
+
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QFont, QColor, QIcon, QRegExpValidator
 from PyQt5.QtCore import QDate, QDateTime, QModelIndex, QRegExp, Qt
 
-from math import ceil
+from mydecorators import con_fondo
 from myutils import (chunkify, clamp, enviarWhatsApp, formatDate, generarOrdenCompra, 
                      generarTicketCompra, ColorsEnum, son_similar)
-from mydecorators import con_fondo
 from mywidgets import LabelAdvertencia, WarningDialog
-
-import fdb
 
 
 #####################
