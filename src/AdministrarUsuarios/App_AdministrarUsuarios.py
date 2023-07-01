@@ -1,4 +1,5 @@
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets
+from PyQt5.QtGui import QFont, QRegExpValidator
 from PyQt5.QtCore import Qt, QRegExp
 
 from myutils import formatDate, son_similar
@@ -126,7 +127,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         tabla = self.ui.tabla_usuarios
         tabla.setRowCount(0)
         
-        bold = QtGui.QFont()
+        bold = QFont()
         bold.setBold(True)
         
         # texto introducido por el usuario
@@ -273,7 +274,7 @@ class App_EditarUsuario(QtWidgets.QMainWindow):
             
         # validador para nombre de usuario
         regexp = QRegExp(r'[a-zA-Z0-9_$]+')
-        validador = QtGui.QRegExpValidator(regexp)
+        validador = QRegExpValidator(regexp)
         self.ui.txtUsuario.setValidator(validador)
 
         # deshabilita eventos del mouse para los textos en los botones

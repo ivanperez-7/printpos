@@ -1,4 +1,5 @@
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets
+from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtCore import (QDate, QDateTime, QRegExp, Qt, 
                           QPropertyAnimation, QRect, QEasingCurve)
 
@@ -440,7 +441,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         
         # validadores para datos numéricos
         regexp_numero = QRegExp(r'\d*\.?\d*')
-        validador = QtGui.QRegExpValidator(regexp_numero)
+        validador = QRegExpValidator(regexp_numero)
         self.ui.txtCantidad.setValidator(validador)
 
         self.show()
@@ -868,7 +869,7 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
         
         # validadores numéricos
         regexp_numero = QRegExp(r'\d*\.?\d*')
-        validador = QtGui.QRegExpValidator(regexp_numero)
+        validador = QRegExpValidator(regexp_numero)
         self.ui.txtPrecio.setValidator(validador)
         
         self.show()
@@ -1120,7 +1121,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         
         # validadores para datos numéricos
         regexp_numero = QRegExp(r'\d*\.?\d*')
-        validador = QtGui.QRegExpValidator(regexp_numero)
+        validador = QRegExpValidator(regexp_numero)
         
         self.ui.txtAnticipo.setValidator(validador)
         self.ui.txtPago.setValidator(validador)

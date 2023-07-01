@@ -1,4 +1,5 @@
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets
+from PyQt5.QtGui import QFont, QColor, QPixmap, QCursor, QRegExpValidator
 from PyQt5.QtCore import Qt, QRegExp
 
 from myutils import ColorsEnum, son_similar
@@ -76,7 +77,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         tabla = self.ui.tabla_inventario
         tabla.setRowCount(0)
         
-        bold = QtGui.QFont()
+        bold = QFont()
         bold.setBold(True)
         
         # texto introducido por el usuario
@@ -111,7 +112,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
             
             # resaltar si hay menos cantidad que el mínimo
             if item[6] < item[4]:
-                color = QtGui.QColor(ColorsEnum.ROJO)
+                color = QColor(ColorsEnum.ROJO)
                 tabla.item(row, 6).setBackground(color)
 
         tabla.resizeRowsToContents()
@@ -120,16 +121,16 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def surtirExistencias(self):
-        from PyQt5 import QtCore, QtGui, QtWidgets
+        from PyQt5 import QtCore
         
         Dialog = QtWidgets.QDialog(self)
         Dialog.resize(354, 84)
         Dialog.setWindowTitle("Surtir existencias")
-        Dialog.setWindowFlags(Dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+        Dialog.setWindowFlags(Dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         gridLayout = QtWidgets.QGridLayout(Dialog)
         gridLayout.setContentsMargins(-1, -1, -1, 9)
         label = QtWidgets.QLabel(Dialog)
-        font = QtGui.QFont()
+        font = QFont()
         font.setFamily("Arial")
         font.setPointSize(10)
         label.setFont(font)
@@ -144,10 +145,10 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         gridLayout.addWidget(label_2, 0, 2, 1, 1)
         buttonBox = QtWidgets.QDialogButtonBox(Dialog)
         buttonBox.setFont(font)
-        buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        buttonBox.setOrientation(Qt.Horizontal)
         buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
         buttonBox.setCenterButtons(True)
-        gridLayout.addWidget(buttonBox, 1, 0, 1, 3, QtCore.Qt.AlignBottom)
+        gridLayout.addWidget(buttonBox, 1, 0, 1, 3, Qt.AlignBottom)
 
         buttonBox.accepted.connect(Dialog.accept) # type: ignore
         buttonBox.rejected.connect(Dialog.reject) # type: ignore
@@ -310,7 +311,7 @@ class App_EditarInventario(QtWidgets.QMainWindow):
         
         # validadores para datos numéricos
         regexp_numero = QRegExp(r'\d*\.?\d*')
-        validador = QtGui.QRegExpValidator(regexp_numero)
+        validador = QRegExpValidator(regexp_numero)
         
         self.ui.txtPrecioCompra.setValidator(validador)
         self.ui.txtExistencia.setValidator(validador)
@@ -336,21 +337,21 @@ class App_EditarInventario(QtWidgets.QMainWindow):
         boxProducto = QtWidgets.QComboBox(frameProducto)
         boxProducto.setGeometry(QtCore.QRect(35, 10, 271, 22))
         boxProducto.setMinimumSize(QtCore.QSize(271, 22))
-        font = QtGui.QFont()
+        font = QFont()
         font.setFamily("Arial")
         font.setPointSize(11)
         boxProducto.setFont(font)
         lbContador = QtWidgets.QLabel(frameProducto)
         lbContador.setGeometry(QtCore.QRect(5, 10, 21, 21))
         lbContador.setMinimumSize(QtCore.QSize(21, 21))
-        lbContador.setPixmap(QtGui.QPixmap(":/img/resources/images/package_2.png"))
+        lbContador.setPixmap(QPixmap(":/img/resources/images/package_2.png"))
         lbContador.setScaledContents(True)
         lbEliminar = QtWidgets.QLabel(frameProducto)
         lbEliminar.setGeometry(QtCore.QRect(343, 12, 35, 35))
         lbEliminar.setMinimumSize(QtCore.QSize(35, 35))
-        lbEliminar.setPixmap(QtGui.QPixmap(":/img/resources/images/cancel.png"))
+        lbEliminar.setPixmap(QPixmap(":/img/resources/images/cancel.png"))
         lbEliminar.setScaledContents(True)
-        lbEliminar.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        lbEliminar.setCursor(QCursor(Qt.PointingHandCursor))
         label = QtWidgets.QLabel(frameProducto)
         label.setGeometry(QtCore.QRect(35, 40, 271, 21))
         label.setMinimumSize(QtCore.QSize(271, 21))
@@ -378,7 +379,7 @@ class App_EditarInventario(QtWidgets.QMainWindow):
         
         # validador para datos numéricos
         regexp_numero = QRegExp(r'\d*\.?\d*')
-        validador = QtGui.QRegExpValidator(regexp_numero)
+        validador = QRegExpValidator(regexp_numero)
         line.setValidator(validador)
         
         # llenar caja de opciones con productos
