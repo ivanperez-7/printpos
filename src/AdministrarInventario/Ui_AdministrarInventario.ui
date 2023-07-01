@@ -141,45 +141,6 @@
               <number>0</number>
              </property>
              <item>
-              <widget class="QToolButton" name="btFiltrar">
-               <property name="minimumSize">
-                <size>
-                 <width>41</width>
-                 <height>31</height>
-                </size>
-               </property>
-               <property name="toolTip">
-                <string>Filtrar búsqueda por...</string>
-               </property>
-               <property name="text">
-                <string>...</string>
-               </property>
-               <property name="icon">
-                <iconset resource="../../resources.qrc">
-                 <normaloff>:/img/resources/images/filter.png</normaloff>:/img/resources/images/filter.png</iconset>
-               </property>
-               <property name="popupMode">
-                <enum>QToolButton::MenuButtonPopup</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="horizontalSpacer">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>0</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
               <widget class="QLabel" name="label_2">
                <property name="minimumSize">
                 <size>
@@ -248,7 +209,7 @@ background-color: rgb(255, 255, 255);</string>
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
                <property name="toolTip">
-                <string>Agregar un cliente a la base de datos</string>
+                <string>Agregar un elemento a la base de datos</string>
                </property>
                <property name="styleSheet">
                 <string notr="true">image: url(:/img/resources/images/plus.png);</string>
@@ -270,7 +231,7 @@ background-color: rgb(255, 255, 255);</string>
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
                <property name="toolTip">
-                <string>Modificar un cliente de la base de datos</string>
+                <string>Modificar un elemento de la base de datos</string>
                </property>
                <property name="styleSheet">
                 <string notr="true">image: url(:/img/resources/images/edit.png);</string>
@@ -292,7 +253,7 @@ background-color: rgb(255, 255, 255);</string>
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
                <property name="toolTip">
-                <string>Eliminar clientes seleccionados de la base de datos</string>
+                <string>Eliminar elemento seleccionado de la base de datos</string>
                </property>
                <property name="styleSheet">
                 <string notr="true">image: url(:/img/resources/images/trash.png);</string>

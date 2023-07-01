@@ -26,6 +26,18 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         
         LabelAdvertencia(self.ui.tabla_productos, '¡No se encontró ningún producto!')
         
+        # añadir menú de opciones al botón para filtrar
+        popup = QtWidgets.QMenu()
+
+        default = popup.addAction(
+            'Código', lambda: self.cambiar_filtro('código', 1))
+        popup.addAction(
+            'Descripción', lambda: self.cambiar_filtro('descripción', 2))
+        popup.setDefaultAction(default)
+
+        self.ui.btFiltrar.setMenu(popup)
+        self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('código', 1))
+        
         # dar formato a la tabla principal
         header = self.ui.tabla_productos.horizontalHeader()
         
@@ -52,6 +64,16 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
+    def cambiar_filtro(self, filtro, idx):
+        """
+        Modifica el filtro de búsqueda.
+        """
+        self.filtro = idx
+        self.ui.searchBar.setPlaceholderText(f'Busque producto por {filtro}...')
+        
+        if self.ui.searchBar.text():
+            self.update_display()
+            
     def update_display(self, rescan: bool = False):
         """
         Actualiza la tabla y el contador de productos.
@@ -80,7 +102,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
             SELECT  P.id_productos,
                     P.codigo,
                     P.descripcion 
-                        || COALESCE(', desde ' || ROUND(P_Inv.desde, 1) || ' unidades', '')
+                        || IIF(desde > 1, ', desde ' || ROUND(desde, 1) || ' unidades ', '')
                         || IIF(P_Inv.duplex, ' [PRECIO DUPLEX]', ''),
                     P.abreviado,
                     COALESCE(P_gran.precio_m2, P_Inv.precio_con_iva) AS precio_con_iva, 

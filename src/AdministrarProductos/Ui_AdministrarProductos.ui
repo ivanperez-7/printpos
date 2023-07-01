@@ -20,7 +20,7 @@
    <string>Administrar productos</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../resources.qrc">
+   <iconset resource="../../resources.qrc">
     <normaloff>:/img/icon.ico</normaloff>:/img/icon.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -155,7 +155,7 @@
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset resource="../resources.qrc">
+                <iconset resource="../../resources.qrc">
                  <normaloff>:/img/resources/images/filter.png</normaloff>:/img/resources/images/filter.png</iconset>
                </property>
                <property name="popupMode">
@@ -220,7 +220,7 @@ background-color: rgb(255, 255, 255);</string>
                 <bool>false</bool>
                </property>
                <property name="placeholderText">
-                <string>Busque elemento por nombre...</string>
+                <string>Busque producto por código...</string>
                </property>
               </widget>
              </item>
@@ -248,7 +248,7 @@ background-color: rgb(255, 255, 255);</string>
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
                <property name="toolTip">
-                <string>Agregar un cliente a la base de datos</string>
+                <string>Agregar un producto a la base de datos</string>
                </property>
                <property name="styleSheet">
                 <string notr="true">image: url(:/img/resources/images/plus.png);</string>
@@ -270,7 +270,7 @@ background-color: rgb(255, 255, 255);</string>
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
                <property name="toolTip">
-                <string>Modificar un cliente de la base de datos</string>
+                <string>Modificar un producto de la base de datos</string>
                </property>
                <property name="styleSheet">
                 <string notr="true">image: url(:/img/resources/images/edit.png);</string>
@@ -292,7 +292,7 @@ background-color: rgb(255, 255, 255);</string>
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
                <property name="toolTip">
-                <string>Eliminar clientes seleccionados de la base de datos</string>
+                <string>Eliminar producto seleccionado de la base de datos</string>
                </property>
                <property name="styleSheet">
                 <string notr="true">image: url(:/img/resources/images/trash.png);</string>
@@ -503,7 +503,7 @@ QTableView:active {
   </widget>
  </widget>
  <resources>
-  <include location="../resources.qrc"/>
+  <include location="../../resources.qrc"/>
  </resources>
  <connections/>
 </ui>

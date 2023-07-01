@@ -293,7 +293,7 @@ def generarOrdenCompra(crsr, idx: int):
     
     os.makedirs('./tmp/', exist_ok=True)
     
-    filename = f'.\\tmp\\{uuid.uuid4().hex}.pdf'
+    filename = f'.\\tmp\\{uuid.uuid4().hex[:10]}.pdf'
     
     writer.write(open(filename, 'wb'))
     enviarAImpresora(filename, True)
@@ -328,7 +328,7 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
     # archivo y directorio temporales
     os.makedirs('./tmp/', exist_ok=True)
     
-    filename = f'.\\tmp\\{uuid.uuid4().hex}.pdf'
+    filename = f'.\\tmp\\{uuid.uuid4().hex[:10]}.pdf'
 
     doc = SimpleDocTemplate(filename,
                             pagesize=(80*mm, 297*mm),

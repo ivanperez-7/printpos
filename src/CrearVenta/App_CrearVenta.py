@@ -1248,8 +1248,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                      'Venta terminada. ¡Recuerde ofrecer el ticket de compra! ¿Desea imprimirlo?',
                      qm.Yes | qm.No, self)
             
-            box.button(qm.Yes).setText('Imprimir ticket')
-            box.button(qm.No).setText('Enviar por WhatsApp')
+            #box.button(qm.Yes).setText('Imprimir ticket')
+            #box.button(qm.No).setText('Enviar por WhatsApp')
             ret = box.exec()
             
             if ret == qm.Yes:

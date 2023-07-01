@@ -22,19 +22,8 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
 
         self.session = parent.session  # conexión y usuario actual
-        self.filtro = 1
         
         LabelAdvertencia(self.ui.tabla_inventario, '¡No se encontró ningún elemento!')
-
-        # añadir menú de opciones al botón para filtrar
-        popup = QtWidgets.QMenu()
-
-        default = popup.addAction('Nombre', lambda: self.cambiar_filtro('nombre'))
-        popup.addAction('Teléfono', lambda: self.cambiar_filtro('teléfono'))
-        popup.setDefaultAction(default)
-
-        self.ui.btFiltrar.setMenu(popup)
-        self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('nombre'))
 
         # dar formato a la tabla principal
         header = self.ui.tabla_inventario.horizontalHeader()
@@ -62,10 +51,6 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def cambiar_filtro(self, *args):
-        ...
-        self.update_display()
-    
     def update_display(self, rescan: bool = False):
         """
         Actualiza la tabla y el contador de elementos.
@@ -99,8 +84,8 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         
         found = self.all if not txt_busqueda else \
                 filter(
-                    lambda c: c[self.filtro] 
-                              and son_similar(txt_busqueda, c[self.filtro]), 
+                    lambda c: c[1] 
+                              and son_similar(txt_busqueda, c[1]), 
                     self.all)
         
         for row, item in enumerate(found):
