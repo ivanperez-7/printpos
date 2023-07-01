@@ -1,4 +1,5 @@
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets
+from PyQt5.QtGui import QFont, QColor, QPixmap, QCursor, QRegExpValidator
 from PyQt5.QtCore import Qt, QRegExp
 
 from myutils import ColorsEnum, son_similar
@@ -125,7 +126,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
         
-        bold = QtGui.QFont()
+        bold = QFont()
         bold.setBold(True)
         
         # texto introducido por el usuario
@@ -157,7 +158,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
             
             # resaltar si la utilidad es nula o negativa
             if item[-1] <= 0:
-                color = QtGui.QColor(ColorsEnum.ROJO)
+                color = QColor(ColorsEnum.ROJO)
                 tabla.item(row, 7).setBackground(color)
 
         tabla.resizeRowsToContents()
@@ -349,21 +350,21 @@ class App_EditarProducto(QtWidgets.QMainWindow):
         boxProducto = QtWidgets.QComboBox(frameProducto)
         boxProducto.setGeometry(QtCore.QRect(35, 10, 271, 22))
         boxProducto.setMinimumSize(QtCore.QSize(271, 22))
-        font = QtGui.QFont()
+        font = QFont()
         font.setFamily("Arial")
         font.setPointSize(11)
         boxProducto.setFont(font)
         lbContador = QtWidgets.QLabel(frameProducto)
         lbContador.setGeometry(QtCore.QRect(5, 10, 21, 21))
         lbContador.setMinimumSize(QtCore.QSize(21, 21))
-        lbContador.setPixmap(QtGui.QPixmap(":/img/resources/images/inventory.png"))
+        lbContador.setPixmap(QPixmap(":/img/resources/images/inventory.png"))
         lbContador.setScaledContents(True)
         lbEliminar = QtWidgets.QLabel(frameProducto)
         lbEliminar.setGeometry(QtCore.QRect(343, 12, 35, 35))
         lbEliminar.setMinimumSize(QtCore.QSize(35, 35))
-        lbEliminar.setPixmap(QtGui.QPixmap(":/img/resources/images/cancel.png"))
+        lbEliminar.setPixmap(QPixmap(":/img/resources/images/cancel.png"))
         lbEliminar.setScaledContents(True)
-        lbEliminar.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        lbEliminar.setCursor(QCursor(Qt.PointingHandCursor))
         label = QtWidgets.QLabel(frameProducto)
         label.setGeometry(QtCore.QRect(35, 40, 271, 21))
         label.setMinimumSize(QtCore.QSize(271, 21))
@@ -424,7 +425,7 @@ class App_EditarProducto(QtWidgets.QMainWindow):
         
         # validador para datos numéricos
         regexp_numero = QRegExp(r'\d*\.?\d*')
-        validador = QtGui.QRegExpValidator(regexp_numero)
+        validador = QRegExpValidator(regexp_numero)
         line.setValidator(validador)
         
         # llenar caja de opciones con productos

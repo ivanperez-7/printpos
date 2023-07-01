@@ -1,8 +1,10 @@
 """
 Módulo con widgets personalizados varios.
 """
-from PyQt5.QtWidgets import QMainWindow, QMessageBox, QWidget, QTextBrowser, QVBoxLayout, QTableWidget
-from PyQt5.QtGui import QPainter, QColor, QPolygon, QFont, QPainterPath, QIcon, QPixmap
+from PyQt5.QtWidgets import (QMainWindow, QMessageBox, QWidget, 
+                             QTextBrowser, QVBoxLayout, QTableWidget)
+from PyQt5.QtGui import (QPainter, QColor, QPolygon, 
+                         QFont, QPainterPath, QIcon, QPixmap)
 from PyQt5.QtCore import Qt, QRectF, QPoint
 
 

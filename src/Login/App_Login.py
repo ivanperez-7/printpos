@@ -1,4 +1,5 @@
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets
+from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtCore import Qt, QRegExp, pyqtSignal
 
 from dataclasses import dataclass
@@ -50,7 +51,7 @@ class App_Login(QtWidgets.QMainWindow):
         
         # validador para nombre de usuario
         regexp = QRegExp(r'[a-zA-Z0-9_$]+')
-        validador = QtGui.QRegExpValidator(regexp)
+        validador = QRegExpValidator(regexp)
         self.ui.inputUsuario.setValidator(validador)
         
         self.ui.btIngresar.clicked.connect(lambda: self.verificar_info() if not self.lock else None)

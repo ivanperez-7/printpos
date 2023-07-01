@@ -1,4 +1,5 @@
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets
+from PyQt5.QtGui import QFont, QColor, QIcon, QRegExpValidator
 from PyQt5.QtCore import QDate, QDateTime, QModelIndex, QRegExp, Qt
 
 from math import ceil
@@ -273,7 +274,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             
             self.all_pedidos = crsr.fetchall()
 
-        bold = QtGui.QFont()
+        bold = QFont()
         bold.setBold(True)
         
         fechaDesde = self.ui.dateDesde.date()
@@ -325,9 +326,9 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             estado = tabla.item(row, 5).text()
             
             if estado.startswith('Cancelada'):
-                tabla.item(row, 5).setBackground(QtGui.QColor(ColorsEnum.ROJO))
+                tabla.item(row, 5).setBackground(QColor(ColorsEnum.ROJO))
             elif estado.startswith('Terminada'):
-                tabla.item(row, 5).setBackground(QtGui.QColor(ColorsEnum.VERDE))
+                tabla.item(row, 5).setBackground(QColor(ColorsEnum.VERDE))
         # </llenar primera tabla>
 
         # <llenar segunda tabla>
@@ -372,14 +373,14 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             estado = tabla.item(row, 6).text()
             
             if estado.startswith('Cancelada'):
-                tabla.item(row, 6).setBackground(QtGui.QColor(ColorsEnum.ROJO))
+                tabla.item(row, 6).setBackground(QColor(ColorsEnum.ROJO))
             elif estado.startswith('Terminada'):
-                tabla.item(row, 6).setBackground(QtGui.QColor(ColorsEnum.VERDE))
+                tabla.item(row, 6).setBackground(QColor(ColorsEnum.VERDE))
             elif estado.startswith('Recibido'):
-                tabla.item(row, 6).setBackground(QtGui.QColor(ColorsEnum.AMARILLO))
+                tabla.item(row, 6).setBackground(QColor(ColorsEnum.AMARILLO))
             
                 button_cell = QtWidgets.QPushButton(' Enviar recordatorio')
-                button_cell.setIcon(QtGui.QIcon(":/img/resources/images/whatsapp.png"))
+                button_cell.setIcon(QIcon(":/img/resources/images/whatsapp.png"))
                 button_cell.clicked.connect(self.enviarRecordatorio)
                 
                 tabla.setCellWidget(row, col+1, button_cell)
@@ -388,7 +389,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                 entrega = compra[4]
                 
                 if QDateTime.currentDateTime().toSecsSinceEpoch() > entrega:
-                    tabla.item(row, 4).setBackground(QtGui.QColor(ColorsEnum.ROJO))
+                    tabla.item(row, 4).setBackground(QColor(ColorsEnum.ROJO))
         # </llenar segunda tabla>
         
         self.tabla_actual.resizeRowsToContents() 
@@ -817,7 +818,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         
         # validadores para datos numéricos
         regexp_numero = QRegExp(r'\d*\.?\d*')
-        validador = QtGui.QRegExpValidator(regexp_numero)
+        validador = QRegExpValidator(regexp_numero)
         self.ui.txtPago.setValidator(validador)
 
         # eventos para widgets

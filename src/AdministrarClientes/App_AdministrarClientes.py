@@ -1,4 +1,5 @@
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets
+from PyQt5.QtGui import QFont, QColor, QRegExpValidator
 from PyQt5.QtCore import Qt, QDateTime, QRegExp, pyqtSignal
 
 from myutils import (exportarXlsx, formatDate, ColorsEnum, son_similar)
@@ -121,7 +122,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         tabla = self.ui.tabla_clientes
         tabla.setRowCount(0)
         
-        bold = QtGui.QFont()
+        bold = QFont()
         bold.setBold(True)
         
         # texto introducido por el usuario
@@ -156,7 +157,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
                 continue
             
             if cliente[-1] and timestamp_now-cliente[-1] >= 86400*dias:
-                color = QtGui.QColor(ColorsEnum.ROJO)
+                color = QColor(ColorsEnum.ROJO)
                 tabla.item(row, col).setBackground(color)
         
         tabla.resizeRowsToContents()
@@ -314,7 +315,7 @@ class App_EditarCliente(QtWidgets.QMainWindow):
         
         # validador clave de país
         regexp = QRegExp(r'[0-9]{1,}')
-        validador = QtGui.QRegExpValidator(regexp)
+        validador = QRegExpValidator(regexp)
         self.ui.txtLada.setValidator(validador)
 
         # crear eventos para los botones

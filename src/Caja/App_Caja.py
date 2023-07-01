@@ -1,5 +1,6 @@
-from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtCore import QDateTime, QDate
+from PyQt5 import QtWidgets
+from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt, QDateTime, QDate
 
 from mydecorators import run_in_thread
 from myutils import enviarAImpresora, formatDate
@@ -132,7 +133,7 @@ class App_Caja(QtWidgets.QMainWindow):
                 lista = self.all_ingresos if m[1] > 0 else self.all_egresos
                 lista.append(m)
 
-        bold = QtGui.QFont()
+        bold = QFont()
         bold.setBold(True)
         
         fechaDesde = self.ui.dateDesde.date()
@@ -473,13 +474,13 @@ class Dialog_Registrar(QtWidgets.QDialog):
         DialogRegistrar.setObjectName("DialogRegistrar")
         DialogRegistrar.setFixedSize(525, 160)
         DialogRegistrar.setWindowTitle("Registrar ingreso")
-        DialogRegistrar.setWindowFlags(DialogRegistrar.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+        DialogRegistrar.setWindowFlags(DialogRegistrar.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.formLayout = QtWidgets.QFormLayout(DialogRegistrar)
         self.formLayout.setHorizontalSpacing(25)
         self.formLayout.setVerticalSpacing(9)
         self.formLayout.setObjectName("formLayout")
         self.label = QtWidgets.QLabel(DialogRegistrar)
-        font = QtGui.QFont()
+        font = QFont()
         font.setFamily("Arial")
         font.setPointSize(10)
         self.label.setFont(font)
@@ -511,27 +512,27 @@ class Dialog_Registrar(QtWidgets.QDialog):
         self.groupMetodo = QtWidgets.QButtonGroup(DialogRegistrar)
         self.groupMetodo.setObjectName("groupMetodo")
         self.groupMetodo.addButton(self.btEfectivo)
-        self.horizontalLayout.addWidget(self.btEfectivo, 0, QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
+        self.horizontalLayout.addWidget(self.btEfectivo, 0, Qt.AlignHCenter|Qt.AlignVCenter)
         self.btTarjetaCredito = QtWidgets.QRadioButton(self.frame)
         self.btTarjetaCredito.setFont(font)
         self.btTarjetaCredito.setText("Tarjeta de crédito")
         self.groupMetodo.addButton(self.btTarjetaCredito)
-        self.horizontalLayout.addWidget(self.btTarjetaCredito, 0, QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
+        self.horizontalLayout.addWidget(self.btTarjetaCredito, 0, Qt.AlignHCenter|Qt.AlignVCenter)
         self.btTarjetaDebito = QtWidgets.QRadioButton(self.frame)
         self.btTarjetaDebito.setFont(font)
         self.btTarjetaDebito.setText("Tarjeta de débito")
         self.groupMetodo.addButton(self.btTarjetaDebito)
-        self.horizontalLayout.addWidget(self.btTarjetaDebito, 0, QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
+        self.horizontalLayout.addWidget(self.btTarjetaDebito, 0, Qt.AlignHCenter|Qt.AlignVCenter)
         self.btTransferencia = QtWidgets.QRadioButton(self.frame)
         self.btTransferencia.setFont(font)
         self.btTransferencia.setText("Transferencia bancaria")
         self.btTransferencia.setObjectName("btTransferencia")
         self.groupMetodo.addButton(self.btTransferencia)
-        self.horizontalLayout.addWidget(self.btTransferencia, 0, QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
+        self.horizontalLayout.addWidget(self.btTransferencia, 0, Qt.AlignHCenter|Qt.AlignVCenter)
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.SpanningRole, self.frame)
         self.buttonBox = QtWidgets.QDialogButtonBox(DialogRegistrar)
         self.buttonBox.setFont(font)
-        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        self.buttonBox.setOrientation(Qt.Horizontal)
         self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
         self.buttonBox.setCenterButtons(True)
         self.buttonBox.setObjectName("buttonBox")
