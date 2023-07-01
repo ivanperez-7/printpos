@@ -1,12 +1,12 @@
+import fdb
+
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QFont, QRegExpValidator
 from PyQt5.QtCore import Qt, QRegExp
 
-from myutils import formatDate, son_similar
 from mydecorators import con_fondo
+from myutils import formatDate, son_similar
 from mywidgets import LabelAdvertencia, WarningDialog
-
-import fdb
 
 
 #####################

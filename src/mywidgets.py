@@ -1,11 +1,11 @@
 """
 Módulo con widgets personalizados varios.
 """
-from PyQt5.QtWidgets import (QMainWindow, QMessageBox, QWidget, 
+from PyQt5.QtWidgets import (QMainWindow, QMessageBox, QWidget, QLabel,
                              QTextBrowser, QVBoxLayout, QTableWidget)
 from PyQt5.QtGui import (QPainter, QColor, QPolygon, 
                          QFont, QPainterPath, QIcon, QPixmap)
-from PyQt5.QtCore import Qt, QRectF, QPoint
+from PyQt5.QtCore import Qt, QRectF, QPoint, QSize
 
 
 class VentanaPrincipal(QMainWindow):
@@ -50,8 +50,6 @@ def DimBackground(window: QMainWindow):
     """
     Crea un widget que ocupa la ventana entera, para poner énfasis en las ventanas nuevas.
     """
-    from PyQt5.QtWidgets import QWidget
-    
     bg = QWidget(parent=window)
     bg.setFixedSize(window.size())
     bg.setStyleSheet('background: rgba(64, 64, 64, 64);')
@@ -66,10 +64,6 @@ def LabelAdvertencia(parent: QTableWidget, msj: str):
     Añade método `resizeEvent` al padre para posicionar el label en el centro.
     Añade método al padre para actualizar el texto, que verifica si hay items o no en la tabla.
     """
-    from PyQt5.QtWidgets import QLabel
-    from PyQt5.QtGui import QFont
-    from PyQt5.QtCore import QSize, Qt
-
     w,h = 282, 52   # tamaño del QLabel, hardcoded
     label = QLabel(parent)
     label.setMinimumSize(QSize(w,h))

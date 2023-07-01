@@ -1,11 +1,12 @@
 """
 Módulo para implementar decoradores útiles varios.
 """
+from functools import wraps
+
+import fdb
+
 from PyQt5.QtWidgets import QMessageBox, QDialog
 from PyQt5.QtCore import QThread, pyqtSignal
-
-from functools import wraps
-import fdb
 
 
 ##############################################

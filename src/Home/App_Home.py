@@ -1,10 +1,11 @@
+import fdb
+
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import (QDate, Qt, QPropertyAnimation,
                           QRect, QEasingCurve, pyqtSignal)
 
 from mydecorators import run_in_thread
-import fdb
 
 
 class App_Home(QtWidgets.QMainWindow):

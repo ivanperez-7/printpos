@@ -1,3 +1,5 @@
+import fdb
+
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QDateTime, QDate
@@ -6,7 +8,6 @@ from mydecorators import run_in_thread
 from myutils import enviarAImpresora, formatDate
 from mywidgets import LabelAdvertencia, WarningDialog
 
-import fdb
 
 #####################
 # VENTANA PRINCIPAL #

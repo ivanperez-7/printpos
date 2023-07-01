@@ -1,16 +1,18 @@
+from dataclasses import dataclass
+
+import fdb
+
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QRegExpValidator
-from PyQt5.QtCore import (QDate, QDateTime, QRegExp, Qt, 
+from PyQt5.QtCore import (QDate, QDateTime, QRegExp, Qt,
                           QPropertyAnimation, QRect, QEasingCurve)
 
-from dataclasses import dataclass
 from mydecorators import con_fondo, requiere_admin
-from myutils import (clamp, enviarWhatsApp, formatDate, 
-                     generarOrdenCompra,  generarTicketCompra, 
+from myutils import (clamp, enviarWhatsApp, formatDate,
+                     generarOrdenCompra, generarTicketCompra,
                      generarTicketPresupuesto, son_similar)
 from mywidgets import DimBackground, LabelAdvertencia, SpeechBubble, WarningDialog
 
-import fdb
 
 ##################
 # CLASE AUXILIAR #
