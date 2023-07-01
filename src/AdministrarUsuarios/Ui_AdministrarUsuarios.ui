@@ -248,7 +248,7 @@ background-color: rgb(255, 255, 255);</string>
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
                <property name="toolTip">
-                <string>Agregar un cliente a la base de datos</string>
+                <string>Agregar un usuario a la base de datos</string>
                </property>
                <property name="styleSheet">
                 <string notr="true">image: url(:/img/resources/images/plus.png);</string>
@@ -270,7 +270,7 @@ background-color: rgb(255, 255, 255);</string>
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
                <property name="toolTip">
-                <string>Modificar un cliente de la base de datos</string>
+                <string>Modificar un usuario de la base de datos</string>
                </property>
                <property name="styleSheet">
                 <string notr="true">image: url(:/img/resources/images/edit.png);</string>
@@ -292,7 +292,7 @@ background-color: rgb(255, 255, 255);</string>
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
                <property name="toolTip">
-                <string>Eliminar clientes seleccionados de la base de datos</string>
+                <string>Eliminar usuario seleccionado de la base de datos</string>
                </property>
                <property name="styleSheet">
                 <string notr="true">image: url(:/img/resources/images/trash.png);</string>

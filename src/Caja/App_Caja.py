@@ -247,30 +247,29 @@ class App_Caja(QtWidgets.QMainWindow):
             - Tabla de resumen de movimientos
                 Método de pago -> Ingresos | Egresos
         """
-        from reportlab.lib.units import mm, inch
-        from reportlab.lib import colors
+        from reportlab.lib.units import mm
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.enums import TA_CENTER, TA_LEFT
+        from reportlab.lib.enums import TA_LEFT
 
-        from reportlab.platypus import (Table, TableStyle, SimpleDocTemplate,
-                                        Paragraph, Spacer)
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
         import os
         import uuid
         
         # archivo y directorio temporales
         os.makedirs('./tmp/', exist_ok=True)
         
-        filename = f'.\\tmp\\{uuid.uuid4().hex}.pdf'
+        filename = f'.\\tmp\\{uuid.uuid4().hex[:10]}.pdf'
 
-        doc = SimpleDocTemplate(filename, pagesize=(5.5*inch, 8.5*inch),
-                                leftMargin=1*inch, rightMargin=1*inch)
+        doc = SimpleDocTemplate(filename, pagesize=(80*mm, 297*mm),
+                                topMargin=0., bottomMargin=0.,
+                                leftMargin=0., rightMargin=0.)
 
         # Define styles for the document
         styles = getSampleStyleSheet()
         styles.add(ParagraphStyle(name='Left', fontName='Helvetica',
-                                fontSize=8, alignment=TA_LEFT))
-        styles.add(ParagraphStyle(name='Cell', fontName='Helvetica',
-                                fontSize=8, alignment=TA_CENTER))
+                                  fontSize=9, alignment=TA_LEFT))
+        styles.add(ParagraphStyle(name='Foot', fontName='Helvetica',
+                                  fontSize=11, alignment=TA_LEFT))
 
         # contenido del PDF
         fechaDesde = self.ui.dateDesde.date()
@@ -278,49 +277,65 @@ class App_Caja(QtWidgets.QMainWindow):
         
         dateFromSecs = lambda s: QDateTime.fromSecsSinceEpoch(s).date()
         
+        # cálculos extra de ingresos
+        movimientos = [m for m in self.all_ingresos
+                       if fechaDesde <= dateFromSecs(m[0]) <= fechaHasta]
+        
+        ingresos_credito = sum(m[1] for m in movimientos if m[3].endswith('crédito'))
+        ingresos_debito = sum(m[1] for m in movimientos if m[3].endswith('débito'))
+        
+        # cálculos extra de egresos
+        movimientos = [m for m in self.all_egresos
+                       if fechaDesde <= dateFromSecs(m[0]) <= fechaHasta]
+        
+        egresos_credito = -sum(m[1] for m in movimientos if m[3].endswith('crédito'))
+        egresos_debito = -sum(m[1] for m in movimientos if m[3].endswith('débito'))
+        
+        # totales (todos los métodos)
         movimientos = [m for m in self.all_ingresos + self.all_egresos
                        if fechaDesde <= dateFromSecs(m[0]) <= fechaHasta]
-
-        data = [['Fecha y hora', 'Descripción', 'Forma de pago', 'Monto', 'Responsable']]
-
-        for fecha_hora, monto, descripcion, metodo, usuario in movimientos:
-            data.append([
-                formatDate(fecha_hora),
-                Paragraph(descripcion, styles['Cell']),
-                Paragraph(metodo, styles['Cell']),
-                monto,
-                Paragraph(usuario, styles['Cell']),
-            ])
-
-        # productos de la compra
-        tabla_productos = Table(data)
-
-        tabla_productos.setStyle(TableStyle([
-            ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONT', (0, 1), (-1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 0), (-1, -1), 8),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('LINEBELOW', (0, 0), (-1, 0), 0.4, colors.black),
-            ('LINEBELOW', (0, -1), (-1, -1), 0.4, colors.black)
-        ]))
+        
+        total_efectivo = sum(m[1] for m in movimientos if m[3] == 'Efectivo')
+        total_transferencia = sum(m[1] for m in movimientos if m[3] == 'Transferencia bancaria')
+        total_credito = ingresos_credito - egresos_credito
+        total_debito = ingresos_debito - egresos_debito
+        
+        esperado = sum(m[1] for m in self.all_egresos + self.all_ingresos)
         
         # elementos para constuir el PDF
         elements = [
-            Paragraph('Resumen de corte de caja', styles['Title']),
-            Paragraph('Fracc. Residencial Pensiones', styles['Left']),
+            Paragraph('Resumen de movimientos de caja', styles['Heading1']),
             Spacer(1, 6),
-
-            Paragraph('Teléfono: 999 649 0443', styles['Left']),
+            
+            Paragraph('Realizado por: ' + self.session['user'].nombre, styles['Left']),
+            Paragraph(f'Fecha y hora: {formatDate(QDateTime.currentDateTime())}', styles['Left']),
             Spacer(1, 6),
-
-            Paragraph('* '*40, styles['Left']),
-            Paragraph(f'<b>Fecha</b>: {formatDate(QDateTime.currentDateTime())}', styles['Left']),
-            Spacer(1, 10),
-
-            tabla_productos]
+            
+            Paragraph('Resumen de ingresos', styles['Heading3']),
+            Paragraph(self.ui.lbIngresosEfectivo.text(), styles['Left'], bulletText='•'),
+            Paragraph(f'Tarjeta de crédito: ${ingresos_credito:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(f'Tarjeta de débito: ${ingresos_debito:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(self.ui.lbIngresosTransferencia.text(), styles['Left'], bulletText='•'),
+            Spacer(1, 6),
+            
+            Paragraph('Resumen de egresos', styles['Heading3']),
+            Paragraph(self.ui.lbEgresosEfectivo.text(), styles['Left'], bulletText='•'),
+            Paragraph(f'Tarjeta de crédito: ${egresos_credito:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(f'Tarjeta de débito: ${egresos_debito:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(self.ui.lbEgresosTransferencia.text(), styles['Left'], bulletText='•'),
+            Spacer(1, 6),
+            
+            Paragraph('Total', styles['Heading3']),
+            Paragraph(f'Efectivo: ${total_efectivo:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(f'Tarjeta de crédito: ${total_credito:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(f'Tarjeta de débito: ${total_debito:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(f'Transferencias bancarias: ${total_transferencia:,.2f}', styles['Left'], bulletText='•'),
+            Spacer(1, 20),
+            
+            Paragraph('<b>' + self.ui.lbTotalIngresos.text() + '</b>', styles['Foot']),
+            Paragraph('<b>' + self.ui.lbTotalEgresos.text() + '</b>', styles['Foot']),
+            Paragraph(f'<b>Esperado en caja: ${esperado}</b>', styles['Foot']),
+        ]
 
         # Build the PDF document
         doc.build(elements)
