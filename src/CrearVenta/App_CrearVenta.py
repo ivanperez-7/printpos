@@ -101,6 +101,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.ui.lbCalendario.mousePressEvent = self.cambiarFecha
         self.ui.lbAgregar.mousePressEvent = self.agregarProducto
         self.ui.lbQuitar.mousePressEvent = self.quitarProducto
+        self.ui.lbRegresar.mousePressEvent = self.goHome
         
         ocultar_boton = lambda: self.ui.btDescuentosCliente.setVisible(False) \
                                 or self.dialogoDescuentos.setVisible(False)
@@ -110,7 +111,6 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.ui.txtTelefono.textChanged.connect(ocultar_boton)
         
         self.ui.tabla_productos.itemChanged.connect(self.itemChanged_handle)
-        self.ui.lbRegresar.mousePressEvent = self.goHome
         self.ui.btRegistrar.clicked.connect(self.registrarCliente)
         self.ui.btSeleccionar.clicked.connect(self.seleccionarCliente)
         self.ui.btDescuento.clicked.connect(self.agregarDescuento)
@@ -231,9 +231,9 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         """
         Abre ventana para registrar un cliente.
         """
-        from AdministrarClientes import App_EditarCliente
+        from AdministrarClientes import App_RegistrarCliente
 
-        self.new = App_EditarCliente(
+        self.new = App_RegistrarCliente(
             self,
             nombre = self.ui.txtCliente.text(),
             celular = self.ui.txtTelefono.text(),
@@ -390,7 +390,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
     """
     Backend para la función de agregar un producto a la venta.
     """
-    def __init__(self, first):
+    def __init__(self, first: App_CrearVenta):
         from CrearVenta.Ui_AgregarProducto import Ui_AgregarProducto
         
         super().__init__(first)
@@ -400,7 +400,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
-        self.first = first # referencia a la ventana de crear venta
+        self.first: App_CrearVenta = first
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
         LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
 
@@ -662,7 +662,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
     """
     Backend para la función de seleccionar un cliente de la base de datos.
     """
-    def __init__(self, first):
+    def __init__(self, first: App_CrearVenta):
         from CrearVenta.Ui_SeleccionarCliente import Ui_SeleccionarCliente
         
         super().__init__(first)
@@ -672,7 +672,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
-        self.first = first # referencia a la ventana de crear venta
+        self.first: App_CrearVenta = first
         
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún cliente!')
 
@@ -776,7 +776,7 @@ class App_FechaEntrega(QtWidgets.QMainWindow):
     """
     Backend para la función de cambiar fecha de entrega.
     """
-    def __init__(self, first):
+    def __init__(self, first: App_CrearVenta):
         from CrearVenta.Ui_FechaEntrega import Ui_FechaEntrega
         
         super().__init__(first)
@@ -786,7 +786,7 @@ class App_FechaEntrega(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
-        self.first = first # referencia a la ventana de crear venta
+        self.first: App_CrearVenta = first
         
         # datos por defecto        
         self.ui.calendario.setSelectedDate(first.fechaEntrega.date())
@@ -825,7 +825,7 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
     """
     Backend para agregar descuento a la orden.
     """
-    def __init__(self, first):
+    def __init__(self, first: App_CrearVenta):
         from CrearVenta.Ui_AgregarDescuento import Ui_AgregarDescuento
         
         super().__init__(first)
@@ -835,7 +835,7 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
-        self.first = first # referencia a la ventana de crear venta
+        self.first: App_CrearVenta = first
         
         # dar formato a la tabla principal
         header = self.ui.tabla_productos.horizontalHeader()
@@ -915,7 +915,7 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
     """
     Backend para agregar descuento a la orden.
     """
-    def __init__(self, first):
+    def __init__(self, first: App_CrearVenta):
         from CrearVenta.Ui_Cotizacion import Ui_EnviarCotizacion
         
         super().__init__(first)
@@ -925,7 +925,7 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
-        self.first = first # referencia a la ventana de crear venta
+        self.first: App_CrearVenta = first
 
         # añade eventos para los botones
         self.ui.lbRegresar.mousePressEvent = self.closeEvent
@@ -983,7 +983,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
     """
     Backend para la ventana de finalización de venta.
     """
-    def __init__(self, first, ventaDatos):
+    def __init__(self, first: App_CrearVenta, ventaDatos):
         from CrearVenta.Ui_ConfirmarVenta import Ui_ConfirmarVenta
         
         super().__init__(first)

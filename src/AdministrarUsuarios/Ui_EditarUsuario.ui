@@ -38,7 +38,7 @@
    <property name="frameShadow">
     <enum>QFrame::Raised</enum>
    </property>
-   <widget class="QLabel" name="label">
+   <widget class="QLabel" name="lbTitulo">
     <property name="geometry">
      <rect>
       <x>80</x>
@@ -79,7 +79,7 @@
     </property>
    </widget>
   </widget>
-  <widget class="QLabel" name="label_14">
+  <widget class="QLabel" name="label_aceptar">
    <property name="geometry">
     <rect>
      <x>290</x>
@@ -103,31 +103,20 @@
     <set>Qt::AlignCenter</set>
    </property>
   </widget>
-  <widget class="QLabel" name="label_15">
+  <widget class="QLabel" name="label_icono">
    <property name="geometry">
     <rect>
-     <x>290</x>
+     <x>320</x>
      <y>440</y>
-     <width>100</width>
-     <height>41</height>
+     <width>40</width>
+     <height>40</height>
     </rect>
    </property>
-   <property name="font">
-    <font>
-     <family>Arial</family>
-     <pointsize>11</pointsize>
-     <weight>50</weight>
-     <bold>false</bold>
-    </font>
+   <property name="pixmap">
+    <pixmap resource="../../resources.qrc">:/img/resources/images/edit.png</pixmap>
    </property>
-   <property name="styleSheet">
-    <string notr="true">image: url(:/img/resources/images/edit.png);</string>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   <property name="scaledContents">
+    <bool>true</bool>
    </property>
   </widget>
   <widget class="QPushButton" name="btRegistrar">
@@ -346,8 +335,8 @@
   </widget>
   <zorder>btRegistrar</zorder>
   <zorder>frame</zorder>
-  <zorder>label_14</zorder>
-  <zorder>label_15</zorder>
+  <zorder>label_aceptar</zorder>
+  <zorder>label_icono</zorder>
   <zorder>groupBox</zorder>
   <zorder>groupBox_2</zorder>
   <zorder>groupPsswd</zorder>

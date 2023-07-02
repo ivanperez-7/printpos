@@ -85,7 +85,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_17">
+           <widget class="QLabel" name="lbTitulo">
             <property name="minimumSize">
              <size>
               <width>211</width>

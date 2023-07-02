@@ -1,7 +1,7 @@
 import fdb
 
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QFont, QColor, QPixmap, QCursor, QRegExpValidator
+from PyQt5.QtGui import QFont, QColor, QPixmap, QCursor, QIcon, QRegExpValidator
 from PyQt5.QtCore import Qt, QRegExp
 
 from mydecorators import con_fondo
@@ -32,13 +32,13 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         popup = QtWidgets.QMenu()
 
         default = popup.addAction(
-            'Código', lambda: self.cambiar_filtro('código', 1))
+            'Código', lambda: self.cambiarFiltro('código', 1))
         popup.addAction(
-            'Descripción', lambda: self.cambiar_filtro('descripción', 2))
+            'Descripción', lambda: self.cambiarFiltro('descripción', 2))
         popup.setDefaultAction(default)
 
         self.ui.btFiltrar.setMenu(popup)
-        self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('código', 1))
+        self.ui.btFiltrar.clicked.connect(lambda: self.cambiarFiltro('código', 1))
         
         # dar formato a la tabla principal
         header = self.ui.tabla_productos.horizontalHeader()
@@ -66,7 +66,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def cambiar_filtro(self, filtro, idx):
+    def cambiarFiltro(self, filtro, idx):
         """
         Modifica el filtro de búsqueda.
         """
@@ -168,7 +168,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def agregarProducto(self, _):
-        self.new = App_EditarProducto(self)
+        self.new = App_RegistrarProducto(self)
     
     def editarProducto(self, _):
         selected = self.ui.tabla_productos.selectedItems()
@@ -246,11 +246,14 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
 # VENTANAS USADAS POR EL MÓDULO #
 #################################
 @con_fondo
-class App_EditarProducto(QtWidgets.QMainWindow):
+class Base_EditarProducto(QtWidgets.QMainWindow):
     """
     Backend para la ventana para editar un producto de la base de datos.
     """
-    def __init__(self, first, idx: int = None):
+    MENSAJE_EXITO: str
+    MENSAJE_ERROR: str
+    
+    def __init__(self, first: App_AdministrarProductos):
         from AdministrarProductos.Ui_EditarProducto import Ui_EditarProducto
         
         super().__init__(first)
@@ -260,9 +263,8 @@ class App_EditarProducto(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
         
-        self.first = first # ventana de administrar productos
+        self.first: App_AdministrarProductos = first
         self.session = first.session # conexión a la base de datos y usuario actual
-        self.idx = idx  # id del elemento a editar
         
         # formato tabla de precios
         header = self.ui.tabla_precios.horizontalHeader()
@@ -276,66 +278,6 @@ class App_EditarProducto(QtWidgets.QMainWindow):
         self.ui.lbAgregar.mousePressEvent = lambda _: self.agregarIntervalo(row=self.ui.tabla_precios.rowCount())
         self.ui.lbQuitar.mousePressEvent = self.quitarIntervalo
         self.ui.lbRegresar.mousePressEvent = self.closeEvent
-        
-        if not idx:  # elemento no existente
-            self.show()
-            return
-        
-        crsr = first.session['conn'].cursor()
-        
-        # datos de la primera página
-        crsr.execute('SELECT * FROM Productos WHERE id_productos = ?;', (idx,))
-        
-        _, codigo, descripcion, abreviado, categoria = crsr.fetchone()
-        
-        self.ui.txtCodigo.setText(codigo)
-        self.ui.txtDescripcion.setPlainText(descripcion)
-        self.ui.txtNombre.setText(abreviado)
-        
-        if categoria == 'S':
-            self.ui.tabWidget.setCurrentIndex(0)
-            
-            # agregar intervalos de precios a la tabla
-            crsr.execute('''
-            SELECT	desde,
-                    precio_con_iva,
-                    duplex
-            FROM	Productos_Intervalos AS P_Inv
-            WHERE 	id_productos = ?
-            ORDER   BY desde ASC, duplex ASC;
-            ''', (idx,))
-            
-            for row, (desde, precio, duplex) in enumerate(crsr):
-                self.agregarIntervalo(row, desde, precio, duplex)
-        elif categoria == 'G':
-            self.ui.tabWidget.setCurrentIndex(1)
-            
-            crsr.execute('''
-            SELECT  min_ancho,
-                    min_alto,
-                    precio_m2
-            FROM    Productos_Gran_Formato
-            WHERE 	id_productos = ?;
-            ''', (idx,))
-        
-            min_ancho, min_alto, precio = crsr.fetchone()
-            
-            self.ui.txtAnchoMin.setText(f'{min_ancho:,.2f}')
-            self.ui.txtAltoMin.setText(f'{min_alto:,.2f}')
-            self.ui.txtPrecio.setText(f'{precio:,.2f}')
-        
-        # agregar elementos de la segunda página
-        crsr.execute('''
-        SELECT	nombre,
-                utiliza_inventario
-        FROM	Productos_Utiliza_Inventario AS PUI
-                LEFT JOIN Inventario AS I
-                        ON PUI.id_inventario = I.id_inventario
-        WHERE 	id_productos = ?;
-        ''', (idx,))
-                
-        for nombre, cantidad in crsr:
-            self.agregarProductoALista(nombre, cantidad)
 
         self.show()
     
@@ -460,32 +402,10 @@ class App_EditarProducto(QtWidgets.QMainWindow):
         crsr = conn.cursor()
 
         try:
-            if self.idx:        # actualizar producto
-                idx = self.idx
-                
-                crsr.execute('''
-                UPDATE  Productos
-                SET     codigo = ?,
-                        descripcion = ?,
-                        abreviado = ?,
-                        categoria = ?
-                WHERE   id_productos = ?;
-                ''', (*productos_db_parametros, idx))
-            else:                # el producto no existe
-                crsr.execute('''
-                INSERT INTO Productos (
-                    codigo, descripcion, abreviado, categoria
-                )
-                VALUES
-                    (?,?,?,?)
-                RETURNING
-                    id_productos;
-                ''', productos_db_parametros)
-                
-                idx, = crsr.fetchone()
+            idx = self.ejecutarConsulta(crsr, productos_db_parametros)
         except fdb.Error as err:
             conn.rollback()
-            WarningDialog(self, '¡No se pudo editar el producto!', str(err))
+            WarningDialog(self, self.MENSAJE_ERROR, str(err))
             return
         #### </tabla Productos> ####
         
@@ -530,7 +450,7 @@ class App_EditarProducto(QtWidgets.QMainWindow):
             ''', PUI_db_parametros)
         except fdb.Error as err:
             conn.rollback()
-            WarningDialog(self, '¡No se pudo editar el producto!', str(err))
+            WarningDialog(self, self.MENSAJE_ERROR, str(err))
             return
         #### </tabla Productos_Utiliza_Inventario> ####
         
@@ -591,11 +511,121 @@ class App_EditarProducto(QtWidgets.QMainWindow):
             conn.commit()
         except fdb.Error as err:
             conn.rollback()
-            WarningDialog(self, '¡No se pudo editar el producto!', str(err))
+            WarningDialog(self, self.MENSAJE_ERROR, str(err))
             return
         #### </tabla Productos_Intervalos> ####
         
-        qm.information(self, 'Éxito', '¡Se editó el producto!')
+        qm.information(self, 'Éxito', self.MENSAJE_EXITO)
         
         self.first.update_display(rescan=True)
         self.close()
+    
+    def ejecutarConsulta(self, crsr: fdb.Cursor, params: tuple) -> int:
+        """Regresa el índice del producto insertado o editado."""
+        pass
+
+
+class App_RegistrarProducto(Base_EditarProducto):
+    """Backend para la ventana para insertar un producto a la base de datos."""
+    MENSAJE_EXITO = '¡Se registró el producto!'
+    MENSAJE_ERROR = '¡No se pudo registrar el producto!'
+    
+    def __init__(self, first: App_AdministrarProductos):
+        super().__init__(first)
+        
+        self.ui.lbTitulo.setText('Registrar producto')
+        self.ui.btAceptar.setText(' Registrar producto')
+        self.ui.btAceptar.setIcon(QIcon(QPixmap(':/img/resources/images/plus.png')))
+    
+    def ejecutarConsulta(self, crsr, params):
+        crsr.execute('''
+        INSERT INTO Productos (
+            codigo, descripcion, abreviado, categoria
+        )
+        VALUES
+            (?,?,?,?)
+        RETURNING
+            id_productos;
+        ''', params)
+        
+        idx, = crsr.fetchone()
+        return idx
+
+
+class App_EditarProducto(Base_EditarProducto):
+    """Backend para la ventana para editar un producto de la base de datos."""
+    MENSAJE_EXITO = '¡Se editó el producto!'
+    MENSAJE_ERROR = '¡No se pudo editar el producto!'
+    
+    def __init__(self, first: App_AdministrarProductos, idx: int):
+        super().__init__(first)
+        
+        crsr = first.session['conn'].cursor()
+        
+        # datos de la primera página
+        crsr.execute('SELECT * FROM Productos WHERE id_productos = ?;', (idx,))
+        
+        _, codigo, descripcion, abreviado, categoria = crsr.fetchone()
+        
+        self.ui.txtCodigo.setText(codigo)
+        self.ui.txtDescripcion.setPlainText(descripcion)
+        self.ui.txtNombre.setText(abreviado)
+        
+        if categoria == 'S':
+            self.ui.tabWidget.setCurrentIndex(0)
+            
+            # agregar intervalos de precios a la tabla
+            crsr.execute('''
+            SELECT	desde,
+                    precio_con_iva,
+                    duplex
+            FROM	Productos_Intervalos AS P_Inv
+            WHERE 	id_productos = ?
+            ORDER   BY desde ASC, duplex ASC;
+            ''', (idx,))
+            
+            for row, (desde, precio, duplex) in enumerate(crsr):
+                self.agregarIntervalo(row, desde, precio, duplex)
+        elif categoria == 'G':
+            self.ui.tabWidget.setCurrentIndex(1)
+            
+            crsr.execute('''
+            SELECT  min_ancho,
+                    min_alto,
+                    precio_m2
+            FROM    Productos_Gran_Formato
+            WHERE 	id_productos = ?;
+            ''', (idx,))
+        
+            min_ancho, min_alto, precio = crsr.fetchone()
+            
+            self.ui.txtAnchoMin.setText(f'{min_ancho:,.2f}')
+            self.ui.txtAltoMin.setText(f'{min_alto:,.2f}')
+            self.ui.txtPrecio.setText(f'{precio:,.2f}')
+        
+        # agregar elementos de la segunda página
+        crsr.execute('''
+        SELECT	nombre,
+                utiliza_inventario
+        FROM	Productos_Utiliza_Inventario AS PUI
+                LEFT JOIN Inventario AS I
+                        ON PUI.id_inventario = I.id_inventario
+        WHERE 	id_productos = ?;
+        ''', (idx,))
+                
+        for nombre, cantidad in crsr:
+            self.agregarProductoALista(nombre, cantidad)
+        
+        self.idx = idx  # id del elemento a editar
+    
+    def ejecutarConsulta(self, crsr, params):
+        crsr.execute('''
+        UPDATE  Productos
+        SET     codigo = ?,
+                descripcion = ?,
+                abreviado = ?,
+                categoria = ?
+        WHERE   id_productos = ?;
+        ''', (*params, self.idx))
+        
+        return self.idx
