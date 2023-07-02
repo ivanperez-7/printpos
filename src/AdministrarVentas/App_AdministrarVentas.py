@@ -60,16 +60,16 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         popup = QtWidgets.QMenu()
 
         default = popup.addAction(
-            'Folio', lambda: self.cambiar_filtro('folio', 0))
+            'Folio', lambda: self.cambiarFiltro('folio', 0))
         popup.addAction(
-            'Vendedor', lambda: self.cambiar_filtro('vendedor', 1))
+            'Vendedor', lambda: self.cambiarFiltro('vendedor', 1))
         popup.addAction(
-            'Cliente', lambda: self.cambiar_filtro('cliente', 2))
+            'Cliente', lambda: self.cambiarFiltro('cliente', 2))
         
         popup.setDefaultAction(default)
 
         self.ui.btFiltrar.setMenu(popup)
-        self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('folio', 0))
+        self.ui.btFiltrar.clicked.connect(lambda: self.cambiarFiltro('folio', 0))
 
         # dar formato a las tabla principales
         # TABLA DE VENTAS DIRECTAS
@@ -183,7 +183,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         
         self.tabla_actual.resizeRowsToContents()
 
-    def cambiar_filtro(self, filtro, idx):
+    def cambiarFiltro(self, filtro, idx):
         """
         Modifica el filtro de búsqueda.
         """
@@ -531,7 +531,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         """
         Abre ventana que muestra los detalles de una venta seleccionada.
         """
-        self.new = App_DetallesVenta(self, idxs.siblingAtColumn(0).data(0))
+        self.new = App_DetallesVenta(self, idxs.siblingAtColumn(0).data())
 
     def imprimirTicket(self):
         """

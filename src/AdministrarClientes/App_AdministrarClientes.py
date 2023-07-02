@@ -1,7 +1,7 @@
 import fdb
 
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QFont, QColor, QRegExpValidator
+from PyQt5.QtGui import QFont, QColor, QIcon, QPixmap, QRegExpValidator
 from PyQt5.QtCore import Qt, QDateTime, QRegExp, pyqtSignal
 
 from mydecorators import con_fondo
@@ -30,19 +30,19 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         popup = QtWidgets.QMenu()
 
         default = popup.addAction(
-            'Nombre',lambda: self.cambiar_filtro('nombre', 1))
+            'Nombre',lambda: self.cambiarFiltro('nombre', 1))
         popup.addAction(
-            'Teléfono', lambda: self.cambiar_filtro('teléfono', 2))
+            'Teléfono', lambda: self.cambiarFiltro('teléfono', 2))
         popup.addAction(
-            'Correo', lambda: self.cambiar_filtro('correo', 3))
+            'Correo', lambda: self.cambiarFiltro('correo', 3))
         popup.addAction(
-            'Dirección', lambda: self.cambiar_filtro('dirección', 4))
+            'Dirección', lambda: self.cambiarFiltro('dirección', 4))
         popup.addAction(
-            'RFC', lambda: self.cambiar_filtro('RFC', 5))
+            'RFC', lambda: self.cambiarFiltro('RFC', 5))
         popup.setDefaultAction(default)
 
         self.ui.btFiltrar.setMenu(popup)
-        self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('nombre', 1))
+        self.ui.btFiltrar.clicked.connect(lambda: self.cambiarFiltro('nombre', 1))
 
         # dar formato a la tabla principal
         header = self.ui.tabla_clientes.horizontalHeader()
@@ -85,7 +85,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         if self.ui.resaltarCheck.isChecked():
             self.update_display()
     
-    def cambiar_filtro(self, filtro, idx):
+    def cambiarFiltro(self, filtro, idx):
         """
         Modifica el filtro de búsqueda.
         """
@@ -199,7 +199,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         """
         Abre ventana para registrar un cliente.
         """
-        self.new = App_EditarCliente(self)
+        self.new = App_RegistrarCliente(self)
         self.new.success.connect(
             lambda: self.update_display(rescan=True))
 
@@ -267,14 +267,14 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
 # VENTANAS PARA EDITAR LA VENTA #
 #################################
 @con_fondo
-class App_EditarCliente(QtWidgets.QMainWindow):
-    """
-    Backend para la función de editar cliente.
-    """
+class Base_EditarCliente(QtWidgets.QMainWindow):
+    """Clase base para registrar o editar cliente."""
+    MENSAJE_EXITO: str
+    MENSAJE_ERROR: str
+    
     success = pyqtSignal()
     
-    def __init__(self, first, idx = None, 
-                 nombre = '', celular = '999', correo = ''):
+    def __init__(self, first: App_AdministrarClientes):
         from AdministrarClientes.Ui_EditarCliente import Ui_EditarCliente
         
         super().__init__(first)
@@ -284,35 +284,7 @@ class App_EditarCliente(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
-        self.first = first # referencia a la ventana de crear venta
         self.session = first.session # conexión a la base de datos y usuario actual
-        self.idx = idx  # id del cliente a editar
-
-        # datos por defecto
-        if idx:
-            crsr = self.session['conn'].cursor()
-            crsr.execute('SELECT * FROM Clientes WHERE id_clientes = ?;', (idx,))
-            cliente = crsr.fetchone()
-            
-            nombre = cliente[1]
-            celular = cliente[2].replace(' ', '')
-            correo = cliente[3]
-            especial = bool(cliente[6])
-            
-            self.ui.txtDireccion.setPlainText(cliente[4])
-            self.ui.txtRFC.setText(cliente[5])
-            self.ui.txtDescuentos.setPlainText(cliente[7])
-        else:
-            celular = celular.replace(' ', '')
-            especial = False
-        
-        self.ui.txtNombre.setText(nombre)
-        self.ui.txtLada.setText(celular[1:-10] or '52')
-        self.ui.txtCelular.setText(celular[-10:])
-        self.ui.txtCorreo.setText(correo)
-        
-        self.ui.checkDescuentos.setChecked(especial)
-        self.ui.txtDescuentos.setEnabled(especial)
         
         # validador clave de país
         regexp = QRegExp(r'[0-9]{1,}')
@@ -339,13 +311,19 @@ class App_EditarCliente(QtWidgets.QMainWindow):
     def numeroTelefono(self) -> str:
         return f'+{self.ui.txtLada.text()} {self.ui.txtCelular.displayText()}'
     
+    def agregarDatosPorDefecto(self, nombre: str, celular: str, correo: str):
+        """Datos por defecto, proveído por ambas clases heredadas."""
+        celular = celular.replace(' ', '')
+        
+        self.ui.txtNombre.setText(nombre)
+        self.ui.txtLada.setText(celular[1:-10] or '52')
+        self.ui.txtCelular.setText(celular[-10:])
+        self.ui.txtCorreo.setText(correo)
+    
     def done(self):
-        """
-        Intenta agregar datos ingresados a la tabla Clientes y
-        se notifica al usuario del resultado de la operación.
-        """
-        clientes_db_parametros = (v.strip() or None if isinstance(v, str)
-                                  else v for v in (
+        """Método en el que se modificará o insertará un cliente."""
+        clientes_db_parametros = tuple(v.strip() or None if isinstance(v, str)
+                                       else v for v in (
             self.ui.txtNombre.text(),
             self.numeroTelefono,
             self.ui.txtCorreo.text(),
@@ -359,37 +337,95 @@ class App_EditarCliente(QtWidgets.QMainWindow):
         crsr = conn.cursor()
 
         try:
-            if self.idx:        # editar cliente
-                crsr.execute('''
-                UPDATE  Clientes
-                SET     nombre = ?,
-                        telefono = ?,
-                        correo = ?,
-                        direccion = ?,
-                        RFC = ?,
-                        cliente_especial = ?,
-                        descuentos = ?
-                WHERE   id_clientes = ?;
-                ''', (*clientes_db_parametros, self.idx))
-            else:               # crear nuevo cliente
-                crsr.execute('''
-                INSERT INTO Clientes (
-                    nombre, telefono, correo, direccion,
-                    RFC, cliente_especial, descuentos
-                ) 
-                VALUES 
-                    (?,?,?,?,?,?,?);
-                ''', tuple(clientes_db_parametros))
-
-            conn.commit()
+            self.ejecutarConsulta(crsr, clientes_db_parametros)
         except fdb.Error as err:
             conn.rollback()
-
-            WarningDialog(self, '¡No se pudo editar el cliente!', str(err))
+            WarningDialog(self, self.MENSAJE_ERROR, str(err))
             return
         
-        qm = QtWidgets.QMessageBox
-        qm.information(self, 'Éxito', '¡Se editó el cliente!')
+        QtWidgets.QMessageBox.information(
+            self, 'Éxito', self.MENSAJE_EXITO)
         
         self.success.emit()
         self.close()
+    
+    def ejecutarConsulta(self, crsr: fdb.Cursor, params: tuple):
+        """Función a sobreescribir donde se realiza consulta SQL."""
+        pass
+
+
+class App_RegistrarCliente(Base_EditarCliente):
+    """Backend para la función de registrar cliente."""
+    MENSAJE_EXITO = '¡Se registró el cliente!'
+    MENSAJE_ERROR = '¡No se pudo registrar el cliente!'
+    
+    def __init__(self, first: App_AdministrarClientes,
+                 nombre = '', celular = '999', correo = ''):        
+        super().__init__(first)
+        
+        self.ui.lbTitulo.setText('Registrar cliente')
+        self.ui.btRegistrar.setText(' Registrar cliente')
+        self.ui.btRegistrar.setIcon(QIcon(QPixmap(':/img/resources/images/plus.png')))
+        
+        self.agregarDatosPorDefecto(nombre, celular, correo)
+    
+    ####################
+    # FUNCIONES ÚTILES #
+    ####################
+    def ejecutarConsulta(self, crsr, params):
+        """Insertar nuevo cliente a la base de datos."""
+        crsr.execute('''
+        INSERT INTO Clientes (
+            nombre, telefono, correo, direccion,
+            RFC, cliente_especial, descuentos
+        )
+        VALUES
+            (?,?,?,?,?,?,?);
+        ''', params)
+
+
+class App_EditarCliente(Base_EditarCliente):
+    """Backend para la función de editar cliente."""
+    MENSAJE_EXITO = '¡Se editó el cliente!'
+    MENSAJE_ERROR = '¡No se pudo editar el cliente!'
+    
+    def __init__(self, first: App_AdministrarClientes, idx: int):        
+        super().__init__(first)
+        
+        self.idx = idx  # id del cliente a editar
+
+        # obtener datos del cliente
+        crsr = self.session['conn'].cursor()
+        crsr.execute('SELECT * FROM Clientes WHERE id_clientes = ?;', (idx,))
+        cliente = crsr.fetchone()
+        
+        nombre = cliente[1]
+        celular = cliente[2].replace(' ', '')
+        correo = cliente[3]
+        especial = bool(cliente[6])
+        
+        self.agregarDatosPorDefecto(nombre, celular, correo)
+        
+        self.ui.txtDireccion.setPlainText(cliente[4])
+        self.ui.txtRFC.setText(cliente[5])
+        
+        self.ui.checkDescuentos.setChecked(especial)
+        self.ui.txtDescuentos.setEnabled(especial)
+        self.ui.txtDescuentos.setPlainText(cliente[7])
+    
+    ####################
+    # FUNCIONES ÚTILES #
+    ####################
+    def ejecutarConsulta(self, crsr, params):
+        """Actualizar datos del cliente en la base de datos."""
+        crsr.execute('''
+        UPDATE  Clientes
+        SET     nombre = ?,
+                telefono = ?,
+                correo = ?,
+                direccion = ?,
+                RFC = ?,
+                cliente_especial = ?,
+                descuentos = ?
+        WHERE   id_clientes = ?;
+        ''', params + (self.idx,))

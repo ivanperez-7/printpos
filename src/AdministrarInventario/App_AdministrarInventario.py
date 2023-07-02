@@ -1,7 +1,8 @@
 import fdb
 
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QFont, QColor, QPixmap, QCursor, QRegExpValidator
+from PyQt5.QtGui import (QFont, QColor, QPixmap,
+                         QCursor, QIcon, QRegExpValidator)
 from PyQt5.QtCore import Qt, QRegExp
 
 from mydecorators import con_fondo
@@ -183,7 +184,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         Dialog.show()
     
     def agregarInventario(self, _):
-        self.new = App_EditarInventario(self)
+        self.new = App_RegistrarInventario(self)
     
     def editarInventario(self, _):
         selected = self.ui.tabla_inventario.selectedItems()
@@ -239,7 +240,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
             WarningDialog(self, '¡No se pudo eliminar el elemento!', str(err))
             return
         
-        qm.information(self, 'Éxito', 'Se eliminó el elemento seleccionado.', qm.Ok)
+        qm.information(self, 'Éxito', 'Se eliminó el elemento seleccionado.')
         self.update_display(rescan=True)
     
     def goHome(self, _):
@@ -257,11 +258,12 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
 # VENTANAS USADAS POR EL MÓDULO #
 #################################
 @con_fondo
-class App_EditarInventario(QtWidgets.QMainWindow):
-    """
-    Backend para la ventana para editar un material del inventario.
-    """
-    def __init__(self, first, idx: int = None):
+class Base_EditarInventario(QtWidgets.QMainWindow):
+    """Clase base para módulo de registrar o modificar elemento."""
+    MENSAJE_EXITO: str
+    MENSAJE_ERROR: str
+    
+    def __init__(self, first: App_AdministrarInventario):
         from AdministrarInventario.Ui_EditarInventario import Ui_EditarInventario
         
         super().__init__(first)
@@ -271,44 +273,8 @@ class App_EditarInventario(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
         
-        self.first = first # ventana de administrar inventario
+        self.first: App_AdministrarInventario = first
         self.session = first.session # conexión a la base de datos y usuario actual
-        self.idx = idx  # id del elemento a editar
-        
-        if idx:     # elemento existente
-            crsr = first.session['conn'].cursor()
-            
-            # datos de la primera página
-            crsr.execute('''SELECT  nombre,
-                                    tamano_lote, 
-                                    precio_lote,
-                                    minimo_lotes,
-                                    unidades_restantes
-                            FROM    Inventario 
-                            WHERE   id_inventario = ?;''', (idx,))
-            
-            nombre, tamano, precio, minimo, existencia = crsr.fetchone()
-            
-            self.ui.txtNombre.setText(nombre)
-            self.ui.txtTamano.setText(f'{tamano:,.2f}')
-            self.ui.txtPrecioCompra.setText(f'{precio:.2f}')
-            self.ui.txtExistencia.setText(f'{existencia:.2f}')
-            self.ui.txtMinimo.setText(f'{minimo:.2f}')
-            
-            # agregar productos de la segunda página
-            crsr.execute('''
-            SELECT	codigo,
-                    utiliza_inventario
-            FROM	Productos_Utiliza_Inventario AS PUI
-                    LEFT JOIN Productos AS P
-                           ON PUI.id_productos = P.id_productos
-            WHERE 	id_inventario = ?;
-            ''', (idx,))
-            
-            productos = crsr.fetchall()
-                    
-            for codigo, cantidad in productos:
-                self.agregarProductoALista(codigo, cantidad)
         
         # validadores para datos numéricos
         regexp_numero = QRegExp(r'\d*\.?\d*')
@@ -326,10 +292,10 @@ class App_EditarInventario(QtWidgets.QMainWindow):
 
         self.show()
     
-    ##################################
-    # WIDGET PARA LISTA DE PRODUCTOS #
-    ##################################
-    def widgetProducto(self):
+    #######################
+    # WIDGETS PARA LISTAS #
+    #######################
+    def widgetProducto(self) -> QtWidgets.QFrame:
         from PyQt5 import QtCore
         
         frameProducto = QtWidgets.QFrame()
@@ -365,10 +331,7 @@ class App_EditarInventario(QtWidgets.QMainWindow):
         QtCore.QMetaObject.connectSlotsByName(frameProducto)
         
         return frameProducto
-    
-    ####################
-    # FUNCIONES ÚTILES #
-    ####################
+
     def agregarProductoALista(self, codigo: str = '', cantidad: int = 1):
         # crear widget y agregar a la lista
         nuevo = self.widgetProducto()
@@ -394,11 +357,12 @@ class App_EditarInventario(QtWidgets.QMainWindow):
         line.setText(f'{cantidad}')
         
         self.ui.layoutScroll.addWidget(nuevo)
-    
+     
+    ####################
+    # FUNCIONES ÚTILES #
+    ####################
     def done(self):
-        """
-        Actualiza la base de datos y sale de la ventana.
-        """
+        """Función donde se registrará o actualizará elemento del inventario."""
         qm = QtWidgets.QMessageBox
         
         #### <tabla Inventario> ####
@@ -414,41 +378,17 @@ class App_EditarInventario(QtWidgets.QMainWindow):
                 float(self.ui.txtExistencia.text())
             )
         except ValueError:
-            qm.warning(self, 'Atención', '¡Verifique que los datos numéricos sean correctos!', qm.Ok)
+            qm.warning(self, 'Atención', '¡Verifique que los datos numéricos sean correctos!')
             return
         
         conn = self.session['conn']
         crsr = conn.cursor()
 
         try:
-            if self.idx:        # el elemento no existe
-                idx = self.idx
-                
-                crsr.execute('''
-                UPDATE  Inventario
-                SET     nombre = ?,
-                        tamano_lote = ?,
-                        precio_lote = ?,
-                        minimo_lotes = ?,
-                        unidades_restantes = ?
-                WHERE   id_inventario = ?;
-                ''', (*inventario_db_parametros, idx))
-            else:                   # actualizar elemento
-                crsr.execute('''
-                INSERT INTO Inventario (
-                    nombre, tamano_lote, precio_lote,
-                    minimo_lotes, unidades_restantes
-                )
-                VALUES
-                    (?,?,?,?,?)
-                RETURNING
-                    id_inventario;
-                ''', inventario_db_parametros)
-                
-                idx, = crsr.fetchone()
+            idx = self.ejecutarConsulta(crsr, inventario_db_parametros)
         except fdb.Error as err:
             conn.rollback()
-            WarningDialog(self, '¡No se pudo editar el elemento!', str(err))
+            WarningDialog(self, self.MENSAJE_ERROR, str(err))
             return
         #### </tabla Inventario> ####
         
@@ -461,7 +401,7 @@ class App_EditarInventario(QtWidgets.QMainWindow):
                          for (box, _, _, _, line) in productos]
         except ValueError:
             conn.rollback()
-            qm.warning(self, 'Atención', '¡Verifique que los datos numéricos sean correctos!', qm.Ok)
+            qm.warning(self, 'Atención', '¡Verifique que los datos numéricos sean correctos!')
             return
         
         PUI_db_parametros = []
@@ -495,11 +435,107 @@ class App_EditarInventario(QtWidgets.QMainWindow):
             conn.commit()
         except fdb.Error as err:
             conn.rollback()
-            WarningDialog(self, '¡No se pudo editar el elemento!', str(err))
+            WarningDialog(self, self.MENSAJE_ERROR, str(err))
             return
         #### </tabla Productos_Utiliza_Inventario> ####
         
-        qm.information(self, 'Éxito', '¡Se editó el elemento!', qm.Ok)
+        qm.information(self, 'Éxito', self.MENSAJE_EXITO)
         
         self.first.update_display(rescan=True)
         self.close()
+    
+    def ejecutarConsulta(self, crsr: fdb.Cursor, params: tuple) -> int:
+        """Devuelve índice del elemento registrado o editado."""
+        pass
+
+
+class App_RegistrarInventario(Base_EditarInventario):
+    """Backend para la ventana para registrar un material del inventario."""
+    MENSAJE_EXITO = '¡Se registró el elemento!'
+    MENSAJE_ERROR = '¡No se pudo registrar el elemento!'
+    
+    def __init__(self, first: App_AdministrarInventario):
+        super().__init__(first)
+        
+        self.ui.lbTitulo.setText('Registrar elemento')
+        self.ui.btAceptar.setText(' Registrar elemento')
+        self.ui.btAceptar.setIcon(QIcon(QPixmap(':/img/resources/images/plus.png')))
+    
+    ####################
+    # FUNCIONES ÚTILES #
+    ####################
+    def ejecutarConsulta(self, crsr, params):
+        crsr.execute('''
+        INSERT INTO Inventario (
+            nombre, tamano_lote, precio_lote,
+            minimo_lotes, unidades_restantes
+        )
+        VALUES
+            (?,?,?,?,?)
+        RETURNING
+            id_inventario;
+        ''', params)
+            
+        idx, = crsr.fetchone()
+        return idx
+
+
+class App_EditarInventario(Base_EditarInventario):
+    """Backend para la ventana para editar un material del inventario."""
+    MENSAJE_EXITO = '¡Se editó el elemento!'
+    MENSAJE_ERROR = '¡No se pudo editar el elemento!'
+    
+    def __init__(self, first: App_AdministrarInventario, idx: int = None):
+        super().__init__(first)
+        
+        self.idx = idx  # id del elemento a editar
+        
+        crsr = first.session['conn'].cursor()
+        
+        # datos de la primera página
+        crsr.execute('''SELECT  nombre,
+                                tamano_lote, 
+                                precio_lote,
+                                minimo_lotes,
+                                unidades_restantes
+                        FROM    Inventario 
+                        WHERE   id_inventario = ?;''', (idx,))
+        
+        nombre, tamano, precio, minimo, existencia = crsr.fetchone()
+        
+        self.ui.txtNombre.setText(nombre)
+        self.ui.txtTamano.setText(f'{tamano:,.2f}')
+        self.ui.txtPrecioCompra.setText(f'{precio:.2f}')
+        self.ui.txtExistencia.setText(f'{existencia:.2f}')
+        self.ui.txtMinimo.setText(f'{minimo:.2f}')
+        
+        # agregar productos de la segunda página
+        crsr.execute('''
+        SELECT	codigo,
+                utiliza_inventario
+        FROM	Productos_Utiliza_Inventario AS PUI
+                LEFT JOIN Productos AS P
+                        ON PUI.id_productos = P.id_productos
+        WHERE 	id_inventario = ?;
+        ''', (idx,))
+        
+        productos = crsr.fetchall()
+                
+        for codigo, cantidad in productos:
+            self.agregarProductoALista(codigo, cantidad)
+    
+    ####################
+    # FUNCIONES ÚTILES #
+    ####################
+    def ejecutarConsulta(self, crsr, params):
+        crsr.execute('''
+        UPDATE  Inventario
+        SET     nombre = ?,
+                tamano_lote = ?,
+                precio_lote = ?,
+                minimo_lotes = ?,
+                unidades_restantes = ?
+        WHERE   id_inventario = ?;
+        ''', (*params, self.idx))
+        
+        return self.idx

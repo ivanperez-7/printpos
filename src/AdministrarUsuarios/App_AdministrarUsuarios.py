@@ -1,7 +1,7 @@
 import fdb
 
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QFont, QRegExpValidator
+from PyQt5.QtGui import QFont, QPixmap, QRegExpValidator
 from PyQt5.QtCore import Qt, QRegExp
 
 from mydecorators import con_fondo
@@ -39,15 +39,15 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         popup = QtWidgets.QMenu()
 
         default = popup.addAction(
-            'Usuario', lambda: self.cambiar_filtro('usuario'))
+            'Usuario', lambda: self.cambiarFiltro('usuario'))
         popup.addAction(
-            'Nombre', lambda: self.cambiar_filtro('nombre'))
+            'Nombre', lambda: self.cambiarFiltro('nombre'))
         popup.addAction(
-            'Permisos', lambda: self.cambiar_filtro('permisos'))
+            'Permisos', lambda: self.cambiarFiltro('permisos'))
         popup.setDefaultAction(default)
 
         self.ui.btFiltrar.setMenu(popup)
-        self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('nombre'))
+        self.ui.btFiltrar.clicked.connect(lambda: self.cambiarFiltro('nombre'))
 
         # dar formato a la tabla principal
         header = self.ui.tabla_usuarios.horizontalHeader()
@@ -80,7 +80,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
     def mostrarTrigger(self, state):
         self.update_display(rescan=True)
 
-    def cambiar_filtro(self, filtro):
+    def cambiarFiltro(self, filtro):
         """
         Modifica el filtro de búsqueda.
         """
@@ -160,7 +160,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         """
         Abre ventana para registrar un usuario.
         """
-        self.new = App_EditarUsuario(self)
+        self.new = App_RegistrarUsuario(self)
 
     def editarUsuario(self, _):
         """
@@ -168,7 +168,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         """
         selected = self.ui.tabla_usuarios.selectedItems()
 
-        if len(selected) == self.ui.tabla_usuarios.columnCount():
+        if selected:
             self.new = App_EditarUsuario(self, selected[0].text())
 
     def quitarUsuario(self, _):
@@ -182,11 +182,10 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
 
         # abrir pregunta
         qm = QtWidgets.QMessageBox
-        ret = qm.question(
-            self,
-            'Atención',
-            'Los usuarios seleccionados se darán de baja del sistema. ¿Desea continuar?',
-            qm.Yes | qm.No)
+        ret = qm.question(self, 'Atención',
+                          'Los usuarios seleccionados se darán '
+                          'de baja del sistema. ¿Desea continuar?',
+                          qm.Yes | qm.No)
 
         if ret != qm.Yes:
             return
@@ -209,7 +208,6 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
             conn.commit()
         except fdb.Error as err:
             conn.rollback()
-
             WarningDialog(self, '¡Hubo un error!', str(err))
             return
         
@@ -231,11 +229,12 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
 # VENTANAS PARA EDITAR USUARIOS #
 #################################
 @con_fondo
-class App_EditarUsuario(QtWidgets.QMainWindow):
-    """
-    Backend para la ventana de editar usuario.
-    """
-    def __init__(self, first, usuario: str = None):
+class Base_EditarUsuario(QtWidgets.QMainWindow):
+    """Clase base para la ventana de registrar o editar usuario."""
+    MENSAJE_EXITO: str
+    MENSAJE_ERROR: str
+    
+    def __init__(self, first: App_AdministrarUsuarios):
         from AdministrarUsuarios.Ui_EditarUsuario import Ui_EditarUsuario
         
         super().__init__(first)
@@ -245,32 +244,8 @@ class App_EditarUsuario(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
-        self.first = first  # referencia a la ventana de crear venta
+        self.first: App_AdministrarUsuarios = first 
         self.session = first.session  # conexión a la base de datos y usuario actual
-        self.usuario = usuario  # usuario a editar
-
-        if usuario:
-            crsr = self.session['conn'].cursor()
-            
-            crsr.execute('''
-            SELECT  usuario,
-                    nombre,
-                    permisos
-            FROM    Usuarios
-            WHERE   usuario = ?;
-            ''', (usuario,))
-            
-            usuario, nombre, permisos = crsr.fetchone()
-
-            self.ui.txtUsuario.setText(usuario)
-            self.ui.txtNombre.setText(nombre)
-            self.ui.boxPermisos.setCurrentText(permisos)
-            
-            self.ui.txtUsuario.setReadOnly(True)
-        else:
-            self.ui.cambiarPsswd.hide()
-            self.ui.groupPsswd.setEnabled(True)
-            self.ui.groupPsswdConf.setEnabled(True)
             
         # validador para nombre de usuario
         regexp = QRegExp(r'[a-zA-Z0-9_$]+')
@@ -287,29 +262,23 @@ class App_EditarUsuario(QtWidgets.QMainWindow):
         # crear eventos para los botones
         self.ui.lbRegresar.mousePressEvent = self.closeEvent
         self.ui.btRegistrar.clicked.connect(self.editar)
-        self.ui.cambiarPsswd.stateChanged.connect(self.cambiarTrigger)
 
         self.show()
 
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def cambiarTrigger(self, state):
-        """
-        Indica si se desea cambiar la contraseña en la operación.
-        """
-        enable = bool(state)
-
-        self.ui.groupPsswd.setEnabled(enable)
-        self.ui.groupPsswdConf.setEnabled(enable)
-
+    @property
+    def cambioContrasena(self) -> bool:
+        """Cada clase tiene su manera de decidir si hay cambio de contraseña."""
+        pass
+    
     def editar(self):
         """
         Intenta editar datos de la tabla Usuarios y
         se notifica al usuario del resultado de la operación.
         """
-        if self.ui.cambiarPsswd.isChecked() or not self.usuario:
-            # se desea cambiar la contraseña, o bien puede ser usuario nuevo
+        if self.cambioContrasena:
             psswd = self.ui.txtPsswd.text()
             psswd_conf = self.ui.txtPsswdConf.text()
             
@@ -324,7 +293,7 @@ class App_EditarUsuario(QtWidgets.QMainWindow):
         usuario = self.ui.txtUsuario.text().upper()
         permisos = self.ui.boxPermisos.currentText()
         
-        usuarios_db_parametros = (v or None for v in (
+        usuarios_db_parametros = tuple(v or None for v in (
             usuario,
             self.ui.txtNombre.text().strip(),
             permisos
@@ -334,32 +303,7 @@ class App_EditarUsuario(QtWidgets.QMainWindow):
         crsr = conn.cursor()
 
         try:            
-            if self.usuario:
-                crsr.execute('''
-                UPDATE  Usuarios
-                SET     usuario = ?,
-                        nombre = ?,
-                        permisos = ?
-                WHERE   usuario = ?;
-                ''', (*usuarios_db_parametros, self.usuario))
-                
-                crsr.execute(f'REVOKE ADMINISTRADOR, VENDEDOR FROM {usuario};')
-                
-                if self.ui.cambiarPsswd.isChecked():
-                    psswd = self.ui.txtPsswd.text()
-                    crsr.execute(f'''ALTER USER {usuario} PASSWORD '{psswd}';''')
-            else:
-                crsr.execute('''
-                INSERT INTO Usuarios (
-                    usuario, nombre, permisos
-                )
-                VALUES
-                    (?,?,?);
-                ''', tuple(usuarios_db_parametros))
-                
-                admin_role = 'GRANT ADMIN ROLE' if permisos == 'Administrador' else ''
-                
-                crsr.execute(f'''CREATE USER {usuario} PASSWORD '{psswd}' {admin_role};''')
+            self.ejecutarConsulta(crsr, usuarios_db_parametros)
             
             if permisos == 'Administrador':
                 crsr.execute(f'GRANT ADMINISTRADOR, VENDEDOR TO {usuario} WITH ADMIN OPTION;')
@@ -369,12 +313,118 @@ class App_EditarUsuario(QtWidgets.QMainWindow):
             conn.commit()
         except fdb.Error as err:
             conn.rollback()
-
-            WarningDialog(self, 'No se pudo editar el usuario!', str(err))
+            WarningDialog(self, self.MENSAJE_ERROR, str(err))
             return
         
-        qm = QtWidgets.QMessageBox
-        qm.information(self, 'Éxito', '¡Se editó el usuario!')
+        QtWidgets.QMessageBox.information(
+            self, 'Éxito', self.MENSAJE_EXITO)
         
         self.first.update_display(rescan=True)
         self.close()
+    
+    def ejecutarConsulta(self, crsr: fdb.Cursor, params: tuple):
+        """Método que insertará o modificará usuario."""
+        pass
+
+
+class App_RegistrarUsuario(Base_EditarUsuario):
+    """Backend para la ventana de registrar usuario."""
+    MENSAJE_EXITO = '¡Se registró el usuario!'
+    MENSAJE_ERROR = '¡No se pudo registrar el usuario!'
+    
+    def __init__(self, first: App_AdministrarUsuarios):
+        super().__init__(first)
+
+        self.ui.cambiarPsswd.hide()
+        self.ui.groupPsswd.setEnabled(True)
+        self.ui.groupPsswdConf.setEnabled(True)
+        
+        self.ui.lbTitulo.setText('Registrar usuario')
+        self.ui.label_aceptar.setText('Registrar')
+        self.ui.label_icono.setPixmap(QPixmap(':/img/resources/images/plus.png'))
+
+    # ==================
+    #  FUNCIONES ÚTILES
+    # ==================
+    @property
+    def cambioContrasena(self) -> bool:
+        """Siempre hay cambio de contraseña."""
+        return True
+    
+    def ejecutarConsulta(self, crsr, params):
+        crsr.execute('''
+        INSERT INTO Usuarios (
+            usuario, nombre, permisos
+        )
+        VALUES
+            (?,?,?);
+        ''', params)
+        
+        usuario, _, permisos = params
+        psswd = self.ui.txtPsswd.text()
+        
+        admin_role = 'GRANT ADMIN ROLE' if permisos == 'Administrador' else ''
+        
+        crsr.execute(f'''CREATE USER {usuario} PASSWORD '{psswd}' {admin_role};''')
+
+
+class App_EditarUsuario(Base_EditarUsuario):
+    """Backend para la ventana de editar usuario."""
+    MENSAJE_EXITO = '¡Se editó el usuario!'
+    MENSAJE_ERROR = '¡No se pudo editar el usuario!'
+    
+    def __init__(self, first: App_AdministrarUsuarios, usuario: str):
+        super().__init__(first)
+
+        crsr = self.session['conn'].cursor()
+        
+        crsr.execute('''
+        SELECT  usuario,
+                nombre,
+                permisos
+        FROM    Usuarios
+        WHERE   usuario = ?;
+        ''', (usuario,))
+        
+        usuario, nombre, permisos = crsr.fetchone()
+
+        self.ui.txtUsuario.setText(usuario)
+        self.ui.txtNombre.setText(nombre)
+        self.ui.boxPermisos.setCurrentText(permisos)        
+        self.ui.txtUsuario.setReadOnly(True)
+        
+        self.ui.cambiarPsswd.toggled.connect(self.cambiarTrigger)
+
+        self.usuario = usuario  # usuario a editar
+
+    # ==================
+    #  FUNCIONES ÚTILES
+    # ==================
+    @property
+    def cambioContrasena(self) -> bool:
+        """Hay cambio de contraseña si se solicita."""
+        return self.ui.cambiarPsswd.isChecked()
+    
+    def cambiarTrigger(self, state):
+        """
+        Indica si se desea cambiar la contraseña en la operación.
+        """
+        enable = bool(state)
+
+        self.ui.groupPsswd.setEnabled(enable)
+        self.ui.groupPsswdConf.setEnabled(enable)
+    
+    def ejecutarConsulta(self, crsr, params):
+        crsr.execute('''
+        UPDATE  Usuarios
+        SET     usuario = ?,
+                nombre = ?,
+                permisos = ?
+        WHERE   usuario = ?;
+        ''', (*params, self.usuario))
+        
+        crsr.execute(f'REVOKE ADMINISTRADOR, VENDEDOR FROM {self.usuario};')
+        
+        if self.cambioContrasena:
+            psswd = self.ui.txtPsswd.text()
+            crsr.execute(f'''ALTER USER {self.usuario} PASSWORD '{psswd}';''')
