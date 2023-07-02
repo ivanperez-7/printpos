@@ -11,7 +11,8 @@ from mydecorators import con_fondo, requiere_admin
 from myutils import (clamp, enviarWhatsApp, formatDate,
                      generarOrdenCompra, generarTicketCompra,
                      generarTicketPresupuesto, son_similar)
-from mywidgets import DimBackground, LabelAdvertencia, SpeechBubble, WarningDialog
+from mywidgets import (DimBackground, LabelAdvertencia, SpeechBubble, 
+                       VentanaPrincipal, WarningDialog)
 
 
 ##################
@@ -54,18 +55,22 @@ class App_CrearVenta(QtWidgets.QMainWindow):
     TODO:
     -   mandar ticket por whatsapp o imprimir, sí o sí
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent: VentanaPrincipal):
         from CrearVenta.Ui_CrearVenta import Ui_CrearVenta
         
         super().__init__()
 
         self.ui = Ui_CrearVenta()
         self.ui.setupUi(self)
-
-        self.session = parent.session # conexión y usuario actual
-        self.fechaHoraActual = QDateTime.currentDateTime() # fecha y hora en que se abre esta ventana
         
         LabelAdvertencia(self.ui.tabla_productos, '¡Aún no hay productos!')
+
+        # otras variables importantes
+        self.fechaHoraActual = QDateTime.currentDateTime() # fecha y hora en que se abre esta ventana        
+        
+        # guardar conexión y usuarios como atributos
+        self.conn = parent.conn
+        self.user = parent.user
         
         # cuadro de texto para los descuentos del cliente
         self.dialogoDescuentos = SpeechBubble(self)
@@ -77,7 +82,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.productosVenta: list[ItemVenta] = []
 
         # datos por defecto
-        self.ui.txtVendedor.setText(self.session['user'].nombre)
+        self.ui.txtVendedor.setText(self.user.nombre)
         self.ui.lbFecha.setText(formatDate(self.fechaEntrega))
 
         # dar formato a la tabla principal
@@ -303,7 +308,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         qm = QtWidgets.QMessageBox
 
         # se confirma si existe el cliente en la base de datos
-        crsr = self.session['conn'].cursor()
+        crsr = self.conn.cursor()
         nombre = self.ui.txtCliente.text().strip()
         telefono = self.ui.txtTelefono.text().strip()
 
@@ -400,9 +405,15 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
-        self.first: App_CrearVenta = first
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
         LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
+        
+        # otras variables importantes
+        self.first = first
+        
+        # guardar conexión y usuarios como atributos
+        self.conn = first.conn
+        self.user = first.user
 
         # dar formato a las tablas
         header = self.ui.tabla_seleccionar.horizontalHeader()
@@ -422,7 +433,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
 
         # llena la tabla de productos no gran formato
-        crsr = first.session['conn'].cursor()
+        crsr = first.conn.cursor()
         
         crsr.execute('SELECT * FROM View_Productos_Simples;')
         self.all_prod = crsr.fetchall()
@@ -543,7 +554,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         # obtener información del producto
         codigo = selected[0].text()
         
-        crsr = self.first.session['conn'].cursor()
+        crsr = self.conn.cursor()
         crsr.execute('SELECT id_productos FROM Productos WHERE codigo = ?;', (codigo,))
         
         idProducto, = crsr.fetchone()
@@ -619,7 +630,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
             return
         
         # obtener información del producto
-        crsr = self.first.session['conn'].cursor()
+        crsr = self.conn.cursor()
         crsr.execute('SELECT id_productos FROM Productos WHERE codigo = ?;', (codigo,))
         
         idProducto, = crsr.fetchone()
@@ -671,10 +682,15 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
-
-        self.first: App_CrearVenta = first
         
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún cliente!')
+
+        # otras variables importantes
+        self.first = first
+        
+        # guardar conexión y usuarios como atributos
+        self.conn = first.conn
+        self.user = first.user
 
         # dar formato a la tabla principal
         header = self.ui.tabla_seleccionar.horizontalHeader()
@@ -686,7 +702,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
 
         # llena la tabla con todos los clientes existentes
-        crsr = self.first.session['conn'].cursor()
+        crsr = self.conn.cursor()
         crsr.execute('SELECT nombre, telefono, correo, direccion, RFC FROM Clientes;')
         self.all = crsr.fetchall()
 
@@ -750,7 +766,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
         self.first.ui.txtCorreo.setText(correo)
 
         # checar si el cliente es especial
-        crsr = self.first.session['conn'].cursor()
+        crsr = self.conn.cursor()
         crsr.execute('''
         SELECT  cliente_especial,
                 descuentos
@@ -993,11 +1009,14 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
         
         # datos de la ventana padre
-        session = first.session
+        conn = first.conn
+        user = first.user
+
         esDirecta = first.ui.tickDirectaSi.isChecked()
         
-        self.session = session
-        self.ventaDatos = ventaDatos
+        # guardar conexión y usuarios como atributos
+        self.conn = first.conn
+        self.user = first.user
 
         # total de la compra y precio a pagarse ahora mismo
         self.total = ventaDatos['total']
@@ -1045,13 +1064,12 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             fechaEntrega = ventaDatos['fechaEntrega']
 
         # crear nuevas entradas en la base de datos
-        conn = session['conn']
         crsr = conn.cursor()
 
         try:
             ventas_db_parametros = (
                 ventaDatos['idCliente'],
-                session['user'].id,
+                user.id,
                 ventaDatos['fechaCreacion'].toSecsSinceEpoch(),
                 fechaEntrega.toSecsSinceEpoch(),
                 ventaDatos['comentarios'].strip(),
@@ -1136,6 +1154,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
 
         self.show()
         
+        self.ventaDatos = ventaDatos
+        
         # brincar el proceso si el pago es de cero
         if self.paraPagar <= 0:
             self.done()
@@ -1187,7 +1207,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         if not pagoAceptado or not (self.total/2 <= self.paraPagar <= self.total):
             return
         
-        conn = self.session['conn']
+        conn = self.conn
         crsr = conn.cursor()
 
         try:
@@ -1210,7 +1230,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 pago,
                 f'Pago de venta con folio {self.id_ventas}',
                 metodo,
-                self.session['user'].id
+                self.user.id
             )]
             
             # registrar egreso (cambio) en caja
@@ -1220,7 +1240,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                     -cambio,
                     f'Cambio de venta con folio {self.id_ventas}',
                     metodo,
-                    self.session['user'].id
+                    self.user.id
                 ))
             
             if pago > 0.:
@@ -1236,7 +1256,6 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             conn.commit()
         except fdb.Error as err:
             conn.rollback()
-
             WarningDialog(self, '¡Hubo un error!', str(err))
             return
 
@@ -1266,7 +1285,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         @requiere_admin
         def accion(parent):
             try:
-                conn = self.session['conn']
+                conn = self.conn
                 crsr = conn.cursor()
                 
                 crsr.execute('''

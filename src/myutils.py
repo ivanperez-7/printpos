@@ -17,7 +17,7 @@ class ColorsEnum:
     ROJO = 0xFFB2AE
 
 
-def clamp(value, smallest, largest):
+def clamp(value, smallest, largest) -> int | float:
     """
     Trunca un valor dentro de un rango.
     """

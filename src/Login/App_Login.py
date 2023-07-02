@@ -7,7 +7,6 @@ from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtCore import Qt, QRegExp, pyqtSignal
 
 from mydecorators import run_in_thread
-from mywidgets import VentanaPrincipal
 
 
 ##################
@@ -113,13 +112,10 @@ class App_Login(QtWidgets.QMainWindow):
         """
         En método separado para regresar al hilo principal.
         """
-        self.close()
-
-        # crear ventana principal del sistema
-        from Home import App_Home
+        from mywidgets import VentanaPrincipal
         
-        session = {'conn': conn, 'user': user}
-        self.mainWindow = VentanaPrincipal(session, App_Home)
+        self.close()
+        self.mainWindow = VentanaPrincipal(conn, user)
 
 ########################
 # FUNCIONES DEL MÓDULO #

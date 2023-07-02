@@ -6,25 +6,29 @@ from PyQt5.QtCore import Qt, QDateTime, QRegExp, pyqtSignal
 
 from mydecorators import con_fondo
 from myutils import exportarXlsx, formatDate, ColorsEnum, son_similar
-from mywidgets import LabelAdvertencia, WarningDialog
+from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
 
 
 class App_AdministrarClientes(QtWidgets.QMainWindow):
     """
     Backend para la ventana de administración de clientes.
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent: VentanaPrincipal):
         from AdministrarClientes.Ui_AdministrarClientes import Ui_AdministrarClientes
         
         super().__init__()
 
         self.ui = Ui_AdministrarClientes()
         self.ui.setupUi(self)
-
-        self.session = parent.session  # conexión y usuario actual
-        self.filtro = 1
         
         LabelAdvertencia(self.ui.tabla_clientes, '¡No se encontró ningún cliente!')
+
+        # otras variables importantes
+        self.filtro = 1
+        
+        # guardar conexión y usuarios como atributos
+        self.conn = parent.conn
+        self.user = parent.user
 
         # añadir menú de opciones al botón para filtrar
         popup = QtWidgets.QMenu()
@@ -54,7 +58,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
         
         # restringir botón de eliminar cliente
-        if not self.session['user'].administrador:
+        if not self.user.administrador:
             self.ui.lbQuitar.hide()
 
         # añade eventos para los botones
@@ -100,7 +104,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         También lee de nuevo la tabla de clientes, si se desea.
         """
         if rescan:
-            crsr = self.session['conn'].cursor()
+            crsr = self.conn.cursor()
 
             crsr.execute('''
             SELECT  C.id_clientes,
@@ -236,7 +240,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         
         values = [(item.text(),) for item in selected if item.column() == 0]
 
-        conn = self.session['conn']
+        conn = self.conn
         crsr = conn.cursor()
 
         # crea un cuadro que notifica el resultado de la operación
@@ -284,7 +288,9 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
-        self.session = first.session # conexión a la base de datos y usuario actual
+        # guardar conexión y usuarios como atributos
+        self.conn = first.conn
+        self.user = first.user
         
         # validador clave de país
         regexp = QRegExp(r'[0-9]{1,}')
@@ -298,7 +304,7 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
             lambda estado: self.ui.txtDescuentos.setEnabled(estado))
         
         # deshabilitar modificación de descuentos para usuarios normales
-        if not first.session['user'].administrador:
+        if not first.user.administrador:
             self.ui.checkDescuentos.setEnabled(False)
             self.ui.txtDescuentos.setEnabled(False)
 
@@ -333,7 +339,7 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
             self.ui.txtDescuentos.toPlainText()
         ))
         
-        conn = self.session['conn']
+        conn = self.conn
         crsr = conn.cursor()
 
         try:
@@ -395,7 +401,7 @@ class App_EditarCliente(Base_EditarCliente):
         self.idx = idx  # id del cliente a editar
 
         # obtener datos del cliente
-        crsr = self.session['conn'].cursor()
+        crsr = self.conn.cursor()
         crsr.execute('SELECT * FROM Clientes WHERE id_clientes = ?;', (idx,))
         cliente = crsr.fetchone()
         

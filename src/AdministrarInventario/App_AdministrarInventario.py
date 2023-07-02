@@ -3,11 +3,11 @@ import fdb
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import (QFont, QColor, QPixmap,
                          QCursor, QIcon, QRegExpValidator)
-from PyQt5.QtCore import Qt, QRegExp
+from PyQt5.QtCore import Qt, QRegExp, pyqtSignal
 
 from mydecorators import con_fondo
 from myutils import ColorsEnum, son_similar
-from mywidgets import LabelAdvertencia, WarningDialog
+from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
 
 
 class App_AdministrarInventario(QtWidgets.QMainWindow):
@@ -16,17 +16,19 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
     TODO:
     -   alimentar inventario por mayoreo pero monitorear por unidades
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent: VentanaPrincipal):
         from AdministrarInventario.Ui_AdministrarInventario import Ui_AdministrarInventario
         
         super().__init__()
 
         self.ui = Ui_AdministrarInventario()
         self.ui.setupUi(self)
-
-        self.session = parent.session  # conexión y usuario actual
         
         LabelAdvertencia(self.ui.tabla_inventario, '¡No se encontró ningún elemento!')
+
+        # guardar conexión y usuarios como atributos
+        self.conn = parent.conn
+        self.user = parent.user
 
         # dar formato a la tabla principal
         header = self.ui.tabla_inventario.horizontalHeader()
@@ -61,7 +63,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         También lee de nuevo la tabla de elementos, si se desea.
         """
         if rescan:
-            crsr = self.session['conn'].cursor()
+            crsr = self.conn.cursor()
             crsr.execute('''
             SELECT  id_inventario,
                     nombre,
@@ -162,7 +164,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
             if not selected:
                 return
             
-            conn = self.session['conn']
+            conn = self.conn
             crsr = conn.cursor()
             
             try:
@@ -185,12 +187,16 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
     
     def agregarInventario(self, _):
         self.new = App_RegistrarInventario(self)
+        self.new.success.connect(
+            lambda: self.update_display(rescan=True))
     
     def editarInventario(self, _):
         selected = self.ui.tabla_inventario.selectedItems()
         
         if selected:        
             self.new = App_EditarInventario(self, selected[0].text())
+            self.new.success.connect(
+                lambda: self.update_display(rescan=True))
     
     def quitarInventario(self, _):
         """
@@ -204,7 +210,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         
         qm = QtWidgets.QMessageBox
         
-        conn = self.session['conn']
+        conn = self.conn
         crsr = conn.cursor()
         
         crsr.execute('''
@@ -263,6 +269,8 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
     
+    success = pyqtSignal()
+    
     def __init__(self, first: App_AdministrarInventario):
         from AdministrarInventario.Ui_EditarInventario import Ui_EditarInventario
         
@@ -273,8 +281,9 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
         
-        self.first: App_AdministrarInventario = first
-        self.session = first.session # conexión a la base de datos y usuario actual
+        # guardar conexión y usuarios como atributos
+        self.conn = first.conn
+        self.user = first.user
         
         # validadores para datos numéricos
         regexp_numero = QRegExp(r'\d*\.?\d*')
@@ -347,7 +356,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         line.setValidator(validador)
         
         # llenar caja de opciones con productos
-        crsr = self.session['conn'].cursor()
+        crsr = self.conn.cursor()
         
         crsr.execute('SELECT codigo FROM Productos;')
         box.addItems([codigo for codigo, in crsr])
@@ -381,7 +390,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
             qm.warning(self, 'Atención', '¡Verifique que los datos numéricos sean correctos!')
             return
         
-        conn = self.session['conn']
+        conn = self.conn
         crsr = conn.cursor()
 
         try:
@@ -440,8 +449,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         #### </tabla Productos_Utiliza_Inventario> ####
         
         qm.information(self, 'Éxito', self.MENSAJE_EXITO)
-        
-        self.first.update_display(rescan=True)
+        self.success.emit()
         self.close()
     
     def ejecutarConsulta(self, crsr: fdb.Cursor, params: tuple) -> int:
@@ -490,7 +498,7 @@ class App_EditarInventario(Base_EditarInventario):
         
         self.idx = idx  # id del elemento a editar
         
-        crsr = first.session['conn'].cursor()
+        crsr = self.conn.cursor()
         
         # datos de la primera página
         crsr.execute('''SELECT  nombre,
