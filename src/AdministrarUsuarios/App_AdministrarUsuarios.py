@@ -2,11 +2,11 @@ import fdb
 
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QFont, QPixmap, QRegExpValidator
-from PyQt5.QtCore import Qt, QRegExp
+from PyQt5.QtCore import Qt, QRegExp, pyqtSignal
 
 from mydecorators import con_fondo
 from myutils import formatDate, son_similar
-from mywidgets import LabelAdvertencia, WarningDialog
+from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
 
 
 #####################
@@ -22,18 +22,22 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         - personalización: foto de perfil y colores del UI
         - reportes de actividad de usuario: inicios de sesión, # de ventas realizadas, ganancias generadas
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent: VentanaPrincipal):
         from AdministrarUsuarios.Ui_AdministrarUsuarios import Ui_AdministrarUsuarios
         
         super().__init__()
 
         self.ui = Ui_AdministrarUsuarios()
         self.ui.setupUi(self)
-
-        self.session = parent.session  # conexión y usuario actual
-        self.filtro = 0
         
         LabelAdvertencia(self.ui.tabla_usuarios, '¡No se encontró ningún usuario!')
+
+        # otras variables importantes
+        self.filtro = 0
+        
+        # guardar conexión y usuario como atributos
+        self.conn = parent.conn
+        self.user = parent.user
 
         # añadir menú de opciones al botón para filtrar
         popup = QtWidgets.QMenu()
@@ -106,7 +110,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
             filtrar = 'WHERE permisos IS NOT NULL' \
                       if not self.ui.mostrarCheck.isChecked() else ''
 
-            crsr = self.session['conn'].cursor()
+            crsr = self.conn.cursor()
             crsr.execute(f'''
             SELECT  usuario,
                     nombre,
@@ -161,6 +165,8 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         Abre ventana para registrar un usuario.
         """
         self.new = App_RegistrarUsuario(self)
+        self.new.success.connect(
+            lambda: self.update_display(rescan=True))
 
     def editarUsuario(self, _):
         """
@@ -170,6 +176,8 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
 
         if selected:
             self.new = App_EditarUsuario(self, selected[0].text())
+            self.new.success.connect(
+                lambda: self.update_display(rescan=True))
 
     def quitarUsuario(self, _):
         """
@@ -192,7 +200,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         
         values = selected[0].text()
 
-        conn = self.session['conn']
+        conn = self.conn
         crsr = conn.cursor()
 
         # crea un cuadro que notifica el resultado de la operación
@@ -234,6 +242,8 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
     
+    success = pyqtSignal()
+    
     def __init__(self, first: App_AdministrarUsuarios):
         from AdministrarUsuarios.Ui_EditarUsuario import Ui_EditarUsuario
         
@@ -244,8 +254,9 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
-        self.first: App_AdministrarUsuarios = first 
-        self.session = first.session  # conexión a la base de datos y usuario actual
+        # guardar conexión y usuario como atributos
+        self.conn = first.conn
+        self.user = first.user
             
         # validador para nombre de usuario
         regexp = QRegExp(r'[a-zA-Z0-9_$]+')
@@ -299,7 +310,7 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
             permisos
         ))
         
-        conn = self.session['conn']
+        conn = self.conn
         crsr = conn.cursor()
 
         try:            
@@ -319,7 +330,7 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.information(
             self, 'Éxito', self.MENSAJE_EXITO)
         
-        self.first.update_display(rescan=True)
+        self.success.emit()
         self.close()
     
     def ejecutarConsulta(self, crsr: fdb.Cursor, params: tuple):
@@ -376,7 +387,7 @@ class App_EditarUsuario(Base_EditarUsuario):
     def __init__(self, first: App_AdministrarUsuarios, usuario: str):
         super().__init__(first)
 
-        crsr = self.session['conn'].cursor()
+        crsr = self.conn.cursor()
         
         crsr.execute('''
         SELECT  usuario,

@@ -99,7 +99,7 @@ def requiere_admin(func):
         
         parent = args[0]    # QMainWindow (módulo) actual
         
-        if parent.session['user'].administrador:
+        if parent.user.administrador:
             func(*args, **kwargs)
             return
         

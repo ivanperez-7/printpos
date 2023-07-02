@@ -4,12 +4,13 @@ import fdb
 
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QFont, QColor, QIcon, QRegExpValidator
-from PyQt5.QtCore import QDate, QDateTime, QModelIndex, QRegExp, Qt
+from PyQt5.QtCore import (QDate, QDateTime, QModelIndex,
+                          QRegExp, Qt, pyqtSignal)
 
 from mydecorators import con_fondo
 from myutils import (chunkify, clamp, enviarWhatsApp, formatDate, generarOrdenCompra, 
                      generarTicketCompra, ColorsEnum, son_similar)
-from mywidgets import LabelAdvertencia, WarningDialog
+from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
 
 
 #####################
@@ -22,7 +23,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
     TODO:
     -   ocultamiento de folios
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent: VentanaPrincipal):
         from AdministrarVentas.Ui_AdministrarVentas import Ui_AdministrarVentas
         
         super().__init__()
@@ -30,15 +31,19 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.ui = Ui_AdministrarVentas()
         self.ui.setupUi(self)
         
-        self.session = parent.session  # conexión a la base de datos y usuario actual
-        self.filtro = 0
-        
         LabelAdvertencia(self.ui.tabla_ventasDirectas, '¡No se encontró ninguna venta!')
         LabelAdvertencia(self.ui.tabla_pedidos, '¡No se encontró ningún pedido!')
         
+        # otras variables importantes
+        self.filtro = 0
+        
+        # guardar conexión y usuario como atributos
+        self.conn = parent.conn
+        self.user = parent.user
+        
         # fechas por defecto
         hoy = QDate.currentDate()
-        fechaMin, = self.session['conn'] \
+        fechaMin, = self.conn \
                     .cursor() \
                     .execute('SELECT MIN(fecha_hora_creacion) FROM Ventas;') \
                     .fetchone()
@@ -53,7 +58,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.ui.dateHasta.setMinimumDate(fechaMin)
         
         # deshabilitar botones (¿cuáles?) es caso de no ser administrador
-        if not self.session['user'].administrador:
+        if not self.user.administrador:
             self.ui.lbCancelar.hide()
 
         # añadir menú de opciones al botón para filtrar
@@ -220,8 +225,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         Lee de nuevo la tabla de clientes, si se desea.
         """
         if rescan:
-            user = self.session['user']
-            crsr = self.session['conn'].cursor()
+            user = self.user
+            crsr = self.conn.cursor()
             
             restrict = f'AND Usuarios.id_usuarios = {user.id}' \
                        if not user.administrador else ''
@@ -410,7 +415,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         # obtener número y nombre del cliente
         idVenta = self.tabla_actual.selectedItems()[0].text()
         
-        conn = self.session['conn']
+        conn = self.conn
         crsr = conn.cursor()
         
         crsr.execute('''
@@ -452,6 +457,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         
         if saldo > 0.:
             self.new = App_TerminarVenta(self, idVenta)
+            self.new.success.connect(
+                lambda: self.update_display(rescan=True))
             return
         
         ret = qm.question(self, 'Atención', 
@@ -461,7 +468,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         if ret != qm.Yes:
             return
         
-        conn = self.session['conn']
+        conn = self.conn
         crsr = conn.cursor()
 
         # crea un cuadro que notifica el resultado de la operación
@@ -506,7 +513,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         if ret != qm.Yes:
             return
         
-        conn = self.session['conn']
+        conn = self.conn
         crsr = conn.cursor()
 
         # crea un cuadro que notifica el resultado de la operación
@@ -549,7 +556,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                           f'con folio {idVenta}. ¿Desea continuar?', qm.Yes | qm.No)
 
         if ret == qm.Yes:
-            generarTicketCompra(self.session['conn'].cursor(), idVenta)
+            generarTicketCompra(self.conn.cursor(), idVenta)
 
     def imprimirOrden(self):
         """
@@ -569,7 +576,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                           f'con folio {idVenta}. ¿Desea continuar?', qm.Yes | qm.No)
 
         if ret == qm.Yes:
-            generarOrdenCompra(self.session['conn'].cursor(), idVenta)
+            generarOrdenCompra(self.conn.cursor(), idVenta)
 
     def goHome(self, _):
         """
@@ -590,7 +597,7 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
     """
     Backend para la ventana que muestra los detalles de una venta.
     """
-    def __init__(self, first, idx):
+    def __init__(self, first: App_AdministrarVentas, idx):
         from AdministrarVentas.Ui_DetallesVenta import Ui_DetallesVenta
         
         super().__init__(first)
@@ -598,10 +605,6 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
         self.ui = Ui_DetallesVenta()
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
-        
-        session = first.session # conexión a base de datos, y usuario
-        
-        self.first = first  # ventana de administrar ventas
 
         # dar formato a la tabla principal
         header = self.ui.tabla_productos.horizontalHeader()
@@ -614,7 +617,7 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
         
         # llenar de productos la tabla
-        crsr = session['conn'].cursor()
+        crsr = first.conn.cursor()
         
         crsr.execute('''
         SELECT  cantidad,
@@ -719,10 +722,10 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
 
 @con_fondo
 class App_TerminarVenta(QtWidgets.QMainWindow):
-    """
-    Backend para la ventana para terminar una venta sobre pedido.
-    """
-    def __init__(self, first, idx):        
+    """Backend para la ventana para terminar una venta sobre pedido."""
+    success = pyqtSignal()
+    
+    def __init__(self, first: App_AdministrarVentas, idx):        
         from AdministrarVentas.Ui_TerminarVenta import Ui_TerminarVenta
         
         super().__init__(first)
@@ -731,10 +734,11 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
         
-        session = first.session # conexión a base de datos, y usuario
-        
-        self.first = first  # ventana de administrar ventas
         self.id_ventas = idx
+        
+        # guardar conexión y usuario como atributos
+        self.conn = first.conn
+        self.user = first.user
 
         # dar formato a la tabla principal
         header = self.ui.tabla_productos.horizontalHeader()
@@ -747,7 +751,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
         
         # llenar de productos la tabla
-        crsr = session['conn'].cursor()
+        crsr = first.conn.cursor()
         
         crsr.execute('''
         SELECT  cantidad,
@@ -863,8 +867,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         if not pagoAceptado:
             return
         
-        session = self.first.session
-        conn = session['conn']
+        conn = self.conn
         crsr = conn.cursor()
         
         try:
@@ -882,7 +885,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
                 pago,
                 f'Pago de venta con folio {self.id_ventas}',
                 metodo_pago,
-                session['user'].id
+                self.user.id
             )]
             
             # registrar egreso (cambio) en caja
@@ -892,7 +895,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
                     -cambio,
                     f'Cambio de venta con folio {self.id_ventas}',
                     metodo_pago,
-                    session['user'].id
+                    self.user.id
                 ))
             
             crsr.executemany('''
@@ -910,9 +913,9 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
 
             WarningDialog(self, '¡Hubo un error!', str(err))
             return
-
-        qm = QtWidgets.QMessageBox
         
-        qm.information(self, 'Éxito', 'La venta ha sido marcada como terminada.')
-        self.first.update_display(rescan=True)
+        QtWidgets.QMessageBox.information(
+            self, 'Éxito', 'La venta ha sido marcada como terminada.')
+        
+        self.success.emit()
         self.close()

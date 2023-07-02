@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt, QDateTime, QDate
 
 from mydecorators import run_in_thread
 from myutils import enviarAImpresora, formatDate
-from mywidgets import LabelAdvertencia, WarningDialog
+from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
 
 
 #####################
@@ -19,22 +19,24 @@ class App_Caja(QtWidgets.QMainWindow):
     TODO:
     -   exportar corte a archivo
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent: VentanaPrincipal):
         from Caja.Ui_Caja import Ui_Caja
         
         super().__init__()
 
         self.ui = Ui_Caja()
         self.ui.setupUi(self)
-    
-        self.session = parent.session  # conexión y usuario actual
         
         LabelAdvertencia(self.ui.tabla_ingresos, '¡No se encontró ningún movimiento!')
         LabelAdvertencia(self.ui.tabla_egresos, '¡No se encontró ningún movimiento!')
+
+        # guardar conexión y usuario como atributos
+        self.conn = parent.conn
+        self.user = parent.user
         
         # fechas por defecto
         hoy = QDate.currentDate()
-        fechaMin, = self.session['conn'] \
+        fechaMin, = self.conn \
                     .cursor() \
                     .execute('SELECT MIN(fecha_hora) FROM Caja;') \
                     .fetchone()
@@ -113,7 +115,7 @@ class App_Caja(QtWidgets.QMainWindow):
         También lee de nuevo la tabla de usuarios, si se desea.
         """
         if rescan:
-            crsr = self.session['conn'].cursor()
+            crsr = self.conn.cursor()
             crsr.execute('''
             SELECT 	fecha_hora,
                     monto,
@@ -309,7 +311,7 @@ class App_Caja(QtWidgets.QMainWindow):
             Paragraph('Resumen de movimientos de caja', styles['Heading1']),
             Spacer(1, 6),
             
-            Paragraph('Realizado por: ' + self.session['user'].nombre, styles['Left']),
+            Paragraph('Realizado por: ' + self.user.nombre, styles['Left']),
             Paragraph(f'Fecha y hora: {formatDate(QDateTime.currentDateTime())}', styles['Left']),
             Spacer(1, 6),
             
@@ -363,14 +365,14 @@ class App_Caja(QtWidgets.QMainWindow):
             if cantidad <= 0. or not motivo:
                 return
             
-            conn = self.session['conn']
+            conn = self.conn
             crsr = conn.cursor()
             caja_db_parametros = (
                 QDateTime.currentDateTime().toSecsSinceEpoch(),
                 cantidad,
                 motivo,
                 metodo,
-                self.session['user'].id
+                self.user.id
             )
             
             try:
@@ -412,14 +414,14 @@ class App_Caja(QtWidgets.QMainWindow):
             if cantidad <= 0. or not motivo:
                 return
             
-            conn = self.session['conn']
+            conn = self.conn
             crsr = conn.cursor()
             caja_db_parametros = (
                 QDateTime.currentDateTime().toSecsSinceEpoch(),
                 -abs(cantidad),
                 motivo,
                 metodo,
-                self.session['user'].id
+                self.user.id
             )
             
             try:

@@ -1,47 +1,51 @@
 """
 Módulo con widgets personalizados varios.
 """
+import fdb
+
 from PyQt5.QtWidgets import (QMainWindow, QMessageBox, QWidget, QLabel,
                              QTextBrowser, QVBoxLayout, QTableWidget)
 from PyQt5.QtGui import (QPainter, QColor, QPolygon, 
                          QFont, QPainterPath, QIcon, QPixmap)
 from PyQt5.QtCore import Qt, QRectF, QPoint, QSize
 
+from Login.App_Login import Usuario
+
 
 class VentanaPrincipal(QMainWindow):
-    def __init__(self, session, modulo):
+    def __init__(self, conn: fdb.Connection, user: Usuario):
         super().__init__()
         
         self.resize(1540, 800)
         self.setWindowTitle('PrintPOS')
         
-        self.session = session
-        self.en_venta = False
+        self.conn = conn
+        self.user = user
+        self.en_venta = False   # bandera levantada al entrar en CrearVenta
         
         icon = QIcon()
         icon.addPixmap(QPixmap(':/img/icon.ico'), QIcon.Normal, QIcon.Off)
         self.setWindowIcon(icon)
         
-        central_widget = modulo(self)
+        from Home import App_ConsultarPrecios, App_Home
+        
+        central_widget = App_Home(self)
         self.setCentralWidget(central_widget)
-        
-        from Home import App_ConsultarPrecios
         self.consultarPrecios = App_ConsultarPrecios(self)
-        
         self.show()
     
     def closeEvent(self, event):
         """
         En eventos específicos, restringimos el cerrado del sistema.
         """
-        if self.en_venta and not self.session['user'].administrador:
+        if self.en_venta and not self.user.administrador:
             event.ignore()
         else:
             import shutil
             
             shutil.rmtree('./tmp/', ignore_errors=True)
             
-            self.session['conn'].close()
+            self.conn.close()
             self.consultarPrecios.close()
             event.accept()
 

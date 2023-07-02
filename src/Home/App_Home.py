@@ -1,33 +1,34 @@
-import fdb
-
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import (QDate, Qt, QPropertyAnimation,
                           QRect, QEasingCurve, pyqtSignal)
 
 from mydecorators import run_in_thread
+from mywidgets import VentanaPrincipal
 
 
 class App_Home(QtWidgets.QMainWindow):
     """
     Backend para la pantalla principal.
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent: VentanaPrincipal):
         from Home.Ui_Home import Ui_Home
         
         super().__init__()
 
         self.ui = Ui_Home()
         self.ui.setupUi(self)
-
-        session = parent.session
         
-        self.session = session # conexión y usuario actual
+        user = parent.user
+        
+        # guardar conexión y usuarios como atributos
+        self.conn = parent.conn
+        self.user = parent.user
         
         # foto de perfil del usuario
-        if session['user'].foto_perfil:
+        if user.foto_perfil:
             qp = QPixmap()
-            qp.loadFromData(session['user'].foto_perfil)
+            qp.loadFromData(user.foto_perfil)
         else:
             qp = QPixmap("resources/images/user.png")
             
@@ -39,8 +40,6 @@ class App_Home(QtWidgets.QMainWindow):
         self.agregarNotificaciones()
 
         # configurar texto dinámico
-        user = session['user']
-
         self.ui.fechaHoy.setDate(QDate.currentDate())
         self.ui.usuario.setText(user.nombre)
         self.ui.tipo_usuario.setText(user.permisos)
@@ -74,7 +73,7 @@ class App_Home(QtWidgets.QMainWindow):
         self.ui.btSalir.clicked.connect(self.exitApp)
 
         # deshabilitar funciones para usuarios normales
-        if not session['user'].administrador:
+        if not user.administrador:
             for w in [self.ui.frameInventario,
                       self.ui.frameCaja,
                       self.ui.frameUsuarios,
@@ -121,7 +120,7 @@ class App_Home(QtWidgets.QMainWindow):
         Llena la caja de notificaciones.
         """
         items = []
-        crsr = self.session['conn'].cursor()
+        crsr = self.conn.cursor()
 
         crsr.execute('''
         SELECT	COUNT(*)
@@ -129,7 +128,7 @@ class App_Home(QtWidgets.QMainWindow):
         WHERE	fecha_hora_creacion != fecha_hora_entrega
                 AND estado LIKE 'Recibido%'
                 AND id_usuarios = ?;
-        ''', (self.session['user'].id,))
+        ''', (self.user.id,))
         
         numPendientes, = crsr.fetchone()
 
@@ -193,7 +192,7 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
     """
     dataChanged = pyqtSignal()  # señal para actualizar tabla en hilo principal
     
-    def __init__(self, principal):
+    def __init__(self, principal: VentanaPrincipal):
         from Home.Ui_ConsultarPrecios import Ui_ConsultarPrecios
         
         super().__init__()
@@ -203,10 +202,12 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)
         
-        self.conn = principal.session['conn']
-        
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
         LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
+        
+        # guardar conexión y usuarios como atributos
+        self.conn = principal.conn
+        self.user = principal.user
 
         # dar formato a las tablas
         header = self.ui.tabla_seleccionar.horizontalHeader()
@@ -246,8 +247,7 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
             lambda: self.update_display(True))
         
         # evento de Firebird para escuchar cambios en productos
-        conn: fdb.Connection = principal.session['conn']
-        self.events = conn.event_conduit(['cambio_productos'])
+        self.events = principal.conn.event_conduit(['cambio_productos'])
         self.events.begin()
         
         self.showMinimized()
