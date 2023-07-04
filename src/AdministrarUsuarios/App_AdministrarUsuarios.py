@@ -216,7 +216,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
             conn.commit()
         except fdb.Error as err:
             conn.rollback()
-            WarningDialog(self, '¡Hubo un error!', str(err))
+            WarningDialog('¡Hubo un error!', str(err))
             return
         
         qm.information(self, 'Éxito', 'Se dieron de baja los usuarios seleccionados.')
@@ -314,7 +314,7 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
         crsr = conn.cursor()
 
         try:            
-            self.ejecutarConsulta(crsr, usuarios_db_parametros)
+            self.ejecutarOperacion(crsr, usuarios_db_parametros)
             
             if permisos == 'Administrador':
                 crsr.execute(f'GRANT ADMINISTRADOR, VENDEDOR TO {usuario} WITH ADMIN OPTION;')
@@ -324,7 +324,7 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
             conn.commit()
         except fdb.Error as err:
             conn.rollback()
-            WarningDialog(self, self.MENSAJE_ERROR, str(err))
+            WarningDialog(self.MENSAJE_ERROR, str(err))
             return
         
         QtWidgets.QMessageBox.information(
@@ -333,7 +333,7 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
         self.success.emit()
         self.close()
     
-    def ejecutarConsulta(self, crsr: fdb.Cursor, params: tuple):
+    def ejecutarOperacion(self, crsr: fdb.Cursor, params: tuple):
         """Método que insertará o modificará usuario."""
         pass
 
@@ -362,7 +362,7 @@ class App_RegistrarUsuario(Base_EditarUsuario):
         """Siempre hay cambio de contraseña."""
         return True
     
-    def ejecutarConsulta(self, crsr, params):
+    def ejecutarOperacion(self, crsr, params):
         crsr.execute('''
         INSERT INTO Usuarios (
             usuario, nombre, permisos
@@ -425,7 +425,7 @@ class App_EditarUsuario(Base_EditarUsuario):
         self.ui.groupPsswd.setEnabled(enable)
         self.ui.groupPsswdConf.setEnabled(enable)
     
-    def ejecutarConsulta(self, crsr, params):
+    def ejecutarOperacion(self, crsr, params):
         crsr.execute('''
         UPDATE  Usuarios
         SET     usuario = ?,

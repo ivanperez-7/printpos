@@ -231,7 +231,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         except fdb.Error as err:
             conn.rollback()
 
-            WarningDialog(self, '¡No se pudo eliminar el producto!', str(err))
+            WarningDialog('¡No se pudo eliminar el producto!', str(err))
             return
         
         qm.information(self, 'Éxito', 'Se eliminó el producto seleccionado.')
@@ -411,10 +411,10 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
         crsr = conn.cursor()
 
         try:
-            idx = self.ejecutarConsulta(crsr, productos_db_parametros)
+            idx = self.ejecutarOperacion(crsr, productos_db_parametros)
         except fdb.Error as err:
             conn.rollback()
-            WarningDialog(self, self.MENSAJE_ERROR, str(err))
+            WarningDialog(self.MENSAJE_ERROR, str(err))
             return
         #### </tabla Productos> ####
         
@@ -459,7 +459,7 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
             ''', PUI_db_parametros)
         except fdb.Error as err:
             conn.rollback()
-            WarningDialog(self, self.MENSAJE_ERROR, str(err))
+            WarningDialog(self.MENSAJE_ERROR, str(err))
             return
         #### </tabla Productos_Utiliza_Inventario> ####
         
@@ -520,7 +520,7 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
             conn.commit()
         except fdb.Error as err:
             conn.rollback()
-            WarningDialog(self, self.MENSAJE_ERROR, str(err))
+            WarningDialog(self.MENSAJE_ERROR, str(err))
             return
         #### </tabla Productos_Intervalos> ####
         
@@ -528,7 +528,7 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
         self.success.emit()
         self.close()
     
-    def ejecutarConsulta(self, crsr: fdb.Cursor, params: tuple) -> int:
+    def ejecutarOperacion(self, crsr: fdb.Cursor, params: tuple) -> int:
         """Regresa el índice del producto insertado o editado."""
         pass
 
@@ -545,7 +545,7 @@ class App_RegistrarProducto(Base_EditarProducto):
         self.ui.btAceptar.setText(' Registrar producto')
         self.ui.btAceptar.setIcon(QIcon(QPixmap(':/img/resources/images/plus.png')))
     
-    def ejecutarConsulta(self, crsr, params):
+    def ejecutarOperacion(self, crsr, params):
         crsr.execute('''
         INSERT INTO Productos (
             codigo, descripcion, abreviado, categoria
@@ -626,7 +626,7 @@ class App_EditarProducto(Base_EditarProducto):
         
         self.idx = idx  # id del elemento a editar
     
-    def ejecutarConsulta(self, crsr, params):
+    def ejecutarOperacion(self, crsr, params):
         crsr.execute('''
         UPDATE  Productos
         SET     codigo = ?,

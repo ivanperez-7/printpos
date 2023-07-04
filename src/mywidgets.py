@@ -51,9 +51,7 @@ class VentanaPrincipal(QMainWindow):
 
 
 def DimBackground(window: QMainWindow):
-    """
-    Crea un widget que ocupa la ventana entera, para poner énfasis en las ventanas nuevas.
-    """
+    """ Crea un widget que ocupa la ventana entera, para poner énfasis en las ventanas nuevas. """
     bg = QWidget(parent=window)
     bg.setFixedSize(window.size())
     bg.setStyleSheet('background: rgba(64, 64, 64, 64);')
@@ -63,10 +61,9 @@ def DimBackground(window: QMainWindow):
 
 
 def LabelAdvertencia(parent: QTableWidget, msj: str):
-    """
-    Crea un label de advertencia para las tablas, ya que en Qt Designer no se puede.
-    Añade método `resizeEvent` al padre para posicionar el label en el centro.
-    Añade método al padre para actualizar el texto, que verifica si hay items o no en la tabla.
+    """ Crea un label de advertencia para las tablas, ya que en Qt Designer no se puede.
+        Añade método `resizeEvent` al padre para posicionar el label en el centro.
+        Añade método al padre para actualizar el texto, que verifica si hay items o no en la tabla.
     """
     w,h = 282, 52   # tamaño del QLabel, hardcoded
     label = QLabel(parent)
@@ -176,11 +173,9 @@ class SpeechBubble(QWidget):
 
 
 class WarningDialog(QMessageBox):
-    """
-    Crea un widget simple con un ícono de advertencia.
-    """
-    def __init__(self, parent, body, error):
-        super().__init__(parent)
+    """ Crea un widget simple con un ícono de advertencia. """
+    def __init__(self, body: str, error: str):
+        super().__init__()
 
         icon = QIcon()
         icon.addPixmap(QPixmap(':/img/icon.ico'), QIcon.Normal, QIcon.Off)
