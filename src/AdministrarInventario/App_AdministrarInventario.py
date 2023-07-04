@@ -17,7 +17,7 @@ class ManejadorInventario(DatabaseManager):
     def __init__(self, conn: fdb.Connection, error_txt: str = ''):
         super().__init__(conn, error_txt)
     
-    def tablaPrincipal(self):
+    def obtenerTablaPrincipal(self):
         """ Sentencia para alimentar tabla principal de elementos. """
         return self.fetchall('''
             SELECT  id_inventario,
@@ -107,8 +107,7 @@ class ManejadorInventario(DatabaseManager):
     def insertarProdUtilizaInv(self, id_inventario: int, params: list[tuple]):
         """ Inserta elemento en la tabla productos_utiliza_inventario.
             Hace commit, al ser parte final del proceso de registro/modificación. """
-        params = [(id_inventario, id_productos, cantidad)
-                  for (id_productos, cantidad) in params]
+        params = [(id_inventario,) + param for param in params]
         
         return self.executemany('''
             INSERT INTO productos_utiliza_inventario (
@@ -172,7 +171,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         """
         if rescan:
             manejador = ManejadorInventario(self.conn)
-            self.all = manejador.tablaPrincipal()
+            self.all = manejador.obtenerTablaPrincipal()
             self.ui.lbContador.setText(f'{len(self.all)} elementos en la base de datos.')
         
         tabla = self.ui.tabla_inventario
@@ -257,10 +256,8 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
                 lambda: self.update_display(rescan=True))
     
     def quitarInventario(self, _):
-        """
-        Elimina un material de la base de datos.
-        Primero se verifica si hay productos que lo utilizan.
-        """
+        """ Elimina un material de la base de datos.
+            Primero se verifica si hay productos que lo utilizan. """
         try:
             id_inventario = self.ui.tabla_inventario.selectedItems()[0].text()
         except IndexError:
@@ -344,10 +341,10 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         self.ui.lbRegresar.mousePressEvent = self.closeEvent
 
         self.show()
-    
-    #######################
-    # WIDGETS PARA LISTAS #
-    #######################
+     
+    ####################
+    # FUNCIONES ÚTILES #
+    ####################
     def agregarProductoALista(self, codigo: str = '', cantidad: int = 1):
         # crear widget y agregar a la lista
         nuevo = WidgetProducto()
@@ -373,11 +370,9 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         nuevo.txtProductoUtiliza.setText(f'{cantidad}')
         
         self.ui.layoutScroll.addWidget(nuevo)
-     
-    ####################
-    # FUNCIONES ÚTILES #
-    ####################
+        
     def obtenerParametrosInventario(self):
+        """ Parámetros para la tabla inventario. """
         try:
             if not (tamanoLote := float(self.ui.txtTamano.text())):
                 return None
@@ -394,6 +389,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
             return None
     
     def obtenerParametrosProdUtilizaInv(self):
+        """ Parámetros para la tabla productos_utiliza_inventario. """
         productos: list[WidgetProducto] = self.ui.scrollAreaLista.children()[1:]
         
         try:
@@ -423,6 +419,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         """Función donde se registrará o actualizará elemento del inventario."""
         qm = QtWidgets.QMessageBox
         
+        #### obtención de parámetros ####
         inventario_db_parametros = self.obtenerParametrosInventario()
         PUI_db_parametros = self.obtenerParametrosProdUtilizaInv()
         
@@ -437,6 +434,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         idx, = result
         manejador = ManejadorInventario(self.conn, self.MENSAJE_ERROR)
         
+        # transacción principal, se checa si cada operación fue exitosa
         if not manejador.eliminarProdUtilizaInv(idx):
             return
         if not manejador.insertarProdUtilizaInv(idx, PUI_db_parametros):

@@ -17,7 +17,7 @@ class ManejadorClientes(DatabaseManager):
     def __init__(self, conn: fdb.Connection, error_txt: str = ''):
         super().__init__(conn, error_txt)
     
-    def tablaPrincipal(self):
+    def obtenerTablaPrincipal(self):
         """ Sentencia para alimentar la tabla principal de clientes. """
         return self.fetchall('''
             SELECT  C.id_clientes,
@@ -174,7 +174,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         """
         if rescan:
             manejador = ManejadorClientes(self.conn)
-            self.all = manejador.tablaPrincipal()
+            self.all = manejador.obtenerTablaPrincipal()
             self.ui.lbContador.setText(f'{len(self.all)} clientes en la base de datos.')
 
         tabla = self.ui.tabla_clientes

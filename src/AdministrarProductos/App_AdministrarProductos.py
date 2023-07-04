@@ -1,18 +1,212 @@
 import fdb
 
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QFont, QColor, QPixmap, QCursor, QIcon, QRegExpValidator
+from PyQt5.QtGui import QFont, QColor, QPixmap, QIcon, QRegExpValidator
 from PyQt5.QtCore import Qt, QRegExp, pyqtSignal
 
 from mydecorators import con_fondo
-from myutils import ColorsEnum, son_similar
-from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
+from myutils import ColorsEnum, DatabaseManager, son_similar
+from mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
+###########################################
+# CLASE PARA MANEJAR OPERACIONES EN LA DB #
+###########################################
+class ManejadorProductos(DatabaseManager):
+    """ Clase para manejar sentencias hacia/desde la tabla Inventario. """
+    def __init__(self, conn: fdb.Connection, error_txt: str = ''):
+        super().__init__(conn, error_txt)
+    
+    def obtenerTablaPrincipal(self):
+        """ Sentencia para alimentar tabla principal de productos. """
+        return self.fetchall('''
+            WITH Costo_Produccion (id_productos, costo) AS (
+            SELECT	P.id_productos,
+                    SUM(
+                        COALESCE(PUI.utiliza_inventario * I.precio_unidad, 
+                                0.0)
+                    ) AS costo
+            FROM  	Productos AS P
+                    LEFT JOIN Productos_Utiliza_Inventario AS PUI
+                           ON P.id_productos = PUI.id_productos
+                    LEFT JOIN Inventario AS I
+                           ON PUI.id_inventario = I.id_inventario
+            GROUP	BY P.id_productos
+            ORDER	BY P.id_productos ASC
+            )
+
+            SELECT  P.id_productos,
+                    P.codigo,
+                    P.descripcion 
+                        || IIF(desde > 1, ', desde ' || ROUND(desde, 1) || ' unidades ', '')
+                        || IIF(P_Inv.duplex, ' [PRECIO DUPLEX]', ''),
+                    P.abreviado,
+                    COALESCE(P_gran.precio_m2, P_Inv.precio_con_iva) AS precio_con_iva, 
+                    COALESCE(P_gran.precio_m2, P_Inv.precio_con_iva) / 1.16 AS precio_sin_iva,
+                    C_Prod.costo,
+                    COALESCE(P_gran.precio_m2, P_Inv.precio_con_iva) - C_Prod.costo AS utilidad
+            FROM    Productos AS P
+                    LEFT JOIN Productos_Intervalos AS P_Inv
+                           ON P_Inv.id_productos = P.id_productos
+                    LEFT JOIN Productos_Gran_Formato AS P_gran
+                           ON P.id_productos = P_gran.id_productos
+                    LEFT JOIN Costo_Produccion AS C_Prod
+                           ON P.id_productos = C_Prod.id_productos
+            ORDER   BY P.id_productos, desde ASC;
+        ''')
+    
+    def obtenerProducto(self, id_productos: int):
+        """ Obtener todas las columnas de un producto. """
+        return self.fetchone('''
+            SELECT  * 
+            FROM    Productos 
+            WHERE   id_productos = ?;
+        ''', (id_productos,))
+        
+    def obtenerRelacionVentas(self, id_productos: int):
+        """ Obtener relación con ventas en la tabla ventas_detallado. """
+        return self.fetchall('''
+            SELECT	id_productos
+            FROM	Ventas_Detallado
+            WHERE	id_productos = ?;
+        ''', (id_productos,))
+    
+    def obtenerTablaPrecios(self, id_productos: int):
+        """ Obtener tabla de precios, asumiendo producto simple. """
+        return self.fetchall('''
+            SELECT	desde,
+                    precio_con_iva,
+                    duplex
+            FROM	Productos_Intervalos AS P_Inv
+            WHERE 	id_productos = ?
+            ORDER   BY desde ASC, duplex ASC;
+        ''', (id_productos,))
+    
+    def obtenerGranFormato(self, id_productos: int):
+        """ Obtener datos de un producto categoría gran formato. """
+        return self.fetchone('''
+            SELECT  min_ancho,
+                    min_alto,
+                    precio_m2
+            FROM    Productos_Gran_Formato
+            WHERE 	id_productos = ?;
+        ''', (id_productos,))
+    
+    def obtenerUtilizaInventario(self, id_productos: int):
+        """ Obtener relación del producto con elementos del inventario. """
+        return self.fetchall('''
+            SELECT	nombre,
+                    utiliza_inventario
+            FROM	Productos_Utiliza_Inventario AS PUI
+                    LEFT JOIN Inventario AS I
+                            ON PUI.id_inventario = I.id_inventario
+            WHERE 	id_productos = ?;
+        ''', (id_productos,))
+    
+    def insertarProducto(self, params: tuple):
+        """ Intenta insertar un producto y regresar tupla
+            con el índice recién insertado. No hace commit. """
+        return self.fetchone('''
+            INSERT INTO Productos (
+                codigo, descripcion, abreviado, categoria
+            )
+            VALUES
+                (?,?,?,?)
+            RETURNING
+                id_productos;
+        ''', params)
+    
+    def editarProducto(self, id_productos: int, params: tuple):
+        """ Intenta editar un productos y regresar tupla
+            con el índice recién modificado. No hace commit. """
+        return self.fetchone('''
+            UPDATE  Productos
+            SET     codigo = ?,
+                    descripcion = ?,
+                    abreviado = ?,
+                    categoria = ?
+            WHERE   id_productos = ?
+            RETURNING id_productos;
+        ''', (*params, id_productos))
+    
+    def eliminarProducto(self, id_productos: int):
+        """ Elimina el producto y sus relaciones con las tablas productos_intervalos,
+            productos_gran_formato, productos_utiliza_inventario y productos.
+            Hace commit automáticamente. """
+        param = (id_productos,)
+        query = lambda tabla: f'DELETE FROM {tabla} WHERE id_productos = ?;'
+        
+        # primero borrar en tres tablas, antes de hacer commit
+        if all(self.execute(query(tabla), param) for tabla in [
+            'Productos_Utiliza_Inventario',
+            'Productos_Gran_Formato',
+            'Productos_Intervalos']):
+            return self.execute(query('Productos'), param, commit=True)
+        else:
+            return False
+    
+    def eliminarProdUtilizaInv(self, id_productos: int):
+        """ Elimina producto de la tabla productos_utiliza_inventario.
+            No hace commit, al ser parte inicial del proceso de registro/modificación. """
+        return self.execute('''
+            DELETE  FROM productos_utiliza_inventario
+            WHERE   id_productos = ?;
+        ''', (id_productos,), commit=False)
+    
+    def insertarProdUtilizaInv(self, id_productos: int, params: list[tuple]):
+        """ Inserta producto en la tabla productos_utiliza_inventario.
+            No hace commit, al ser parte del proceso de registro/modificación. """
+        params = [(id_productos,) + param for param in params]
+        
+        return self.executemany('''
+            INSERT INTO productos_utiliza_inventario (
+                id_productos, id_inventario, utiliza_inventario
+            )
+            VALUES
+                (?,?,?);
+        ''', params, commit=False)
+    
+    def eliminarPrecios(self, id_productos: int):
+        """ Eliminar todos los precios del producto, en las tablas 
+            productos_intervalos y productos_gran_formato. 
+            No hace commit, al ser parte del proceso de registro/modificación. """
+        param = (id_productos,)
+        query = lambda tabla: f'DELETE FROM {tabla} WHERE id_productos = ?;'
+        
+        return all(self.execute(query(tabla), param) for tabla in [
+            'Productos_Intervalos',
+            'Productos_Gran_Formato'])
+    
+    def insertarProductosIntervalos(self, id_productos: int, params: list[tuple]):
+        """ Inserta precios para el producto en la tabla productos_intervalos.
+            Hace commit, al ser parte final del proceso de registro/modificación."""
+        params = [(id_productos,) + param for param in params]
+        
+        return self.executemany('''
+            INSERT INTO Productos_Intervalos (
+                id_productos, desde, precio_con_iva, duplex
+            )
+            VALUES
+                (?,?,?,?);
+        ''', params, commit=True)
+    
+    def insertarProductoGranFormato(self, id_productos: int, params: tuple):
+        """ Inserta precios para el producto en la tabla productos_gran_formato.
+            Hace commit, al ser parte final del proceso de registro/modificación."""
+        return self.execute('''
+            INSERT INTO Productos_Gran_Formato (
+                id_productos, min_ancho, min_alto, precio_m2
+            )
+            VALUES
+                (?,?,?,?);
+        ''', (id_productos,) + params, commit=True)
+
+
+#####################
+# VENTANA PRINCIPAL #
+#####################
 class App_AdministrarProductos(QtWidgets.QMainWindow):
-    """
-    Backend para la ventana de administración de productos.
-    """
+    """ Backend para la ventana de administración de productos. """
     def __init__(self, parent: VentanaPrincipal):
         from AdministrarProductos.Ui_AdministrarProductos import Ui_AdministrarProductos
         
@@ -85,45 +279,8 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         También lee de nuevo la tabla de productos, si se desea.
         """
         if rescan:
-            crsr = self.conn.cursor()
-            
-            crsr.execute('''
-            WITH Costo_Produccion (id_productos, costo) AS (
-            SELECT	P.id_productos,
-                    SUM(
-                        COALESCE(PUI.utiliza_inventario * I.precio_unidad, 
-                                0.0)
-                    ) AS costo
-            FROM  	Productos AS P
-                    LEFT JOIN Productos_Utiliza_Inventario AS PUI
-                           ON P.id_productos = PUI.id_productos
-                    LEFT JOIN Inventario AS I
-                           ON PUI.id_inventario = I.id_inventario
-            GROUP	BY P.id_productos
-            ORDER	BY P.id_productos ASC
-            )
-
-            SELECT  P.id_productos,
-                    P.codigo,
-                    P.descripcion 
-                        || IIF(desde > 1, ', desde ' || ROUND(desde, 1) || ' unidades ', '')
-                        || IIF(P_Inv.duplex, ' [PRECIO DUPLEX]', ''),
-                    P.abreviado,
-                    COALESCE(P_gran.precio_m2, P_Inv.precio_con_iva) AS precio_con_iva, 
-                    COALESCE(P_gran.precio_m2, P_Inv.precio_con_iva) / 1.16 AS precio_sin_iva,
-                    C_Prod.costo,
-                    COALESCE(P_gran.precio_m2, P_Inv.precio_con_iva) - C_Prod.costo AS utilidad
-            FROM    Productos AS P
-                    LEFT JOIN Productos_Intervalos AS P_Inv
-                           ON P_Inv.id_productos = P.id_productos
-                    LEFT JOIN Productos_Gran_Formato AS P_gran
-                           ON P.id_productos = P_gran.id_productos
-                    LEFT JOIN Costo_Produccion AS C_Prod
-                           ON P.id_productos = C_Prod.id_productos
-            ORDER   BY P.id_productos, desde ASC;
-            ''')
-
-            self.all = crsr.fetchall()
+            manejador = ManejadorProductos(self.conn)
+            self.all = manejador.obtenerTablaPrincipal()
             self.ui.lbContador.setText(f'{len(self.all)} productos en la base de datos.')
         
         tabla = self.ui.tabla_productos
@@ -183,30 +340,19 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
                 lambda: self.update_display(rescan=True))
     
     def quitarProducto(self, _):
-        """
-        Elimina un producto de la base de datos.
-        Primero se verifica si hay elementos que este utilizan.
-        """
+        """ Elimina un producto de la base de datos.
+            Primero se verifica si hay elementos que este utilizan. """
         try:
-            idProducto = self.ui.tabla_productos.selectedItems()[0].text()
+            id_productos = self.ui.tabla_productos.selectedItems()[0].text()
         except IndexError:
             return
         
         qm = QtWidgets.QMessageBox
         
-        conn = self.conn
-        crsr = conn.cursor()
+        manejador = ManejadorProductos(self.conn, '¡No se pudo eliminar el producto!')
+        result = manejador.obtenerRelacionVentas(id_productos)
         
-        crsr.execute('''
-        SELECT	COUNT(id_productos)
-        FROM	Ventas_Detallado
-        WHERE	id_productos = ?;
-        ''', (idProducto,))
-        
-        # numero de ventas que contienen este producto
-        count, = crsr.fetchone()
-        
-        if count > 0:
+        if result:
             qm.warning(self, 'Atención', 
                        'No se puede eliminar este producto debido '
                        'a que hay ventas que lo incluyen.')
@@ -221,17 +367,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         if ret != qm.Yes:
             return
         
-        try:
-            crsr.execute('DELETE FROM Productos_Utiliza_Inventario WHERE id_productos = ?;', (idProducto,))
-            crsr.execute('DELETE FROM Productos_Gran_Formato WHERE id_productos = ?;', (idProducto,))
-            crsr.execute('DELETE FROM Productos_Intervalos WHERE id_productos = ?;', (idProducto,))
-            crsr.execute('DELETE FROM Productos WHERE id_productos = ?;', (idProducto,))
-            
-            conn.commit()
-        except fdb.Error as err:
-            conn.rollback()
-
-            WarningDialog('¡No se pudo eliminar el producto!', str(err))
+        if not manejador.eliminarProducto(id_productos):
             return
         
         qm.information(self, 'Éxito', 'Se eliminó el producto seleccionado.')
@@ -290,54 +426,16 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
 
         self.show()
     
-    ##################################
-    # WIDGET PARA LISTA DE PRODUCTOS #
-    ##################################
-    def widgetElemento(self):
-        from PyQt5 import QtCore
-        
-        frameProducto = QtWidgets.QFrame()
-        frameProducto.resize(390, 70)
-        frameProducto.setMinimumSize(390, 70)
-        boxProducto = QtWidgets.QComboBox(frameProducto)
-        boxProducto.setGeometry(QtCore.QRect(35, 10, 271, 22))
-        boxProducto.setMinimumSize(QtCore.QSize(271, 22))
-        font = QFont()
-        font.setFamily("Arial")
-        font.setPointSize(11)
-        boxProducto.setFont(font)
-        lbContador = QtWidgets.QLabel(frameProducto)
-        lbContador.setGeometry(QtCore.QRect(5, 10, 21, 21))
-        lbContador.setMinimumSize(QtCore.QSize(21, 21))
-        lbContador.setPixmap(QPixmap(":/img/resources/images/inventory.png"))
-        lbContador.setScaledContents(True)
-        lbEliminar = QtWidgets.QLabel(frameProducto)
-        lbEliminar.setGeometry(QtCore.QRect(343, 12, 35, 35))
-        lbEliminar.setMinimumSize(QtCore.QSize(35, 35))
-        lbEliminar.setPixmap(QPixmap(":/img/resources/images/cancel.png"))
-        lbEliminar.setScaledContents(True)
-        lbEliminar.setCursor(QCursor(Qt.PointingHandCursor))
-        label = QtWidgets.QLabel(frameProducto)
-        label.setGeometry(QtCore.QRect(35, 40, 271, 21))
-        label.setMinimumSize(QtCore.QSize(271, 21))
-        label.setFont(font)
-        label.setText("se usa            unidades de este elemento.")
-        txtProductoUtiliza = QtWidgets.QLineEdit(frameProducto)
-        txtProductoUtiliza.setGeometry(QtCore.QRect(84, 40, 39, 20))
-        txtProductoUtiliza.setMinimumSize(QtCore.QSize(39, 20))
-        txtProductoUtiliza.setFont(font)
-        QtCore.QMetaObject.connectSlotsByName(frameProducto)
-        
-        return frameProducto
-    
     ####################
     # FUNCIONES ÚTILES #
     ####################
+    @property
+    def categoriaActual(self):
+        return ['S', 'G'][self.ui.tabWidget.currentIndex()]
+    
     def agregarIntervalo(self, row: int, desde: float = 0., 
                          precio: float = 0., duplex: bool = False):
-        """
-        Agrega entrada a la tabla de precios.
-        """ 
+        """ Agrega entrada a la tabla de precios. """ 
         self.ui.tabla_precios.insertRow(row)
         
         cell = QtWidgets.QTableWidgetItem(f'{desde:,.2f}' if desde else '')
@@ -348,14 +446,7 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
         cell.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
         self.ui.tabla_precios.setItem(row, 1, cell)
         
-        widget = QtWidgets.QWidget()
-        widget.setMinimumHeight(32)
-        layout = QtWidgets.QHBoxLayout(widget)
-        layout.setAlignment(Qt.AlignCenter)
-        checkbox = QtWidgets.QCheckBox(widget)
-        checkbox.setChecked(duplex)
-        layout.addWidget(checkbox)
-        self.ui.tabla_precios.setCellWidget(row, 2, widget)
+        self.ui.tabla_precios.setCellWidget(row, 2, ItemAuxiliar(duplex))
     
     def quitarIntervalo(self, _):
         tabla = self.ui.tabla_precios
@@ -368,168 +459,151 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
     
     def agregarProductoALista(self, nombre: str = '', cantidad: int = 1):
         # crear widget y agregar a la lista
-        nuevo = self.widgetElemento()
-        box, _, lbCancelar, _, line = nuevo.children()
+        nuevo = WidgetElemento()
         
         # evento para eliminar la entrada
-        lbCancelar.mousePressEvent = lambda _: self.ui.layoutScroll.removeWidget(nuevo) \
-                                               or nuevo.setParent(None)
+        nuevo.lbEliminar.mousePressEvent = \
+            lambda _: self.ui.layoutScroll.removeWidget(nuevo) \
+                      or nuevo.setParent(None)
         
         # validador para datos numéricos
         regexp_numero = QRegExp(r'\d*\.?\d*')
         validador = QRegExpValidator(regexp_numero)
-        line.setValidator(validador)
+        nuevo.txtProductoUtiliza.setValidator(validador)
         
-        # llenar caja de opciones con productos
+        # llenar caja de opciones con elementos del inventario
         crsr = self.conn.cursor()
         
         crsr.execute('SELECT nombre FROM Inventario;')
-        box.addItems([nombre for nombre, in crsr])
+        nuevo.boxElemento.addItems([nombre for nombre, in crsr])
         
         # modificar valores a los de la base de datos
-        box.setCurrentText(nombre)
-        line.setText(f'{cantidad}')
+        nuevo.boxElemento.setCurrentText(nombre)
+        nuevo.txtProductoUtiliza.setText(f'{cantidad}')
         
         self.ui.layoutScroll.addWidget(nuevo)
     
-    def done(self):
-        """
-        Actualiza la base de datos y sale de la ventana.
-        """
-        qm = QtWidgets.QMessageBox
-        categoria = ['S','G'][self.ui.tabWidget.currentIndex()]
-        
-        #### <tabla Productos> ####
-        productos_db_parametros = (
-            self.ui.txtCodigo.text().strip() or None,
-            self.ui.txtDescripcion.toPlainText().strip() or None,
-            self.ui.txtNombre.text() or None,
-            categoria
-        )
-
-        conn = self.conn
-        crsr = conn.cursor()
-
-        try:
-            idx = self.ejecutarOperacion(crsr, productos_db_parametros)
-        except fdb.Error as err:
-            conn.rollback()
-            WarningDialog(self.MENSAJE_ERROR, str(err))
-            return
-        #### </tabla Productos> ####
-        
-        #### <tabla Productos_Utiliza_Inventario> ####
-        elementos = self.ui.scrollAreaLista.children()[1:]  # QFrames
-        elementos = [elem.children() for elem in elementos] # hijos de cada QFrame
+    def obtenerParametrosProductos(self):
+        """ Parámetros para la tabla productos. """
+        return tuple(v or None for v in (
+            self.ui.txtCodigo.text().strip(),
+            self.ui.txtDescripcion.toPlainText().strip(),
+            self.ui.txtNombre.text(),
+            self.categoriaActual))
+    
+    def obtenerParametrosProdUtilizaInv(self):
+        """ Parámetros para la tabla productos_utiliza_inventario. """
+        elementos: list[WidgetElemento] = self.ui.scrollAreaLista.children()[1:]
         
         try:
-            elementos = [(box.currentText(), float(line.text()))    # codigo y cantidad
-                         for (box, _, _, _, line) in elementos]
+            elementos = [(e.elementoSeleccionado, float(e.cantidadElemento))
+                         for e in elementos]
         except ValueError:
-            conn.rollback()
-            qm.warning(self, 'Atención', '¡Verifique que los datos en la lista de materia prima sean correctos!')
-            return
+            QtWidgets.QMessageBox.warning(
+                self, 'Atención', 
+                '¡Verifique que los datos numéricos sean correctos!')
+            return None
         
         PUI_db_parametros = []
+        manejador = DatabaseManager(self.conn, '')
             
         for nombre, cantidad in elementos:
             if not nombre or cantidad < 1:
-                conn.rollback()
-                return 
+                return None
             
-            crsr.execute('SELECT id_inventario FROM Inventario WHERE nombre = ?;', (nombre,))
-            id_inventario, = crsr.fetchone()
+            id_inventario, = manejador.fetchone(
+                'SELECT id_inventario FROM Inventario WHERE nombre = ?;', (nombre,))
             
-            PUI_db_parametros.append((idx, id_inventario, cantidad))
-
-        # primero borrar las entradas existentes
-        crsr.execute('''
-        DELETE  FROM Productos_Utiliza_Inventario
-        WHERE   id_productos = ?;
-        ''', (idx,))
+            PUI_db_parametros.append((id_inventario, cantidad))
         
-        try:    
-            # nuevas entradas, introducidas por el usuario
-            crsr.executemany('''
-            INSERT INTO Productos_Utiliza_Inventario (
-                id_productos, id_inventario, utiliza_inventario
-            )
-            VALUES
-                (?,?,?);
-            ''', PUI_db_parametros)
-        except fdb.Error as err:
-            conn.rollback()
-            WarningDialog(self.MENSAJE_ERROR, str(err))
-            return
-        #### </tabla Productos_Utiliza_Inventario> ####
+        return PUI_db_parametros
+    
+    def obtenerParametrosProdIntervalos(self):
+        """ Parámetros para la tabla productos_intervalos. """
+        tabla = self.ui.tabla_precios
+        Prod_db_parametros = []
         
-        #### <tabla Productos_Intervalos> ####
-        crsr.execute('DELETE FROM Productos_Intervalos WHERE id_productos = ?;', (idx,))
-        crsr.execute('DELETE FROM Productos_Gran_Formato WHERE id_productos = ?;', (idx,))
+        if not self.ui.tabla_precios.rowCount():
+            QtWidgets.QMessageBox.warning(
+                self, 'Atención', 
+                '¡La tabla de precios se encuentra vacía!')
+            return None
         
-        if categoria == 'S':
-            tabla = self.ui.tabla_precios
-            Prod_db_parametros = []
+        for row in range(tabla.rowCount()):
+            desde = tabla.item(row, 0).text().replace(',', '')
+            precio = tabla.item(row, 1).text().replace(',', '')
+            duplex: ItemAuxiliar = tabla.cellWidget(row, 2)
             
-            if self.ui.tabla_precios.rowCount() == 0:
-                conn.rollback()
-                qm.warning(self, 'Atención', '¡Tabla de precios vacía!')
-                return
-            
-            for row in range(tabla.rowCount()):
-                desde = tabla.item(row, 0).text().replace(',', '')
-                precio = tabla.item(row, 1).text().replace(',', '')
-                duplex = tabla.cellWidget(row, 2).children()[1].isChecked()
-                
-                try:
-                    Prod_db_parametros.append((idx, float(desde), float(precio), duplex))
-                except ValueError:
-                    conn.rollback()
-                    qm.warning(self, 'Atención', '¡Verifique que los datos en la tabla de precio sean correctos!')
-                    return
-            
-            query = '''
-            INSERT INTO Productos_Intervalos (
-                id_productos, desde, precio_con_iva, duplex
-            )
-            VALUES
-                (?,?,?,?);
-            '''
-        elif categoria == 'G':
             try:
-                Prod_db_parametros = [(
-                    idx,
-                    float(self.ui.txtAnchoMin.text()),
-                    float(self.ui.txtAltoMin.text()),
-                    float(self.ui.txtPrecio.text()))]
+                Prod_db_parametros.append((float(desde), float(precio), duplex.isChecked))
             except ValueError:
-                conn.rollback()
-                qm.warning(self, 'Atención', '¡Datos incorrectos!')
-                return
+                QtWidgets.QMessageBox.warning(
+                    self, 'Atención', 
+                    '¡Verifique que los datos numéricos sean correctos!')
+                return None
             
-            query = '''
-            INSERT INTO Productos_Gran_Formato (
-                id_productos, min_ancho, min_alto, precio_m2
-            )
-            VALUES
-                (?,?,?,?);
-            '''
-        
+        return Prod_db_parametros
+    
+    def obtenerParametrosProdGranFormato(self):
+        """ Parámetros para la tabla productos_gran_formato. """
         try:
-            crsr.executemany(query, Prod_db_parametros)
-            conn.commit()
-        except fdb.Error as err:
-            conn.rollback()
-            WarningDialog(self.MENSAJE_ERROR, str(err))
+            return (float(self.ui.txtAnchoMin.text()),
+                    float(self.ui.txtAltoMin.text()),
+                    float(self.ui.txtPrecio.text()))
+        except ValueError:
+            QtWidgets.QMessageBox.warning(
+                self, 'Atención', 
+                '¡Verifique que los datos numéricos sean correctos!')
+            return None
+    
+    def done(self):
+        """Función donde se registrará o actualizará producto."""
+        qm = QtWidgets.QMessageBox
+        
+        #### obtención de parámetros ####
+        productos_db_parametros = self.obtenerParametrosProductos()
+        PUI_db_parametros = self.obtenerParametrosProdUtilizaInv()
+        
+        if self.categoriaActual == 'S':
+            precios_db_parametros = self.obtenerParametrosProdIntervalos()
+        else:
+            precios_db_parametros = self.obtenerParametrosProdGranFormato()
+            
+        if any(params is None for params in (productos_db_parametros,
+                                             PUI_db_parametros,
+                                             precios_db_parametros)):
             return
-        #### </tabla Productos_Intervalos> ####
+        
+        # ejecuta internamente un fetchone, por lo que se desempaca luego
+        result = self.ejecutarOperacion(self.conn, productos_db_parametros)
+        if not result:
+            return
+
+        idx, = result
+        manejador = ManejadorProductos(self.conn, self.MENSAJE_ERROR)
+        
+        # transacción principal, se checa si cada operación fue exitosa
+        if not manejador.eliminarProdUtilizaInv(idx):
+            return
+        if not manejador.insertarProdUtilizaInv(idx, PUI_db_parametros):
+            return
+        if not manejador.eliminarPrecios(idx):
+            return
+        
+        if self.categoriaActual == 'S':
+            result = manejador.insertarProductosIntervalos(idx, precios_db_parametros)
+        else:
+            result = manejador.insertarProductoGranFormato(idx, precios_db_parametros)
+        
+        if not result:
+            return
         
         qm.information(self, 'Éxito', self.MENSAJE_EXITO)
         self.success.emit()
         self.close()
     
-    def ejecutarOperacion(self, crsr: fdb.Cursor, params: tuple) -> int:
-        """Regresa el índice del producto insertado o editado."""
+    def ejecutarOperacion(self, conn: fdb.Connection, params: tuple) -> tuple:
+        """ Devuelve tupla con índice del producto registrado o editado. """
         pass
 
 
@@ -545,19 +619,9 @@ class App_RegistrarProducto(Base_EditarProducto):
         self.ui.btAceptar.setText(' Registrar producto')
         self.ui.btAceptar.setIcon(QIcon(QPixmap(':/img/resources/images/plus.png')))
     
-    def ejecutarOperacion(self, crsr, params):
-        crsr.execute('''
-        INSERT INTO Productos (
-            codigo, descripcion, abreviado, categoria
-        )
-        VALUES
-            (?,?,?,?)
-        RETURNING
-            id_productos;
-        ''', params)
-        
-        idx, = crsr.fetchone()
-        return idx
+    def ejecutarOperacion(self, conn, params):
+        manejador = ManejadorProductos(conn, self.MENSAJE_ERROR)
+        return manejador.insertarProducto(params)
 
 
 class App_EditarProducto(Base_EditarProducto):
@@ -568,12 +632,10 @@ class App_EditarProducto(Base_EditarProducto):
     def __init__(self, first: App_AdministrarProductos, idx: int):
         super().__init__(first)
         
-        crsr = self.conn.cursor()
-        
-        # datos de la primera página
-        crsr.execute('SELECT * FROM Productos WHERE id_productos = ?;', (idx,))
-        
-        _, codigo, descripcion, abreviado, categoria = crsr.fetchone()
+        manejador = ManejadorProductos(self.conn)
+
+        _, codigo, descripcion, abreviado, categoria \
+            = manejador.obtenerProducto(idx)
         
         self.ui.txtCodigo.setText(codigo)
         self.ui.txtDescripcion.setPlainText(descripcion)
@@ -583,57 +645,100 @@ class App_EditarProducto(Base_EditarProducto):
             self.ui.tabWidget.setCurrentIndex(0)
             
             # agregar intervalos de precios a la tabla
-            crsr.execute('''
-            SELECT	desde,
-                    precio_con_iva,
-                    duplex
-            FROM	Productos_Intervalos AS P_Inv
-            WHERE 	id_productos = ?
-            ORDER   BY desde ASC, duplex ASC;
-            ''', (idx,))
+            precios = manejador.obtenerTablaPrecios(idx)
             
-            for row, (desde, precio, duplex) in enumerate(crsr):
+            for row, (desde, precio, duplex) in enumerate(precios):
                 self.agregarIntervalo(row, desde, precio, duplex)
         elif categoria == 'G':
             self.ui.tabWidget.setCurrentIndex(1)
-            
-            crsr.execute('''
-            SELECT  min_ancho,
-                    min_alto,
-                    precio_m2
-            FROM    Productos_Gran_Formato
-            WHERE 	id_productos = ?;
-            ''', (idx,))
-        
-            min_ancho, min_alto, precio = crsr.fetchone()
+
+            min_ancho, min_alto, precio = manejador.obtenerGranFormato(idx)
             
             self.ui.txtAnchoMin.setText(f'{min_ancho:,.2f}')
             self.ui.txtAltoMin.setText(f'{min_alto:,.2f}')
             self.ui.txtPrecio.setText(f'{precio:,.2f}')
         
         # agregar elementos de la segunda página
-        crsr.execute('''
-        SELECT	nombre,
-                utiliza_inventario
-        FROM	Productos_Utiliza_Inventario AS PUI
-                LEFT JOIN Inventario AS I
-                        ON PUI.id_inventario = I.id_inventario
-        WHERE 	id_productos = ?;
-        ''', (idx,))
+        utiliza_inventario = manejador.obtenerUtilizaInventario(idx)
                 
-        for nombre, cantidad in crsr:
+        for nombre, cantidad in utiliza_inventario:
             self.agregarProductoALista(nombre, cantidad)
         
         self.idx = idx  # id del elemento a editar
     
-    def ejecutarOperacion(self, crsr, params):
-        crsr.execute('''
-        UPDATE  Productos
-        SET     codigo = ?,
-                descripcion = ?,
-                abreviado = ?,
-                categoria = ?
-        WHERE   id_productos = ?;
-        ''', (*params, self.idx))
+    def ejecutarOperacion(self, conn, params):
+        manejador = ManejadorProductos(conn, self.MENSAJE_ERROR)
+        return manejador.editarProducto(self.idx, params)
+
+
+#########################################
+# WIDGETS PERSONALIZADOS PARA EL MÓDULO #
+#########################################
+class WidgetElemento(QtWidgets.QWidget):
+    def __init__(self):
+        from PyQt5 import QtCore, QtWidgets, QtGui
         
-        return self.idx
+        super().__init__()
+        
+        self.resize(390, 70)
+        self.setMinimumSize(390, 70)
+        boxElemento = QtWidgets.QComboBox(self)
+        boxElemento.setGeometry(QtCore.QRect(35, 10, 271, 22))
+        boxElemento.setMinimumSize(QtCore.QSize(271, 22))
+        font = QFont()
+        font.setFamily("Arial")
+        font.setPointSize(11)
+        boxElemento.setFont(font)
+        lbContador = QtWidgets.QLabel(self)
+        lbContador.setGeometry(QtCore.QRect(5, 10, 21, 21))
+        lbContador.setMinimumSize(QtCore.QSize(21, 21))
+        lbContador.setPixmap(QtGui.QPixmap(":/img/resources/images/inventory.png"))
+        lbContador.setScaledContents(True)
+        lbEliminar = QtWidgets.QLabel(self)
+        lbEliminar.setGeometry(QtCore.QRect(343, 12, 35, 35))
+        lbEliminar.setMinimumSize(QtCore.QSize(35, 35))
+        lbEliminar.setPixmap(QtGui.QPixmap(":/img/resources/images/cancel.png"))
+        lbEliminar.setScaledContents(True)
+        lbEliminar.setCursor(QtGui.QCursor(Qt.PointingHandCursor))
+        label = QtWidgets.QLabel(self)
+        label.setGeometry(QtCore.QRect(35, 40, 271, 21))
+        label.setMinimumSize(QtCore.QSize(271, 21))
+        label.setFont(font)
+        label.setText("se usa            unidades de este elemento.")
+        txtProductoUtiliza = QtWidgets.QLineEdit(self)
+        txtProductoUtiliza.setGeometry(QtCore.QRect(84, 40, 39, 20))
+        txtProductoUtiliza.setMinimumSize(QtCore.QSize(39, 20))
+        txtProductoUtiliza.setFont(font)
+        QtCore.QMetaObject.connectSlotsByName(self)
+        
+        # guardar widgets importantes como atributos
+        self.boxElemento = boxElemento
+        self.lbEliminar = lbEliminar
+        self.txtProductoUtiliza = txtProductoUtiliza
+    
+    @property
+    def elementoSeleccionado(self):
+        return self.boxElemento.currentText()
+    
+    @property
+    def cantidadElemento(self):
+        return self.txtProductoUtiliza.text()
+
+
+class ItemAuxiliar(QtWidgets.QWidget):
+    def __init__(self, duplex: bool = False):
+        super().__init__()
+        
+        self.setMinimumHeight(32)
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setAlignment(Qt.AlignCenter)
+        checkbox = QtWidgets.QCheckBox(self)
+        checkbox.setChecked(duplex)
+        layout.addWidget(checkbox)
+        
+        # guardar widgets importantes como atributos
+        self.checkBox = checkbox
+    
+    @property
+    def isChecked(self):
+        return self.checkBox.isChecked()
