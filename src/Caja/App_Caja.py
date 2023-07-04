@@ -389,7 +389,7 @@ class App_Caja(QtWidgets.QMainWindow):
             except fdb.Error as err:
                 conn.rollback()
                 
-                WarningDialog(self, '¡No pudo se registrar el movimiento!', str(err))
+                WarningDialog('¡No pudo se registrar el movimiento!', str(err))
                 return
             
             QtWidgets.QMessageBox.information(self, 'Éxito', '¡Movimiento registrado!')
@@ -438,7 +438,7 @@ class App_Caja(QtWidgets.QMainWindow):
             except fdb.Error as err:
                 conn.rollback()
                 
-                WarningDialog(self, '¡No pudo se registrar el movimiento!', str(err))
+                WarningDialog('¡No pudo se registrar el movimiento!', str(err))
                 return
             
             QtWidgets.QMessageBox.information(self, 'Éxito', '¡Movimiento registrado!')

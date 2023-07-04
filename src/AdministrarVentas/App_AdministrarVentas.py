@@ -13,10 +13,65 @@ from myutils import (chunkify, clamp, enviarWhatsApp, formatDate, generarOrdenCo
 from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
 
 
+###########################################
+# CLASE PARA MANEJAR OPERACIONES EN LA DB #
+###########################################
+class ManejadorVentas:
+    """Clase para manejar sentencias hacia/desde la tabla Ventas."""
+    def __init__(self, crsr: fdb.Cursor):
+        self.crsr = crsr
+    
+    def tablaVentas(self):
+        """Sentencia para alimentar la tabla principal de clientes."""
+        self.crsr.execute('''
+
+        ''')
+        
+        return self.crsr.fetchall()
+    
+    def tablaPedidos(self):
+        """Sentencia para alimentar la tabla principal de clientes."""
+        self.crsr.execute('''
+
+        ''')
+        
+        return self.crsr.fetchall()
+    
+    def obtenerVenta(self, idx):
+        """Sentencia para obtener un cliente."""
+        self.crsr.execute('''
+            SELECT  * 
+            FROM    Ventas 
+            WHERE id_clientes = ?;
+        ''', (idx,))
+        
+        return self.crsr.fetchone()
+    
+    def actualizarCliente(self, idCliente, datosCliente: tuple):
+        """Sentencia para actualizar cliente."""
+        self.crsr.execute('''
+            UPDATE  Venta
+            SET     nombre = ?,
+                    telefono = ?,
+                    correo = ?,
+                    direccion = ?,
+                    RFC = ?,
+                    cliente_especial = ?,
+                    descuentos = ?
+            WHERE   id_clientes = ?;
+        ''', (*datosCliente, idCliente))
+    
+    def eliminarCliente(self, idCliente):
+        """Sentencia para eliminar cliente."""
+        self.crsr.execute('''
+            DELETE  FROM Ventas
+            WHERE   id_clientes = ?;
+        ''', (idCliente,))
+        
+
 #####################
 # VENTANA PRINCIPAL #
 #####################
-
 class App_AdministrarVentas(QtWidgets.QMainWindow):
     """
     Backend para la ventana de administración de ventas.
@@ -483,7 +538,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         except fdb.Error as err:
             conn.rollback()
 
-            WarningDialog(self, '¡Hubo un error!', str(err))
+            WarningDialog('¡Hubo un error!', str(err))
             return
         
         qm.information(self, 'Éxito', 'Se marcó como terminada la venta seleccionada.')
@@ -528,7 +583,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         except fdb.Error as err:
             conn.rollback()
 
-            WarningDialog(self, '¡Hubo un error!', str(err))
+            WarningDialog('¡Hubo un error!', str(err))
             return
         
         qm.information(self, 'Éxito', 'Se marcó como cancelada la venta seleccionada.')
@@ -911,7 +966,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         except fdb.Error as err:
             conn.rollback()
 
-            WarningDialog(self, '¡Hubo un error!', str(err))
+            WarningDialog('¡Hubo un error!', str(err))
             return
         
         QtWidgets.QMessageBox.information(

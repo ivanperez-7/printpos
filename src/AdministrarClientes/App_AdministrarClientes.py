@@ -5,10 +5,79 @@ from PyQt5.QtGui import QFont, QColor, QIcon, QPixmap, QRegExpValidator
 from PyQt5.QtCore import Qt, QDateTime, QRegExp, pyqtSignal
 
 from mydecorators import con_fondo
-from myutils import exportarXlsx, formatDate, ColorsEnum, son_similar
-from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
+from myutils import DatabaseManager, exportarXlsx, formatDate, ColorsEnum, son_similar
+from mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
+###########################################
+# CLASE PARA MANEJAR OPERACIONES EN LA DB #
+###########################################
+class ManejadorClientes(DatabaseManager):
+    """ Clase para manejar sentencias hacia/desde la tabla Clientes. """
+    def __init__(self, conn: fdb.Connection, error_txt: str = ''):
+        super().__init__(conn, error_txt)
+    
+    def tablaPrincipal(self):
+        """ Sentencia para alimentar la tabla principal de clientes. """
+        return self.fetchall('''
+            SELECT  C.id_clientes,
+                    nombre,
+                    telefono,
+                    correo,
+                    direccion,
+                    RFC,
+                    MAX(fecha_hora_creacion) AS ultimaVenta
+            FROM    Clientes AS C
+                    LEFT JOIN Ventas AS V
+                           ON C.id_clientes = V.id_clientes
+            GROUP   BY 1, 2, 3, 4, 5, 6
+            ORDER   BY C.id_clientes;
+        ''')
+    
+    def obtenerCliente(self, idx):
+        """ Sentencia para obtener un cliente. """
+        return self.fetchone('''
+            SELECT  * 
+            FROM    Clientes 
+            WHERE id_clientes = ?;
+        ''', (idx,))
+    
+    def registrarCliente(self, datosCliente: tuple):
+        """ Sentencia para registrar cliente. Hace commit automáticamente. """
+        return self.execute('''
+            INSERT INTO Clientes (
+                nombre, telefono, correo, direccion,
+                RFC, cliente_especial, descuentos
+            )
+            VALUES
+                (?,?,?,?,?,?,?);
+        ''', datosCliente, commit=True)
+    
+    def actualizarCliente(self, idCliente, datosCliente: tuple):
+        """ Sentencia para actualizar cliente. Hace commit automáticamente. """
+        return self.execute('''
+            UPDATE  Clientes
+            SET     nombre = ?,
+                    telefono = ?,
+                    correo = ?,
+                    direccion = ?,
+                    RFC = ?,
+                    cliente_especial = ?,
+                    descuentos = ?
+            WHERE   id_clientes = ?;
+        ''', (*datosCliente, idCliente), commit=True)
+    
+    def eliminarCliente(self, idCliente):
+        """ Sentencia para eliminar cliente. Hace commit automáticamente. """
+        return self.execute('''
+            DELETE  FROM Clientes
+            WHERE   id_clientes = ?;
+        ''', (idCliente,), commit=True)
+
+
+#####################
+# VENTANA PRINCIPAL #
+#####################
 class App_AdministrarClientes(QtWidgets.QMainWindow):
     """
     Backend para la ventana de administración de clientes.
@@ -104,24 +173,8 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         También lee de nuevo la tabla de clientes, si se desea.
         """
         if rescan:
-            crsr = self.conn.cursor()
-
-            crsr.execute('''
-            SELECT  C.id_clientes,
-                    nombre,
-                    telefono,
-                    correo,
-                    direccion,
-                    RFC,
-                    MAX(fecha_hora_creacion) AS ultimaVenta
-            FROM    Clientes AS C
-                    LEFT JOIN Ventas AS V
-                           ON C.id_clientes = V.id_clientes
-            GROUP   BY 1, 2, 3, 4, 5, 6
-            ORDER   BY C.id_clientes;
-            ''')
-
-            self.all = crsr.fetchall()
+            manejador = ManejadorClientes(self.conn)
+            self.all = manejador.tablaPrincipal()
             self.ui.lbContador.setText(f'{len(self.all)} clientes en la base de datos.')
 
         tabla = self.ui.tabla_clientes
@@ -232,27 +285,18 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         # abrir pregunta
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
-                          'Los clientes seleccionados se eliminarán de la base de datos. ¿Desea continuar?',
+                          'Los clientes seleccionados se eliminarán de la base de datos. '
+                          '¿Desea continuar?',
                           qm.Yes | qm.No)
 
         if ret != qm.Yes:
             return
+
+        manejador = ManejadorClientes(self.conn, '¡No se pudo eliminar el cliente!')
         
-        values = [(item.text(),) for item in selected if item.column() == 0]
-
-        conn = self.conn
-        crsr = conn.cursor()
-
-        # crea un cuadro que notifica el resultado de la operación
-        try:
-            crsr.executemany('DELETE FROM Clientes WHERE id_clientes = ?;', values)
-            conn.commit()
-        except fdb.Error as err:
-            conn.rollback()
-            
-            WarningDialog(self, '¡No se pudo eliminar el cliente!', str(err))
+        if not manejador.eliminarCliente(selected[0].text()):
             return
-        
+
         qm.information(self, 'Éxito', 'Se eliminaron los clientes seleccionados.')
         self.update_display(rescan=True)
     
@@ -268,7 +312,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
 
 
 #################################
-# VENTANAS PARA EDITAR LA VENTA #
+# VENTANAS PARA EDITAR CLIENTES #
 #################################
 @con_fondo
 class Base_EditarCliente(QtWidgets.QMainWindow):
@@ -276,7 +320,7 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
     
-    success = pyqtSignal()
+    success = pyqtSignal(str, str, str)
     
     def __init__(self, first: App_AdministrarClientes):
         from AdministrarClientes.Ui_EditarCliente import Ui_EditarCliente
@@ -338,24 +382,19 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
             int(self.ui.checkDescuentos.isChecked()),
             self.ui.txtDescuentos.toPlainText()
         ))
-        
-        conn = self.conn
-        crsr = conn.cursor()
 
-        try:
-            self.ejecutarConsulta(crsr, clientes_db_parametros)
-        except fdb.Error as err:
-            conn.rollback()
-            WarningDialog(self, self.MENSAJE_ERROR, str(err))
+        if not self.ejecutarOperacion(self.conn, clientes_db_parametros):
             return
         
         QtWidgets.QMessageBox.information(
             self, 'Éxito', self.MENSAJE_EXITO)
         
-        self.success.emit()
+        self.success.emit(self.ui.txtNombre.text(), 
+                          self.numeroTelefono, 
+                          self.ui.txtCorreo.text())
         self.close()
     
-    def ejecutarConsulta(self, crsr: fdb.Cursor, params: tuple):
+    def ejecutarOperacion(self, conn: fdb.Connection, params: tuple):
         """Función a sobreescribir donde se realiza consulta SQL."""
         pass
 
@@ -378,16 +417,10 @@ class App_RegistrarCliente(Base_EditarCliente):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def ejecutarConsulta(self, crsr, params):
+    def ejecutarOperacion(self, conn, params):
         """Insertar nuevo cliente a la base de datos."""
-        crsr.execute('''
-        INSERT INTO Clientes (
-            nombre, telefono, correo, direccion,
-            RFC, cliente_especial, descuentos
-        )
-        VALUES
-            (?,?,?,?,?,?,?);
-        ''', params)
+        manejador = ManejadorClientes(conn, self.MENSAJE_ERROR)
+        return manejador.registrarCliente(params)
 
 
 class App_EditarCliente(Base_EditarCliente):
@@ -401,9 +434,8 @@ class App_EditarCliente(Base_EditarCliente):
         self.idx = idx  # id del cliente a editar
 
         # obtener datos del cliente
-        crsr = self.conn.cursor()
-        crsr.execute('SELECT * FROM Clientes WHERE id_clientes = ?;', (idx,))
-        cliente = crsr.fetchone()
+        manejador = ManejadorClientes(self.conn)
+        cliente = manejador.obtenerCliente(idx)
         
         nombre = cliente[1]
         celular = cliente[2].replace(' ', '')
@@ -422,16 +454,7 @@ class App_EditarCliente(Base_EditarCliente):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def ejecutarConsulta(self, crsr, params):
+    def ejecutarOperacion(self, conn, params):
         """Actualizar datos del cliente en la base de datos."""
-        crsr.execute('''
-        UPDATE  Clientes
-        SET     nombre = ?,
-                telefono = ?,
-                correo = ?,
-                direccion = ?,
-                RFC = ?,
-                cliente_especial = ?,
-                descuentos = ?
-        WHERE   id_clientes = ?;
-        ''', params + (self.idx,))
+        manejador = ManejadorClientes(conn, self.MENSAJE_ERROR)
+        return manejador.actualizarCliente(self.idx, params)

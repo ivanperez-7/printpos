@@ -7,6 +7,7 @@ from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtCore import (QDate, QDateTime, QRegExp, Qt,
                           QPropertyAnimation, QRect, QEasingCurve)
 
+from AdministrarVentas.App_AdministrarVentas import ManejadorVentas
 from mydecorators import con_fondo, requiere_admin
 from myutils import (clamp, enviarWhatsApp, formatDate,
                      generarOrdenCompra, generarTicketCompra,
@@ -45,6 +46,7 @@ class ItemVenta:
         """
         return iter((self.cantidad, self.codigo, self.notas, 
                      self.precio_unit, self.descuento_unit, self.importe))
+
 
 #####################
 # VENTANA PRINCIPAL #
@@ -245,9 +247,10 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             correo = self.ui.txtCorreo.text()
         )
         self.new.success.connect(
-            lambda:    self.ui.txtCliente.setText(self.new.ui.txtNombre.text())
-                    or self.ui.txtTelefono.setText(self.new.numeroTelefono)
-                    or self.ui.txtCorreo.setText(self.new.ui.txtCorreo.text()))
+            lambda nombre, tel, correo: 
+                       self.ui.txtCliente.setText(nombre)
+                    or self.ui.txtTelefono.setText(tel)
+                    or self.ui.txtCorreo.setText(correo))
 
     def agregarProducto(self, _):
         """
@@ -392,9 +395,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
 #################################
 @con_fondo
 class App_AgregarProducto(QtWidgets.QMainWindow):
-    """
-    Backend para la función de agregar un producto a la venta.
-    """
+    """Backend para la función de agregar un producto a la venta."""
     def __init__(self, first: App_CrearVenta):
         from CrearVenta.Ui_AgregarProducto import Ui_AgregarProducto
         
@@ -408,7 +409,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
         LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
         
-        # otras variables importantes
+        # referencia a widget padre
         self.first = first
         
         # guardar conexión y usuarios como atributos
@@ -433,7 +434,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
 
         # llena la tabla de productos no gran formato
-        crsr = first.conn.cursor()
+        crsr = self.conn.cursor()
         
         crsr.execute('SELECT * FROM View_Productos_Simples;')
         self.all_prod = crsr.fetchall()
@@ -530,9 +531,14 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         current = self.ui.tabWidget.currentIndex()
         
         if current == 0:
-            self.agregarSimple()
+            item = self.agregarSimple()
         elif current == 1:
-            self.agregarGranFormato()
+            item = self.agregarGranFormato()
+        
+        if item:
+            self.first.productosVenta.append(item)
+            self.first.colorearActualizar()
+            self.close()
     
     def agregarSimple(self):
         selected = self.ui.tabla_seleccionar.selectedItems()
@@ -541,7 +547,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
             return
         
         try:
-            cantidad = (float(self.ui.txtCantidad.text() or 1))
+            cantidad = int(float(self.ui.txtCantidad.text() or 1))
         except ValueError:
             QtWidgets.QMessageBox.warning(
                 self, 'Atención',
@@ -592,13 +598,9 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         # insertar información del producto con cantidad y especificaciones
         codigo += ' (a doble cara)' if self.ui.checkDuplex.isChecked() else ''
         
-        self.first.productosVenta.append(
-            ItemVenta(
+        return ItemVenta(
                 idProducto, codigo, precio, 0.0, cantidad, 
-                self.ui.txtNotas.text().strip(), self.ui.checkDuplex.isChecked()))
-        
-        self.first.colorearActualizar()
-        self.close()
+                self.ui.txtNotas.text().strip(), self.ui.checkDuplex.isChecked())
         
     def agregarGranFormato(self):
         selected = self.ui.tabla_granformato.selectedItems()
@@ -659,13 +661,9 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
             return
 
         # insertar información del producto con cantidad y especificaciones
-        self.first.productosVenta.append(
-            ItemVenta(
+        return ItemVenta(
                 idProducto, codigo, precio, 0.0, cantidad, 
-                self.ui.txtNotas_2.text().strip(), False))
-        
-        self.first.colorearActualizar()
-        self.close()
+                self.ui.txtNotas_2.text().strip(), False)
 
 
 @con_fondo
@@ -802,7 +800,7 @@ class App_FechaEntrega(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
-        self.first: App_CrearVenta = first
+        self.first = first
         
         # datos por defecto        
         self.ui.calendario.setSelectedDate(first.fechaEntrega.date())
@@ -851,7 +849,7 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
-        self.first: App_CrearVenta = first
+        self.first = first
         
         # dar formato a la tabla principal
         header = self.ui.tabla_productos.horizontalHeader()
@@ -941,7 +939,7 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
-        self.first: App_CrearVenta = first
+        self.first = first
 
         # añade eventos para los botones
         self.ui.lbRegresar.mousePressEvent = self.closeEvent
@@ -996,9 +994,7 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
 
 
 class App_ConfirmarVenta(QtWidgets.QMainWindow):
-    """
-    Backend para la ventana de finalización de venta.
-    """
+    """Backend para la ventana de finalización de venta."""
     def __init__(self, first: App_CrearVenta, ventaDatos):
         from CrearVenta.Ui_ConfirmarVenta import Ui_ConfirmarVenta
         
@@ -1063,9 +1059,28 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         else:
             fechaEntrega = ventaDatos['fechaEntrega']
 
-        # crear nuevas entradas en la base de datos
+        # mostrar datos del cliente, fechas, etc.
         crsr = conn.cursor()
+        
+        crsr.execute('''
+        SELECT  nombre,
+                telefono,
+                correo
+        FROM    Clientes
+        WHERE   id_clientes = ?;
+        ''', (ventaDatos['idCliente'],))
 
+        nombre, correo, telefono = crsr.fetchone()
+
+        self.ui.txtCliente.setText(nombre)
+        self.ui.txtCorreo.setText(correo)
+        self.ui.txtTelefono.setText(telefono)
+        self.ui.txtCreacion.setText(formatDate(ventaDatos['fechaCreacion']))
+        self.ui.txtEntrega.setText(formatDate(ventaDatos['fechaEntrega']))
+        self.ui.lbTotal.setText(f'{ventaDatos["total"]:,.2f}')
+        self.ui.txtAnticipo.setText(f'{self.paraPagar:.2f}')
+
+        # crear nuevas entradas en la base de datos
         try:
             ventas_db_parametros = (
                 ventaDatos['idCliente'],
@@ -1116,28 +1131,11 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         except fdb.Error as err:
             conn.rollback()
 
-            WarningDialog(self, '¡Hubo un error!', str(err))
+            WarningDialog('¡Hubo un error!', str(err))
             return
-
-        # modifica datos de venta
-        crsr.execute('''
-        SELECT  nombre,
-                telefono,
-                correo
-        FROM    Clientes
-        WHERE   id_clientes = ?;
-        ''', (ventaDatos['idCliente'],))
-
-        nombre, correo, telefono = crsr.fetchone()
-
+        
+        # mostrar folio de venta
         self.ui.lbFolio.setText(f'{self.id_ventas}')
-        self.ui.txtCliente.setText(nombre)
-        self.ui.txtCorreo.setText(correo)
-        self.ui.txtTelefono.setText(telefono)
-        self.ui.txtCreacion.setText(formatDate(ventaDatos['fechaCreacion']))
-        self.ui.txtEntrega.setText(formatDate(ventaDatos['fechaEntrega']))
-        self.ui.lbTotal.setText(f'{ventaDatos["total"]:,.2f}')
-        self.ui.txtAnticipo.setText(f'{self.paraPagar:.2f}')
         
         # validadores para datos numéricos
         regexp_numero = QRegExp(r'\d*\.?\d*')
@@ -1167,9 +1165,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
     # FUNCIONES ÚTILES
     # ================
     def calcularCambio(self, txt):
-        """
-        Recalcular cambio a entregar.
-        """
+        """Recalcular cambio a entregar."""
         try:
             pago = float(txt)
         except ValueError:
@@ -1179,9 +1175,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ui.lbCambio.setText(f'{cambio:,.2f}')
     
     def cambiarAnticipo(self, txt):
-        """
-        Cambiar el anticipo pagado por el cliente.
-        """
+        """Cambiar el anticipo pagado por el cliente."""
         try:
             self.paraPagar = float(txt)
         except ValueError:
@@ -1191,9 +1185,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.calcularCambio(self.ui.txtPago.text())
     
     def done(self):
-        """
-        Acepta los cambios y modifica la fecha seleccionada en la ventana principal (CrearVenta).
-        """
+        """Intenta finalizar la compra o pedido, actualizando el estado
+        e insertando los correspondientes movimientos en la tabla Caja."""
         esDirecta = not self.ui.boxFechaEntrega.isVisible()
         
         try:
@@ -1256,7 +1249,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             conn.commit()
         except fdb.Error as err:
             conn.rollback()
-            WarningDialog(self, '¡Hubo un error!', str(err))
+            WarningDialog('¡Hubo un error!', str(err))
             return
 
         # abrir pregunta
@@ -1282,6 +1275,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.goHome()
     
     def abortar(self, _):
+        """Función para abortar la venta y actualizar estado a 'Cancelada'."""
         @requiere_admin
         def accion(parent):
             try:
@@ -1299,7 +1293,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 self.goHome()
             except fdb.Error as err:
                 conn.rollback()
-                WarningDialog(self, '¡Hubo un error!', str(err))
+                WarningDialog('¡Hubo un error!', str(err))
         
         qm = QtWidgets.QMessageBox
         
@@ -1310,9 +1304,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             accion(self)
     
     def goHome(self):
-        """
-        Cierra la ventana y crea otra venta.
-        """
+        """Cierra la ventana y crea otra venta."""
         from Home import App_Home
         
         parent = self.parentWidget().parentWidget() # QMainWindow, ventana principal

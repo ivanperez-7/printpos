@@ -1,21 +1,129 @@
 import fdb
 
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import (QFont, QColor, QPixmap,
-                         QCursor, QIcon, QRegExpValidator)
+from PyQt5.QtGui import QFont, QColor, QPixmap, QIcon, QRegExpValidator
 from PyQt5.QtCore import Qt, QRegExp, pyqtSignal
 
 from mydecorators import con_fondo
-from myutils import ColorsEnum, son_similar
-from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
+from myutils import ColorsEnum, DatabaseManager, son_similar
+from mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
+###########################################
+# CLASE PARA MANEJAR OPERACIONES EN LA DB #
+###########################################
+class ManejadorInventario(DatabaseManager):
+    """ Clase para manejar sentencias hacia/desde la tabla Inventario. """
+    def __init__(self, conn: fdb.Connection, error_txt: str = ''):
+        super().__init__(conn, error_txt)
+    
+    def tablaPrincipal(self):
+        """ Sentencia para alimentar tabla principal de elementos. """
+        return self.fetchall('''
+            SELECT  id_inventario,
+                    nombre,
+                    tamano_lote,
+                    precio_lote,
+                    minimo_lotes,
+                    unidades_restantes,
+                    lotes_restantes
+            FROM    Inventario;
+        ''')
+    
+    def obtenerInformacionPrincipal(self, id_inventario: int):
+        """ Regresa información principal de un elemento. """
+        return self.fetchone('''
+            SELECT  nombre,
+                    tamano_lote, 
+                    precio_lote,
+                    minimo_lotes,
+                    unidades_restantes
+            FROM    Inventario 
+            WHERE   id_inventario = ?;
+        ''', (id_inventario,))
+    
+    def obtenerProdUtilizaInv(self, id_inventario: int):
+        """ Obtener relación con productos en la tabla productos_utiliza_inventario. """
+        return self.fetchall('''
+            SELECT	codigo,
+                    utiliza_inventario
+            FROM	Productos_Utiliza_Inventario AS PUI
+                    LEFT JOIN Productos AS P
+                           ON PUI.id_productos = P.id_productos
+            WHERE 	id_inventario = ?;
+        ''', (id_inventario,))
+    
+    def agregarLotes(self, id_inventario: int, num_lotes: float):
+        """ Agrega lotes a existencia del elemento. Hace commit automáticamente. """
+        return self.execute('''
+            UPDATE  Inventario
+            SET     unidades_restantes = unidades_restantes + tamano_lote * ?
+            WHERE   id_inventario = ?;
+        ''', (num_lotes, id_inventario), commit=True)
+    
+    def registrarElemento(self, datos_elemento: tuple):
+        """ Intenta registrar un elemento en la tabla y regresar 
+            tupla con el índice recién insertado. No hace commit. """
+        return self.fetchone('''
+            INSERT INTO Inventario (
+                nombre, tamano_lote, precio_lote,
+                minimo_lotes, unidades_restantes
+            )
+            VALUES
+                (?,?,?,?,?)
+            RETURNING
+                id_inventario;
+        ''', datos_elemento)
+    
+    def editarElemento(self, id_inventario: int, datos_elemento: tuple):
+        """ Intenta editar datos de un elemento en la tabla y regresar
+            tupla con el índice recién editado. No hace commit. """
+        return self.fetchone('''
+            UPDATE  Inventario
+            SET     nombre = ?,
+                    tamano_lote = ?,
+                    precio_lote = ?,
+                    minimo_lotes = ?,
+                    unidades_restantes = ?
+            WHERE   id_inventario = ?
+            RETURNING id_inventario;
+        ''', (*datos_elemento, id_inventario))
+    
+    def eliminarElemento(self, id_inventario: int):
+        """ Elimina un elemento de la tabla. Hace commit automáticamente. """
+        return self.execute('''
+            DELETE  FROM Inventario 
+            WHERE   id_inventario = ?;
+        ''', (id_inventario,), commit=True)
+    
+    def eliminarProdUtilizaInv(self, id_inventario: int):
+        """ Elimina elemento de la tabla productos_utiliza_inventario.
+            No hace commit, al ser parte inicial del proceso de registro/modificación. """
+        return self.execute('''
+            DELETE  FROM productos_utiliza_inventario
+            WHERE   id_inventario = ?;
+        ''', (id_inventario,), commit=False)
+    
+    def insertarProdUtilizaInv(self, id_inventario: int, params: list[tuple]):
+        """ Inserta elemento en la tabla productos_utiliza_inventario.
+            Hace commit, al ser parte final del proceso de registro/modificación. """
+        params = [(id_inventario, id_productos, cantidad)
+                  for (id_productos, cantidad) in params]
+        
+        return self.executemany('''
+            INSERT INTO productos_utiliza_inventario (
+                id_inventario, id_productos, utiliza_inventario
+            )
+            VALUES
+                (?,?,?);
+        ''', params, commit=True)
+
+
+#####################
+# VENTANA PRINCIPAL #
+#####################
 class App_AdministrarInventario(QtWidgets.QMainWindow):
-    """
-    Backend para la ventana de administración de inventario.
-    TODO:
-    -   alimentar inventario por mayoreo pero monitorear por unidades
-    """
+    """ Backend para la ventana de administración de inventario. """
     def __init__(self, parent: VentanaPrincipal):
         from AdministrarInventario.Ui_AdministrarInventario import Ui_AdministrarInventario
         
@@ -63,19 +171,8 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         También lee de nuevo la tabla de elementos, si se desea.
         """
         if rescan:
-            crsr = self.conn.cursor()
-            crsr.execute('''
-            SELECT  id_inventario,
-                    nombre,
-                    tamano_lote,
-                    precio_lote,
-                    minimo_lotes,
-                    unidades_restantes,
-                    lotes_restantes
-            FROM    Inventario;
-            ''')
-
-            self.all = crsr.fetchall()
+            manejador = ManejadorInventario(self.conn)
+            self.all = manejador.tablaPrincipal()
             self.ui.lbContador.setText(f'{len(self.all)} elementos en la base de datos.')
         
         tabla = self.ui.tabla_inventario
@@ -125,62 +222,23 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def surtirExistencias(self):
-        from PyQt5 import QtCore
-        
-        Dialog = QtWidgets.QDialog(self)
-        Dialog.resize(354, 84)
-        Dialog.setWindowTitle("Surtir existencias")
-        Dialog.setWindowFlags(Dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-        gridLayout = QtWidgets.QGridLayout(Dialog)
-        gridLayout.setContentsMargins(-1, -1, -1, 9)
-        label = QtWidgets.QLabel(Dialog)
-        font = QFont()
-        font.setFamily("Arial")
-        font.setPointSize(10)
-        label.setFont(font)
-        label.setText("Suministrar ")
-        gridLayout.addWidget(label, 0, 0, 1, 1)
-        txtCantidad = QtWidgets.QLineEdit(Dialog)
-        txtCantidad.setFont(font)
-        gridLayout.addWidget(txtCantidad, 0, 1, 1, 1)
-        label_2 = QtWidgets.QLabel(Dialog)
-        label_2.setFont(font)
-        label_2.setText(" lotes para este elemento.")
-        gridLayout.addWidget(label_2, 0, 2, 1, 1)
-        buttonBox = QtWidgets.QDialogButtonBox(Dialog)
-        buttonBox.setFont(font)
-        buttonBox.setOrientation(Qt.Horizontal)
-        buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
-        buttonBox.setCenterButtons(True)
-        gridLayout.addWidget(buttonBox, 1, 0, 1, 3, Qt.AlignBottom)
-
-        buttonBox.accepted.connect(Dialog.accept) # type: ignore
-        buttonBox.rejected.connect(Dialog.reject) # type: ignore
-        QtCore.QMetaObject.connectSlotsByName(Dialog)
+        Dialog = ExistenciasWidget(self)
         
         def accept_handle():
             selected = self.ui.tabla_inventario.selectedItems()
             
-            if not selected:
+            try:
+                idx = int(selected[0].text())
+                num_lotes = float(Dialog.cantidadLotes)
+            except ValueError:
                 return
             
-            conn = self.conn
-            crsr = conn.cursor()
-            
-            try:
-                surtir = float(txtCantidad.text())
-                idx = selected[0].text()
-                
-                crsr.execute('''UPDATE  Inventario
-                                SET     unidades_restantes = unidades_restantes + tamano_lote * ?
-                                WHERE   id_inventario = ?;''', (surtir, idx))
-                conn.commit()
-                
-                self.update_display(rescan=True)
-                Dialog.close()
-            except (ValueError, fdb.Error) as err:
-                conn.rollback()
-                print(str(err))
+            manejador = ManejadorInventario(self.conn)
+            if not manejador.agregarLotes(idx, num_lotes):
+                return
+     
+            self.update_display(rescan=True)
+            Dialog.close()
             
         Dialog.accept = accept_handle
         Dialog.show()
@@ -210,21 +268,14 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         
         qm = QtWidgets.QMessageBox
         
-        conn = self.conn
-        crsr = conn.cursor()
+        manejador = ManejadorInventario(self.conn, '¡No se pudo eliminar el elemento!')
+        result = manejador.obtenerProdUtilizaInv(id_inventario)
         
-        crsr.execute('''
-        SELECT	id_productos
-        FROM	Productos_Utiliza_Inventario
-        WHERE	id_inventario = ?;
-        ''', (id_inventario,))
-        
-        if crsr.fetchall():
+        if result:
             qm.warning(self, 'Atención', 
                        'No se puede eliminar este elemento debido '
                        'a que hay productos que lo utilizan. Haga doble '
-                       'click en algún elemento para ver estos productos.',
-                       qm.Ok)
+                       'click en algún elemento para ver estos productos.')
             return
         
         # abrir pregunta
@@ -236,14 +287,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         if ret != qm.Yes:
             return
         
-        # crea un cuadro que notifica el resultado de la operación
-        try:
-            crsr.execute('DELETE FROM Inventario WHERE id_inventario = ?;', (id_inventario,))
-            conn.commit()
-        except fdb.Error as err:
-            conn.rollback()
-
-            WarningDialog(self, '¡No se pudo eliminar el elemento!', str(err))
+        if not manejador.eliminarElemento(id_inventario):
             return
         
         qm.information(self, 'Éxito', 'Se eliminó el elemento seleccionado.')
@@ -304,156 +348,106 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
     #######################
     # WIDGETS PARA LISTAS #
     #######################
-    def widgetProducto(self) -> QtWidgets.QFrame:
-        from PyQt5 import QtCore
-        
-        frameProducto = QtWidgets.QFrame()
-        frameProducto.resize(390, 70)
-        frameProducto.setMinimumSize(390, 70)
-        boxProducto = QtWidgets.QComboBox(frameProducto)
-        boxProducto.setGeometry(QtCore.QRect(35, 10, 271, 22))
-        boxProducto.setMinimumSize(QtCore.QSize(271, 22))
-        font = QFont()
-        font.setFamily("Arial")
-        font.setPointSize(11)
-        boxProducto.setFont(font)
-        lbContador = QtWidgets.QLabel(frameProducto)
-        lbContador.setGeometry(QtCore.QRect(5, 10, 21, 21))
-        lbContador.setMinimumSize(QtCore.QSize(21, 21))
-        lbContador.setPixmap(QPixmap(":/img/resources/images/package_2.png"))
-        lbContador.setScaledContents(True)
-        lbEliminar = QtWidgets.QLabel(frameProducto)
-        lbEliminar.setGeometry(QtCore.QRect(343, 12, 35, 35))
-        lbEliminar.setMinimumSize(QtCore.QSize(35, 35))
-        lbEliminar.setPixmap(QPixmap(":/img/resources/images/cancel.png"))
-        lbEliminar.setScaledContents(True)
-        lbEliminar.setCursor(QCursor(Qt.PointingHandCursor))
-        label = QtWidgets.QLabel(frameProducto)
-        label.setGeometry(QtCore.QRect(35, 40, 271, 21))
-        label.setMinimumSize(QtCore.QSize(271, 21))
-        label.setFont(font)
-        label.setText("utiliza              unidades de este elemento.")
-        txtProductoUtiliza = QtWidgets.QLineEdit(frameProducto)
-        txtProductoUtiliza.setGeometry(QtCore.QRect(80, 40, 41, 20))
-        txtProductoUtiliza.setMinimumSize(QtCore.QSize(41, 20))
-        txtProductoUtiliza.setFont(font)
-        QtCore.QMetaObject.connectSlotsByName(frameProducto)
-        
-        return frameProducto
-
     def agregarProductoALista(self, codigo: str = '', cantidad: int = 1):
         # crear widget y agregar a la lista
-        nuevo = self.widgetProducto()
-        box, _, lbCancelar, _, line = nuevo.children()
+        nuevo = WidgetProducto()
         
         # evento para eliminar la entrada
-        lbCancelar.mousePressEvent = lambda _: self.ui.layoutScroll.removeWidget(nuevo) \
-                                               or nuevo.setParent(None)
+        nuevo.lbEliminar.mousePressEvent = \
+            lambda _: self.ui.layoutScroll.removeWidget(nuevo) \
+                      or nuevo.setParent(None)
         
         # validador para datos numéricos
         regexp_numero = QRegExp(r'\d*\.?\d*')
         validador = QRegExpValidator(regexp_numero)
-        line.setValidator(validador)
+        nuevo.txtProductoUtiliza.setValidator(validador)
         
         # llenar caja de opciones con productos
         crsr = self.conn.cursor()
         
         crsr.execute('SELECT codigo FROM Productos;')
-        box.addItems([codigo for codigo, in crsr])
+        nuevo.boxProducto.addItems([codigo for codigo, in crsr])
         
         # modificar valores a los de la base de datos
-        box.setCurrentText(codigo)
-        line.setText(f'{cantidad}')
+        nuevo.boxProducto.setCurrentText(codigo)
+        nuevo.txtProductoUtiliza.setText(f'{cantidad}')
         
         self.ui.layoutScroll.addWidget(nuevo)
      
     ####################
     # FUNCIONES ÚTILES #
     ####################
+    def obtenerParametrosInventario(self):
+        try:
+            if not (tamanoLote := float(self.ui.txtTamano.text())):
+                return None
+            
+            return (self.ui.txtNombre.text().strip() or None,
+                    tamanoLote,
+                    float(self.ui.txtPrecioCompra.text()),
+                    float(self.ui.txtMinimo.text()),
+                    float(self.ui.txtExistencia.text()))
+        except ValueError:
+            QtWidgets.QMessageBox.warning(
+                self, 'Atención', 
+                '¡Verifique que los datos numéricos sean correctos!')
+            return None
+    
+    def obtenerParametrosProdUtilizaInv(self):
+        productos: list[WidgetProducto] = self.ui.scrollAreaLista.children()[1:]
+        
+        try:
+            productos = [(p.productoSeleccionado, float(p.cantidadProducto))
+                         for p in productos]
+        except ValueError:
+            QtWidgets.QMessageBox.warning(
+                self, 'Atención', 
+                '¡Verifique que los datos numéricos sean correctos!')
+            return None
+        
+        PUI_db_parametros = []
+        manejador = DatabaseManager(self.conn, '')
+            
+        for codigo, cantidad in productos:
+            if not codigo or cantidad < 1:
+                return None
+            
+            idProducto, = manejador.fetchone(
+                'SELECT id_productos FROM Productos WHERE codigo = ?;', (codigo,))
+            
+            PUI_db_parametros.append((idProducto, cantidad))
+        
+        return PUI_db_parametros
+        
     def done(self):
         """Función donde se registrará o actualizará elemento del inventario."""
         qm = QtWidgets.QMessageBox
         
-        #### <tabla Inventario> ####
-        try:
-            if (tamanoLote := float(self.ui.txtTamano.text())) == 0:
-                return
-            
-            inventario_db_parametros = (
-                self.ui.txtNombre.text().strip() or None,
-                tamanoLote,
-                float(self.ui.txtPrecioCompra.text()),
-                float(self.ui.txtMinimo.text()),
-                float(self.ui.txtExistencia.text())
-            )
-        except ValueError:
-            qm.warning(self, 'Atención', '¡Verifique que los datos numéricos sean correctos!')
+        inventario_db_parametros = self.obtenerParametrosInventario()
+        PUI_db_parametros = self.obtenerParametrosProdUtilizaInv()
+        
+        if inventario_db_parametros == None or PUI_db_parametros == None:
             return
         
-        conn = self.conn
-        crsr = conn.cursor()
-
-        try:
-            idx = self.ejecutarConsulta(crsr, inventario_db_parametros)
-        except fdb.Error as err:
-            conn.rollback()
-            WarningDialog(self, self.MENSAJE_ERROR, str(err))
-            return
-        #### </tabla Inventario> ####
-        
-        #### <tabla Productos_Utiliza_Inventario> ####
-        productos = self.ui.scrollAreaLista.children()[1:]  # QFrames
-        productos = [prod.children() for prod in productos] # hijos de cada QFrame
-        
-        try:
-            productos = [(box.currentText(), float(line.text()))    # codigo y cantidad
-                         for (box, _, _, _, line) in productos]
-        except ValueError:
-            conn.rollback()
-            qm.warning(self, 'Atención', '¡Verifique que los datos numéricos sean correctos!')
+        # ejecuta internamente un fetchone, por lo que se desempaca luego
+        result = self.ejecutarOperacion(self.conn, inventario_db_parametros)
+        if not result:
             return
         
-        PUI_db_parametros = []
-            
-        for codigo, cantidad in productos:
-            if not codigo or cantidad < 1:
-                conn.rollback()
-                return
-            
-            crsr.execute('SELECT id_productos FROM Productos WHERE codigo = ?;', (codigo,))
-            idProducto, = crsr.fetchone()
-            
-            PUI_db_parametros.append((idProducto, idx, cantidad))
-
-        try:
-            # primero borrar las entradas existentes
-            crsr.execute('''
-            DELETE  FROM Productos_Utiliza_Inventario
-            WHERE   id_inventario = ?;
-            ''', (idx,))
-            
-            # nuevas entradas, introducidas por el usuario
-            crsr.executemany('''
-            INSERT INTO Productos_Utiliza_Inventario (
-                id_productos, id_inventario, utiliza_inventario
-            )
-            VALUES
-                (?,?,?);
-            ''', PUI_db_parametros)
-            
-            conn.commit()
-        except fdb.Error as err:
-            conn.rollback()
-            WarningDialog(self, self.MENSAJE_ERROR, str(err))
+        idx, = result
+        manejador = ManejadorInventario(self.conn, self.MENSAJE_ERROR)
+        
+        if not manejador.eliminarProdUtilizaInv(idx):
             return
-        #### </tabla Productos_Utiliza_Inventario> ####
+        if not manejador.insertarProdUtilizaInv(idx, PUI_db_parametros):
+            return
         
         qm.information(self, 'Éxito', self.MENSAJE_EXITO)
         self.success.emit()
         self.close()
     
-    def ejecutarConsulta(self, crsr: fdb.Cursor, params: tuple) -> int:
-        """Devuelve índice del elemento registrado o editado."""
+    def ejecutarOperacion(self, conn: fdb.Connection, params: tuple) -> tuple:
+        """ Devuelve tupla con índice del elemento registrado o editado. """
         pass
 
 
@@ -472,20 +466,9 @@ class App_RegistrarInventario(Base_EditarInventario):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def ejecutarConsulta(self, crsr, params):
-        crsr.execute('''
-        INSERT INTO Inventario (
-            nombre, tamano_lote, precio_lote,
-            minimo_lotes, unidades_restantes
-        )
-        VALUES
-            (?,?,?,?,?)
-        RETURNING
-            id_inventario;
-        ''', params)
-            
-        idx, = crsr.fetchone()
-        return idx
+    def ejecutarOperacion(self, conn, params):
+        manejador = ManejadorInventario(conn, self.MENSAJE_ERROR)
+        return manejador.registrarElemento(params)
 
 
 class App_EditarInventario(Base_EditarInventario):
@@ -498,18 +481,11 @@ class App_EditarInventario(Base_EditarInventario):
         
         self.idx = idx  # id del elemento a editar
         
-        crsr = self.conn.cursor()
+        manejador = ManejadorInventario(self.conn)
         
         # datos de la primera página
-        crsr.execute('''SELECT  nombre,
-                                tamano_lote, 
-                                precio_lote,
-                                minimo_lotes,
-                                unidades_restantes
-                        FROM    Inventario 
-                        WHERE   id_inventario = ?;''', (idx,))
-        
-        nombre, tamano, precio, minimo, existencia = crsr.fetchone()
+        nombre, tamano, precio, minimo, existencia \
+            = manejador.obtenerInformacionPrincipal(idx)
         
         self.ui.txtNombre.setText(nombre)
         self.ui.txtTamano.setText(f'{tamano:,.2f}')
@@ -518,16 +494,7 @@ class App_EditarInventario(Base_EditarInventario):
         self.ui.txtMinimo.setText(f'{minimo:.2f}')
         
         # agregar productos de la segunda página
-        crsr.execute('''
-        SELECT	codigo,
-                utiliza_inventario
-        FROM	Productos_Utiliza_Inventario AS PUI
-                LEFT JOIN Productos AS P
-                        ON PUI.id_productos = P.id_productos
-        WHERE 	id_inventario = ?;
-        ''', (idx,))
-        
-        productos = crsr.fetchall()
+        productos = manejador.obtenerProdUtilizaInv(idx)
                 
         for codigo, cantidad in productos:
             self.agregarProductoALista(codigo, cantidad)
@@ -535,15 +502,104 @@ class App_EditarInventario(Base_EditarInventario):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def ejecutarConsulta(self, crsr, params):
-        crsr.execute('''
-        UPDATE  Inventario
-        SET     nombre = ?,
-                tamano_lote = ?,
-                precio_lote = ?,
-                minimo_lotes = ?,
-                unidades_restantes = ?
-        WHERE   id_inventario = ?;
-        ''', (*params, self.idx))
+    def ejecutarOperacion(self, conn, params):
+        manejador = ManejadorInventario(conn, self.MENSAJE_ERROR)
+        return manejador.editarElemento(self.idx, params)
+
+
+#########################################
+# WIDGETS PERSONALIZADOS PARA EL MÓDULO #
+#########################################
+class WidgetProducto(QtWidgets.QWidget):
+    def __init__(self):
+        from PyQt5 import QtCore, QtWidgets, QtGui
         
-        return self.idx
+        super().__init__()
+        
+        self.resize(390, 70)
+        self.setMinimumSize(390, 70)
+        boxProducto = QtWidgets.QComboBox(self)
+        boxProducto.setGeometry(QtCore.QRect(35, 10, 271, 22))
+        boxProducto.setMinimumSize(QtCore.QSize(271, 22))
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(11)
+        boxProducto.setFont(font)
+        lbContador = QtWidgets.QLabel(self)
+        lbContador.setGeometry(QtCore.QRect(5, 10, 21, 21))
+        lbContador.setMinimumSize(QtCore.QSize(21, 21))
+        lbContador.setPixmap(QtGui.QPixmap(":/img/resources/images/package_2.png"))
+        lbContador.setScaledContents(True)
+        lbEliminar = QtWidgets.QLabel(self)
+        lbEliminar.setGeometry(QtCore.QRect(343, 12, 35, 35))
+        lbEliminar.setMinimumSize(QtCore.QSize(35, 35))
+        lbEliminar.setPixmap(QtGui.QPixmap(":/img/resources/images/cancel.png"))
+        lbEliminar.setScaledContents(True)
+        lbEliminar.setCursor(QtGui.QCursor(Qt.PointingHandCursor))
+        label = QtWidgets.QLabel(self)
+        label.setGeometry(QtCore.QRect(35, 40, 271, 21))
+        label.setMinimumSize(QtCore.QSize(271, 21))
+        label.setFont(font)
+        label.setText("utiliza              unidades de este elemento.")
+        txtProductoUtiliza = QtWidgets.QLineEdit(self)
+        txtProductoUtiliza.setGeometry(QtCore.QRect(80, 40, 41, 20))
+        txtProductoUtiliza.setMinimumSize(QtCore.QSize(41, 20))
+        txtProductoUtiliza.setFont(font)
+        QtCore.QMetaObject.connectSlotsByName(self)
+        
+        # guardar widgets importantes como atributos
+        self.boxProducto = boxProducto
+        self.lbEliminar = lbEliminar
+        self.txtProductoUtiliza = txtProductoUtiliza
+    
+    @property
+    def productoSeleccionado(self):
+        return self.boxProducto.currentText()
+    
+    @property
+    def cantidadProducto(self):
+        return self.txtProductoUtiliza.text()
+
+
+class ExistenciasWidget(QtWidgets.QDialog):
+    def __init__(self, first: App_AdministrarInventario):
+        from PyQt5 import QtCore
+        
+        super().__init__(parent=first)
+        
+        self.resize(354, 84)
+        self.setWindowTitle("Surtir existencias")
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        gridLayout = QtWidgets.QGridLayout(self)
+        gridLayout.setContentsMargins(-1, -1, -1, 9)
+        label = QtWidgets.QLabel(self)
+        font = QFont()
+        font.setFamily("Arial")
+        font.setPointSize(10)
+        label.setFont(font)
+        label.setText("Suministrar ")
+        gridLayout.addWidget(label, 0, 0, 1, 1)
+        txtCantidad = QtWidgets.QLineEdit(self)
+        txtCantidad.setFont(font)
+        gridLayout.addWidget(txtCantidad, 0, 1, 1, 1)
+        label_2 = QtWidgets.QLabel(self)
+        label_2.setFont(font)
+        label_2.setText(" lotes para este elemento.")
+        gridLayout.addWidget(label_2, 0, 2, 1, 1)
+        buttonBox = QtWidgets.QDialogButtonBox(self)
+        buttonBox.setFont(font)
+        buttonBox.setOrientation(Qt.Horizontal)
+        buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        buttonBox.setCenterButtons(True)
+        gridLayout.addWidget(buttonBox, 1, 0, 1, 3, Qt.AlignBottom)
+
+        buttonBox.accepted.connect(self.accept) # type: ignore
+        buttonBox.rejected.connect(self.reject) # type: ignore
+        QtCore.QMetaObject.connectSlotsByName(self)
+        
+        # guardar widgets importantes como atributos
+        self.txtCantidad = txtCantidad
+    
+    @property
+    def cantidadLotes(self):
+        return self.txtCantidad.text()
