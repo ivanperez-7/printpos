@@ -46,28 +46,7 @@ class ManejadorVentas:
         ''', (idx,))
         
         return self.crsr.fetchone()
-    
-    def actualizarCliente(self, idCliente, datosCliente: tuple):
-        """Sentencia para actualizar cliente."""
-        self.crsr.execute('''
-            UPDATE  Venta
-            SET     nombre = ?,
-                    telefono = ?,
-                    correo = ?,
-                    direccion = ?,
-                    RFC = ?,
-                    cliente_especial = ?,
-                    descuentos = ?
-            WHERE   id_clientes = ?;
-        ''', (*datosCliente, idCliente))
-    
-    def eliminarCliente(self, idCliente):
-        """Sentencia para eliminar cliente."""
-        self.crsr.execute('''
-            DELETE  FROM Ventas
-            WHERE   id_clientes = ?;
-        ''', (idCliente,))
-        
+
 
 #####################
 # VENTANA PRINCIPAL #
