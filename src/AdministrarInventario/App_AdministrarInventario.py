@@ -4,118 +4,10 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QPixmap, QIcon, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QRegularExpression, Signal
 
+from databasemanagers import ManejadorInventario, ManejadorProductos
 from mydecorators import con_fondo
-from myutils import ColorsEnum, DatabaseManager, son_similar
+from myutils import ColorsEnum, son_similar
 from mywidgets import LabelAdvertencia, VentanaPrincipal
-
-
-###########################################
-# CLASE PARA MANEJAR OPERACIONES EN LA DB #
-###########################################
-class ManejadorInventario(DatabaseManager):
-    """ Clase para manejar sentencias hacia/desde la tabla Inventario. """
-    def __init__(self, conn: fdb.Connection, error_txt: str = ''):
-        super().__init__(conn, error_txt)
-    
-    def obtenerTablaPrincipal(self):
-        """ Sentencia para alimentar tabla principal de elementos. """
-        return self.fetchall('''
-            SELECT  id_inventario,
-                    nombre,
-                    tamano_lote,
-                    precio_lote,
-                    minimo_lotes,
-                    unidades_restantes,
-                    lotes_restantes
-            FROM    Inventario;
-        ''')
-    
-    def obtenerInformacionPrincipal(self, id_inventario: int):
-        """ Regresa información principal de un elemento. """
-        return self.fetchone('''
-            SELECT  nombre,
-                    tamano_lote, 
-                    precio_lote,
-                    minimo_lotes,
-                    unidades_restantes
-            FROM    Inventario 
-            WHERE   id_inventario = ?;
-        ''', (id_inventario,))
-    
-    def obtenerProdUtilizaInv(self, id_inventario: int):
-        """ Obtener relación con productos en la tabla productos_utiliza_inventario. """
-        return self.fetchall('''
-            SELECT	codigo,
-                    utiliza_inventario
-            FROM	Productos_Utiliza_Inventario AS PUI
-                    LEFT JOIN Productos AS P
-                           ON PUI.id_productos = P.id_productos
-            WHERE 	id_inventario = ?;
-        ''', (id_inventario,))
-    
-    def agregarLotes(self, id_inventario: int, num_lotes: float):
-        """ Agrega lotes a existencia del elemento. Hace commit automáticamente. """
-        return self.execute('''
-            UPDATE  Inventario
-            SET     unidades_restantes = unidades_restantes + tamano_lote * ?
-            WHERE   id_inventario = ?;
-        ''', (num_lotes, id_inventario), commit=True)
-    
-    def registrarElemento(self, datos_elemento: tuple):
-        """ Intenta registrar un elemento en la tabla y regresar 
-            tupla con el índice recién insertado. No hace commit. """
-        return self.fetchone('''
-            INSERT INTO Inventario (
-                nombre, tamano_lote, precio_lote,
-                minimo_lotes, unidades_restantes
-            )
-            VALUES
-                (?,?,?,?,?)
-            RETURNING
-                id_inventario;
-        ''', datos_elemento)
-    
-    def editarElemento(self, id_inventario: int, datos_elemento: tuple):
-        """ Intenta editar datos de un elemento en la tabla y regresar
-            tupla con el índice recién editado. No hace commit. """
-        return self.fetchone('''
-            UPDATE  Inventario
-            SET     nombre = ?,
-                    tamano_lote = ?,
-                    precio_lote = ?,
-                    minimo_lotes = ?,
-                    unidades_restantes = ?
-            WHERE   id_inventario = ?
-            RETURNING id_inventario;
-        ''', (*datos_elemento, id_inventario))
-    
-    def eliminarElemento(self, id_inventario: int):
-        """ Elimina un elemento de la tabla. Hace commit automáticamente. """
-        return self.execute('''
-            DELETE  FROM Inventario 
-            WHERE   id_inventario = ?;
-        ''', (id_inventario,), commit=True)
-    
-    def eliminarProdUtilizaInv(self, id_inventario: int):
-        """ Elimina elemento de la tabla productos_utiliza_inventario.
-            No hace commit, al ser parte inicial del proceso de registro/modificación. """
-        return self.execute('''
-            DELETE  FROM productos_utiliza_inventario
-            WHERE   id_inventario = ?;
-        ''', (id_inventario,), commit=False)
-    
-    def insertarProdUtilizaInv(self, id_inventario: int, params: list[tuple]):
-        """ Inserta elemento en la tabla productos_utiliza_inventario.
-            Hace commit, al ser parte final del proceso de registro/modificación. """
-        params = [(id_inventario,) + param for param in params]
-        
-        return self.executemany('''
-            INSERT INTO productos_utiliza_inventario (
-                id_inventario, id_productos, utiliza_inventario
-            )
-            VALUES
-                (?,?,?);
-        ''', params, commit=True)
 
 
 #####################
@@ -147,11 +39,11 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
 
         # añade eventos para los botones
-        self.ui.lbAgregar.mousePressEvent = self.agregarInventario
-        self.ui.lbEditar.mousePressEvent = self.editarInventario
-        self.ui.lbQuitar.mousePressEvent = self.quitarInventario
-        self.ui.lbRegresar.mousePressEvent = self.goHome
-        self.ui.searchBar.textChanged.connect(lambda : self.update_display())
+        self.ui.btAgregar.clicked.connect(self.agregarInventario)
+        self.ui.btEditar.clicked.connect(self.editarInventario)
+        self.ui.btEliminar.clicked.connect(self.quitarInventario)
+        self.ui.btRegresar.clicked.connect(self.goHome)
+        self.ui.searchBar.textChanged.connect(lambda: self.update_display())
     
     def showEvent(self, event):
         self.update_display(rescan=True)
@@ -164,11 +56,9 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
     #  FUNCIONES ÚTILES
     # ==================
     def update_display(self, rescan: bool = False):
-        """
-        Actualiza la tabla y el contador de elementos.
-        Acepta una cadena de texto para la búsqueda de elementos.
-        También lee de nuevo la tabla de elementos, si se desea.
-        """
+        """ Actualiza la tabla y el contador de elementos.
+            Acepta una cadena de texto para la búsqueda de elementos.
+            También lee de nuevo la tabla de elementos, si se desea. """
         if rescan:
             manejador = ManejadorInventario(self.conn)
             self.all = manejador.obtenerTablaPrincipal()
@@ -242,12 +132,12 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         Dialog.accept = accept_handle
         Dialog.show()
     
-    def agregarInventario(self, _):
+    def agregarInventario(self):
         self.new = App_RegistrarInventario(self)
         self.new.success.connect(
             lambda: self.update_display(rescan=True))
     
-    def editarInventario(self, _):
+    def editarInventario(self):
         selected = self.ui.tabla_inventario.selectedItems()
         
         if selected:        
@@ -255,7 +145,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
             self.new.success.connect(
                 lambda: self.update_display(rescan=True))
     
-    def quitarInventario(self, _):
+    def quitarInventario(self):
         """ Elimina un material de la base de datos.
             Primero se verifica si hay productos que lo utilizan. """
         try:
@@ -290,10 +180,8 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         qm.information(self, 'Éxito', 'Se eliminó el elemento seleccionado.')
         self.update_display(rescan=True)
     
-    def goHome(self, _):
-        """
-        Cierra la ventana y regresa al inicio.
-        """
+    def goHome(self):
+        """ Cierra la ventana y regresa al inicio. """
         from Home import App_Home
 
         parent = self.parentWidget()       # QMainWindow
@@ -337,8 +225,8 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
 
         # evento para botón de regresar
         self.ui.btAceptar.clicked.connect(self.done)
-        self.ui.btAgregar.clicked.connect(lambda _: self.agregarProductoALista())
-        self.ui.lbRegresar.mousePressEvent = self.closeEvent
+        self.ui.btAgregar.clicked.connect(lambda: self.agregarProductoALista())
+        self.ui.btRegresar.clicked.connect(self.close)
 
         self.show()
      
@@ -350,9 +238,9 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         nuevo = WidgetProducto()
         
         # evento para eliminar la entrada
-        nuevo.lbEliminar.mousePressEvent = \
-            lambda _: self.ui.layoutScroll.removeWidget(nuevo) \
-                      or nuevo.setParent(None)
+        nuevo.btEliminar.clicked.connect(
+            lambda: self.ui.layoutScroll.removeWidget(nuevo)
+                    or nuevo.setParent(None))
         
         # validador para datos numéricos
         regexp_numero = QRegularExpression(r'\d*\.?\d*')
@@ -402,14 +290,13 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
             return None
         
         PUI_db_parametros = []
-        manejador = DatabaseManager(self.conn, '')
+        manejador = ManejadorProductos(self.conn)
             
         for codigo, cantidad in productos:
             if not codigo or cantidad < 1:
                 return None
             
-            idProducto, = manejador.fetchone(
-                'SELECT id_productos FROM Productos WHERE codigo = ?;', (codigo,))
+            idProducto, = manejador.obtenerIdProducto(codigo)
             
             PUI_db_parametros.append((idProducto, cantidad))
         
@@ -528,12 +415,27 @@ class WidgetProducto(QtWidgets.QWidget):
         lbContador.setMinimumSize(QtCore.QSize(21, 21))
         lbContador.setPixmap(QtGui.QPixmap(":/img/resources/images/package_2.png"))
         lbContador.setScaledContents(True)
-        lbEliminar = QtWidgets.QLabel(self)
-        lbEliminar.setGeometry(QtCore.QRect(343, 12, 35, 35))
-        lbEliminar.setMinimumSize(QtCore.QSize(35, 35))
-        lbEliminar.setPixmap(QtGui.QPixmap(":/img/resources/images/cancel.png"))
-        lbEliminar.setScaledContents(True)
-        lbEliminar.setCursor(QtGui.QCursor(Qt.PointingHandCursor))
+        
+        btEliminar = QtWidgets.QPushButton(self)
+        btEliminar.setGeometry(QtCore.QRect(343, 12, 35, 35))
+        btEliminar.setCursor(QtGui.QCursor(Qt.PointingHandCursor))
+        btEliminar.setStyleSheet("QPushButton {\n"
+        "        background-color: transparent;\n"
+        "        border: none;\n"
+        "        padding: 0px;\n"
+        "    }\n"
+        "    QPushButton:hover {\n"
+        "        background-color: rgba(255, 255, 255, 0);\n"
+        "    }\n"
+        "    QPushButton:pressed {\n"
+        "        background-color: rgba(255, 255, 255, 0);\n"
+        "    }")
+        icon = QIcon()
+        icon.addFile(":/img/resources/images/cancel.png", QtCore.QSize(), QIcon.Normal, QIcon.Off)
+        btEliminar.setIcon(icon)
+        btEliminar.setIconSize(QtCore.QSize(35, 35))
+        btEliminar.setFlat(True)
+        
         label = QtWidgets.QLabel(self)
         label.setGeometry(QtCore.QRect(35, 40, 271, 21))
         label.setMinimumSize(QtCore.QSize(271, 21))
@@ -547,7 +449,7 @@ class WidgetProducto(QtWidgets.QWidget):
         
         # guardar widgets importantes como atributos
         self.boxProducto = boxProducto
-        self.lbEliminar = lbEliminar
+        self.btEliminar = btEliminar
         self.txtProductoUtiliza = txtProductoUtiliza
     
     @property

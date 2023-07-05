@@ -64,10 +64,11 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
 
         # añade eventos para los botones
-        self.ui.lbAgregar.mousePressEvent = self.registrarUsuario
-        self.ui.lbEditar.mousePressEvent = self.editarUsuario
-        self.ui.lbQuitar.mousePressEvent = self.quitarUsuario
-        self.ui.lbRegresar.mousePressEvent = self.goHome
+        self.ui.btAgregar.clicked.connect(self.registrarUsuario)
+        self.ui.btEditar.clicked.connect(self.editarUsuario)
+        self.ui.btEliminar.clicked.connect(self.quitarUsuario)
+        self.ui.btRegresar.clicked.connect(self.goHome)
+        
         self.ui.searchBar.textChanged.connect(lambda: self.update_display())
         self.ui.mostrarCheck.stateChanged.connect(self.mostrarTrigger)
 
@@ -160,7 +161,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
-    def registrarUsuario(self, _):
+    def registrarUsuario(self):
         """
         Abre ventana para registrar un usuario.
         """
@@ -168,7 +169,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         self.new.success.connect(
             lambda: self.update_display(rescan=True))
 
-    def editarUsuario(self, _):
+    def editarUsuario(self):
         """
         Abre ventana para editar un usuario seleccionado.
         """
@@ -179,7 +180,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
             self.new.success.connect(
                 lambda: self.update_display(rescan=True))
 
-    def quitarUsuario(self, _):
+    def quitarUsuario(self):
         """
         Pide confirmación para eliminar usuarios de la base de datos.
         """
@@ -222,7 +223,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         qm.information(self, 'Éxito', 'Se dieron de baja los usuarios seleccionados.')
         self.update_display(rescan=True)
 
-    def goHome(self, _):
+    def goHome(self):
         """
         Cierra la ventana y regresa al inicio.
         """
@@ -271,7 +272,7 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
             w.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         # crear eventos para los botones
-        self.ui.lbRegresar.mousePressEvent = self.closeEvent
+        self.ui.btRegresar.clicked.connect(self.close)
         self.ui.btRegistrar.clicked.connect(self.editar)
 
         self.show()

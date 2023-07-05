@@ -47,24 +47,35 @@
         <number>15</number>
        </property>
        <item>
-        <widget class="QLabel" name="lbRegresar">
-         <property name="minimumSize">
-          <size>
-           <width>41</width>
-           <height>41</height>
-          </size>
-         </property>
+        <widget class="QPushButton" name="btRegresar">
          <property name="cursor">
           <cursorShape>PointingHandCursor</cursorShape>
          </property>
-         <property name="toolTip">
-          <string>Regresar al menú de inicio</string>
-         </property>
          <property name="styleSheet">
-          <string notr="true">image: url(:/img/resources/images/leftarrow.png);</string>
+          <string notr="true">QPushButton {
+        background-color: transparent;
+        border: none;
+        padding: 0px;
+    }
+    QPushButton:hover {
+        background-color: rgba(255, 255, 255, 0);
+    }
+    QPushButton:pressed {
+        background-color: rgba(255, 255, 255, 0);
+    }</string>
          </property>
-         <property name="text">
-          <string/>
+         <property name="icon">
+          <iconset resource="../../resources.qrc">
+           <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -236,68 +247,101 @@ background-color: rgb(255, 255, 255);</string>
               <number>30</number>
              </property>
              <item>
-              <widget class="QLabel" name="lbAgregar">
-               <property name="minimumSize">
-                <size>
-                 <width>41</width>
-                 <height>41</height>
-                </size>
-               </property>
+              <widget class="QPushButton" name="btAgregar">
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
-               <property name="toolTip">
-                <string>Agregar un producto a la base de datos</string>
-               </property>
                <property name="styleSheet">
-                <string notr="true">image: url(:/img/resources/images/plus.png);</string>
+                <string notr="true">QPushButton {
+        background-color: transparent;
+        border: none;
+        padding: 0px;
+    }
+    QPushButton:hover {
+        background-color: rgba(255, 255, 255, 0);
+    }
+    QPushButton:pressed {
+        background-color: rgba(255, 255, 255, 0);
+    }</string>
                </property>
-               <property name="text">
-                <string/>
+               <property name="icon">
+                <iconset resource="../../resources.qrc">
+                 <normaloff>:/img/resources/images/plus.png</normaloff>:/img/resources/images/plus.png</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>40</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="lbEditar">
-               <property name="minimumSize">
-                <size>
-                 <width>41</width>
-                 <height>41</height>
-                </size>
-               </property>
+              <widget class="QPushButton" name="btEditar">
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
-               <property name="toolTip">
-                <string>Modificar un producto de la base de datos</string>
-               </property>
                <property name="styleSheet">
-                <string notr="true">image: url(:/img/resources/images/edit.png);</string>
+                <string notr="true">QPushButton {
+        background-color: transparent;
+        border: none;
+        padding: 0px;
+    }
+    QPushButton:hover {
+        background-color: rgba(255, 255, 255, 0);
+    }
+    QPushButton:pressed {
+        background-color: rgba(255, 255, 255, 0);
+    }</string>
                </property>
-               <property name="text">
-                <string/>
+               <property name="icon">
+                <iconset resource="../../resources.qrc">
+                 <normaloff>:/img/resources/images/edit.png</normaloff>:/img/resources/images/edit.png</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>40</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="lbQuitar">
-               <property name="minimumSize">
-                <size>
-                 <width>41</width>
-                 <height>41</height>
-                </size>
-               </property>
+              <widget class="QPushButton" name="btEliminar">
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
-               <property name="toolTip">
-                <string>Eliminar producto seleccionado de la base de datos</string>
-               </property>
                <property name="styleSheet">
-                <string notr="true">image: url(:/img/resources/images/trash.png);</string>
+                <string notr="true">QPushButton {
+        background-color: transparent;
+        border: none;
+        padding: 0px;
+    }
+    QPushButton:hover {
+        background-color: rgba(255, 255, 255, 0);
+    }
+    QPushButton:pressed {
+        background-color: rgba(255, 255, 255, 0);
+    }</string>
                </property>
-               <property name="text">
-                <string/>
+               <property name="icon">
+                <iconset resource="../../resources.qrc">
+                 <normaloff>:/img/resources/images/trash.png</normaloff>:/img/resources/images/trash.png</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>40</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
