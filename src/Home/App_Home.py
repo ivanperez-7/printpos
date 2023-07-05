@@ -90,8 +90,8 @@ class App_Home(QtWidgets.QMainWindow):
     def alternarNotificaciones(self):
         """ Se llama a esta función al hacer click en la foto de perfil
             del usuario. Anima el tamaño de la caja de notificaciones. """
-        hiddenGeom = QRect(9, 76, 400, 0)
-        shownGeom = QRect(9, 76, 400, 120)
+        hiddenGeom = QRect(0, 0, 400, 0)
+        shownGeom = QRect(0, 0, 400, 120)
 
         if not self.ui.listaNotificaciones.isVisible():
             # Create an animation to gradually change the height of the widget
