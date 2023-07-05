@@ -7,7 +7,7 @@ from mywidgets import WarningDialog
 class DatabaseManager:
     """ Clase general de un administrador de bases de datos.
     Permite ejecutar consultas varias y manejar las excepciones."""
-    def __init__(self, conn: fdb.Connection, error_txt: str):
+    def __init__(self, conn: fdb.Connection, error_txt: str = None):
         self.conn = conn
         self.crsr: fdb.Cursor = conn.cursor()
         self.error_txt = error_txt or '¡Acceso fallido a base de datos!'
@@ -68,8 +68,31 @@ class ManejadorCaja(DatabaseManager):
     def __init__(self, conn: fdb.Connection, error_txt: str = ''):
         super().__init__(conn, error_txt)
     
+    def obtenerMovimientos(self):
+        """ Obtener historial completo de movimientos de caja. """
+        return self.fetchall('''
+            SELECT 	fecha_hora,
+                    monto,
+                    descripcion,
+                    metodo,
+                    U.nombre
+            FROM 	Caja AS C
+                    LEFT JOIN Usuarios AS U
+                           ON C.id_usuarios = U.id_usuarios
+            ORDER   BY fecha_hora DESC;
+        ''')
+    
     def registrarMovimiento(self, params: tuple):
-        ...
+        """ Registra ingreso o egreso en tabla historial de movimientos. 
+            Hace commit automáticamente. """
+        return self.execute('''
+            INSERT INTO Caja (
+                fecha_hora, monto,
+                descripcion, metodo, id_usuarios
+            )
+            VALUES
+                (?,?,?,?,?);
+        ''', params, commit=True)
 
 
 class ManejadorClientes(DatabaseManager):
@@ -452,8 +475,11 @@ class ManejadorVentas(DatabaseManager):
     def __init__(self, conn: fdb.Connection, error_txt: str = ''):
         super().__init__(conn, error_txt)
     
-    def tablaVentas(self, restrict: str):
-        """Sentencia para alimentar la tabla principal de clientes."""
+    def tablaVentas(self, restrict: int = None):
+        """ Sentencia para alimentar la tabla principal de ventas directas. 
+            Restringir a un solo usuario, si se desea. """
+        restrict = f'AND Usuarios.id_usuarios = {restrict}' if restrict else ''
+        
         return self.fetchall(f'''
             SELECT  Ventas.id_ventas,
                     Usuarios.nombre,
@@ -476,8 +502,11 @@ class ManejadorVentas(DatabaseManager):
             ORDER	BY Ventas.id_ventas DESC;
         ''')
     
-    def tablaPedidos(self, restrict: str):
-        """Sentencia para alimentar la tabla principal de clientes."""
+    def tablaPedidos(self, restrict: int = None):
+        """ Sentencia para alimentar la tabla principal de pedidos. 
+            Restringir a un solo usuario, si se desea. """
+        restrict = f'AND Usuarios.id_usuarios = {restrict}' if restrict else ''
+        
         return self.fetchall(f'''
             SELECT  Ventas.id_ventas,
                     Usuarios.nombre,
@@ -502,14 +531,12 @@ class ManejadorVentas(DatabaseManager):
         ''')
     
     def obtenerVenta(self, idx):
-        """Sentencia para obtener un cliente."""
-        self.crsr.execute('''
+        """ Sentencia para obtener una venta. """
+        return self.fetchone('''
             SELECT  * 
             FROM    Ventas 
-            WHERE id_clientes = ?;
+            WHERE   id_ventas = ?;
         ''', (idx,))
-        
-        return self.crsr.fetchone()
     
     def insertarVenta(self, params: tuple):
         """ Insertar venta nueva en la tabla ventas e intenta 

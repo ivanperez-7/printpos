@@ -42,11 +42,6 @@
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
-      <property name="font">
-       <font>
-        <family>MS Shell Dlg 2</family>
-       </font>
-      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(52, 172, 224);</string>
       </property>
@@ -76,11 +71,6 @@
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <family>MS Shell Dlg 2</family>
-          </font>
          </property>
          <property name="styleSheet">
           <string notr="true">QFrame { border:none; }
@@ -148,7 +138,6 @@ background-color: rgb(52, 172, 224);</string>
             </property>
             <property name="font">
              <font>
-              <family>MS Shell Dlg 2</family>
               <pointsize>18</pointsize>
              </font>
             </property>
@@ -174,11 +163,6 @@ background-color: rgb(52, 172, 224);</string>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
-      <property name="font">
-       <font>
-        <family>MS Shell Dlg 2</family>
-       </font>
-      </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
@@ -191,11 +175,6 @@ background-color: rgb(52, 172, 224);</string>
        </property>
        <item alignment="Qt::AlignTop">
         <widget class="QFrame" name="frame_5">
-         <property name="font">
-          <font>
-           <family>MS Shell Dlg 2</family>
-          </font>
-         </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
@@ -208,11 +187,6 @@ background-color: rgb(52, 172, 224);</string>
           </property>
           <item>
            <widget class="QFrame" name="frame_7">
-            <property name="font">
-             <font>
-              <family>MS Shell Dlg 2</family>
-             </font>
-            </property>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
@@ -242,7 +216,6 @@ background-color: rgb(52, 172, 224);</string>
                </property>
                <property name="font">
                 <font>
-                 <family>MS Shell Dlg 2</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -265,11 +238,6 @@ background-color: rgb(52, 172, 224);</string>
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
-            </property>
-            <property name="font">
-             <font>
-              <family>MS Shell Dlg 2</family>
-             </font>
             </property>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
@@ -304,11 +272,6 @@ background-color: rgb(52, 172, 224);</string>
                  <height>31</height>
                 </size>
                </property>
-               <property name="font">
-                <font>
-                 <family>MS Shell Dlg 2</family>
-                </font>
-               </property>
                <property name="styleSheet">
                 <string notr="true">image: url(:/img/resources/images/magnifier.png);
 background-color: rgb(255, 255, 255);</string>
@@ -334,7 +297,6 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
-                 <family>MS Shell Dlg 2</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -360,11 +322,6 @@ background-color: rgb(255, 255, 255);</string>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="font">
-          <font>
-           <family>MS Shell Dlg 2</family>
-          </font>
-         </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
@@ -376,7 +333,7 @@ background-color: rgb(255, 255, 255);</string>
            <widget class="QTableWidget" name="tabla_seleccionar">
             <property name="font">
              <font>
-              <family>MS Shell Dlg 2</family>
+              <family>Segoe UI</family>
               <pointsize>10</pointsize>
              </font>
             </property>

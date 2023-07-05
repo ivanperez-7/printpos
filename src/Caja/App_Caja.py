@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import fdb
 
 from PySide6 import QtWidgets
@@ -40,7 +42,7 @@ class App_Caja(QtWidgets.QMainWindow):
                     .cursor() \
                     .execute('SELECT MIN(fecha_hora) FROM Caja;') \
                     .fetchone()
-        fechaMin = QDateTime.fromSecsSinceEpoch(fechaMin).date() if fechaMin else hoy
+        fechaMin = QDateTime(fechaMin).date() if fechaMin else hoy
         
         self.ui.dateDesde.setDate(hoy)
         self.ui.dateDesde.setMaximumDate(hoy)
@@ -113,20 +115,9 @@ class App_Caja(QtWidgets.QMainWindow):
             Acepta una cadena de texto para la búsqueda de usuarios.
             También lee de nuevo la tabla de usuarios, si se desea. """
         if rescan:
-            crsr = self.conn.cursor()
-            crsr.execute('''
-            SELECT 	fecha_hora,
-                    monto,
-                    descripcion,
-                    metodo,
-                    U.nombre
-            FROM 	Caja AS C
-                    LEFT JOIN Usuarios AS U
-                           ON C.id_usuarios = U.id_usuarios
-            ORDER   BY fecha_hora DESC;
-            ''')
+            manejador = ManejadorCaja(self.conn)
 
-            all_movimientos = crsr.fetchall()
+            all_movimientos = manejador.obtenerMovimientos()
             self.all_ingresos = []
             self.all_egresos  = []
             
@@ -140,14 +131,12 @@ class App_Caja(QtWidgets.QMainWindow):
         fechaDesde = self.ui.dateDesde.date()
         fechaHasta = self.ui.dateHasta.date()
         
-        dateFromSecs = lambda s: QDateTime.fromSecsSinceEpoch(s).date()
-        
         # <tabla de ingresos>
         tabla = self.ui.tabla_ingresos
         tabla.setRowCount(0)
         
         movimientos = [m for m in self.all_ingresos
-                       if fechaDesde <= dateFromSecs(m[0]) <= fechaHasta]
+                       if fechaDesde <= QDate(m[0]) <= fechaHasta]
         
         ingresos_efectivo = sum(m[1] for m in movimientos if m[3] == 'Efectivo')
         ingresos_transferencia = sum(m[1] for m in movimientos if m[3] == 'Transferencia bancaria')
@@ -166,7 +155,7 @@ class App_Caja(QtWidgets.QMainWindow):
             tabla.insertRow(row)
 
             for col, dato in enumerate(movimiento):
-                if isinstance(dato, int):
+                if isinstance(dato, datetime):
                     cell = formatDate(dato)
                 elif isinstance(dato, float):
                     cell = f'{dato:,.2f}'
@@ -184,7 +173,7 @@ class App_Caja(QtWidgets.QMainWindow):
         tabla.setRowCount(0)
         
         movimientos = [m for m in self.all_egresos
-                       if fechaDesde <= dateFromSecs(m[0]) <= fechaHasta]
+                       if fechaDesde <= QDate(m[0]) <= fechaHasta]
         
         egresos_efectivo = sum(-m[1] for m in movimientos if m[3] == 'Efectivo')
         egresos_transferencia = sum(-m[1] for m in movimientos if m[3] == 'Transferencia bancaria')
@@ -203,7 +192,7 @@ class App_Caja(QtWidgets.QMainWindow):
             tabla.insertRow(row)
 
             for col, dato in enumerate(movimiento):
-                if isinstance(dato, int):
+                if isinstance(dato, datetime):
                     cell = formatDate(dato)
                 elif isinstance(dato, float):
                     cell = f'{dato:,.2f}'
@@ -275,25 +264,23 @@ class App_Caja(QtWidgets.QMainWindow):
         fechaDesde = self.ui.dateDesde.date()
         fechaHasta = self.ui.dateHasta.date()
         
-        dateFromSecs = lambda s: QDateTime.fromSecsSinceEpoch(s).date()
-        
         # cálculos extra de ingresos
         movimientos = [m for m in self.all_ingresos
-                       if fechaDesde <= dateFromSecs(m[0]) <= fechaHasta]
+                       if fechaDesde <= QDate(m[0]) <= fechaHasta]
         
         ingresos_credito = sum(m[1] for m in movimientos if m[3].endswith('crédito'))
         ingresos_debito = sum(m[1] for m in movimientos if m[3].endswith('débito'))
         
         # cálculos extra de egresos
         movimientos = [m for m in self.all_egresos
-                       if fechaDesde <= dateFromSecs(m[0]) <= fechaHasta]
+                       if fechaDesde <= QDate(m[0]) <= fechaHasta]
         
         egresos_credito = -sum(m[1] for m in movimientos if m[3].endswith('crédito'))
         egresos_debito = -sum(m[1] for m in movimientos if m[3].endswith('débito'))
         
         # totales (todos los métodos)
         movimientos = [m for m in self.all_ingresos + self.all_egresos
-                       if fechaDesde <= dateFromSecs(m[0]) <= fechaHasta]
+                       if fechaDesde <= QDate(m[0]) <= fechaHasta]
         
         total_efectivo = sum(m[1] for m in movimientos if m[3] == 'Efectivo')
         total_transferencia = sum(m[1] for m in movimientos if m[3] == 'Transferencia bancaria')
@@ -334,7 +321,7 @@ class App_Caja(QtWidgets.QMainWindow):
             
             Paragraph('<b>' + self.ui.lbTotalIngresos.text() + '</b>', styles['Foot']),
             Paragraph('<b>' + self.ui.lbTotalEgresos.text() + '</b>', styles['Foot']),
-            Paragraph(f'<b>Esperado en caja: ${esperado}</b>', styles['Foot']),
+            Paragraph(f'<b>Esperado en caja: ${esperado:,.2f}</b>', styles['Foot']),
         ]
 
         # Build the PDF document
@@ -347,101 +334,12 @@ class App_Caja(QtWidgets.QMainWindow):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def registrarIngreso(self):
-        dialogRegistrar = Dialog_Registrar(self)
-        
-        # callbacks para los botones
-        def accepted_handle():
-            try:
-                cantidad = float(dialogRegistrar.txtCantidad.text())
-                motivo = dialogRegistrar.txtMotivo.text().strip()
-                metodo = dialogRegistrar.groupMetodo.checkedButton().text()
-            except (ValueError, AttributeError):
-                return
-            
-            if cantidad <= 0. or not motivo:
-                return
-            
-            conn = self.conn
-            crsr = conn.cursor()
-            caja_db_parametros = (
-                QDateTime.currentDateTime().toSecsSinceEpoch(),
-                cantidad,
-                motivo,
-                metodo,
-                self.user.id
-            )
-            
-            try:
-                crsr.execute('''
-                INSERT INTO Caja (
-                    fecha_hora, monto,
-                    descripcion, metodo, id_usuarios
-                )
-                VALUES
-                    (?,?,?,?,?);
-                ''', caja_db_parametros)
-                
-                conn.commit()
-            except fdb.Error as err:
-                conn.rollback()
-                
-                WarningDialog('¡No pudo se registrar el movimiento!', str(err))
-                return
-            
-            QtWidgets.QMessageBox.information(self, 'Éxito', '¡Movimiento registrado!')
-            self.update_display(rescan=True)
-            dialogRegistrar.close()
-            
-        dialogRegistrar.accept = accepted_handle
+        """ Registrar ingreso en movimientos. """
+        self.Dialog = Dialog_Registrar(self)
     
     def registrarEgreso(self):
-        dialogRegistrar = Dialog_Registrar(self)
-        dialogRegistrar.setWindowTitle('Registrar egreso')
-        
-        # callbacks para los botones
-        def accepted_handle():
-            try:
-                cantidad = float(dialogRegistrar.txtCantidad.text())
-                motivo = dialogRegistrar.txtMotivo.text().strip()
-                metodo = dialogRegistrar.groupMetodo.checkedButton().text()
-            except (ValueError, AttributeError):
-                return
-            
-            if cantidad <= 0. or not motivo:
-                return
-            
-            conn = self.conn
-            crsr = conn.cursor()
-            caja_db_parametros = (
-                QDateTime.currentDateTime().toSecsSinceEpoch(),
-                -abs(cantidad),
-                motivo,
-                metodo,
-                self.user.id
-            )
-            
-            try:
-                crsr.execute('''
-                INSERT INTO Caja (
-                    fecha_hora, monto,
-                    descripcion, metodo, id_usuarios
-                )
-                VALUES
-                    (?,?,?,?,?);
-                ''', caja_db_parametros)
-                
-                conn.commit()
-            except fdb.Error as err:
-                conn.rollback()
-                
-                WarningDialog('¡No pudo se registrar el movimiento!', str(err))
-                return
-            
-            QtWidgets.QMessageBox.information(self, 'Éxito', '¡Movimiento registrado!')
-            self.update_display(rescan=True)
-            dialogRegistrar.close()
-            
-        dialogRegistrar.accept = accepted_handle
+        """ Registrar egreso en movimientos. """
+        self.Dialog = Dialog_Registrar(self, egreso=True)
         
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
@@ -458,83 +356,138 @@ class App_Caja(QtWidgets.QMainWindow):
 #################################
 
 class Dialog_Registrar(QtWidgets.QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent: App_Caja, egreso = False):
+        from PySide6 import QtCore, QtGui
+        
         super().__init__(parent)
+        
+        self.egreso = egreso # es egreso o no
+        
+        self.conn = parent.conn
+        self.user = parent.user
+        self.parent_ = parent
+        
+        if egreso:
+            self.setWindowTitle("Registrar egreso")
+        else:
+            self.setWindowTitle("Registrar ingreso")
 
-        self.setupUi(self)
-        
-        self.show()
-    
-    def setupUi(self, DialogRegistrar):
-        from PySide6 import QtCore
-        
-        DialogRegistrar.setObjectName("DialogRegistrar")
-        DialogRegistrar.setFixedSize(525, 160)
-        DialogRegistrar.setWindowTitle("Registrar ingreso")
-        DialogRegistrar.setWindowFlags(DialogRegistrar.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-        self.formLayout = QtWidgets.QFormLayout(DialogRegistrar)
-        self.formLayout.setHorizontalSpacing(25)
-        self.formLayout.setVerticalSpacing(9)
-        self.formLayout.setObjectName("formLayout")
-        self.label = QtWidgets.QLabel(DialogRegistrar)
+        self.setFixedSize(525, 160)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        formLayout = QtWidgets.QFormLayout(self)
+        formLayout.setHorizontalSpacing(25)
+        formLayout.setVerticalSpacing(9)
+        formLayout.setObjectName("formLayout")
+        label = QtWidgets.QLabel(self)
         font = QFont()
         font.setFamily("MS Shell Dlg 2")
         font.setPointSize(10)
-        self.label.setFont(font)
-        self.label.setText("Monto:")
-        self.label.setObjectName("label")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.label)
-        self.txtCantidad = QtWidgets.QLineEdit(DialogRegistrar)
-        self.txtCantidad.setFont(font)
-        self.txtCantidad.setText("")
-        self.txtCantidad.setObjectName("txtCantidad")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.txtCantidad)
-        self.label_2 = QtWidgets.QLabel(DialogRegistrar)
-        self.label_2.setFont(font)
-        self.label_2.setText("Descripción:")
-        self.label_2.setObjectName("label_2")
-        self.formLayout.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.label_2)
-        self.txtMotivo = QtWidgets.QLineEdit(DialogRegistrar)
-        self.txtMotivo.setFont(font)
-        self.txtMotivo.setObjectName("txtMotivo")
-        self.formLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.txtMotivo)
-        self.frame = QtWidgets.QFrame(DialogRegistrar)
-        self.frame.setObjectName("frame")
-        self.horizontalLayout = QtWidgets.QHBoxLayout(self.frame)
-        self.horizontalLayout.setObjectName("horizontalLayout")
-        self.btEfectivo = QtWidgets.QRadioButton(self.frame)
-        self.btEfectivo.setFont(font)
-        self.btEfectivo.setText("Efectivo")
-        self.btEfectivo.setObjectName("btEfectivo")
-        self.groupMetodo = QtWidgets.QButtonGroup(DialogRegistrar)
-        self.groupMetodo.setObjectName("groupMetodo")
-        self.groupMetodo.addButton(self.btEfectivo)
-        self.horizontalLayout.addWidget(self.btEfectivo, 0, Qt.AlignHCenter|Qt.AlignVCenter)
-        self.btTarjetaCredito = QtWidgets.QRadioButton(self.frame)
-        self.btTarjetaCredito.setFont(font)
-        self.btTarjetaCredito.setText("Tarjeta de crédito")
-        self.groupMetodo.addButton(self.btTarjetaCredito)
-        self.horizontalLayout.addWidget(self.btTarjetaCredito, 0, Qt.AlignHCenter|Qt.AlignVCenter)
-        self.btTarjetaDebito = QtWidgets.QRadioButton(self.frame)
-        self.btTarjetaDebito.setFont(font)
-        self.btTarjetaDebito.setText("Tarjeta de débito")
-        self.groupMetodo.addButton(self.btTarjetaDebito)
-        self.horizontalLayout.addWidget(self.btTarjetaDebito, 0, Qt.AlignHCenter|Qt.AlignVCenter)
-        self.btTransferencia = QtWidgets.QRadioButton(self.frame)
-        self.btTransferencia.setFont(font)
-        self.btTransferencia.setText("Transferencia bancaria")
-        self.btTransferencia.setObjectName("btTransferencia")
-        self.groupMetodo.addButton(self.btTransferencia)
-        self.horizontalLayout.addWidget(self.btTransferencia, 0, Qt.AlignHCenter|Qt.AlignVCenter)
-        self.formLayout.setWidget(2, QtWidgets.QFormLayout.SpanningRole, self.frame)
-        self.buttonBox = QtWidgets.QDialogButtonBox(DialogRegistrar)
-        self.buttonBox.setFont(font)
-        self.buttonBox.setOrientation(Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
-        self.buttonBox.setCenterButtons(True)
-        self.buttonBox.setObjectName("buttonBox")
-        self.formLayout.setWidget(3, QtWidgets.QFormLayout.SpanningRole, self.buttonBox)
+        label.setFont(font)
+        label.setText("Monto:")
+        label.setObjectName("label")
+        formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, label)
+        txtCantidad = QtWidgets.QLineEdit(self)
+        txtCantidad.setFont(font)
+        txtCantidad.setText("")
+        txtCantidad.setObjectName("txtCantidad")
+        formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, txtCantidad)
+        label_2 = QtWidgets.QLabel(self)
+        label_2.setFont(font)
+        label_2.setText("Descripción:")
+        label_2.setObjectName("label_2")
+        formLayout.setWidget(1, QtWidgets.QFormLayout.LabelRole, label_2)
+        txtMotivo = QtWidgets.QLineEdit(self)
+        txtMotivo.setFont(font)
+        txtMotivo.setObjectName("txtMotivo")
+        formLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, txtMotivo)
+        frame = QtWidgets.QFrame(self)
+        frame.setObjectName("frame")
+        horizontalLayout = QtWidgets.QHBoxLayout(frame)
+        horizontalLayout.setObjectName("horizontalLayout")
+        btEfectivo = QtWidgets.QRadioButton(frame)
+        btEfectivo.setFont(font)
+        btEfectivo.setText("Efectivo")
+        btEfectivo.setObjectName("btEfectivo")
+        btEfectivo.setChecked(True)
+        groupMetodo = QtWidgets.QButtonGroup(self)
+        groupMetodo.setObjectName("groupMetodo")
+        groupMetodo.addButton(btEfectivo)
+        horizontalLayout.addWidget(btEfectivo, 0, Qt.AlignHCenter|Qt.AlignVCenter)
+        btTarjetaCredito = QtWidgets.QRadioButton(frame)
+        btTarjetaCredito.setFont(font)
+        btTarjetaCredito.setText("Tarjeta de crédito")
+        groupMetodo.addButton(btTarjetaCredito)
+        horizontalLayout.addWidget(btTarjetaCredito, 0, Qt.AlignHCenter|Qt.AlignVCenter)
+        btTarjetaDebito = QtWidgets.QRadioButton(frame)
+        btTarjetaDebito.setFont(font)
+        btTarjetaDebito.setText("Tarjeta de débito")
+        groupMetodo.addButton(btTarjetaDebito)
+        horizontalLayout.addWidget(btTarjetaDebito, 0, Qt.AlignHCenter|Qt.AlignVCenter)
+        btTransferencia = QtWidgets.QRadioButton(frame)
+        btTransferencia.setFont(font)
+        btTransferencia.setText("Transferencia bancaria")
+        btTransferencia.setObjectName("btTransferencia")
+        groupMetodo.addButton(btTransferencia)
+        horizontalLayout.addWidget(btTransferencia, 0, Qt.AlignHCenter|Qt.AlignVCenter)
+        formLayout.setWidget(2, QtWidgets.QFormLayout.SpanningRole, frame)
+        buttonBox = QtWidgets.QDialogButtonBox(self)
+        buttonBox.setFont(font)
+        buttonBox.setOrientation(Qt.Horizontal)
+        buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        buttonBox.setCenterButtons(True)
+        buttonBox.setObjectName("buttonBox")
+        formLayout.setWidget(3, QtWidgets.QFormLayout.SpanningRole, buttonBox)
 
-        self.buttonBox.accepted.connect(DialogRegistrar.accept) # type: ignore
-        self.buttonBox.rejected.connect(DialogRegistrar.reject) # type: ignore
-        QtCore.QMetaObject.connectSlotsByName(DialogRegistrar)
+        buttonBox.accepted.connect(self.accept) # type: ignore
+        buttonBox.rejected.connect(self.reject) # type: ignore
+        QtCore.QMetaObject.connectSlotsByName(self)
+        
+        # guardar algunos widgets como atributos
+        self.txtCantidad = txtCantidad
+        self.groupMetodo = groupMetodo
+        self.txtMotivo = txtMotivo
+        
+        # validadores para datos numéricos
+        regexp_numero = QtCore.QRegularExpression(r'\d*\.?\d*')
+        validador = QtGui.QRegularExpressionValidator(regexp_numero)
+        txtCantidad.setValidator(validador)
+        
+        self.show()
+    
+    def accept(self):
+        if self.monto == 0. or not self.motivo:
+            return
+        
+        caja_db_parametros = (
+            QDateTime.currentDateTime().toPython(),
+            self.monto,
+            self.motivo,
+            self.metodo,
+            self.user.id
+        )
+        manejador = ManejadorCaja(self.conn, 
+                                  '¡No se pudo registrar el movimiento!')
+        
+        if not manejador.registrarMovimiento(caja_db_parametros):
+            return
+        
+        QtWidgets.QMessageBox.information(
+            self, 'Éxito', '¡Movimiento registrado!')
+        
+        self.parent_.update_display(rescan=True)
+        self.close()
+    
+    @property
+    def monto(self):
+        try:
+            return float(self.txtCantidad.text()) * (-1 if self.egreso else 1)
+        except ValueError:
+            return 0.
+    
+    @property
+    def metodo(self):
+        return self.groupMetodo.checkedButton().text()
+    
+    @property
+    def motivo(self):
+        return self.txtMotivo.text()

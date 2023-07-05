@@ -29,6 +29,11 @@
      <height>81</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Segoe UI</family>
+    </font>
+   </property>
    <property name="styleSheet">
     <string notr="true">background-color: rgb(52, 172, 224);</string>
    </property>
@@ -49,6 +54,7 @@
     </property>
     <property name="font">
      <font>
+      <family>Segoe UI</family>
       <pointsize>18</pointsize>
      </font>
     </property>
@@ -67,6 +73,11 @@
       <width>41</width>
       <height>41</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Segoe UI</family>
+     </font>
     </property>
     <property name="cursor">
      <cursorShape>PointingHandCursor</cursorShape>
@@ -110,9 +121,8 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
+     <family>Segoe UI</family>
      <pointsize>11</pointsize>
-     <weight>50</weight>
      <bold>false</bold>
     </font>
    </property>
@@ -132,6 +142,11 @@
      <height>40</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Segoe UI</family>
+    </font>
+   </property>
    <property name="pixmap">
     <pixmap resource="../../resources.qrc">:/img/resources/images/edit.png</pixmap>
    </property>
@@ -148,6 +163,11 @@
      <height>81</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Segoe UI</family>
+    </font>
+   </property>
    <property name="text">
     <string/>
    </property>
@@ -163,7 +183,7 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
+     <family>Segoe UI</family>
      <pointsize>11</pointsize>
     </font>
    </property>
@@ -178,6 +198,12 @@
       <width>321</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Segoe UI</family>
+      <pointsize>11</pointsize>
+     </font>
     </property>
     <property name="text">
      <string/>
@@ -198,7 +224,7 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
+     <family>Segoe UI</family>
      <pointsize>11</pointsize>
     </font>
    </property>
@@ -213,6 +239,12 @@
       <width>321</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Segoe UI</family>
+      <pointsize>11</pointsize>
+     </font>
     </property>
     <property name="text">
      <string/>
@@ -236,7 +268,7 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
+     <family>Segoe UI</family>
      <pointsize>11</pointsize>
     </font>
    </property>
@@ -251,6 +283,12 @@
       <width>241</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Segoe UI</family>
+      <pointsize>11</pointsize>
+     </font>
     </property>
     <property name="text">
      <string/>
@@ -274,7 +312,7 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
+     <family>Segoe UI</family>
      <pointsize>11</pointsize>
     </font>
    </property>
@@ -289,6 +327,12 @@
       <width>241</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Segoe UI</family>
+      <pointsize>11</pointsize>
+     </font>
     </property>
     <property name="text">
      <string/>
@@ -309,7 +353,7 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
+     <family>Segoe UI</family>
      <pointsize>11</pointsize>
     </font>
    </property>
@@ -324,6 +368,12 @@
       <width>201</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Segoe UI</family>
+      <pointsize>9</pointsize>
+     </font>
     </property>
     <property name="styleSheet">
      <string notr="true">QFrame {border: 1px solid black;}</string>
@@ -348,6 +398,11 @@
      <width>16</width>
      <height>17</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Segoe UI</family>
+    </font>
    </property>
    <property name="text">
     <string/>

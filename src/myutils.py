@@ -1,4 +1,8 @@
 """ Provee varias funciones útiles utilizadas frecuentemente. """
+from datetime import datetime
+
+from PySide6.QtCore import QDateTime
+
 from mydecorators import run_in_thread
 
 
@@ -10,24 +14,18 @@ class ColorsEnum:
 
 
 def clamp(value, smallest, largest) -> int | float:
-    """
-    Trunca un valor dentro de un rango.
-    """
+    """ Trunca un valor dentro de un rango. """
     return sorted((value, smallest, largest))[1]
 
 
 def chunkify(array, size: int):
-    """
-    Divide un arreglo en subarreglos de un tamaño dado.
-    """
+    """ Divide un arreglo en subarreglos de un tamaño dado. """
     return [array[x : x+size] for x in range(0, len(array), size)]
 
 
 def unidecode(input_str: str):
-    """
-    Elimina (normaliza) los acentos en una cadena de texto y convierte a 
-    minúsculas. Ejemplo: 'Pérez' -> 'perez'.
-    """
+    """ Elimina (normaliza) los acentos en una cadena de texto y 
+        convierte a minúsculas. Ejemplo: 'Pérez' -> 'perez'. """
     import unicodedata
 
     nfkd_form = unicodedata.normalize('NFKD', input_str)
@@ -37,9 +35,7 @@ def unidecode(input_str: str):
 
 
 def son_similar(str1: str, str2: str) -> bool:
-    """
-    Determina si dos cadenas son similares o no.
-    """
+    """ Determina si dos cadenas son similares o no. """
     import re
     
     # convertir, por si acaso
@@ -52,31 +48,27 @@ def son_similar(str1: str, str2: str) -> bool:
     return str1_clean in str2_clean
 
 
-def formatDate(date) -> str:
-    """
-    Da formato en texto a un dato QDateTime.
-    Ejemplo: 08 de febrero 2023, 4:56 p. m.
-    """
+def formatDate(date: QDateTime | datetime) -> str:
+    """ Da formato en texto a un dato QDateTime.
+        Ejemplo: 08 de febrero 2023, 4:56 p. m. """
     if not date:
         return ''
     
-    from PySide6.QtCore import QDateTime, QLocale
+    from PySide6.QtCore import QLocale
+    
+    if isinstance(date, datetime):
+        date = QDateTime(date)
 
     locale = QLocale(QLocale.Spanish, QLocale.Mexico)
-
-    if isinstance(date, int):
-        date = QDateTime.fromSecsSinceEpoch(date)
 
     return locale.toString(date, "d 'de' MMMM yyyy, h:mm ap")
 
 
 @run_in_thread
 def exportarXlsx(rutaArchivo, titulos, datos):
-    """
-    Exporta una lista de tuplas a un archivo MS Excel, con extensión xlsx.
-    Requiere el nombre del archivo, una lista con los títulos para las
-    columnas, y una lista de tuplas con los datos principales.
-    """
+    """ Exporta una lista de tuplas a un archivo MS Excel, con extensión xlsx.
+        Requiere el nombre del archivo, una lista con los títulos para las
+        columnas, y una lista de tuplas con los datos principales. """
     from openpyxl import Workbook
     from openpyxl.styles import Font
 
@@ -98,11 +90,9 @@ def exportarXlsx(rutaArchivo, titulos, datos):
 
 
 def enviarWhatsApp(phone_no: str, message: str):
-    """
-    Enviar mensaje por WhatsApp abriendo el navegador de internet.
-    TODO:
-        - open("https://web.whatsapp.com/accept?code=" + receiver)
-    """
+    """ Enviar mensaje por WhatsApp abriendo el navegador de internet.
+        TODO:
+            - open("https://web.whatsapp.com/accept?code=" + receiver) """
     from urllib.parse import quote
     import webbrowser as web
 
@@ -476,15 +466,12 @@ def generarTicketCompra(crsr, idx):
     elif metodo == 'Transferencia bancaria': metodo = 'TRF'
     else: metodo = 'TVP'
     
-    _generarTicketPDF(idx, productos, vendedor, fechaCreacion, pagado, metodo)
+    _generarTicketPDF(idx, productos, vendedor, 
+                      fechaCreacion, pagado, metodo)
 
 
 def generarTicketPresupuesto(productos, vendedor):
-    """
-    Genera un ticket para el presupuesto de una compra.
-    """
-    from PySide6.QtCore import QDateTime
-    
+    """ Genera un ticket para el presupuesto de una compra. """
     _generarTicketPDF(0, productos, vendedor, 
                       QDateTime.currentDateTime(), 0., None)
 #####################################

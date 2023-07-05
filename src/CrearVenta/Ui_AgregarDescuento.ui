@@ -25,6 +25,11 @@
      <height>81</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Segoe UI</family>
+    </font>
+   </property>
    <property name="styleSheet">
     <string notr="true">background-color: rgb(52, 172, 224);</string>
    </property>
@@ -45,6 +50,7 @@
     </property>
     <property name="font">
      <font>
+      <family>Segoe UI</family>
       <pointsize>18</pointsize>
      </font>
     </property>
@@ -63,6 +69,11 @@
       <width>41</width>
       <height>41</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Segoe UI</family>
+     </font>
     </property>
     <property name="cursor">
      <cursorShape>PointingHandCursor</cursorShape>
@@ -106,6 +117,7 @@
    </property>
    <property name="font">
     <font>
+     <family>Segoe UI</family>
      <pointsize>12</pointsize>
     </font>
    </property>
@@ -124,6 +136,7 @@
    </property>
    <property name="font">
     <font>
+     <family>Segoe UI</family>
      <pointsize>10</pointsize>
     </font>
    </property>
@@ -219,6 +232,7 @@ QTableView:active {
    </property>
    <property name="font">
     <font>
+     <family>Segoe UI</family>
      <pointsize>12</pointsize>
     </font>
    </property>
@@ -237,6 +251,7 @@ QTableView:active {
    </property>
    <property name="font">
     <font>
+     <family>Segoe UI</family>
      <pointsize>11</pointsize>
     </font>
    </property>
@@ -259,6 +274,7 @@ QTableView:active {
    </property>
    <property name="font">
     <font>
+     <family>Segoe UI</family>
      <pointsize>12</pointsize>
     </font>
    </property>

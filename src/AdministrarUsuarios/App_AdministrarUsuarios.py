@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import fdb
 
 from PySide6 import QtWidgets
@@ -148,7 +150,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
             tabla.insertRow(row)
 
             for col, dato in enumerate(usuario):
-                if isinstance(dato, int):
+                if isinstance(dato, datetime):
                     cell = formatDate(dato)
                 else:
                     cell = str(dato or '')

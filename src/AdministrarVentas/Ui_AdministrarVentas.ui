@@ -57,6 +57,9 @@
          <property name="cursor">
           <cursorShape>PointingHandCursor</cursorShape>
          </property>
+         <property name="toolTip">
+          <string>Regresar a menú de inicio</string>
+         </property>
          <property name="styleSheet">
           <string notr="true">QPushButton {
         background-color: transparent;
@@ -257,6 +260,9 @@ background-color: rgb(255, 255, 255);</string>
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
+               <property name="toolTip">
+                <string>Terminar orden seleccionada</string>
+               </property>
                <property name="styleSheet">
                 <string notr="true">QPushButton {
         background-color: transparent;
@@ -289,6 +295,9 @@ background-color: rgb(255, 255, 255);</string>
               <widget class="QPushButton" name="btCancelar">
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="toolTip">
+                <string>Marcar venta como cancelada</string>
                </property>
                <property name="styleSheet">
                 <string notr="true">QPushButton {
@@ -355,6 +364,7 @@ background-color: rgb(255, 255, 255);</string>
               <widget class="QLabel" name="label">
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -379,6 +389,7 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -394,6 +405,7 @@ background-color: rgb(255, 255, 255);</string>
               <widget class="QLabel" name="label_4">
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -418,6 +430,7 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -448,6 +461,7 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -466,6 +480,7 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -484,6 +499,7 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -514,6 +530,7 @@ background-color: rgb(255, 255, 255);</string>
         <widget class="QTabWidget" name="tabWidget">
          <property name="font">
           <font>
+           <family>Segoe UI</family>
            <pointsize>10</pointsize>
           </font>
          </property>
@@ -547,7 +564,7 @@ background-color: rgb(255, 255, 255);</string>
             <widget class="QTableWidget" name="tabla_ventasDirectas">
              <property name="font">
               <font>
-               <family>MS Shell Dlg 2</family>
+               <family>Segoe UI</family>
                <pointsize>10</pointsize>
               </font>
              </property>
@@ -673,7 +690,7 @@ QTableView:active {
             <widget class="QTableWidget" name="tabla_pedidos">
              <property name="font">
               <font>
-               <family>MS Shell Dlg 2</family>
+               <family>Segoe UI</family>
                <pointsize>10</pointsize>
               </font>
              </property>
@@ -852,7 +869,6 @@ QTableView:active {
             <property name="font">
              <font>
               <pointsize>11</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -872,7 +888,6 @@ QTableView:active {
             <property name="font">
              <font>
               <pointsize>11</pointsize>
-              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
