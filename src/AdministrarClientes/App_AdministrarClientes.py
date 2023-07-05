@@ -4,75 +4,10 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon, QPixmap, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QDateTime, QRegularExpression, Signal
 
+from databasemanagers import ManejadorClientes
 from mydecorators import con_fondo
-from myutils import DatabaseManager, exportarXlsx, formatDate, ColorsEnum, son_similar
+from myutils import exportarXlsx, formatDate, ColorsEnum, son_similar
 from mywidgets import LabelAdvertencia, VentanaPrincipal
-
-
-###########################################
-# CLASE PARA MANEJAR OPERACIONES EN LA DB #
-###########################################
-class ManejadorClientes(DatabaseManager):
-    """ Clase para manejar sentencias hacia/desde la tabla Clientes. """
-    def __init__(self, conn: fdb.Connection, error_txt: str = ''):
-        super().__init__(conn, error_txt)
-    
-    def obtenerTablaPrincipal(self):
-        """ Sentencia para alimentar la tabla principal de clientes. """
-        return self.fetchall('''
-            SELECT  C.id_clientes,
-                    nombre,
-                    telefono,
-                    correo,
-                    direccion,
-                    RFC,
-                    MAX(fecha_hora_creacion) AS ultimaVenta
-            FROM    Clientes AS C
-                    LEFT JOIN Ventas AS V
-                           ON C.id_clientes = V.id_clientes
-            GROUP   BY 1, 2, 3, 4, 5, 6
-            ORDER   BY C.id_clientes;
-        ''')
-    
-    def obtenerCliente(self, idx):
-        """ Sentencia para obtener un cliente. """
-        return self.fetchone('''
-            SELECT  * 
-            FROM    Clientes 
-            WHERE id_clientes = ?;
-        ''', (idx,))
-    
-    def registrarCliente(self, datosCliente: tuple):
-        """ Sentencia para registrar cliente. Hace commit automáticamente. """
-        return self.execute('''
-            INSERT INTO Clientes (
-                nombre, telefono, correo, direccion,
-                RFC, cliente_especial, descuentos
-            )
-            VALUES
-                (?,?,?,?,?,?,?);
-        ''', datosCliente, commit=True)
-    
-    def actualizarCliente(self, idCliente, datosCliente: tuple):
-        """ Sentencia para actualizar cliente. Hace commit automáticamente. """
-        return self.execute('''
-            UPDATE  Clientes
-            SET     nombre = ?,
-                    telefono = ?,
-                    correo = ?,
-                    direccion = ?,
-                    RFC = ?,
-                    cliente_especial = ?,
-                    descuentos = ?
-            WHERE   id_clientes = ?;
-        ''', (*datosCliente, idCliente), commit=True)
-    
-    def eliminarCliente(self, idCliente):
-        """ Sentencia para eliminar cliente. Hace commit automáticamente. """
-        return self.execute('''
-            DELETE  FROM Clientes
-            WHERE   id_clientes = ?;
-        ''', (idCliente,), commit=True)
 
 
 #####################
@@ -128,13 +63,14 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         
         # restringir botón de eliminar cliente
         if not self.user.administrador:
-            self.ui.lbQuitar.hide()
+            self.ui.btEliminar.hide()
 
         # añade eventos para los botones
-        self.ui.lbAgregar.mousePressEvent = self.registrarCliente
-        self.ui.lbEditar.mousePressEvent = self.editarCliente
-        self.ui.lbQuitar.mousePressEvent = self.quitarCliente
-        self.ui.lbRegresar.mousePressEvent = self.goHome
+        self.ui.btAgregar.clicked.connect(self.registrarCliente)
+        self.ui.btEditar.clicked.connect(self.editarCliente)
+        self.ui.btEliminar.clicked.connect(self.quitarCliente)
+        self.ui.btRegresar.clicked.connect(self.goHome)
+        
         self.ui.searchBar.textChanged.connect(lambda: self.update_display())
         self.ui.resaltarCheck.stateChanged.connect(lambda: self.update_display())
         self.ui.resaltarDias.textChanged.connect(self.resaltarTrigger)
@@ -252,18 +188,14 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
-    def registrarCliente(self, _):
-        """
-        Abre ventana para registrar un cliente.
-        """
+    def registrarCliente(self):
+        """ Abre ventana para registrar un cliente. """
         self.new = App_RegistrarCliente(self)
         self.new.success.connect(
             lambda: self.update_display(rescan=True))
 
-    def editarCliente(self, _):
-        """
-        Abre ventana para editar un cliente seleccionado.
-        """
+    def editarCliente(self):
+        """ Abre ventana para editar un cliente seleccionado. """
         selected = self.ui.tabla_clientes.selectedItems()
         
         if not selected or selected[0].text() == '1':
@@ -273,10 +205,8 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         self.new.success.connect(
             lambda: self.update_display(rescan=True))
     
-    def quitarCliente(self, _):
-        """
-        Pide confirmación para eliminar clientes de la base de datos.
-        """
+    def quitarCliente(self):
+        """ Pide confirmación para eliminar clientes de la base de datos. """
         selected = self.ui.tabla_clientes.selectedItems()
 
         if not selected or selected[0].text() == '1':
@@ -300,10 +230,8 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         qm.information(self, 'Éxito', 'Se eliminaron los clientes seleccionados.')
         self.update_display(rescan=True)
     
-    def goHome(self, _):
-        """
-        Cierra la ventana y regresa al inicio.
-        """
+    def goHome(self):
+        """ Cierra la ventana y regresa al inicio. """
         from Home import App_Home
 
         parent = self.parentWidget()       # QMainWindow
@@ -342,7 +270,7 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
         self.ui.txtLada.setValidator(validador)
 
         # crear eventos para los botones
-        self.ui.lbRegresar.mousePressEvent = self.closeEvent
+        self.ui.btRegresar.clicked.connect(self.close)
         self.ui.btRegistrar.clicked.connect(self.done)
         self.ui.checkDescuentos.clicked.connect(
             lambda estado: self.ui.txtDescuentos.setEnabled(estado))

@@ -55,7 +55,8 @@ class App_Login(QtWidgets.QMainWindow):
         validador = QRegularExpressionValidator(regexp)
         self.ui.inputUsuario.setValidator(validador)
         
-        self.ui.btIngresar.clicked.connect(lambda: self.verificar_info() if not self.lock else None)
+        self.ui.btIngresar.clicked.connect(
+            lambda: self.verificar_info() if not self.lock else None)
         self.validated.connect(self.crearVentanaPrincipal)
 
         self.show()
@@ -66,9 +67,7 @@ class App_Login(QtWidgets.QMainWindow):
     
     @run_in_thread
     def verificar_info(self):
-        """
-        Verifica datos ingresados consultando la tabla Usuarios.
-        """
+        """ Verifica datos ingresados consultando la tabla Usuarios. """
         self.lock = True
             
         usuario = self.ui.inputUsuario.text().upper()
@@ -109,9 +108,7 @@ class App_Login(QtWidgets.QMainWindow):
         self.validated.emit(conn, user)
 
     def crearVentanaPrincipal(self, conn, user):
-        """
-        En método separado para regresar al hilo principal.
-        """
+        """ En método separado para regresar al hilo principal."""
         from mywidgets import VentanaPrincipal
         
         self.close()

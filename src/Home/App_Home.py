@@ -1,9 +1,8 @@
 from PySide6 import QtWidgets
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtCore import (QDate, Qt, QPropertyAnimation,
-                          QRect, QEasingCurve, Signal)
+                            QRect, QEasingCurve, Signal)
 
-from mydecorators import run_in_thread
 from mywidgets import VentanaPrincipal
 
 
@@ -32,11 +31,11 @@ class App_Home(QtWidgets.QMainWindow):
         else:
             qp = QPixmap("resources/images/user.png")
             
-        self.ui.fotoPerfil.setPixmap(qp)
+        self.ui.btFotoPerfil.setIcon(qp)
 
         # ocultar lista y proporcionar eventos
         self.ui.listaNotificaciones.setVisible(False)
-        self.ui.fotoPerfil.mousePressEvent = self.alternarNotificaciones
+        self.ui.btFotoPerfil.clicked.connect(self.alternarNotificaciones)
         self.agregarNotificaciones()
 
         # configurar texto dinámico
@@ -88,11 +87,9 @@ class App_Home(QtWidgets.QMainWindow):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def alternarNotificaciones(self, _):
-        """
-        Se llama a esta función al hacer click en la foto de perfil
-        del usuario. Anima el tamaño de la caja de notificaciones.
-        """
+    def alternarNotificaciones(self):
+        """ Se llama a esta función al hacer click en la foto de perfil
+            del usuario. Anima el tamaño de la caja de notificaciones. """
         hiddenGeom = QRect(9, 76, 400, 0)
         shownGeom = QRect(9, 76, 400, 120)
 
@@ -116,9 +113,7 @@ class App_Home(QtWidgets.QMainWindow):
             self.hide_animation.start()
     
     def agregarNotificaciones(self):
-        """
-        Llena la caja de notificaciones.
-        """
+        """ Llena la caja de notificaciones. """
         items = []
         crsr = self.conn.cursor()
 
@@ -182,14 +177,13 @@ class App_Home(QtWidgets.QMainWindow):
 ##################################
 # VENTANA PARA CONSULTAR PRECIOS #
 ##################################
+from mydecorators import Runner
 from myutils import son_similar
 from mywidgets import LabelAdvertencia
 
 class App_ConsultarPrecios(QtWidgets.QMainWindow):
-    """
-    Backend para el módulo de consultar precios.
-    No se puede cerrar hasta cerrar por completo el sistema.
-    """
+    """ Backend para el módulo de consultar precios.
+        No se puede cerrar hasta cerrar por completo el sistema. """
     dataChanged = Signal()  # señal para actualizar tabla en hilo principal
     
     def __init__(self, principal: VentanaPrincipal):
@@ -250,16 +244,26 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         self.events = principal.conn.event_conduit(['cambio_productos'])
         self.events.begin()
         
+        # crear QThread manualmente, para poder destruirlo al cerrar ventana
+        self.eventReader = Runner(self.listenEvents)
+        self.eventReader.success.connect(self.eventReader.quit)
+        self.eventReader.success.connect(self.eventReader.deleteLater)
+        self.eventReader.start()
+        
         self.showMinimized()
-        self.listenEvents()
     
     def showEvent(self, event):
         self.update_display(True)
+        event.accept()
     
     def closeEvent(self, event):
         if event.spontaneous():
             event.ignore()
         else:
+            # no recomendado generalmente para terminar hilos, sin embargo
+            # esta vez se puede hacer así al no ser una función crítica.
+            self.eventReader.terminate()
+            self.eventReader.wait()
             self.events.close()
             event.accept()
     
@@ -270,22 +274,18 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
     def tabla_actual(self):
         return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][self.ui.tabWidget.currentIndex()]
     
-    @run_in_thread
     def listenEvents(self):
-        """
-        Escucha trigger 'cambio_productos' en la base de datos.
-        Al suceder, se actualizan las tablas de productos.
-        """
-        while self.events.wait():
+        """ Escucha trigger 'cambio_productos' en la base de datos.
+            Al suceder, se actualizan las tablas de productos. """
+        while True:
+            self.events.wait()
             self.dataChanged.emit()
             self.events.flush()
     
     def update_display(self, rescan: bool = False):
-        """
-        Actualiza la tabla y el contador de clientes.
-        Acepta una cadena de texto para la búsqueda de clientes.
-        También lee de nuevo la tabla de clientes, si se desea.
-        """
+        """ Actualiza la tabla y el contador de clientes.
+            Acepta una cadena de texto para la búsqueda de clientes.
+            También lee de nuevo la tabla de clientes, si se desea. """
         if rescan:
             crsr = self.conn.cursor()
             

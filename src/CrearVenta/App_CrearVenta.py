@@ -7,8 +7,7 @@ from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtCore import (QDate, QDateTime, QRegularExpression, Qt,
                           QPropertyAnimation, QRect, QEasingCurve)
 
-from AdministrarClientes.App_AdministrarClientes import ManejadorClientes
-from AdministrarVentas.App_AdministrarVentas import ManejadorVentas
+from databasemanagers import ManejadorClientes, ManejadorVentas
 from mydecorators import con_fondo, requiere_admin
 from myutils import (clamp, enviarWhatsApp, formatDate,
                      generarOrdenCompra, generarTicketCompra,
@@ -62,7 +61,8 @@ class Venta:
     @property
     def total(self) -> float:
         if self.productos:
-            return sum(prod.importe for prod in self.productos)
+            temp = sum(prod.importe for prod in self.productos)
+            return round(temp, 2)
         else:
             return 0.0
     
@@ -124,10 +124,10 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             w.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         # crear eventos para los botones
-        self.ui.lbCalendario.mousePressEvent = self.cambiarFecha
-        self.ui.lbAgregar.mousePressEvent = self.agregarProducto
-        self.ui.lbQuitar.mousePressEvent = self.quitarProducto
-        self.ui.lbRegresar.mousePressEvent = self.goHome
+        self.ui.btCalendario.clicked.connect(self.cambiarFecha)
+        self.ui.btAgregar.clicked.connect(self.agregarProducto)
+        self.ui.btEliminar.clicked.connect(self.quitarProducto)
+        self.ui.btRegresar.clicked.connect(self.goHome)
         
         ocultar_boton = lambda: self.ui.btDescuentosCliente.setVisible(False) \
                                 or self.dialogoDescuentos.setVisible(False)
@@ -158,7 +158,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             self.ventaDatos.productos[item.row()].notas = item.text()
     
     @requiere_admin
-    def goHome(self, _):
+    def goHome(self):
         from Home import App_Home
         
         parent = self.parentWidget()    # QMainWindow
@@ -211,7 +211,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         
         tabla.resizeRowsToContents()
     
-    def alternarDescuentos(self, _):
+    def alternarDescuentos(self):
         """
         Se llama a esta función al hacer click en la foto de perfil
         del usuario. Anima el tamaño de la caja de notificaciones.
@@ -241,7 +241,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
-    def cambiarFecha(self, _):
+    def cambiarFecha(self):
         """
         Abre ventana para cambiar la fecha de entrega.
         """
@@ -271,13 +271,13 @@ class App_CrearVenta(QtWidgets.QMainWindow):
                     or self.ui.txtTelefono.setText(tel)
                     or self.ui.txtCorreo.setText(correo))
 
-    def agregarProducto(self, _):
+    def agregarProducto(self):
         """
         Abre ventana para agregar un producto a la orden.
         """
         self.new = App_AgregarProducto(self)
         
-    def quitarProducto(self, _):
+    def quitarProducto(self):
         """
         Pide confirmación para eliminar un producto de la tabla.
         """
@@ -300,7 +300,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         if ret == qm.Yes:
             accion(self, selected)
     
-    def agregarDescuento(self, _):
+    def agregarDescuento(self):
         """
         Abre ventana para agregar un descuento a la orden si el cliente es especial.
         """
@@ -459,7 +459,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         self.all_gran = crsr.fetchall()
 
         # añade eventos para los botones
-        self.ui.lbRegresar.mousePressEvent = self.closeEvent
+        self.ui.btRegresar.clicked.connect(self.close)
         self.ui.btAgregar.clicked.connect(self.done)
         self.ui.searchBar.textChanged.connect(self.update_display)
         self.ui.tabla_seleccionar.itemDoubleClicked.connect(self.done)
@@ -720,7 +720,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
         self.all = crsr.fetchall()
 
         # añade eventos para los botones
-        self.ui.lbRegresar.mousePressEvent = self.closeEvent
+        self.ui.btRegresar.clicked.connect(self.close)
         self.ui.btAgregar.clicked.connect(self.done)
         self.ui.searchBar.textChanged.connect(self.update_display)
         self.ui.tabla_seleccionar.itemDoubleClicked.connect(self.done)
@@ -827,7 +827,7 @@ class App_FechaEntrega(QtWidgets.QMainWindow):
         self.ui.calendario.setMaximumDate(hoy.addYears(1))
 
         # añade eventos para los botones
-        self.ui.lbRegresar.mousePressEvent = self.closeEvent
+        self.ui.btRegresar.clicked.connect(self.close)
         self.ui.btListo.clicked.connect(self.done)
 
         self.show()
@@ -896,7 +896,7 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
                 tabla.setItem(row, col, cell)
 
         # añade eventos para los botones
-        self.ui.lbRegresar.mousePressEvent = self.closeEvent
+        self.ui.btRegresar.clicked.connect(self.close)
         self.ui.btListo.clicked.connect(self.done)
         
         # validadores numéricos
@@ -958,7 +958,7 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
         self.first = first
 
         # añade eventos para los botones
-        self.ui.lbRegresar.mousePressEvent = self.closeEvent
+        self.ui.btRegresar.clicked.connect(self.close)
         self.ui.btTicket.clicked.connect(self.imprimirTicket)
         self.ui.btWhatsapp.clicked.connect(self.enviarWhatsApp)
         
@@ -983,7 +983,7 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
             '-------------------------------------------'
         ]
         
-        for prod in self.first.productosVenta:
+        for prod in self.first.ventaDatos.productos:
             mensaje.extend([
                 f'{prod.codigo} ({prod.cantidad:,.2f} unidades)',
                 f'Importe: {prod.importe: ,.2f}',
@@ -1001,7 +1001,7 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
     def imprimirTicket(self):             
         productos = [(prod.cantidad, prod.codigo, prod.precio_unit, 
                       prod.descuento_unit, prod.importe)
-                     for prod in self.first.productosVenta]
+                     for prod in self.first.ventaDatos.productos]
         
         vendedor = self.first.ui.txtVendedor.text()
         
@@ -1029,8 +1029,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ventaDatos = ventaDatos
 
         # total de la compra y precio a pagarse ahora mismo
-        self.total = round(ventaDatos.total, 2)
-        self.paraPagar = round(self.total if esDirecta else self.total/2, 2)
+        self.total = ventaDatos.total
+        self.paraPagar = self.total if esDirecta else round(self.total/2, 2)
 
         # dar formato a la tabla principal
         header = self.ui.tabla_productos.horizontalHeader()
@@ -1164,7 +1164,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         try:
             self.paraPagar = float(txt)
         except ValueError:
-            self.paraPagar = self.total/2  # regresar al 50%
+            self.paraPagar = round(self.total/2, 2)  # regresar al 50%
             self.ui.txtAnticipo.setText(f'{self.paraPagar:.2f}')
         
         self.calcularCambio(self.ui.txtPago.text())
@@ -1181,8 +1181,9 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         
         pagoAceptado = pago >= self.paraPagar if self.ventaDatos.metodoPago == 'Efectivo' \
                        else pago == self.paraPagar
+        minimoCincuentaPorCiento = round(self.total/2, 2) <= self.paraPagar <= self.total
         
-        if not pagoAceptado or not (self.total/2 <= self.paraPagar <= self.total):
+        if not pagoAceptado or not minimoCincuentaPorCiento:
             return
         
         conn = self.conn
@@ -1259,7 +1260,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         
         self.goHome()
     
-    def abortar(self, _):
+    def abortar(self):
         """Función para abortar la venta y actualizar estado a 'Cancelada'."""
         @requiere_admin
         def accion(parent):

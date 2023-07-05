@@ -1,10 +1,5 @@
-"""
-Provee varias funciones útiles utilizadas frecuentemente.
-"""
-import fdb
-
+""" Provee varias funciones útiles utilizadas frecuentemente. """
 from mydecorators import run_in_thread
-from mywidgets import WarningDialog
 
 
 class ColorsEnum:
@@ -12,65 +7,6 @@ class ColorsEnum:
     VERDE = 0xB2FFAE
     AMARILLO = 0xFDFDA9
     ROJO = 0xFFB2AE
-
-
-class DatabaseManager:
-    """ Clase general de un administrador de bases de datos.
-    Permite ejecutar consultas varias y manejar las excepciones."""
-    def __init__(self, conn: fdb.Connection, error_txt: str):
-        self.conn = conn
-        self.crsr: fdb.Cursor = conn.cursor()
-        self.error_txt = error_txt or '¡Acceso fallido a base de datos!'
-
-    def execute(self, query, parameters=None, commit=False):
-        try:
-            if parameters is None:
-                self.crsr.execute(query)
-            else:
-                self.crsr.execute(query, parameters)
-            if commit: 
-                self.conn.commit()
-            return True
-        except fdb.Error as err:
-            self.conn.rollback()
-            WarningDialog(self.error_txt, str(err))
-            return False
-    
-    def executemany(self, query, parameters=None, commit=False):
-        try:
-            if parameters is None:
-                self.crsr.executemany(query)
-            else:
-                self.crsr.executemany(query, parameters)
-            if commit: 
-                self.conn.commit()
-            return True
-        except fdb.Error as err:
-            self.conn.rollback()
-            WarningDialog(self.error_txt, str(err))
-            return False
-
-    def fetchall(self, query, parameters=None) -> list | None:
-        try:
-            if parameters is None:
-                self.crsr.execute(query)
-            else:
-                self.crsr.execute(query, parameters)
-            return self.crsr.fetchall()
-        except fdb.Error as err:
-            WarningDialog(self.error_txt, str(err))
-            return None
-
-    def fetchone(self, query, parameters=None) -> tuple | None:
-        try:
-            if parameters is None:
-                self.crsr.execute(query)
-            else:
-                self.crsr.execute(query, parameters)
-            return self.crsr.fetchone()
-        except fdb.Error as err:
-            WarningDialog(self.error_txt, str(err))
-            return None
 
 
 def clamp(value, smallest, largest) -> int | float:

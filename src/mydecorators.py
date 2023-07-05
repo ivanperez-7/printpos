@@ -163,7 +163,7 @@ def con_fondo(modulo):
     
     def closeEvent(self, event):
         self.parentWidget().bg.close()
-        self.close()
+        event.accept()
 
     modulo.__init__ = __init__
     modulo.closeEvent = closeEvent

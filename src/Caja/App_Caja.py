@@ -4,21 +4,10 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt, QDateTime, QDate
 
+from databasemanagers import ManejadorCaja
 from mydecorators import run_in_thread
-from myutils import DatabaseManager, enviarAImpresora, formatDate
+from myutils import enviarAImpresora, formatDate
 from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
-
-
-###########################################
-# CLASE PARA MANEJAR OPERACIONES EN LA DB #
-###########################################
-class ManejadorCaja(DatabaseManager):
-    """ Clase para manejar sentencias hacia/desde la tabla Caja. """
-    def __init__(self, conn: fdb.Connection, error_txt: str = ''):
-        super().__init__(conn, error_txt)
-    
-    def registrarMovimiento(self, params: tuple):
-        ...
 
 
 #####################
@@ -74,7 +63,7 @@ class App_Caja(QtWidgets.QMainWindow):
                 header_e.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
 
         # añade eventos para los botones
-        self.ui.lbRegresar.mousePressEvent = self.goHome
+        self.ui.btRegresar.clicked.connect(self.goHome)
         self.ui.btIngreso.clicked.connect(self.registrarIngreso)
         self.ui.btEgreso.clicked.connect(self.registrarEgreso)
         
@@ -120,11 +109,9 @@ class App_Caja(QtWidgets.QMainWindow):
         self.ui.dateHasta.setDate(end)
         
     def update_display(self, rescan: bool = False):
-        """
-        Actualiza la tabla y el contador de usuarios.
-        Acepta una cadena de texto para la búsqueda de usuarios.
-        También lee de nuevo la tabla de usuarios, si se desea.
-        """
+        """ Actualiza la tabla y el contador de usuarios.
+            Acepta una cadena de texto para la búsqueda de usuarios.
+            También lee de nuevo la tabla de usuarios, si se desea. """
         if rescan:
             crsr = self.conn.cursor()
             crsr.execute('''
@@ -236,9 +223,7 @@ class App_Caja(QtWidgets.QMainWindow):
             f'Total del corte: ${total:,.2f}')
     
     def confirmarImprimir(self):
-        """
-        Ventana de confirmación para imprimir corte.
-        """
+        """ Ventana de confirmación para imprimir corte. """
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención', 
                           'Se procederá a imprimir el corte de caja entre '
@@ -458,10 +443,8 @@ class App_Caja(QtWidgets.QMainWindow):
             
         dialogRegistrar.accept = accepted_handle
         
-    def goHome(self, _):
-        """
-        Cierra la ventana y regresa al inicio.
-        """
+    def goHome(self):
+        """ Cierra la ventana y regresa al inicio. """
         from Home import App_Home
 
         parent = self.parentWidget()       # QMainWindow

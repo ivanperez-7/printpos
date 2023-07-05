@@ -7,111 +7,11 @@ from PySide6.QtGui import QFont, QColor, QIcon, QRegularExpressionValidator
 from PySide6.QtCore import (QDate, QDateTime, QModelIndex,
                           QRegularExpression, Qt, Signal)
 
+from databasemanagers import ManejadorVentas
 from mydecorators import con_fondo
-from myutils import (chunkify, clamp, DatabaseManager, enviarWhatsApp, formatDate, 
-                     generarOrdenCompra, generarTicketCompra, ColorsEnum, son_similar)
+from myutils import (chunkify, clamp, enviarWhatsApp, formatDate, generarOrdenCompra, 
+                     generarTicketCompra, ColorsEnum, son_similar)
 from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
-
-
-###########################################
-# CLASE PARA MANEJAR OPERACIONES EN LA DB #
-###########################################
-class ManejadorVentas(DatabaseManager):
-    """ Clase para manejar sentencias hacia/desde la tabla Ventas. """
-    def __init__(self, conn: fdb.Connection, error_txt: str = ''):
-        super().__init__(conn, error_txt)
-    
-    def tablaVentas(self, restrict: str):
-        """Sentencia para alimentar la tabla principal de clientes."""
-        return self.fetchall(f'''
-            SELECT  Ventas.id_ventas,
-                    Usuarios.nombre,
-                    Clientes.nombre,
-                    fecha_hora_creacion,
-                    SUM(importe) AS total,
-                    estado,
-                    metodo_pago,
-                    comentarios
-            FROM    Ventas
-                    LEFT JOIN Usuarios
-                           ON Ventas.id_usuarios = Usuarios.id_usuarios
-                    LEFT JOIN Clientes
-                           ON Ventas.id_clientes = Clientes.id_clientes
-                    LEFT JOIN Ventas_Detallado
-                           ON Ventas.id_ventas = Ventas_Detallado.id_ventas
-			WHERE   fecha_hora_creacion = fecha_hora_entrega
-                    {restrict}
-            GROUP   BY 1, 2, 3, 4, 6, 7, 8
-            ORDER	BY Ventas.id_ventas DESC;
-        ''')
-    
-    def tablaPedidos(self, restrict: str):
-        """Sentencia para alimentar la tabla principal de clientes."""
-        return self.fetchall(f'''
-            SELECT  Ventas.id_ventas,
-                    Usuarios.nombre,
-                    Clientes.nombre,
-                    fecha_hora_creacion,
-                    fecha_hora_entrega,
-                    SUM(importe) AS total,
-                    estado,
-                    metodo_pago,
-                    comentarios
-            FROM    Ventas
-                    LEFT JOIN Usuarios
-                           ON Ventas.id_usuarios = Usuarios.id_usuarios
-                    LEFT JOIN Clientes
-                           ON Ventas.id_clientes = Clientes.id_clientes
-                    LEFT JOIN Ventas_Detallado
-                           ON Ventas.id_ventas = Ventas_Detallado.id_ventas
-			WHERE   fecha_hora_creacion != fecha_hora_entrega
-                    {restrict}
-            GROUP   BY 1, 2, 3, 4, 5, 7, 8, 9
-            ORDER	BY Ventas.id_ventas DESC;
-        ''')
-    
-    def obtenerVenta(self, idx):
-        """Sentencia para obtener un cliente."""
-        self.crsr.execute('''
-            SELECT  * 
-            FROM    Ventas 
-            WHERE id_clientes = ?;
-        ''', (idx,))
-        
-        return self.crsr.fetchone()
-    
-    def insertarVenta(self, params: tuple):
-        """ Insertar venta nueva en la tabla ventas e intenta 
-            regresar tupla con índice de venta recién insertada.
-            
-            No hace commit. """
-        return self.fetchone('''
-            INSERT INTO Ventas (
-                id_clientes, id_usuarios, fecha_hora_creacion, 
-                fecha_hora_entrega, comentarios, metodo_pago, 
-                requiere_factura, estado
-            ) 
-            VALUES 
-                (?,?,?,?,?,?,?,?)
-            RETURNING
-                id_ventas;
-        ''', params)
-    
-    def insertarDetallesVenta(self, id_ventas: int, params: list[tuple]):
-        """ Insertar detalles de venta en tabla ventas_detallado e intenta 
-            regresar tupla con índice de venta recién insertada.
-            
-            Hace commit automáticamente. """
-        params = [(id_ventas,) + param for param in params]
-        
-        return self.executemany('''
-            INSERT INTO Ventas_Detallado (
-                id_ventas, id_productos, cantidad, precio, 
-                descuento, especificaciones, duplex
-            ) 
-            VALUES 
-                (?,?,?,?,?,?,?);
-        ''', params, commit=True)
 
 
 #####################
@@ -159,7 +59,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         
         # deshabilitar botones (¿cuáles?) es caso de no ser administrador
         if not self.user.administrador:
-            self.ui.lbCancelar.hide()
+            self.ui.btCancelar.hide()
 
         # añadir menú de opciones al botón para filtrar
         popup = QtWidgets.QMenu(self.ui.btFiltrar)
@@ -199,9 +99,9 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.chunk_size = 50
                 
         # crear eventos para los botones
-        self.ui.lbRegresar.mousePressEvent = self.goHome
-        self.ui.lbTerminar.mousePressEvent = self.terminarVenta
-        self.ui.lbCancelar.mousePressEvent = self.cancelarVenta
+        self.ui.btRegresar.clicked.connect(self.goHome)
+        self.ui.btTerminar.clicked.connect(self.terminarVenta)
+        self.ui.btCancelar.clicked.connect(self.cancelarVenta)
         self.ui.btOrden.clicked.connect(self.imprimirOrden)
         self.ui.btRecibo.clicked.connect(self.imprimirTicket)
         self.ui.searchBar.textChanged.connect(lambda: self.update_display())
@@ -320,10 +220,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.ui.dateHasta.setDate(end)
 
     def update_display(self, rescan: bool = False):
-        """
-        Actualiza la tabla y el contador de clientes.
-        Lee de nuevo la tabla de clientes, si se desea.
-        """
+        """ Actualiza la tabla y el contador de clientes.
+            Lee de nuevo la tabla de clientes, si se desea. """
         if rescan:
             restrict = f'AND Usuarios.id_usuarios = {self.user.id}' \
                        if not self.user.administrador else ''
@@ -331,7 +229,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             manejador = ManejadorVentas(self.conn)
 
             self.all_directas = manejador.tablaVentas(restrict)
-            self.all_pedidos = manejador.tablaVentas(restrict)
+            self.all_pedidos = manejador.tablaPedidos(restrict)
 
         bold = QFont()
         bold.setBold(True)
@@ -491,7 +389,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         
         enviarWhatsApp(celular, mensaje)
         
-    def terminarVenta(self, _):
+    def terminarVenta(self):
         """
         Pide confirmación para marcar como cancelada una venta.
         """
@@ -542,7 +440,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         qm.information(self, 'Éxito', 'Se marcó como terminada la venta seleccionada.')
         self.update_display(rescan=True)
             
-    def cancelarVenta(self, _):
+    def cancelarVenta(self):
         """
         Pide confirmación para marcar como cancelada una venta.
         """
@@ -631,7 +529,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         if ret == qm.Yes:
             generarOrdenCompra(self.conn.cursor(), idVenta)
 
-    def goHome(self, _):
+    def goHome(self):
         """
         Cierra la ventana y regresa al inicio.
         """
@@ -765,7 +663,7 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
         self.ui.lbTotal.setText(f'{total:,.2f}')
 
         # evento para botón de regresar
-        self.ui.lbRegresar.mousePressEvent = self.closeEvent
+        self.ui.btRegresar.clicked.connect(self.close)
 
         self.show()
     
@@ -881,7 +779,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
 
         # eventos para widgets
         self.ui.btListo.clicked.connect(self.done)
-        self.ui.btCancelar.clicked.connect(self.closeEvent)
+        self.ui.btCancelar.clicked.connect(self.close)
         self.ui.txtPago.textChanged.connect(self.calcularCambio)
 
         self.show()
