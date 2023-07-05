@@ -1,7 +1,5 @@
-"""
-ARCHIVO PRINCIPAL.
-Inicia una QApplication y abre la ventana de iniciar sesión.
-"""
+""" ARCHIVO PRINCIPAL.
+    Inicia una QApplication y abre la ventana de iniciar sesión. """
 from PySide6.QtWidgets import QApplication, QStyleFactory
 from PySide6.QtGui import QPalette, QColor
 
@@ -26,7 +24,7 @@ def main():
     palette.setColor(CR.PlaceholderText, QColor(128, 128, 128))
     app.setPalette(palette)
     
-    login = App_Login()
+    login = App_Login()    
     app.exec()
 
 if __name__ == '__main__':
