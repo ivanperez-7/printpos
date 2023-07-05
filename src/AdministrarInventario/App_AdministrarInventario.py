@@ -1,8 +1,8 @@
 import fdb
 
-from PyQt5 import QtWidgets
-from PyQt5.QtGui import QFont, QColor, QPixmap, QIcon, QRegExpValidator
-from PyQt5.QtCore import Qt, QRegExp, pyqtSignal
+from PySide6 import QtWidgets
+from PySide6.QtGui import QFont, QColor, QPixmap, QIcon, QRegularExpressionValidator
+from PySide6.QtCore import Qt, QRegularExpression, Signal
 
 from mydecorators import con_fondo
 from myutils import ColorsEnum, DatabaseManager, son_similar
@@ -310,7 +310,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
     
-    success = pyqtSignal()
+    success = Signal()
     
     def __init__(self, first: App_AdministrarInventario):
         from AdministrarInventario.Ui_EditarInventario import Ui_EditarInventario
@@ -327,8 +327,8 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         self.user = first.user
         
         # validadores para datos numéricos
-        regexp_numero = QRegExp(r'\d*\.?\d*')
-        validador = QRegExpValidator(regexp_numero)
+        regexp_numero = QRegularExpression(r'\d*\.?\d*')
+        validador = QRegularExpressionValidator(regexp_numero)
         
         self.ui.txtPrecioCompra.setValidator(validador)
         self.ui.txtExistencia.setValidator(validador)
@@ -355,8 +355,8 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
                       or nuevo.setParent(None)
         
         # validador para datos numéricos
-        regexp_numero = QRegExp(r'\d*\.?\d*')
-        validador = QRegExpValidator(regexp_numero)
+        regexp_numero = QRegularExpression(r'\d*\.?\d*')
+        validador = QRegularExpressionValidator(regexp_numero)
         nuevo.txtProductoUtiliza.setValidator(validador)
         
         # llenar caja de opciones con productos
@@ -510,7 +510,7 @@ class App_EditarInventario(Base_EditarInventario):
 #########################################
 class WidgetProducto(QtWidgets.QWidget):
     def __init__(self):
-        from PyQt5 import QtCore, QtWidgets, QtGui
+        from PySide6 import QtCore, QtWidgets, QtGui
         
         super().__init__()
         
@@ -520,7 +520,7 @@ class WidgetProducto(QtWidgets.QWidget):
         boxProducto.setGeometry(QtCore.QRect(35, 10, 271, 22))
         boxProducto.setMinimumSize(QtCore.QSize(271, 22))
         font = QtGui.QFont()
-        font.setFamily("Arial")
+        font.setFamily("MS Shell Dlg 2")
         font.setPointSize(11)
         boxProducto.setFont(font)
         lbContador = QtWidgets.QLabel(self)
@@ -538,9 +538,9 @@ class WidgetProducto(QtWidgets.QWidget):
         label.setGeometry(QtCore.QRect(35, 40, 271, 21))
         label.setMinimumSize(QtCore.QSize(271, 21))
         label.setFont(font)
-        label.setText("utiliza              unidades de este elemento.")
+        label.setText("utiliza           unidades de este elemento.")
         txtProductoUtiliza = QtWidgets.QLineEdit(self)
-        txtProductoUtiliza.setGeometry(QtCore.QRect(80, 40, 41, 20))
+        txtProductoUtiliza.setGeometry(QtCore.QRect(77, 40, 41, 20))
         txtProductoUtiliza.setMinimumSize(QtCore.QSize(41, 20))
         txtProductoUtiliza.setFont(font)
         QtCore.QMetaObject.connectSlotsByName(self)
@@ -561,7 +561,7 @@ class WidgetProducto(QtWidgets.QWidget):
 
 class ExistenciasWidget(QtWidgets.QDialog):
     def __init__(self, first: App_AdministrarInventario):
-        from PyQt5 import QtCore
+        from PySide6 import QtCore
         
         super().__init__(parent=first)
         
@@ -572,7 +572,7 @@ class ExistenciasWidget(QtWidgets.QDialog):
         gridLayout.setContentsMargins(-1, -1, -1, 9)
         label = QtWidgets.QLabel(self)
         font = QFont()
-        font.setFamily("Arial")
+        font.setFamily("MS Shell Dlg 2")
         font.setPointSize(10)
         label.setFont(font)
         label.setText("Suministrar ")

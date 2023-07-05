@@ -77,7 +77,6 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
      <pointsize>11</pointsize>
     </font>
    </property>
@@ -85,7 +84,7 @@
     <string>Listo</string>
    </property>
    <property name="icon">
-    <iconset resource="../resources.qrc">
+    <iconset resource="../../resources.qrc">
      <normaloff>:/img/resources/images/accept.png</normaloff>:/img/resources/images/accept.png</iconset>
    </property>
   </widget>
@@ -100,7 +99,6 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
      <pointsize>11</pointsize>
     </font>
    </property>
@@ -119,7 +117,6 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
      <pointsize>11</pointsize>
     </font>
    </property>
@@ -138,7 +135,7 @@
   <tabstop>btListo</tabstop>
  </tabstops>
  <resources>
-  <include location="../resources.qrc"/>
+  <include location="../../resources.qrc"/>
  </resources>
  <connections/>
 </ui>

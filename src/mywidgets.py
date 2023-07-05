@@ -3,9 +3,9 @@ Módulo con widgets personalizados varios.
 """
 import fdb
 
-from PyQt5.QtWidgets import QMainWindow, QMessageBox, QWidget, QLabel, QTableWidget
-from PyQt5.QtGui import QFont, QIcon, QPixmap
-from PyQt5.QtCore import Qt, QSize
+from PySide6.QtWidgets import QMainWindow, QMessageBox, QWidget, QLabel, QTableWidget
+from PySide6.QtGui import QFont, QIcon, QPixmap
+from PySide6.QtCore import Qt, QSize
 
 from Login.App_Login import Usuario
 
@@ -68,7 +68,7 @@ def LabelAdvertencia(parent: QTableWidget, msj: str):
     label.setMinimumSize(QSize(w,h))
 
     font = QFont()
-    font.setFamily('Arial')
+    font.setFamily('MS Shell Dlg 2')
     font.setPointSize(14)
 
     label.setFont(font)

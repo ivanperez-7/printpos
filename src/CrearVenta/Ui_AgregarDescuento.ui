@@ -86,7 +86,6 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
      <pointsize>12</pointsize>
     </font>
    </property>
@@ -105,13 +104,12 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
      <pointsize>10</pointsize>
     </font>
    </property>
    <property name="styleSheet">
     <string notr="true">QHeaderView::section {
-	font: bold 10pt &quot;Arial&quot;;
+	font: bold 10pt;
 	color: rgb(255, 255, 255);
 	background-color: rgb(0, 0, 0);
 	border: 0px;
@@ -201,7 +199,6 @@ QTableView:active {
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
      <pointsize>12</pointsize>
     </font>
    </property>
@@ -220,7 +217,6 @@ QTableView:active {
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
      <pointsize>11</pointsize>
     </font>
    </property>
@@ -235,15 +231,14 @@ QTableView:active {
   <widget class="QLineEdit" name="txtPrecio">
    <property name="geometry">
     <rect>
-     <x>280</x>
-     <y>417</y>
+     <x>300</x>
+     <y>416</y>
      <width>171</width>
      <height>20</height>
     </rect>
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
      <pointsize>12</pointsize>
     </font>
    </property>

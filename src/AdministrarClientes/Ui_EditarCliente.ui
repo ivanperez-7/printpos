@@ -157,7 +157,6 @@
           </property>
           <property name="font">
            <font>
-            <family>Arial</family>
             <pointsize>14</pointsize>
            </font>
           </property>
@@ -179,7 +178,6 @@
           </property>
           <property name="font">
            <font>
-            <family>Arial</family>
             <pointsize>11</pointsize>
            </font>
           </property>
@@ -243,7 +241,6 @@
           </property>
           <property name="font">
            <font>
-            <family>Arial</family>
             <pointsize>11</pointsize>
            </font>
           </property>
@@ -275,7 +272,6 @@
           </property>
           <property name="font">
            <font>
-            <family>Arial</family>
             <pointsize>11</pointsize>
            </font>
           </property>
@@ -307,7 +303,6 @@
           </property>
           <property name="font">
            <font>
-            <family>Arial</family>
             <pointsize>11</pointsize>
            </font>
           </property>
@@ -339,7 +334,6 @@
           </property>
           <property name="font">
            <font>
-            <family>Arial</family>
             <pointsize>11</pointsize>
            </font>
           </property>
@@ -390,7 +384,6 @@
            <widget class="QLabel" name="label_2">
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>14</pointsize>
              </font>
             </property>
@@ -409,7 +402,6 @@
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>11</pointsize>
              </font>
             </property>
@@ -422,7 +414,6 @@
            <widget class="QPlainTextEdit" name="txtDescuentos">
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>11</pointsize>
              </font>
             </property>
@@ -447,7 +438,6 @@
          </property>
          <property name="font">
           <font>
-           <family>Arial</family>
            <pointsize>11</pointsize>
           </font>
          </property>

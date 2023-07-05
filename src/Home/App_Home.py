@@ -1,7 +1,7 @@
-from PyQt5 import QtWidgets
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import (QDate, Qt, QPropertyAnimation,
-                          QRect, QEasingCurve, pyqtSignal)
+from PySide6 import QtWidgets
+from PySide6.QtGui import QPixmap
+from PySide6.QtCore import (QDate, Qt, QPropertyAnimation,
+                          QRect, QEasingCurve, Signal)
 
 from mydecorators import run_in_thread
 from mywidgets import VentanaPrincipal
@@ -57,9 +57,9 @@ class App_Home(QtWidgets.QMainWindow):
         from AdministrarProductos import App_AdministrarProductos
         from AdministrarClientes import App_AdministrarClientes
         from AdministrarUsuarios import App_AdministrarUsuarios
-        from Ajustes import App_Ajustes
+        #from Ajustes import App_Ajustes
         from Caja import App_Caja
-        from Reportes import App_Reportes
+        #from Reportes import App_Reportes
 
         self.ui.btCrearVenta.clicked.connect(self.iniciarVenta)
         self.ui.btProductos.clicked.connect(lambda: self.crearVentana(App_AdministrarProductos))
@@ -68,8 +68,8 @@ class App_Home(QtWidgets.QMainWindow):
         self.ui.btCaja.clicked.connect(lambda: self.crearVentana(App_Caja))
         self.ui.btClientes.clicked.connect(lambda: self.crearVentana(App_AdministrarClientes))
         self.ui.btUsuarios.clicked.connect(lambda: self.crearVentana(App_AdministrarUsuarios))
-        self.ui.btReportes.clicked.connect(lambda: self.crearVentana(App_Reportes))
-        self.ui.btAjustes.clicked.connect(lambda: self.crearVentana(App_Ajustes))
+        #self.ui.btReportes.clicked.connect(lambda: self.crearVentana(App_Reportes))
+        #self.ui.btAjustes.clicked.connect(lambda: self.crearVentana(App_Ajustes))
         self.ui.btSalir.clicked.connect(self.exitApp)
 
         # deshabilitar funciones para usuarios normales
@@ -190,7 +190,7 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
     Backend para el módulo de consultar precios.
     No se puede cerrar hasta cerrar por completo el sistema.
     """
-    dataChanged = pyqtSignal()  # señal para actualizar tabla en hilo principal
+    dataChanged = Signal()  # señal para actualizar tabla en hilo principal
     
     def __init__(self, principal: VentanaPrincipal):
         from Home.Ui_ConsultarPrecios import Ui_ConsultarPrecios
@@ -276,10 +276,9 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         Escucha trigger 'cambio_productos' en la base de datos.
         Al suceder, se actualizan las tablas de productos.
         """
-        while True:
-            if self.events.wait():
-                self.dataChanged.emit()
-                self.events.flush()
+        while self.events.wait():
+            self.dataChanged.emit()
+            self.events.flush()
     
     def update_display(self, rescan: bool = False):
         """

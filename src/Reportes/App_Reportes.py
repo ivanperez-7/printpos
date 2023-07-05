@@ -13,10 +13,10 @@ This can help you identify customers who are loyal to your store and reward them
 Sales Trends Report: You can display a report that shows the sales trends in your store over a period of time, such as monthly or 
 quarterly. This can help you identify the seasonal trends in your business and make informed decisions about inventory and promotions.
 """
-from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtChart import QChart, QChartView, QBarSeries, QBarSet, QBarCategoryAxis
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter
+from PySide6 import QtWidgets, QtGui
+from PySide6.QtChart import QChart, QChartView, QBarSeries, QBarSet, QBarCategoryAxis
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPainter
 
 
 
@@ -116,7 +116,7 @@ class App_Reportes(QtWidgets.QMainWindow):
         series.append(set1)
         
         font = QtGui.QFont()
-        font.setFamily('Arial')
+        font.setFamily('MS Shell Dlg 2')
         font.setPointSize(11)
  
         chart = QChart()
@@ -177,7 +177,7 @@ class App_Reportes(QtWidgets.QMainWindow):
         series.append(set1)
         
         font = QtGui.QFont()
-        font.setFamily('Arial')
+        font.setFamily('MS Shell Dlg 2')
         font.setPointSize(11)
  
         chart = QChart()

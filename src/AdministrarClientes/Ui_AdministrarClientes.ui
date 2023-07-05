@@ -27,6 +27,11 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item alignment="Qt::AlignLeft|Qt::AlignTop">
      <widget class="QFrame" name="frame">
+      <property name="font">
+       <font>
+        <family>MS Shell Dlg 2</family>
+       </font>
+      </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
@@ -54,6 +59,11 @@
            <height>41</height>
           </size>
          </property>
+         <property name="font">
+          <font>
+           <family>MS Shell Dlg 2</family>
+          </font>
+         </property>
          <property name="cursor">
           <cursorShape>PointingHandCursor</cursorShape>
          </property>
@@ -78,6 +88,7 @@
          </property>
          <property name="font">
           <font>
+           <family>MS Shell Dlg 2</family>
            <pointsize>18</pointsize>
           </font>
          </property>
@@ -97,6 +108,11 @@
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="font">
+       <font>
+        <family>MS Shell Dlg 2</family>
+       </font>
+      </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
@@ -115,6 +131,11 @@
        </property>
        <item alignment="Qt::AlignTop">
         <widget class="QFrame" name="frame_2">
+         <property name="font">
+          <font>
+           <family>MS Shell Dlg 2</family>
+          </font>
+         </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
@@ -136,6 +157,11 @@
           </property>
           <item>
            <widget class="QFrame" name="frame_5">
+            <property name="font">
+             <font>
+              <family>MS Shell Dlg 2</family>
+             </font>
+            </property>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
@@ -162,7 +188,7 @@
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
+                 <family>MS Shell Dlg 2</family>
                  <pointsize>10</pointsize>
                 </font>
                </property>
@@ -183,6 +209,11 @@
                  <height>31</height>
                 </size>
                </property>
+               <property name="font">
+                <font>
+                 <family>MS Shell Dlg 2</family>
+                </font>
+               </property>
                <property name="toolTip">
                 <string>Filtrar búsqueda por...</string>
                </property>
@@ -200,6 +231,11 @@
              </item>
              <item row="1" column="1">
               <spacer name="horizontalSpacer">
+               <property name="font">
+                <font>
+                 <family>MS Shell Dlg 2</family>
+                </font>
+               </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -228,6 +264,11 @@
                  <height>31</height>
                 </size>
                </property>
+               <property name="font">
+                <font>
+                 <family>MS Shell Dlg 2</family>
+                </font>
+               </property>
                <property name="styleSheet">
                 <string notr="true">image: url(:/img/resources/images/magnifier.png);
 background-color: rgb(255, 255, 255);</string>
@@ -247,7 +288,7 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
+                 <family>MS Shell Dlg 2</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -264,6 +305,11 @@ background-color: rgb(255, 255, 255);</string>
           </item>
           <item alignment="Qt::AlignBottom">
            <widget class="QFrame" name="frame_6">
+            <property name="font">
+             <font>
+              <family>MS Shell Dlg 2</family>
+             </font>
+            </property>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
@@ -278,6 +324,11 @@ background-color: rgb(255, 255, 255);</string>
                  <width>41</width>
                  <height>41</height>
                 </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>MS Shell Dlg 2</family>
+                </font>
                </property>
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
@@ -301,6 +352,11 @@ background-color: rgb(255, 255, 255);</string>
                  <height>41</height>
                 </size>
                </property>
+               <property name="font">
+                <font>
+                 <family>MS Shell Dlg 2</family>
+                </font>
+               </property>
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
@@ -322,6 +378,11 @@ background-color: rgb(255, 255, 255);</string>
                  <width>41</width>
                  <height>41</height>
                 </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>MS Shell Dlg 2</family>
+                </font>
                </property>
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
@@ -345,6 +406,11 @@ background-color: rgb(255, 255, 255);</string>
        </item>
        <item>
         <widget class="QFrame" name="frame_7">
+         <property name="font">
+          <font>
+           <family>MS Shell Dlg 2</family>
+          </font>
+         </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
@@ -359,13 +425,13 @@ background-color: rgb(255, 255, 255);</string>
            <widget class="QTableWidget" name="tabla_clientes">
             <property name="font">
              <font>
-              <family>Arial</family>
+              <family>MS Shell Dlg 2</family>
               <pointsize>10</pointsize>
              </font>
             </property>
             <property name="styleSheet">
              <string notr="true">QHeaderView::section {
-	font: bold 10pt &quot;Arial&quot;;
+	font: bold 10pt;
 	color: rgb(255, 255, 255);
 	background-color: rgb(52, 172, 224);
 
@@ -459,6 +525,11 @@ QTableView:active {
     </item>
     <item alignment="Qt::AlignBottom">
      <widget class="QFrame" name="frame_4">
+      <property name="font">
+       <font>
+        <family>MS Shell Dlg 2</family>
+       </font>
+      </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
@@ -471,6 +542,11 @@ QTableView:active {
        </property>
        <item>
         <widget class="QFrame" name="frame_8">
+         <property name="font">
+          <font>
+           <family>MS Shell Dlg 2</family>
+          </font>
+         </property>
          <property name="styleSheet">
           <string notr="true">QFrame { border: none; }</string>
          </property>
@@ -491,7 +567,7 @@ QTableView:active {
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
+              <family>MS Shell Dlg 2</family>
               <pointsize>11</pointsize>
               <weight>75</weight>
               <bold>true</bold>
@@ -512,7 +588,7 @@ QTableView:active {
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
+              <family>MS Shell Dlg 2</family>
               <pointsize>11</pointsize>
               <weight>50</weight>
               <bold>false</bold>
@@ -528,6 +604,11 @@ QTableView:active {
        </item>
        <item alignment="Qt::AlignRight|Qt::AlignBottom">
         <widget class="QFrame" name="frame_9">
+         <property name="font">
+          <font>
+           <family>MS Shell Dlg 2</family>
+          </font>
+         </property>
          <property name="styleSheet">
           <string notr="true">QFrame { border: none; }</string>
          </property>
@@ -540,6 +621,11 @@ QTableView:active {
          <layout class="QHBoxLayout" name="horizontalLayout_7">
           <item>
            <widget class="QCheckBox" name="resaltarCheck">
+            <property name="font">
+             <font>
+              <family>MS Shell Dlg 2</family>
+             </font>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -552,7 +638,7 @@ QTableView:active {
            <widget class="QLabel" name="label_4">
             <property name="font">
              <font>
-              <family>Arial</family>
+              <family>MS Shell Dlg 2</family>
               <pointsize>11</pointsize>
               <weight>50</weight>
               <bold>false</bold>
@@ -570,7 +656,7 @@ QTableView:active {
            <widget class="QSpinBox" name="resaltarDias">
             <property name="font">
              <font>
-              <family>Arial</family>
+              <family>MS Shell Dlg 2</family>
               <pointsize>11</pointsize>
              </font>
             </property>
@@ -589,7 +675,7 @@ QTableView:active {
            <widget class="QLabel" name="label_5">
             <property name="font">
              <font>
-              <family>Arial</family>
+              <family>MS Shell Dlg 2</family>
               <pointsize>11</pointsize>
               <weight>50</weight>
               <bold>false</bold>

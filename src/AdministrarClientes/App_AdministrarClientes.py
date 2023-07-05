@@ -1,8 +1,8 @@
 import fdb
 
-from PyQt5 import QtWidgets
-from PyQt5.QtGui import QFont, QColor, QIcon, QPixmap, QRegExpValidator
-from PyQt5.QtCore import Qt, QDateTime, QRegExp, pyqtSignal
+from PySide6 import QtWidgets
+from PySide6.QtGui import QFont, QColor, QIcon, QPixmap, QRegularExpressionValidator
+from PySide6.QtCore import Qt, QDateTime, QRegularExpression, Signal
 
 from mydecorators import con_fondo
 from myutils import DatabaseManager, exportarXlsx, formatDate, ColorsEnum, son_similar
@@ -100,7 +100,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         self.user = parent.user
 
         # añadir menú de opciones al botón para filtrar
-        popup = QtWidgets.QMenu()
+        popup = QtWidgets.QMenu(self.ui.btFiltrar)
 
         default = popup.addAction(
             'Nombre',lambda: self.cambiarFiltro('nombre', 1))
@@ -320,7 +320,7 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
     
-    success = pyqtSignal(str, str, str)
+    success = Signal(str, str, str)
     
     def __init__(self, first: App_AdministrarClientes):
         from AdministrarClientes.Ui_EditarCliente import Ui_EditarCliente
@@ -337,8 +337,8 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
         self.user = first.user
         
         # validador clave de país
-        regexp = QRegExp(r'[0-9]{1,}')
-        validador = QRegExpValidator(regexp)
+        regexp = QRegularExpression(r'[0-9]{1,}')
+        validador = QRegularExpressionValidator(regexp)
         self.ui.txtLada.setValidator(validador)
 
         # crear eventos para los botones

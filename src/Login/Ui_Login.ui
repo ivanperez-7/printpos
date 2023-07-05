@@ -44,7 +44,7 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>Arial</family>
+      <family>MS Shell Dlg 2</family>
       <pointsize>18</pointsize>
       <weight>75</weight>
       <bold>true</bold>
@@ -65,7 +65,7 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>Arial</family>
+      <family>MS Shell Dlg 2</family>
       <pointsize>12</pointsize>
      </font>
     </property>
@@ -87,7 +87,7 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>Arial</family>
+      <family>MS Shell Dlg 2</family>
       <pointsize>11</pointsize>
      </font>
     </property>
@@ -106,7 +106,7 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>Arial</family>
+      <family>MS Shell Dlg 2</family>
       <pointsize>11</pointsize>
      </font>
     </property>
@@ -125,7 +125,6 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>Arial</family>
       <pointsize>10</pointsize>
      </font>
     </property>
@@ -150,7 +149,7 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>Arial</family>
+      <family>MS Shell Dlg 2</family>
      </font>
     </property>
     <property name="styleSheet">
@@ -171,7 +170,7 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>Arial</family>
+      <family>MS Shell Dlg 2</family>
       <pointsize>11</pointsize>
      </font>
     </property>
@@ -190,7 +189,7 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>Arial</family>
+      <family>MS Shell Dlg 2</family>
       <pointsize>12</pointsize>
      </font>
     </property>
@@ -217,6 +216,9 @@ QLineEdit::placeholder {
      <font>
       <family>Arial</family>
       <pointsize>11</pointsize>
+      <weight>50</weight>
+      <italic>false</italic>
+      <bold>false</bold>
      </font>
     </property>
     <property name="styleSheet">
@@ -248,6 +250,11 @@ QPushButton:focus {
       <width>61</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>MS Shell Dlg 2</family>
+     </font>
     </property>
     <property name="text">
      <string>123</string>

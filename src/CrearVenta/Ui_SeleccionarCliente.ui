@@ -17,7 +17,7 @@
    <string>MainWindow</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../resources.qrc">
+   <iconset resource="../../resources.qrc">
     <normaloff>:/img/icon.ico</normaloff>:/img/icon.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -41,6 +41,11 @@
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <family>MS Shell Dlg 2</family>
+       </font>
       </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(52, 172, 224);</string>
@@ -71,6 +76,11 @@
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <family>MS Shell Dlg 2</family>
+          </font>
          </property>
          <property name="styleSheet">
           <string notr="true">QFrame { border:none; }
@@ -103,6 +113,11 @@ background-color: rgb(52, 172, 224);</string>
               <height>41</height>
              </size>
             </property>
+            <property name="font">
+             <font>
+              <family>MS Shell Dlg 2</family>
+             </font>
+            </property>
             <property name="cursor">
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
@@ -124,6 +139,7 @@ background-color: rgb(52, 172, 224);</string>
             </property>
             <property name="font">
              <font>
+              <family>MS Shell Dlg 2</family>
               <pointsize>18</pointsize>
              </font>
             </property>
@@ -149,6 +165,11 @@ background-color: rgb(52, 172, 224);</string>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="font">
+       <font>
+        <family>MS Shell Dlg 2</family>
+       </font>
+      </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
@@ -161,6 +182,11 @@ background-color: rgb(52, 172, 224);</string>
        </property>
        <item alignment="Qt::AlignTop">
         <widget class="QFrame" name="frame_5">
+         <property name="font">
+          <font>
+           <family>MS Shell Dlg 2</family>
+          </font>
+         </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
@@ -173,6 +199,11 @@ background-color: rgb(52, 172, 224);</string>
           </property>
           <item>
            <widget class="QFrame" name="frame_7">
+            <property name="font">
+             <font>
+              <family>MS Shell Dlg 2</family>
+             </font>
+            </property>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
@@ -202,7 +233,7 @@ background-color: rgb(52, 172, 224);</string>
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
+                 <family>MS Shell Dlg 2</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -210,7 +241,7 @@ background-color: rgb(52, 172, 224);</string>
                 <string>Seleccionar</string>
                </property>
                <property name="icon">
-                <iconset resource="../resources.qrc">
+                <iconset resource="../../resources.qrc">
                  <normaloff>:/img/resources/images/accept.png</normaloff>:/img/resources/images/accept.png</iconset>
                </property>
               </widget>
@@ -225,6 +256,11 @@ background-color: rgb(52, 172, 224);</string>
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="font">
+             <font>
+              <family>MS Shell Dlg 2</family>
+             </font>
             </property>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
@@ -259,6 +295,11 @@ background-color: rgb(52, 172, 224);</string>
                  <height>31</height>
                 </size>
                </property>
+               <property name="font">
+                <font>
+                 <family>MS Shell Dlg 2</family>
+                </font>
+               </property>
                <property name="styleSheet">
                 <string notr="true">image: url(:/img/resources/images/magnifier.png);
 background-color: rgb(255, 255, 255);</string>
@@ -284,7 +325,7 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
+                 <family>MS Shell Dlg 2</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -310,6 +351,11 @@ background-color: rgb(255, 255, 255);</string>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="font">
+          <font>
+           <family>MS Shell Dlg 2</family>
+          </font>
+         </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
@@ -321,13 +367,13 @@ background-color: rgb(255, 255, 255);</string>
            <widget class="QTableWidget" name="tabla_seleccionar">
             <property name="font">
              <font>
-              <family>Arial</family>
+              <family>MS Shell Dlg 2</family>
               <pointsize>10</pointsize>
              </font>
             </property>
             <property name="styleSheet">
              <string notr="true">QHeaderView::section {
-	font: bold 10pt &quot;Arial&quot;;
+	font: bold 10pt;
 	color: rgb(255, 255, 255);
 	background-color: rgb(52, 172, 224);
 
@@ -413,7 +459,7 @@ QTableView:active {
   </widget>
  </widget>
  <resources>
-  <include location="../resources.qrc"/>
+  <include location="../../resources.qrc"/>
  </resources>
  <connections/>
 </ui>

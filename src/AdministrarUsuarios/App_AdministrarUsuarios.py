@@ -1,8 +1,8 @@
 import fdb
 
-from PyQt5 import QtWidgets
-from PyQt5.QtGui import QFont, QPixmap, QRegExpValidator
-from PyQt5.QtCore import Qt, QRegExp, pyqtSignal
+from PySide6 import QtWidgets
+from PySide6.QtGui import QFont, QPixmap, QRegularExpressionValidator
+from PySide6.QtCore import Qt, QRegularExpression, Signal
 
 from mydecorators import con_fondo
 from myutils import formatDate, son_similar
@@ -40,7 +40,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         self.user = parent.user
 
         # añadir menú de opciones al botón para filtrar
-        popup = QtWidgets.QMenu()
+        popup = QtWidgets.QMenu(self.ui.btFiltrar)
 
         default = popup.addAction(
             'Usuario', lambda: self.cambiarFiltro('usuario'))
@@ -242,7 +242,7 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
     
-    success = pyqtSignal()
+    success = Signal()
     
     def __init__(self, first: App_AdministrarUsuarios):
         from AdministrarUsuarios.Ui_EditarUsuario import Ui_EditarUsuario
@@ -259,8 +259,8 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
         self.user = first.user
             
         # validador para nombre de usuario
-        regexp = QRegExp(r'[a-zA-Z0-9_$]+')
-        validador = QRegExpValidator(regexp)
+        regexp = QRegularExpression(r'[a-zA-Z0-9_$]+')
+        validador = QRegularExpressionValidator(regexp)
         self.ui.txtUsuario.setValidator(validador)
 
         # deshabilita eventos del mouse para los textos en los botones
