@@ -2,40 +2,73 @@ from math import ceil
 
 import fdb
 
-from PyQt5 import QtWidgets
-from PyQt5.QtGui import QFont, QColor, QIcon, QRegExpValidator
-from PyQt5.QtCore import (QDate, QDateTime, QModelIndex,
-                          QRegExp, Qt, pyqtSignal)
+from PySide6 import QtWidgets
+from PySide6.QtGui import QFont, QColor, QIcon, QRegularExpressionValidator
+from PySide6.QtCore import (QDate, QDateTime, QModelIndex,
+                          QRegularExpression, Qt, Signal)
 
 from mydecorators import con_fondo
-from myutils import (chunkify, clamp, enviarWhatsApp, formatDate, generarOrdenCompra, 
-                     generarTicketCompra, ColorsEnum, son_similar)
+from myutils import (chunkify, clamp, DatabaseManager, enviarWhatsApp, formatDate, 
+                     generarOrdenCompra, generarTicketCompra, ColorsEnum, son_similar)
 from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
 
 
 ###########################################
 # CLASE PARA MANEJAR OPERACIONES EN LA DB #
 ###########################################
-class ManejadorVentas:
-    """Clase para manejar sentencias hacia/desde la tabla Ventas."""
-    def __init__(self, crsr: fdb.Cursor):
-        self.crsr = crsr
+class ManejadorVentas(DatabaseManager):
+    """ Clase para manejar sentencias hacia/desde la tabla Ventas. """
+    def __init__(self, conn: fdb.Connection, error_txt: str = ''):
+        super().__init__(conn, error_txt)
     
-    def tablaVentas(self):
+    def tablaVentas(self, restrict: str):
         """Sentencia para alimentar la tabla principal de clientes."""
-        self.crsr.execute('''
-
+        return self.fetchall(f'''
+            SELECT  Ventas.id_ventas,
+                    Usuarios.nombre,
+                    Clientes.nombre,
+                    fecha_hora_creacion,
+                    SUM(importe) AS total,
+                    estado,
+                    metodo_pago,
+                    comentarios
+            FROM    Ventas
+                    LEFT JOIN Usuarios
+                           ON Ventas.id_usuarios = Usuarios.id_usuarios
+                    LEFT JOIN Clientes
+                           ON Ventas.id_clientes = Clientes.id_clientes
+                    LEFT JOIN Ventas_Detallado
+                           ON Ventas.id_ventas = Ventas_Detallado.id_ventas
+			WHERE   fecha_hora_creacion = fecha_hora_entrega
+                    {restrict}
+            GROUP   BY 1, 2, 3, 4, 6, 7, 8
+            ORDER	BY Ventas.id_ventas DESC;
         ''')
-        
-        return self.crsr.fetchall()
     
-    def tablaPedidos(self):
+    def tablaPedidos(self, restrict: str):
         """Sentencia para alimentar la tabla principal de clientes."""
-        self.crsr.execute('''
-
+        return self.fetchall(f'''
+            SELECT  Ventas.id_ventas,
+                    Usuarios.nombre,
+                    Clientes.nombre,
+                    fecha_hora_creacion,
+                    fecha_hora_entrega,
+                    SUM(importe) AS total,
+                    estado,
+                    metodo_pago,
+                    comentarios
+            FROM    Ventas
+                    LEFT JOIN Usuarios
+                           ON Ventas.id_usuarios = Usuarios.id_usuarios
+                    LEFT JOIN Clientes
+                           ON Ventas.id_clientes = Clientes.id_clientes
+                    LEFT JOIN Ventas_Detallado
+                           ON Ventas.id_ventas = Ventas_Detallado.id_ventas
+			WHERE   fecha_hora_creacion != fecha_hora_entrega
+                    {restrict}
+            GROUP   BY 1, 2, 3, 4, 5, 7, 8, 9
+            ORDER	BY Ventas.id_ventas DESC;
         ''')
-        
-        return self.crsr.fetchall()
     
     def obtenerVenta(self, idx):
         """Sentencia para obtener un cliente."""
@@ -46,6 +79,39 @@ class ManejadorVentas:
         ''', (idx,))
         
         return self.crsr.fetchone()
+    
+    def insertarVenta(self, params: tuple):
+        """ Insertar venta nueva en la tabla ventas e intenta 
+            regresar tupla con índice de venta recién insertada.
+            
+            No hace commit. """
+        return self.fetchone('''
+            INSERT INTO Ventas (
+                id_clientes, id_usuarios, fecha_hora_creacion, 
+                fecha_hora_entrega, comentarios, metodo_pago, 
+                requiere_factura, estado
+            ) 
+            VALUES 
+                (?,?,?,?,?,?,?,?)
+            RETURNING
+                id_ventas;
+        ''', params)
+    
+    def insertarDetallesVenta(self, id_ventas: int, params: list[tuple]):
+        """ Insertar detalles de venta en tabla ventas_detallado e intenta 
+            regresar tupla con índice de venta recién insertada.
+            
+            Hace commit automáticamente. """
+        params = [(id_ventas,) + param for param in params]
+        
+        return self.executemany('''
+            INSERT INTO Ventas_Detallado (
+                id_ventas, id_productos, cantidad, precio, 
+                descuento, especificaciones, duplex
+            ) 
+            VALUES 
+                (?,?,?,?,?,?,?);
+        ''', params, commit=True)
 
 
 #####################
@@ -96,7 +162,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             self.ui.lbCancelar.hide()
 
         # añadir menú de opciones al botón para filtrar
-        popup = QtWidgets.QMenu()
+        popup = QtWidgets.QMenu(self.ui.btFiltrar)
 
         default = popup.addAction(
             'Folio', lambda: self.cambiarFiltro('folio', 0))
@@ -259,60 +325,13 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         Lee de nuevo la tabla de clientes, si se desea.
         """
         if rescan:
-            user = self.user
-            crsr = self.conn.cursor()
+            restrict = f'AND Usuarios.id_usuarios = {self.user.id}' \
+                       if not self.user.administrador else ''
             
-            restrict = f'AND Usuarios.id_usuarios = {user.id}' \
-                       if not user.administrador else ''
+            manejador = ManejadorVentas(self.conn)
 
-            crsr.execute(f'''
-            SELECT  Ventas.id_ventas,
-                    Usuarios.nombre,
-                    Clientes.nombre,
-                    fecha_hora_creacion,
-                    SUM(importe) AS total,
-                    estado,
-                    metodo_pago,
-                    comentarios
-            FROM    Ventas
-                    LEFT JOIN Usuarios
-                           ON Ventas.id_usuarios = Usuarios.id_usuarios
-                    LEFT JOIN Clientes
-                           ON Ventas.id_clientes = Clientes.id_clientes
-                    LEFT JOIN Ventas_Detallado
-                           ON Ventas.id_ventas = Ventas_Detallado.id_ventas
-			WHERE   fecha_hora_creacion = fecha_hora_entrega
-                    {restrict}
-            GROUP   BY 1, 2, 3, 4, 6, 7, 8
-            ORDER	BY Ventas.id_ventas DESC;
-            ''')
-
-            self.all_directas = crsr.fetchall()
-
-            crsr.execute(f'''
-            SELECT  Ventas.id_ventas,
-                    Usuarios.nombre,
-                    Clientes.nombre,
-                    fecha_hora_creacion,
-                    fecha_hora_entrega,
-                    SUM(importe) AS total,
-                    estado,
-                    metodo_pago,
-                    comentarios
-            FROM    Ventas
-                    LEFT JOIN Usuarios
-                           ON Ventas.id_usuarios = Usuarios.id_usuarios
-                    LEFT JOIN Clientes
-                           ON Ventas.id_clientes = Clientes.id_clientes
-                    LEFT JOIN Ventas_Detallado
-                           ON Ventas.id_ventas = Ventas_Detallado.id_ventas
-			WHERE   fecha_hora_creacion != fecha_hora_entrega
-                    {restrict}
-            GROUP   BY 1, 2, 3, 4, 5, 7, 8, 9
-            ORDER	BY Ventas.id_ventas DESC;
-            ''')
-            
-            self.all_pedidos = crsr.fetchall()
+            self.all_directas = manejador.tablaVentas(restrict)
+            self.all_pedidos = manejador.tablaVentas(restrict)
 
         bold = QFont()
         bold.setBold(True)
@@ -757,7 +776,7 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
 @con_fondo
 class App_TerminarVenta(QtWidgets.QMainWindow):
     """Backend para la ventana para terminar una venta sobre pedido."""
-    success = pyqtSignal()
+    success = Signal()
     
     def __init__(self, first: App_AdministrarVentas, idx):        
         from AdministrarVentas.Ui_TerminarVenta import Ui_TerminarVenta
@@ -856,8 +875,8 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         self.ui.lbSaldo.setText(f'{self.paraPagar:,.2f}')
         
         # validadores para datos numéricos
-        regexp_numero = QRegExp(r'\d*\.?\d*')
-        validador = QRegExpValidator(regexp_numero)
+        regexp_numero = QRegularExpression(r'\d*\.?\d*')
+        validador = QRegularExpressionValidator(regexp_numero)
         self.ui.txtPago.setValidator(validador)
 
         # eventos para widgets

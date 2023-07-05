@@ -154,7 +154,6 @@
           </property>
           <property name="font">
            <font>
-            <family>Arial</family>
             <pointsize>11</pointsize>
            </font>
           </property>
@@ -172,7 +171,6 @@
            </property>
            <property name="font">
             <font>
-             <family>Arial</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -189,7 +187,6 @@
           </property>
           <property name="font">
            <font>
-            <family>Arial</family>
             <pointsize>11</pointsize>
            </font>
           </property>
@@ -207,7 +204,6 @@
            </property>
            <property name="font">
             <font>
-             <family>Arial</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -230,7 +226,6 @@
           </property>
           <property name="font">
            <font>
-            <family>Arial</family>
             <pointsize>11</pointsize>
            </font>
           </property>
@@ -248,7 +243,6 @@
            </property>
            <property name="font">
             <font>
-             <family>Arial</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -271,7 +265,6 @@
           </property>
           <property name="font">
            <font>
-            <family>Arial</family>
             <pointsize>14</pointsize>
            </font>
           </property>
@@ -293,7 +286,6 @@
           </property>
           <property name="font">
            <font>
-            <family>Arial</family>
             <pointsize>14</pointsize>
            </font>
           </property>
@@ -359,13 +351,12 @@
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>10</pointsize>
              </font>
             </property>
             <property name="styleSheet">
              <string notr="true">QHeaderView::section {
-	font: bold 10pt &quot;Arial&quot;;
+	font: bold 10pt;
 	color: rgb(255, 255, 255);
 	background-color: rgb(0, 170, 0);
 
@@ -581,7 +572,6 @@ QTableView:active {
            <widget class="QLabel" name="label_2">
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>14</pointsize>
              </font>
             </property>
@@ -607,7 +597,7 @@ QTableView:active {
                <x>0</x>
                <y>0</y>
                <width>431</width>
-               <height>457</height>
+               <height>456</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="layoutScroll">
@@ -628,7 +618,6 @@ QTableView:active {
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>10</pointsize>
              </font>
             </property>
@@ -660,7 +649,6 @@ QTableView:active {
          </property>
          <property name="font">
           <font>
-           <family>Arial</family>
            <pointsize>11</pointsize>
           </font>
          </property>

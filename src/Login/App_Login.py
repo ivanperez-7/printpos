@@ -2,9 +2,9 @@ from dataclasses import dataclass
 
 import fdb
 
-from PyQt5 import QtWidgets
-from PyQt5.QtGui import QRegExpValidator
-from PyQt5.QtCore import Qt, QRegExp, pyqtSignal
+from PySide6 import QtWidgets
+from PySide6.QtGui import QRegularExpressionValidator
+from PySide6.QtCore import Qt, QRegularExpression, Signal
 
 from mydecorators import run_in_thread
 
@@ -37,7 +37,7 @@ class App_Login(QtWidgets.QMainWindow):
     """
     Backend para la pantalla de inicio de sesión.
     """
-    validated = pyqtSignal(object, object)
+    validated = Signal(object, object)
     
     def __init__(self):
         from Login.Ui_Login import Ui_Login
@@ -51,8 +51,8 @@ class App_Login(QtWidgets.QMainWindow):
         self.lock = False
         
         # validador para nombre de usuario
-        regexp = QRegExp(r'[a-zA-Z0-9_$]+')
-        validador = QRegExpValidator(regexp)
+        regexp = QRegularExpression(r'[a-zA-Z0-9_$]+')
+        validador = QRegularExpressionValidator(regexp)
         self.ui.inputUsuario.setValidator(validador)
         
         self.ui.btIngresar.clicked.connect(lambda: self.verificar_info() if not self.lock else None)

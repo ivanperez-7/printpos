@@ -8,7 +8,7 @@ Scripts/
 pyvenv.cfg
 
 # archivo de recursos compilados
-resources/*.py
+resources_rc.py
 # PDF generados
 tmp/
 # archivos generados por pyuic5

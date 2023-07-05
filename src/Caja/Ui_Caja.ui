@@ -132,7 +132,6 @@
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>11</pointsize>
              </font>
             </property>
@@ -151,7 +150,6 @@
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>11</pointsize>
              </font>
             </property>
@@ -175,7 +173,6 @@ border: 0px;</string>
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>11</pointsize>
              </font>
             </property>
@@ -214,7 +211,6 @@ border: 0px;</string>
               <widget class="QLabel" name="label">
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -239,7 +235,6 @@ border: 0px;</string>
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -255,7 +250,6 @@ border: 0px;</string>
               <widget class="QLabel" name="label_2">
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -280,7 +274,6 @@ border: 0px;</string>
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -308,7 +301,6 @@ border: 0px;</string>
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -327,7 +319,6 @@ border: 0px;</string>
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -346,7 +337,6 @@ border: 0px;</string>
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -377,7 +367,6 @@ border: 0px;</string>
            <widget class="QLabel" name="lbTotalIngresos">
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>16</pointsize>
              </font>
             </property>
@@ -390,7 +379,6 @@ border: 0px;</string>
            <widget class="QLabel" name="lbTotalEgresos">
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>16</pointsize>
              </font>
             </property>
@@ -403,13 +391,12 @@ border: 0px;</string>
            <widget class="QTableWidget" name="tabla_ingresos">
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>10</pointsize>
              </font>
             </property>
             <property name="styleSheet">
              <string notr="true">QHeaderView::section {
-	font: bold 10pt &quot;Arial&quot;;
+	font: bold 10pt;
 	color: rgb(255, 255, 255);
 	background-color: rgb(52, 172, 224);
 
@@ -489,13 +476,12 @@ QTableView:active {
            <widget class="QTableWidget" name="tabla_egresos">
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>10</pointsize>
              </font>
             </property>
             <property name="styleSheet">
              <string notr="true">QHeaderView::section {
-	font: bold 10pt &quot;Arial&quot;;
+	font: bold 10pt;
 	color: rgb(255, 255, 255);
 	background-color: rgb(52, 172, 224);
 
@@ -587,7 +573,6 @@ QTableView:active {
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -606,7 +591,6 @@ QTableView:active {
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -625,7 +609,6 @@ QTableView:active {
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -653,7 +636,6 @@ QTableView:active {
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -672,7 +654,6 @@ QTableView:active {
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -691,7 +672,6 @@ QTableView:active {
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -719,7 +699,6 @@ QTableView:active {
         <widget class="QLabel" name="lbTotal">
          <property name="font">
           <font>
-           <family>Arial</family>
            <pointsize>18</pointsize>
            <weight>75</weight>
            <bold>true</bold>

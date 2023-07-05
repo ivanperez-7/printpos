@@ -206,7 +206,6 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -317,7 +316,6 @@ background-color: rgb(255, 255, 255);</string>
               <widget class="QLabel" name="label">
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -342,7 +340,6 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -358,7 +355,6 @@ background-color: rgb(255, 255, 255);</string>
               <widget class="QLabel" name="label_4">
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -383,7 +379,6 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -414,7 +409,6 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -433,7 +427,6 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -452,7 +445,6 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
-                 <family>Arial</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -483,7 +475,6 @@ background-color: rgb(255, 255, 255);</string>
         <widget class="QTabWidget" name="tabWidget">
          <property name="font">
           <font>
-           <family>Arial</family>
            <pointsize>10</pointsize>
           </font>
          </property>
@@ -517,13 +508,13 @@ background-color: rgb(255, 255, 255);</string>
             <widget class="QTableWidget" name="tabla_ventasDirectas">
              <property name="font">
               <font>
-               <family>Arial</family>
+               <family>MS Shell Dlg 2</family>
                <pointsize>10</pointsize>
               </font>
              </property>
              <property name="styleSheet">
               <string notr="true">QHeaderView::section {
-	font: bold 10pt &quot;Arial&quot;;
+	font: bold 10pt;
 	color: rgb(255, 255, 255);
 	background-color: rgb(52, 172, 224);
 
@@ -643,13 +634,13 @@ QTableView:active {
             <widget class="QTableWidget" name="tabla_pedidos">
              <property name="font">
               <font>
-               <family>Arial</family>
+               <family>MS Shell Dlg 2</family>
                <pointsize>10</pointsize>
               </font>
              </property>
              <property name="styleSheet">
               <string notr="true">QHeaderView::section {
-	font: bold 10pt &quot;Arial&quot;;
+	font: bold 10pt;
 	color: rgb(255, 255, 255);
 	background-color: rgb(52, 172, 224);
 
@@ -821,7 +812,6 @@ QTableView:active {
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>11</pointsize>
               <weight>75</weight>
               <bold>true</bold>
@@ -842,7 +832,6 @@ QTableView:active {
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>11</pointsize>
               <weight>50</weight>
               <bold>false</bold>
@@ -887,7 +876,6 @@ QTableView:active {
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>10</pointsize>
              </font>
             </property>
@@ -910,7 +898,6 @@ QTableView:active {
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>10</pointsize>
              </font>
             </property>
@@ -927,7 +914,6 @@ QTableView:active {
            <widget class="QLabel" name="lbPagina">
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>10</pointsize>
              </font>
             </property>
@@ -949,7 +935,6 @@ QTableView:active {
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>10</pointsize>
              </font>
             </property>
@@ -972,7 +957,6 @@ QTableView:active {
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>10</pointsize>
              </font>
             </property>
@@ -1037,7 +1021,6 @@ QTableView:active {
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>11</pointsize>
              </font>
             </property>
@@ -1081,7 +1064,6 @@ QTableView:active {
             </property>
             <property name="font">
              <font>
-              <family>Arial</family>
               <pointsize>11</pointsize>
              </font>
             </property>

@@ -1,18 +1,29 @@
 import fdb
 
-from PyQt5 import QtWidgets
-from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt, QDateTime, QDate
+from PySide6 import QtWidgets
+from PySide6.QtGui import QFont
+from PySide6.QtCore import Qt, QDateTime, QDate
 
 from mydecorators import run_in_thread
-from myutils import enviarAImpresora, formatDate
+from myutils import DatabaseManager, enviarAImpresora, formatDate
 from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
+
+
+###########################################
+# CLASE PARA MANEJAR OPERACIONES EN LA DB #
+###########################################
+class ManejadorCaja(DatabaseManager):
+    """ Clase para manejar sentencias hacia/desde la tabla Caja. """
+    def __init__(self, conn: fdb.Connection, error_txt: str = ''):
+        super().__init__(conn, error_txt)
+    
+    def registrarMovimiento(self, params: tuple):
+        ...
 
 
 #####################
 # VENTANA PRINCIPAL #
 #####################
-
 class App_Caja(QtWidgets.QMainWindow):
     """
     Backend para la ventana de movimientos de la caja.
@@ -472,7 +483,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         self.show()
     
     def setupUi(self, DialogRegistrar):
-        from PyQt5 import QtCore
+        from PySide6 import QtCore
         
         DialogRegistrar.setObjectName("DialogRegistrar")
         DialogRegistrar.setFixedSize(525, 160)
@@ -484,7 +495,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         self.formLayout.setObjectName("formLayout")
         self.label = QtWidgets.QLabel(DialogRegistrar)
         font = QFont()
-        font.setFamily("Arial")
+        font.setFamily("MS Shell Dlg 2")
         font.setPointSize(10)
         self.label.setFont(font)
         self.label.setText("Monto:")

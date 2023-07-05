@@ -5,18 +5,18 @@ from functools import wraps
 
 import fdb
 
-from PyQt5.QtWidgets import QMessageBox, QDialog
-from PyQt5.QtCore import QThread, pyqtSignal
+from PySide6.QtWidgets import QMessageBox, QDialog
+from PySide6.QtCore import QThread, Signal
 
 
 ##############################################
 # <DECORADOR PARA SOLICITAR CUENTA DE ADMIN> #
 ##############################################
 class Dialog_ObtenerAdmin(QDialog):
-    success = pyqtSignal()
+    success = Signal()
     
     def __init__(self, parent):
-        from PyQt5 import QtCore, QtGui, QtWidgets
+        from PySide6 import QtCore, QtGui, QtWidgets
         
         super().__init__(parent)
         
@@ -119,7 +119,7 @@ def requiere_admin(func):
 # <DECORADOR PARA EEJCUTAR EN QTHREAD> #
 ########################################
 class Runner(QThread):
-    success = pyqtSignal()
+    success = Signal()
 
     def __init__(self, target, *args, **kwargs):
         super().__init__()

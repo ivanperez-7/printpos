@@ -1,12 +1,13 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import fdb
 
-from PyQt5 import QtWidgets
-from PyQt5.QtGui import QRegExpValidator
-from PyQt5.QtCore import (QDate, QDateTime, QRegExp, Qt,
+from PySide6 import QtWidgets
+from PySide6.QtGui import QRegularExpressionValidator
+from PySide6.QtCore import (QDate, QDateTime, QRegularExpression, Qt,
                           QPropertyAnimation, QRect, QEasingCurve)
 
+from AdministrarClientes.App_AdministrarClientes import ManejadorClientes
 from AdministrarVentas.App_AdministrarVentas import ManejadorVentas
 from mydecorators import con_fondo, requiere_admin
 from myutils import (clamp, enviarWhatsApp, formatDate,
@@ -48,6 +49,28 @@ class ItemVenta:
                      self.precio_unit, self.descuento_unit, self.importe))
 
 
+@dataclass
+class Venta:
+    productos: list[ItemVenta] = field(default_factory=list)
+    fechaCreacion: QDateTime = QDateTime.currentDateTime()
+    fechaEntrega: QDateTime = QDateTime.currentDateTime()
+    metodoPago: str = 'Efectivo'
+    requiereFactura: bool = False
+    comentarios: str = ''
+    idCliente: int = 1
+        
+    @property
+    def total(self) -> float:
+        if self.productos:
+            return sum(prod.importe for prod in self.productos)
+        else:
+            return 0.0
+    
+    @property
+    def total_descuentos(self) -> float:
+        return sum(prod.descuento_unit * prod.cantidad for prod in self.productos)
+
+
 #####################
 # VENTANA PRINCIPAL #
 #####################
@@ -67,8 +90,8 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         
         LabelAdvertencia(self.ui.tabla_productos, '¡Aún no hay productos!')
 
-        # otras variables importantes
-        self.fechaHoraActual = QDateTime.currentDateTime() # fecha y hora en que se abre esta ventana        
+        # VARIABLE DE LA VENTA ACTIVA ACTUAL
+        self.ventaDatos = Venta()
         
         # guardar conexión y usuarios como atributos
         self.conn = parent.conn
@@ -79,13 +102,9 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.dialogoDescuentos.setGeometry(610, 28, 0, 165)
         self.dialogoDescuentos.setVisible(False)
 
-        #### otras variables IMPORTANTES para la venta ####
-        self.fechaEntrega = QDateTime.currentDateTime()
-        self.productosVenta: list[ItemVenta] = []
-
         # datos por defecto
         self.ui.txtVendedor.setText(self.user.nombre)
-        self.ui.lbFecha.setText(formatDate(self.fechaEntrega))
+        self.ui.lbFecha.setText(formatDate(self.ventaDatos.fechaEntrega))
 
         # dar formato a la tabla principal
         header = self.ui.tabla_productos.horizontalHeader()
@@ -134,9 +153,9 @@ class App_CrearVenta(QtWidgets.QMainWindow):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def itemChanged_handle(self, item):
+    def itemChanged_handle(self, item: QtWidgets.QTableWidgetItem):
         if item.column() == 2:
-            self.productosVenta[item.row()].notas = item.text()
+            self.ventaDatos.productos[item.row()].notas = item.text()
     
     @requiere_admin
     def goHome(self, _):
@@ -155,7 +174,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
 
-        for row, prod in enumerate(self.productosVenta):
+        for row, prod in enumerate(self.ventaDatos.productos):
             tabla.insertRow(row)
 
             for col, dato in enumerate(prod):
@@ -178,16 +197,16 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         # </llenar tabla>
         
         # <calcular precios y mostrar>
-        preciosConIVA = [p.importe for p in self.productosVenta]
-        preciosSinIVA = [p/1.16 for p in preciosConIVA]
-        impuestos = [con-sin for con, sin in zip(preciosConIVA, preciosSinIVA)]
+        preciosConIVA = self.ventaDatos.total
+        preciosSinIVA = preciosConIVA / 1.16
+        impuestos = preciosConIVA - preciosSinIVA
         
-        descuentos = [p.descuento_unit * p.cantidad for p in self.productosVenta]
+        descuentos = self.ventaDatos.total_descuentos
 
-        self.ui.lbTotal.setText(f'{sum(preciosConIVA):,.2f}')
-        self.ui.lbSubtotal.setText(f'{sum(preciosSinIVA):,.2f}')
-        self.ui.lbImpuestos.setText(f'{sum(impuestos):,.2f}')
-        self.ui.lbDescuento.setText(f'{sum(descuentos):,.2f}')
+        self.ui.lbTotal.setText(f'{preciosConIVA:,.2f}')
+        self.ui.lbSubtotal.setText(f'{preciosSinIVA:,.2f}')
+        self.ui.lbImpuestos.setText(f'{impuestos:,.2f}')
+        self.ui.lbDescuento.setText(f'{descuentos:,.2f}')
         # </calcular precios y mostrar>
         
         tabla.resizeRowsToContents()
@@ -265,7 +284,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         @requiere_admin
         def accion(parent, selected):
             for row in sorted(selected, reverse=True):
-                self.productosVenta.pop(row)
+                self.ventaDatos.productos.pop(row)
             self.colorearActualizar()
             
         selected = {i.row() for i in self.ui.tabla_productos.selectedIndexes()}
@@ -340,7 +359,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
                            'Por favor, seleccione un cliente y/o regístrelo.')
                 return
 
-            if self.fechaHoraActual == self.fechaEntrega:
+            if self.ventaDatos.fechaCreacion == self.ventaDatos.fechaEntrega:
                 qm.warning(self, '¡Atención!', 
                            '¡La fecha de entrega del pedido no ha sido cambiada!\n'
                            'Verifique que esta sea correcta.')
@@ -358,9 +377,10 @@ class App_CrearVenta(QtWidgets.QMainWindow):
                 
                 self.new = App_EditarCliente(self, cliente[id])
                 self.new.success.connect(
-                    lambda:    self.ui.txtCliente.setText(self.new.ui.txtNombre.text())
-                            or self.ui.txtTelefono.setText(self.new.numeroTelefono)
-                            or self.ui.txtCorreo.setText(self.new.ui.txtCorreo.text()))
+                    lambda nombre, tel, correo: 
+                            self.ui.txtCliente.setText(nombre)
+                            or self.ui.txtTelefono.setText(tel)
+                            or self.ui.txtCorreo.setText(correo))
                 
                 qm.warning(self, '¡Atención!', 
                            'El cliente no tiene completos sus datos para la factura.\n'
@@ -374,20 +394,15 @@ class App_CrearVenta(QtWidgets.QMainWindow):
                           '¿Desea concluir la venta?',
                           qm.Yes | qm.No)
 
-        if ret == qm.Yes:
-            ventaDatos = {
-                'productos': self.productosVenta,
-                'total': float(self.ui.lbTotal.text().replace(',','')),
-                'fechaEntrega': self.fechaEntrega,
-                'fechaCreacion': QDateTime.currentDateTime(),
-                'idCliente': cliente[id],
-                'metodo_pago': self.ui.btMetodoGrupo.checkedButton().text(),
-                'comentarios': self.ui.txtComentarios.toPlainText().strip(),
-                'requiere_factura': self.ui.tickFacturaSi.isChecked()
-            }
+        if ret == qm.Yes:    
+            self.ventaDatos.idCliente = cliente[id]
+            self.ventaDatos.fechaCreacion = QDateTime.currentDateTime()
+            self.ventaDatos.metodoPago = self.ui.btMetodoGrupo.checkedButton().text()
+            self.ventaDatos.requiereFactura = self.ui.boxFactura.isChecked()
+            self.ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
             
             bg = DimBackground(self)
-            self.new = App_ConfirmarVenta(self, ventaDatos)
+            self.new = App_ConfirmarVenta(self, self.ventaDatos)
 
 
 #################################
@@ -454,8 +469,8 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
             lambda: self.update_display(self.ui.searchBar.text()))
         
         # validadores para datos numéricos
-        regexp_numero = QRegExp(r'\d*\.?\d*')
-        validador = QRegExpValidator(regexp_numero)
+        regexp_numero = QRegularExpression(r'\d*\.?\d*')
+        validador = QRegularExpressionValidator(regexp_numero)
         self.ui.txtCantidad.setValidator(validador)
 
         self.show()
@@ -536,7 +551,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
             item = self.agregarGranFormato()
         
         if item:
-            self.first.productosVenta.append(item)
+            self.first.ventaDatos.productos.append(item)
             self.first.colorearActualizar()
             self.close()
     
@@ -802,9 +817,10 @@ class App_FechaEntrega(QtWidgets.QMainWindow):
 
         self.first = first
         
-        # datos por defecto        
-        self.ui.calendario.setSelectedDate(first.fechaEntrega.date())
-        self.ui.horaEdit.setTime(first.fechaEntrega.time())
+        # datos por defecto
+        fechaEntrega = first.ventaDatos.fechaEntrega
+        self.ui.calendario.setSelectedDate(fechaEntrega.date())
+        self.ui.horaEdit.setTime(fechaEntrega.time())
         
         hoy = QDate.currentDate()
         self.ui.calendario.setMinimumDate(hoy)
@@ -828,7 +844,7 @@ class App_FechaEntrega(QtWidgets.QMainWindow):
             self.ui.calendario.selectedDate(), 
             self.ui.horaEdit.time())
 
-        self.first.fechaEntrega = dateTime
+        self.first.ventaDatos.fechaEntrega = dateTime
         self.first.ui.lbFecha.setText(formatDate(dateTime))
 
         self.close()
@@ -865,7 +881,7 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
         
-        self.productosVenta = first.productosVenta
+        self.productosVenta = first.ventaDatos.productos
 
         for row, prod in enumerate(self.productosVenta):
             tabla.insertRow(row)
@@ -884,8 +900,8 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
         self.ui.btListo.clicked.connect(self.done)
         
         # validadores numéricos
-        regexp_numero = QRegExp(r'\d*\.?\d*')
-        validador = QRegExpValidator(regexp_numero)
+        regexp_numero = QRegularExpression(r'\d*\.?\d*')
+        validador = QRegularExpressionValidator(regexp_numero)
         self.ui.txtPrecio.setValidator(validador)
         
         self.show()
@@ -995,7 +1011,7 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
 
 class App_ConfirmarVenta(QtWidgets.QMainWindow):
     """Backend para la ventana de finalización de venta."""
-    def __init__(self, first: App_CrearVenta, ventaDatos):
+    def __init__(self, first: App_CrearVenta, ventaDatos: Venta):
         from CrearVenta.Ui_ConfirmarVenta import Ui_ConfirmarVenta
         
         super().__init__(first)
@@ -1003,20 +1019,18 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ui = Ui_ConfirmarVenta()
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
-        
-        # datos de la ventana padre
-        conn = first.conn
-        user = first.user
 
         esDirecta = first.ui.tickDirectaSi.isChecked()
         
         # guardar conexión y usuarios como atributos
         self.conn = first.conn
         self.user = first.user
+        
+        self.ventaDatos = ventaDatos
 
         # total de la compra y precio a pagarse ahora mismo
-        self.total = ventaDatos['total']
-        self.paraPagar = self.total if esDirecta else self.total/2
+        self.total = round(ventaDatos.total, 2)
+        self.paraPagar = round(self.total if esDirecta else self.total/2, 2)
 
         # dar formato a la tabla principal
         header = self.ui.tabla_productos.horizontalHeader()
@@ -1028,11 +1042,78 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             else:
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
 
-        # llenar de productos la tabla
+        # si la venta es directa, ocultar los widgets para apartados
+        if esDirecta:
+            for w in [self.ui.boxFechaEntrega,
+                      self.ui.lbAnticipo1,
+                      self.ui.lbAnticipo2,
+                      self.ui.txtAnticipo]:
+                w.hide()
+            
+            ventaDatos.fechaEntrega = ventaDatos.fechaCreacion
+
+        #### registrar venta en tablas ####
+        manejadorVentas = ManejadorVentas(self.conn)
+        ventas_db_parametros = self.obtenerParametrosVentas()
+        ventas_detallado_db_parametros = self.obtenerParametrosVentasDetallado()
+
+        # ejecuta internamente un fetchone, por lo que se desempaca luego
+        result = manejadorVentas.insertarVenta(ventas_db_parametros)
+        if not result:
+            return
+
+        self.idVentas, = result
+        manejadorVentas.insertarDetallesVenta(self.idVentas,
+                                              ventas_detallado_db_parametros)
+        
+        # mostrar datos del cliente, fechas, etc.
+        manejadorClientes = ManejadorClientes(self.conn)
+        _, nombre, telefono, correo, *_ = manejadorClientes.obtenerCliente(ventaDatos.idCliente)
+
+        self.ui.txtCliente.setText(nombre)
+        self.ui.txtCorreo.setText(correo)
+        self.ui.txtTelefono.setText(telefono)
+        self.ui.txtCreacion.setText(formatDate(ventaDatos.fechaCreacion))
+        self.ui.txtEntrega.setText(formatDate(ventaDatos.fechaEntrega))
+        self.ui.lbTotal.setText(f'{ventaDatos.total:,.2f}')
+        self.ui.txtAnticipo.setText(f'{self.paraPagar:.2f}')
+        self.ui.lbFolio.setText(f'{self.idVentas}')
+        
+        # validadores para datos numéricos
+        regexp_numero = QRegularExpression(r'\d*\.?\d*')
+        validador = QRegularExpressionValidator(regexp_numero)
+        
+        self.ui.txtAnticipo.setValidator(validador)
+        self.ui.txtPago.setValidator(validador)
+
+        # añade eventos para los botones
+        self.ui.btListo.clicked.connect(self.done)
+        self.ui.btCancelar.clicked.connect(self.abortar)
+        self.ui.txtPago.textChanged.connect(self.calcularCambio)
+        self.ui.txtAnticipo.textChanged.connect(self.cambiarAnticipo)
+
+        self.show()
+        
+        # brincar el proceso si el pago es de cero
+        if self.paraPagar <= 0:
+            self.done()
+    
+    def showEvent(self, event):
+        self.update_display()
+        event.accept()
+    
+    def closeEvent(self, event):
+        event.ignore()
+    
+    # ================
+    # FUNCIONES ÚTILES
+    # ================
+    def update_display(self):
+        """ Llenar tabla de productos. """
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
 
-        for row, prod in enumerate(ventaDatos['productos']):
+        for row, prod in enumerate(self.ventaDatos.productos):
             tabla.insertRow(row)
 
             for col, dato in enumerate(prod):
@@ -1046,124 +1127,28 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 tabla.setItem(row, col, cell)
                 
         tabla.resizeRowsToContents()
-
-        # si la venta es directa, ocultar los widgets para apartados
-        if esDirecta:
-            for w in [self.ui.boxFechaEntrega,
-                      self.ui.lbAnticipo1,
-                      self.ui.lbAnticipo2,
-                      self.ui.txtAnticipo]:
-                w.hide()
-            
-            fechaEntrega = ventaDatos['fechaCreacion']
-        else:
-            fechaEntrega = ventaDatos['fechaEntrega']
-
-        # mostrar datos del cliente, fechas, etc.
-        crsr = conn.cursor()
         
-        crsr.execute('''
-        SELECT  nombre,
-                telefono,
-                correo
-        FROM    Clientes
-        WHERE   id_clientes = ?;
-        ''', (ventaDatos['idCliente'],))
-
-        nombre, correo, telefono = crsr.fetchone()
-
-        self.ui.txtCliente.setText(nombre)
-        self.ui.txtCorreo.setText(correo)
-        self.ui.txtTelefono.setText(telefono)
-        self.ui.txtCreacion.setText(formatDate(ventaDatos['fechaCreacion']))
-        self.ui.txtEntrega.setText(formatDate(ventaDatos['fechaEntrega']))
-        self.ui.lbTotal.setText(f'{ventaDatos["total"]:,.2f}')
-        self.ui.txtAnticipo.setText(f'{self.paraPagar:.2f}')
-
-        # crear nuevas entradas en la base de datos
-        try:
-            ventas_db_parametros = (
-                ventaDatos['idCliente'],
-                user.id,
-                ventaDatos['fechaCreacion'].toSecsSinceEpoch(),
-                fechaEntrega.toSecsSinceEpoch(),
-                ventaDatos['comentarios'].strip(),
-                ventaDatos['metodo_pago'],
-                int(ventaDatos['requiere_factura']),
-                'No terminada'
-            )
-        
-            crsr.execute('''
-            INSERT INTO Ventas (
-                id_clientes, id_usuarios, fecha_hora_creacion, 
-                fecha_hora_entrega, comentarios, metodo_pago, 
-                requiere_factura, estado
-            ) 
-            VALUES 
-                (?,?,?,?,?,?,?,?)
-            RETURNING
-                id_ventas;
-            ''', ventas_db_parametros)
-
-            self.id_ventas, = crsr.fetchone() # ID de la venta que se acaba de insertar
-            productos = ventaDatos['productos']
-
-            Ventas_Detallado_db_parametros = [(
-                self.id_ventas,
-                int(prod.id),
-                float(prod.cantidad),
-                float(prod.precio_unit),
-                float(prod.descuento_unit),
-                prod.notas,
-                prod.duplex
-            ) for prod in productos]
-
-            crsr.executemany('''
-            INSERT INTO Ventas_Detallado (
-                id_ventas, id_productos, cantidad, precio, 
-                descuento, especificaciones, duplex
-            ) 
-            VALUES 
-                (?,?,?,?,?,?,?);
-            ''', Ventas_Detallado_db_parametros)
-
-            conn.commit()
-        except fdb.Error as err:
-            conn.rollback()
-
-            WarningDialog('¡Hubo un error!', str(err))
-            return
-        
-        # mostrar folio de venta
-        self.ui.lbFolio.setText(f'{self.id_ventas}')
-        
-        # validadores para datos numéricos
-        regexp_numero = QRegExp(r'\d*\.?\d*')
-        validador = QRegExpValidator(regexp_numero)
-        
-        self.ui.txtAnticipo.setValidator(validador)
-        self.ui.txtPago.setValidator(validador)
-
-        # añade eventos para los botones
-        self.ui.btListo.clicked.connect(self.done)
-        self.ui.btCancelar.clicked.connect(self.abortar)
-        self.ui.txtPago.textChanged.connect(self.calcularCambio)
-        self.ui.txtAnticipo.textChanged.connect(self.cambiarAnticipo)
-
-        self.show()
-        
-        self.ventaDatos = ventaDatos
-        
-        # brincar el proceso si el pago es de cero
-        if self.paraPagar <= 0:
-            self.done()
+    def obtenerParametrosVentas(self):
+        """ Parámetros para tabla ventas (datos generales). """
+        return (self.ventaDatos.idCliente,
+                self.user.id,
+                self.ventaDatos.fechaCreacion.toSecsSinceEpoch(),
+                self.ventaDatos.fechaEntrega.toSecsSinceEpoch(),
+                self.ventaDatos.comentarios.strip(),
+                self.ventaDatos.metodoPago,
+                int(self.ventaDatos.requiereFactura),
+                'No terminada')
     
-    def closeEvent(self, event):
-        event.ignore()
+    def obtenerParametrosVentasDetallado(self):
+        """ Parámetros para tabla ventas_detallado (datos de productos). """
+        return [(int(prod.id),
+                 float(prod.cantidad),
+                 float(prod.precio_unit),
+                 float(prod.descuento_unit),
+                 prod.notas,
+                 prod.duplex) 
+                for prod in self.ventaDatos.productos]
     
-    # ================
-    # FUNCIONES ÚTILES
-    # ================
     def calcularCambio(self, txt):
         """Recalcular cambio a entregar."""
         try:
@@ -1194,7 +1179,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         except ValueError:
             pago = 0.
         
-        pagoAceptado = pago >= self.paraPagar if self.ventaDatos['metodo_pago'] == 'Efectivo' \
+        pagoAceptado = pago >= self.paraPagar if self.ventaDatos.metodoPago == 'Efectivo' \
                        else pago == self.paraPagar
         
         if not pagoAceptado or not (self.total/2 <= self.paraPagar <= self.total):
@@ -1212,16 +1197,16 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             SET     estado = ?,
                     recibido = ?
             WHERE   id_ventas = ?;
-            ''', (estado, pago, self.id_ventas))
+            ''', (estado, pago, self.idVentas))
             
             # registrar ingreso (sin cambio) en caja
             hoy = QDateTime.currentDateTime().toSecsSinceEpoch()
-            metodo = self.ventaDatos['metodo_pago']
+            metodo = self.ventaDatos.metodoPago
             
             caja_db_parametros = [(
                 hoy,
                 pago,
-                f'Pago de venta con folio {self.id_ventas}',
+                f'Pago de venta con folio {self.idVentas}',
                 metodo,
                 self.user.id
             )]
@@ -1231,7 +1216,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 caja_db_parametros.append((
                     hoy,
                     -cambio,
-                    f'Cambio de venta con folio {self.id_ventas}',
+                    f'Cambio de venta con folio {self.idVentas}',
                     metodo,
                     self.user.id
                 ))
@@ -1257,7 +1242,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
 
         if not esDirecta:
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
-            generarOrdenCompra(conn.cursor(), self.id_ventas)
+            generarOrdenCompra(conn.cursor(), self.idVentas)
         else:
             box = qm(qm.Icon.Question, 'Éxito',
                      'Venta terminada. ¡Recuerde ofrecer el ticket de compra! ¿Desea imprimirlo?',
@@ -1268,7 +1253,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             ret = box.exec()
             
             if ret == qm.Yes:
-                generarTicketCompra(conn.cursor(), self.id_ventas)
+                generarTicketCompra(conn.cursor(), self.idVentas)
             else:
                 print("enviar PDF por wa")
         
@@ -1286,7 +1271,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 UPDATE  Ventas
                 SET     estado = 'Cancelada'
                 WHERE   id_ventas = ?;
-                ''', (self.id_ventas,))
+                ''', (self.idVentas,))
 
                 conn.commit()
                 
@@ -1317,10 +1302,10 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
 ###########################################
 # WIDGETS PERSONALIZADOS PARA ESTE MÓDULO #
 ###########################################
-from PyQt5.QtWidgets import QVBoxLayout, QTextBrowser, QWidget
-from PyQt5.QtGui import (QPainter, QColor, QPolygon, 
+from PySide6.QtWidgets import QVBoxLayout, QTextBrowser, QWidget
+from PySide6.QtGui import (QPainter, QColor, QPolygon, 
                          QFont, QPainterPath)
-from PyQt5.QtCore import Qt, QRectF, QPoint
+from PySide6.QtCore import Qt, QRectF, QPoint
 
 class SpeechBubble(QWidget):
     def __init__(self, parent, text = ''):
@@ -1362,7 +1347,7 @@ class SpeechBubble(QWidget):
             }
         """)
         self.text_browser.setPlainText(text)
-        self.text_browser.setFont(QFont("Arial", 11))
+        self.text_browser.setFont(QFont("MS Shell Dlg 2", 11))
         self.text_browser.setLineWrapMode(QTextBrowser.LineWrapMode.FixedPixelWidth)
         self.text_browser.setLineWrapColumnOrWidth(295)
         self.text_browser.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)

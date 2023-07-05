@@ -1,5 +1,5 @@
-from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtCore import QDate, QDateTime, QModelIndex, QRegExp, Qt
+from PySide6 import QtWidgets, QtGui
+from PySide6.QtCore import QDate, QDateTime, QModelIndex, QRegularExpression, Qt
 
 import fdb
 

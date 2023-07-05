@@ -1,8 +1,8 @@
 import fdb
 
-from PyQt5 import QtWidgets
-from PyQt5.QtGui import QFont, QColor, QPixmap, QIcon, QRegExpValidator
-from PyQt5.QtCore import Qt, QRegExp, pyqtSignal
+from PySide6 import QtWidgets
+from PySide6.QtGui import QFont, QColor, QPixmap, QIcon, QRegularExpressionValidator
+from PySide6.QtCore import Qt, QRegularExpression, Signal
 
 from mydecorators import con_fondo
 from myutils import ColorsEnum, DatabaseManager, son_similar
@@ -225,7 +225,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         self.user = parent.user
         
         # añadir menú de opciones al botón para filtrar
-        popup = QtWidgets.QMenu()
+        popup = QtWidgets.QMenu(self.ui.btFiltrar)
 
         default = popup.addAction(
             'Código', lambda: self.cambiarFiltro('código', 1))
@@ -280,7 +280,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         """
         if rescan:
             manejador = ManejadorProductos(self.conn)
-            self.all = manejador.obtenerTablaPrincipal()
+            self.all = manejador.obtenerTablaPrincipal() or []
             self.ui.lbContador.setText(f'{len(self.all)} productos en la base de datos.')
         
         tabla = self.ui.tabla_productos
@@ -395,7 +395,7 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
     
-    success = pyqtSignal()
+    success = Signal()
     
     def __init__(self, first: App_AdministrarProductos):
         from AdministrarProductos.Ui_EditarProducto import Ui_EditarProducto
@@ -467,8 +467,8 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
                       or nuevo.setParent(None)
         
         # validador para datos numéricos
-        regexp_numero = QRegExp(r'\d*\.?\d*')
-        validador = QRegExpValidator(regexp_numero)
+        regexp_numero = QRegularExpression(r'\d*\.?\d*')
+        validador = QRegularExpressionValidator(regexp_numero)
         nuevo.txtProductoUtiliza.setValidator(validador)
         
         # llenar caja de opciones con elementos del inventario
@@ -676,7 +676,7 @@ class App_EditarProducto(Base_EditarProducto):
 #########################################
 class WidgetElemento(QtWidgets.QWidget):
     def __init__(self):
-        from PyQt5 import QtCore, QtWidgets, QtGui
+        from PySide6 import QtCore, QtWidgets, QtGui
         
         super().__init__()
         
@@ -686,7 +686,7 @@ class WidgetElemento(QtWidgets.QWidget):
         boxElemento.setGeometry(QtCore.QRect(35, 10, 271, 22))
         boxElemento.setMinimumSize(QtCore.QSize(271, 22))
         font = QFont()
-        font.setFamily("Arial")
+        font.setFamily("MS Shell Dlg 2")
         font.setPointSize(11)
         boxElemento.setFont(font)
         lbContador = QtWidgets.QLabel(self)
@@ -701,10 +701,10 @@ class WidgetElemento(QtWidgets.QWidget):
         lbEliminar.setScaledContents(True)
         lbEliminar.setCursor(QtGui.QCursor(Qt.PointingHandCursor))
         label = QtWidgets.QLabel(self)
-        label.setGeometry(QtCore.QRect(35, 40, 271, 21))
-        label.setMinimumSize(QtCore.QSize(271, 21))
+        label.setGeometry(QtCore.QRect(35, 40, 273, 21))
+        label.setMinimumSize(QtCore.QSize(273, 21))
         label.setFont(font)
-        label.setText("se usa            unidades de este elemento.")
+        label.setText("se usa          unidades de este elemento.")
         txtProductoUtiliza = QtWidgets.QLineEdit(self)
         txtProductoUtiliza.setGeometry(QtCore.QRect(84, 40, 39, 20))
         txtProductoUtiliza.setMinimumSize(QtCore.QSize(39, 20))

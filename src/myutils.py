@@ -6,6 +6,7 @@ import fdb
 from mydecorators import run_in_thread
 from mywidgets import WarningDialog
 
+
 class ColorsEnum:
     """ Clase para almacenar colores (hexadecimal) en variables. """
     VERDE = 0xB2FFAE
@@ -123,14 +124,14 @@ def formatDate(date) -> str:
     if not date:
         return ''
     
-    from PyQt5.QtCore import QDateTime, QLocale
+    from PySide6.QtCore import QDateTime, QLocale
 
-    QLocale.setDefault(QLocale('es_MX'))
+    locale = QLocale(QLocale.Spanish, QLocale.Mexico)
 
     if isinstance(date, int):
         date = QDateTime.fromSecsSinceEpoch(date)
 
-    return date.toString("d 'de' MMMM yyyy, h:mm ap")
+    return locale.toString(date, "d 'de' MMMM yyyy, h:mm ap")
 
 
 @run_in_thread
@@ -546,7 +547,7 @@ def generarTicketPresupuesto(productos, vendedor):
     """
     Genera un ticket para el presupuesto de una compra.
     """
-    from PyQt5.QtCore import QDateTime
+    from PySide6.QtCore import QDateTime
     
     _generarTicketPDF(0, productos, vendedor, 
                       QDateTime.currentDateTime(), 0., None)

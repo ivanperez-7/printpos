@@ -17,7 +17,7 @@
    <string>Form</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../resources.qrc">
+   <iconset resource="../../resources.qrc">
     <normaloff>:/img/icon.ico</normaloff>:/img/icon.ico</iconset>
   </property>
   <widget class="QFrame" name="frame">
@@ -81,7 +81,6 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
      <pointsize>16</pointsize>
     </font>
    </property>
@@ -101,11 +100,6 @@
      <height>80</height>
     </rect>
    </property>
-   <property name="font">
-    <font>
-     <family>Arial</family>
-    </font>
-   </property>
    <property name="contextMenuPolicy">
     <enum>Qt::DefaultContextMenu</enum>
    </property>
@@ -116,7 +110,7 @@
     <string notr="true"/>
    </property>
    <property name="pixmap">
-    <pixmap resource="../resources.qrc">:/img/resources/images/whatsapp.png</pixmap>
+    <pixmap resource="../../resources.qrc">:/img/resources/images/whatsapp.png</pixmap>
    </property>
    <property name="scaledContents">
     <bool>true</bool>
@@ -136,7 +130,6 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
      <pointsize>12</pointsize>
      <weight>50</weight>
      <bold>false</bold>
@@ -161,11 +154,6 @@
      <height>170</height>
     </rect>
    </property>
-   <property name="font">
-    <font>
-     <family>Arial</family>
-    </font>
-   </property>
    <property name="text">
     <string/>
    </property>
@@ -181,11 +169,6 @@
      <width>170</width>
      <height>170</height>
     </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Arial</family>
-    </font>
    </property>
    <property name="text">
     <string/>
@@ -205,7 +188,6 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
      <pointsize>12</pointsize>
      <weight>50</weight>
      <bold>false</bold>
@@ -230,11 +212,6 @@
      <height>80</height>
     </rect>
    </property>
-   <property name="font">
-    <font>
-     <family>Arial</family>
-    </font>
-   </property>
    <property name="contextMenuPolicy">
     <enum>Qt::DefaultContextMenu</enum>
    </property>
@@ -245,7 +222,7 @@
     <string notr="true"/>
    </property>
    <property name="pixmap">
-    <pixmap resource="../resources.qrc">:/img/resources/images/bill.png</pixmap>
+    <pixmap resource="../../resources.qrc">:/img/resources/images/bill.png</pixmap>
    </property>
    <property name="scaledContents">
     <bool>true</bool>
@@ -264,6 +241,7 @@
   <zorder>label_65</zorder>
  </widget>
  <resources>
+  <include location="../../resources.qrc"/>
   <include location="../resources.qrc"/>
  </resources>
  <connections/>
