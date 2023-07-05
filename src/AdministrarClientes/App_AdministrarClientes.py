@@ -1,8 +1,10 @@
+from datetime import datetime
+
 import fdb
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon, QPixmap, QRegularExpressionValidator
-from PySide6.QtCore import Qt, QDateTime, QRegularExpression, Signal
+from PySide6.QtCore import Qt, QDate, QRegularExpression, Signal
 
 from databasemanagers import ManejadorClientes
 from mydecorators import con_fondo
@@ -14,9 +16,7 @@ from mywidgets import LabelAdvertencia, VentanaPrincipal
 # VENTANA PRINCIPAL #
 #####################
 class App_AdministrarClientes(QtWidgets.QMainWindow):
-    """
-    Backend para la ventana de administración de clientes.
-    """
+    """ Backend para la ventana de administración de clientes. """
     def __init__(self, parent: VentanaPrincipal):
         from AdministrarClientes.Ui_AdministrarClientes import Ui_AdministrarClientes
         
@@ -124,8 +124,8 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         
         # resalta si un cliente no ha venido en _ días
         dias = int(self.ui.resaltarDias.text())
-        # timestamp UNIX de ahora mismo
-        timestamp_now = QDateTime.currentSecsSinceEpoch()
+        # timestamp ahora mismo
+        timestamp_now = QDate.currentDate().dayOfYear()
         
         found = self.all if not txt_busqueda else \
                 filter(
@@ -137,7 +137,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
             tabla.insertRow(row)
 
             for col, dato in enumerate(cliente):
-                if isinstance(dato, int) and col > 0:
+                if isinstance(dato, datetime):
                     cell = formatDate(dato)
                 else:
                     cell = str(dato or '')
@@ -150,7 +150,9 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
             if not self.ui.resaltarCheck.isChecked():
                 continue
             
-            if cliente[-1] and timestamp_now-cliente[-1] >= 86400*dias:
+            ultimaVisita = QDate(cliente[-1])
+            
+            if ultimaVisita and timestamp_now-ultimaVisita.dayOfYear() >= dias:
                 color = QColor(ColorsEnum.ROJO)
                 tabla.item(row, col).setBackground(color)
         
@@ -175,7 +177,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
             cliente = list(cliente)[1:]   # lista mutable
             
             for col, dato in enumerate(cliente):
-                if isinstance(dato, int):
+                if isinstance(dato, datetime):
                     cell = formatDate(dato)
                 else:
                     cell = str(dato or '')

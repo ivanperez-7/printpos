@@ -39,6 +39,11 @@
     </property>
     <item alignment="Qt::AlignTop">
      <widget class="QFrame" name="frame">
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">QFrame { background-color: rgb(52, 172, 224); }</string>
       </property>
@@ -54,6 +59,11 @@
        </property>
        <item alignment="Qt::AlignLeft|Qt::AlignTop">
         <widget class="QFrame" name="frame_5">
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+          </font>
+         </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
@@ -68,6 +78,7 @@
             </property>
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>18</pointsize>
              </font>
             </property>
@@ -89,6 +100,7 @@
             </property>
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>18</pointsize>
              </font>
             </property>
@@ -105,6 +117,11 @@
        </item>
        <item alignment="Qt::AlignRight|Qt::AlignTop">
         <widget class="QFrame" name="frame_6">
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+          </font>
+         </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
@@ -119,6 +136,7 @@
             </property>
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>11</pointsize>
              </font>
             </property>
@@ -143,8 +161,8 @@
             </property>
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>11</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -167,6 +185,11 @@
     </item>
     <item alignment="Qt::AlignTop">
      <widget class="QFrame" name="frame_2">
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+       </font>
+      </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
@@ -179,6 +202,11 @@
        </property>
        <item alignment="Qt::AlignTop">
         <widget class="QFrame" name="frame_7">
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+          </font>
+         </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
@@ -196,8 +224,8 @@
             </property>
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>11</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -218,8 +246,8 @@
               <widget class="QLabel" name="label_6">
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -232,8 +260,10 @@
               <widget class="QLineEdit" name="txtCliente">
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
                  <italic>false</italic>
+                 <bold>false</bold>
                 </font>
                </property>
                <property name="styleSheet">
@@ -257,8 +287,8 @@
               <widget class="QLabel" name="label_7">
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -271,7 +301,9 @@
               <widget class="QLineEdit" name="txtCorreo">
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
+                 <bold>false</bold>
                 </font>
                </property>
                <property name="styleSheet">
@@ -295,8 +327,8 @@
               <widget class="QLabel" name="label_8">
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -309,7 +341,9 @@
               <widget class="QLineEdit" name="txtTelefono">
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
+                 <bold>false</bold>
                 </font>
                </property>
                <property name="styleSheet">
@@ -337,6 +371,11 @@
        </item>
        <item alignment="Qt::AlignRight|Qt::AlignTop">
         <widget class="QFrame" name="frame_8">
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+          </font>
+         </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
@@ -354,8 +393,8 @@
             </property>
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>11</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -376,8 +415,8 @@
              </property>
              <property name="font">
               <font>
+               <family>Segoe UI</family>
                <pointsize>11</pointsize>
-               <weight>50</weight>
                <bold>false</bold>
               </font>
              </property>
@@ -409,8 +448,8 @@
             </property>
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>11</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -431,8 +470,8 @@
              </property>
              <property name="font">
               <font>
+               <family>Segoe UI</family>
                <pointsize>11</pointsize>
-               <weight>50</weight>
                <bold>false</bold>
               </font>
              </property>
@@ -474,6 +513,11 @@
         <height>210</height>
        </size>
       </property>
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+       </font>
+      </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
@@ -500,6 +544,7 @@
          </property>
          <property name="font">
           <font>
+           <family>Segoe UI</family>
            <pointsize>10</pointsize>
           </font>
          </property>
@@ -577,6 +622,11 @@ QTableWidget {
     </item>
     <item>
      <widget class="QFrame" name="frame_4">
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+       </font>
+      </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
@@ -595,6 +645,11 @@ QTableWidget {
        </property>
        <item>
         <widget class="QFrame" name="frame_11">
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+          </font>
+         </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
@@ -604,6 +659,11 @@ QTableWidget {
           </property>
           <item>
            <widget class="QFrame" name="frame_14">
+            <property name="font">
+             <font>
+              <family>Segoe UI</family>
+             </font>
+            </property>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
@@ -618,8 +678,8 @@ QTableWidget {
               <widget class="QLabel" name="label_13">
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>14</pointsize>
-                 <weight>50</weight>
                  <bold>false</bold>
                  <underline>true</underline>
                 </font>
@@ -633,6 +693,7 @@ QTableWidget {
               <widget class="QLabel" name="label_19">
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>15</pointsize>
                 </font>
                </property>
@@ -651,6 +712,7 @@ QTableWidget {
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>14</pointsize>
                 </font>
                </property>
@@ -670,6 +732,11 @@ QTableWidget {
           </item>
           <item>
            <widget class="QFrame" name="frame_15">
+            <property name="font">
+             <font>
+              <family>Segoe UI</family>
+             </font>
+            </property>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
@@ -696,8 +763,8 @@ QTableWidget {
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>14</pointsize>
-                 <weight>75</weight>
                  <bold>true</bold>
                 </font>
                </property>
@@ -716,8 +783,8 @@ QTableWidget {
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>15</pointsize>
-                 <weight>75</weight>
                  <bold>true</bold>
                 </font>
                </property>
@@ -736,6 +803,7 @@ QTableWidget {
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>14</pointsize>
                 </font>
                </property>
@@ -754,6 +822,7 @@ QTableWidget {
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>15</pointsize>
                 </font>
                </property>
@@ -778,6 +847,7 @@ QTableWidget {
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>15</pointsize>
                 </font>
                </property>
@@ -796,8 +866,8 @@ QTableWidget {
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>15</pointsize>
-                 <weight>75</weight>
                  <bold>true</bold>
                 </font>
                </property>
@@ -814,6 +884,11 @@ QTableWidget {
           </item>
           <item alignment="Qt::AlignHCenter">
            <widget class="QFrame" name="frame_9">
+            <property name="font">
+             <font>
+              <family>Segoe UI</family>
+             </font>
+            </property>
             <layout class="QGridLayout" name="gridLayout_2">
              <item row="0" column="0">
               <widget class="QRadioButton" name="radioButton">
@@ -825,6 +900,7 @@ QTableWidget {
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -849,6 +925,7 @@ QTableWidget {
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -870,6 +947,7 @@ QTableWidget {
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -891,6 +969,7 @@ QTableWidget {
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -916,6 +995,11 @@ QTableWidget {
            <height>0</height>
           </size>
          </property>
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+          </font>
+         </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
@@ -930,6 +1014,7 @@ QTableWidget {
             </property>
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>11</pointsize>
              </font>
             </property>
@@ -958,6 +1043,7 @@ QTableWidget {
             </property>
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>11</pointsize>
              </font>
             </property>

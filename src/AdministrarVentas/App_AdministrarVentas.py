@@ -1,3 +1,4 @@
+from datetime import datetime
 from math import ceil
 
 import fdb
@@ -47,7 +48,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                     .cursor() \
                     .execute('SELECT MIN(fecha_hora_creacion) FROM Ventas;') \
                     .fetchone()
-        fechaMin = QDateTime.fromSecsSinceEpoch(fechaMin).date() if fechaMin else hoy
+        fechaMin = QDateTime(fechaMin).date() if fechaMin else hoy
         
         self.ui.dateDesde.setDate(hoy)
         self.ui.dateDesde.setMaximumDate(hoy)
@@ -223,8 +224,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         """ Actualiza la tabla y el contador de clientes.
             Lee de nuevo la tabla de clientes, si se desea. """
         if rescan:
-            restrict = f'AND Usuarios.id_usuarios = {self.user.id}' \
-                       if not self.user.administrador else ''
+            restrict = self.user.id if not self.user.administrador else None
             
             manejador = ManejadorVentas(self.conn)
 
@@ -237,8 +237,6 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         fechaDesde = self.ui.dateDesde.date()
         fechaHasta = self.ui.dateHasta.date()
         
-        dateFromSecs = lambda s: QDateTime.fromSecsSinceEpoch(s).date()
-        
         # texto introducido por el usuario
         txt_busqueda = self.ui.searchBar.text().strip()
 
@@ -247,7 +245,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         tabla.setRowCount(0)
         
         compras = filter(
-                      lambda c: fechaDesde <= dateFromSecs(c[3]) <= fechaHasta, 
+                      lambda c: fechaDesde <= QDate(c[3]) <= fechaHasta, 
                       self.all_directas)
                 
         if txt_busqueda:
@@ -270,7 +268,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             tabla.insertRow(row)
 
             for col, dato in enumerate(compra):
-                if isinstance(dato, int) and col > 0:
+                if isinstance(dato, datetime):
                     cell = formatDate(dato)
                 elif isinstance(dato, float):
                     cell = f'{dato:,.2f}'
@@ -293,7 +291,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         tabla.setRowCount(0)
 
         compras = filter(
-                      lambda c: fechaDesde <= dateFromSecs(c[3]) <= fechaHasta
+                      lambda c: fechaDesde <= QDate(c[3]) <= fechaHasta
                                 or c[6].startswith('Recibido'), 
                       self.all_pedidos)
                 
@@ -317,7 +315,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             tabla.insertRow(row)
 
             for col, dato in enumerate(compra):
-                if isinstance(dato, int) and col > 0:
+                if isinstance(dato, datetime):
                     cell = formatDate(dato)
                 elif isinstance(dato, float):
                     cell = f'{dato:,.2f}'
@@ -345,7 +343,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                 # resaltar pedidos con fechas de entrega ya pasadas
                 entrega = compra[4]
                 
-                if QDateTime.currentDateTime().toSecsSinceEpoch() > entrega:
+                if QDateTime.currentDateTime() > entrega:
                     tabla.item(row, 4).setBackground(QColor(ColorsEnum.ROJO))
         # </llenar segunda tabla>
         
@@ -829,7 +827,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
             ''', (self.id_ventas,))
             
             # registrar ingreso (sin cambio) en caja
-            hoy = QDateTime.currentDateTime().toSecsSinceEpoch()
+            hoy = QDateTime.currentDateTime().toPython()
             
             caja_db_parametros = [(
                 hoy,

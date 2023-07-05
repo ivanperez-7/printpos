@@ -44,9 +44,7 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>MS Shell Dlg 2</family>
       <pointsize>18</pointsize>
-      <weight>75</weight>
       <bold>true</bold>
      </font>
     </property>
@@ -65,7 +63,6 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>MS Shell Dlg 2</family>
       <pointsize>12</pointsize>
      </font>
     </property>
@@ -87,7 +84,6 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>MS Shell Dlg 2</family>
       <pointsize>11</pointsize>
      </font>
     </property>
@@ -106,7 +102,6 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>MS Shell Dlg 2</family>
       <pointsize>11</pointsize>
      </font>
     </property>
@@ -147,11 +142,6 @@ QLineEdit::placeholder {
       <height>91</height>
      </rect>
     </property>
-    <property name="font">
-     <font>
-      <family>MS Shell Dlg 2</family>
-     </font>
-    </property>
     <property name="styleSheet">
      <string notr="true">image: url(:/img/resources/images/logo.png);</string>
     </property>
@@ -170,7 +160,6 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>MS Shell Dlg 2</family>
       <pointsize>11</pointsize>
      </font>
     </property>
@@ -189,7 +178,6 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>MS Shell Dlg 2</family>
       <pointsize>12</pointsize>
      </font>
     </property>
@@ -214,9 +202,7 @@ QLineEdit::placeholder {
     </property>
     <property name="font">
      <font>
-      <family>Arial</family>
       <pointsize>11</pointsize>
-      <weight>50</weight>
       <italic>false</italic>
       <bold>false</bold>
      </font>
@@ -226,7 +212,7 @@ QLineEdit::placeholder {
   background-color: #0d6efd;
   color: #fff;
   font-weight: 600;
-  font: 11pt &quot;Arial&quot;;
+  font: 11pt;
   border-radius: 8px;
   border: 1px solid #0d6efd;
   padding: 5px 15px;

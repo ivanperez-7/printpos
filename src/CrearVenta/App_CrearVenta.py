@@ -1132,8 +1132,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         """ Parámetros para tabla ventas (datos generales). """
         return (self.ventaDatos.idCliente,
                 self.user.id,
-                self.ventaDatos.fechaCreacion.toSecsSinceEpoch(),
-                self.ventaDatos.fechaEntrega.toSecsSinceEpoch(),
+                self.ventaDatos.fechaCreacion.toPython(),
+                self.ventaDatos.fechaEntrega.toPython(),
                 self.ventaDatos.comentarios.strip(),
                 self.ventaDatos.metodoPago,
                 int(self.ventaDatos.requiereFactura),
@@ -1201,7 +1201,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             ''', (estado, pago, self.idVentas))
             
             # registrar ingreso (sin cambio) en caja
-            hoy = QDateTime.currentDateTime().toSecsSinceEpoch()
+            hoy = QDateTime.currentDateTime().toPython()
             metodo = self.ventaDatos.metodoPago
             
             caja_db_parametros = [(

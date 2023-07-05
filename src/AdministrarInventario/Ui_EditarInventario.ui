@@ -26,6 +26,11 @@
     </property>
     <item alignment="Qt::AlignTop">
      <widget class="QFrame" name="frame_4">
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">QFrame { background-color: rgb(52, 172, 224); border: none}</string>
       </property>
@@ -50,6 +55,11 @@
            <height>63</height>
           </size>
          </property>
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+          </font>
+         </property>
          <property name="styleSheet">
           <string notr="true">QFrame {border: none}</string>
          </property>
@@ -59,6 +69,11 @@
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
            <widget class="QPushButton" name="btRegresar">
+            <property name="font">
+             <font>
+              <family>Segoe UI</family>
+             </font>
+            </property>
             <property name="cursor">
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
@@ -100,6 +115,7 @@
             </property>
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>18</pointsize>
              </font>
             </property>
@@ -125,6 +141,11 @@
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+       </font>
+      </property>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <property name="bottomMargin">
         <number>0</number>
@@ -142,6 +163,11 @@
            <width>451</width>
            <height>469</height>
           </size>
+         </property>
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+          </font>
          </property>
          <property name="frameShape">
           <enum>QFrame::Box</enum>
@@ -163,6 +189,7 @@
           </property>
           <property name="font">
            <font>
+            <family>Segoe UI</family>
             <pointsize>14</pointsize>
            </font>
           </property>
@@ -184,6 +211,7 @@
           </property>
           <property name="font">
            <font>
+            <family>Segoe UI</family>
             <pointsize>11</pointsize>
            </font>
           </property>
@@ -201,6 +229,7 @@
            </property>
            <property name="font">
             <font>
+             <family>Segoe UI</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -219,6 +248,7 @@
            </property>
            <property name="font">
             <font>
+             <family>Segoe UI</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -238,6 +268,7 @@
           </property>
           <property name="font">
            <font>
+            <family>Segoe UI</family>
             <pointsize>11</pointsize>
            </font>
           </property>
@@ -255,6 +286,7 @@
            </property>
            <property name="font">
             <font>
+             <family>Segoe UI</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -273,6 +305,7 @@
            </property>
            <property name="font">
             <font>
+             <family>Segoe UI</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -292,6 +325,7 @@
           </property>
           <property name="font">
            <font>
+            <family>Segoe UI</family>
             <pointsize>11</pointsize>
            </font>
           </property>
@@ -309,6 +343,7 @@
            </property>
            <property name="font">
             <font>
+             <family>Segoe UI</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -328,8 +363,8 @@
           </property>
           <property name="font">
            <font>
+            <family>Segoe UI</family>
             <pointsize>11</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -347,7 +382,9 @@
            </property>
            <property name="font">
             <font>
+             <family>Segoe UI</family>
              <pointsize>11</pointsize>
+             <bold>false</bold>
             </font>
            </property>
            <property name="inputMethodHints">
@@ -368,7 +405,9 @@
            </property>
            <property name="font">
             <font>
+             <family>Segoe UI</family>
              <pointsize>11</pointsize>
+             <bold>false</bold>
             </font>
            </property>
            <property name="text">
@@ -387,6 +426,7 @@
           </property>
           <property name="font">
            <font>
+            <family>Segoe UI</family>
             <pointsize>11</pointsize>
            </font>
           </property>
@@ -404,6 +444,7 @@
            </property>
            <property name="font">
             <font>
+             <family>Segoe UI</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -422,6 +463,7 @@
            </property>
            <property name="font">
             <font>
+             <family>Segoe UI</family>
              <pointsize>11</pointsize>
             </font>
            </property>
@@ -434,6 +476,11 @@
        </item>
        <item>
         <widget class="QFrame" name="frame_6">
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+          </font>
+         </property>
          <property name="frameShape">
           <enum>QFrame::Box</enum>
          </property>
@@ -454,6 +501,7 @@
            <widget class="QLabel" name="label_2">
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>14</pointsize>
              </font>
             </property>
@@ -467,6 +515,11 @@
           </item>
           <item>
            <widget class="QScrollArea" name="scrollArea">
+            <property name="font">
+             <font>
+              <family>Segoe UI</family>
+             </font>
+            </property>
             <property name="frameShape">
              <enum>QFrame::NoFrame</enum>
             </property>
@@ -479,7 +532,7 @@
                <x>0</x>
                <y>0</y>
                <width>451</width>
-               <height>416</height>
+               <height>413</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="layoutScroll">
@@ -500,6 +553,7 @@
             </property>
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>10</pointsize>
              </font>
             </property>
@@ -520,6 +574,11 @@
     </item>
     <item alignment="Qt::AlignBottom">
      <widget class="QFrame" name="frame_3">
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+       </font>
+      </property>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item alignment="Qt::AlignHCenter">
         <widget class="QPushButton" name="btAceptar">
@@ -531,6 +590,7 @@
          </property>
          <property name="font">
           <font>
+           <family>Segoe UI</family>
            <pointsize>11</pointsize>
           </font>
          </property>

@@ -42,11 +42,6 @@
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
-      <property name="font">
-       <font>
-        <family>MS Shell Dlg 2</family>
-       </font>
-      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(52, 172, 224);</string>
       </property>
@@ -76,11 +71,6 @@
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <family>MS Shell Dlg 2</family>
-          </font>
          </property>
          <property name="styleSheet">
           <string notr="true">QFrame { border:none; }
@@ -119,11 +109,6 @@ background-color: rgb(52, 172, 224);</string>
               <height>41</height>
              </size>
             </property>
-            <property name="font">
-             <font>
-              <family>MS Shell Dlg 2</family>
-             </font>
-            </property>
             <property name="cursor">
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
@@ -148,7 +133,6 @@ background-color: rgb(52, 172, 224);</string>
             </property>
             <property name="font">
              <font>
-              <family>MS Shell Dlg 2</family>
               <pointsize>18</pointsize>
              </font>
             </property>
@@ -168,11 +152,6 @@ background-color: rgb(52, 172, 224);</string>
     </item>
     <item alignment="Qt::AlignHCenter">
      <widget class="QFrame" name="frame_5">
-      <property name="font">
-       <font>
-        <family>MS Shell Dlg 2</family>
-       </font>
-      </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
@@ -203,11 +182,6 @@ background-color: rgb(52, 172, 224);</string>
            <height>31</height>
           </size>
          </property>
-         <property name="font">
-          <font>
-           <family>MS Shell Dlg 2</family>
-          </font>
-         </property>
          <property name="styleSheet">
           <string notr="true">image: url(:/img/resources/images/magnifier.png);
 background-color: rgb(255, 255, 255);</string>
@@ -233,7 +207,6 @@ background-color: rgb(255, 255, 255);</string>
          </property>
          <property name="font">
           <font>
-           <family>MS Shell Dlg 2</family>
            <pointsize>11</pointsize>
           </font>
          </property>
@@ -247,11 +220,6 @@ background-color: rgb(255, 255, 255);</string>
        </item>
        <item>
         <spacer name="horizontalSpacer">
-         <property name="font">
-          <font>
-           <family>MS Shell Dlg 2</family>
-          </font>
-         </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -267,7 +235,6 @@ background-color: rgb(255, 255, 255);</string>
         <widget class="QRadioButton" name="btCodigo">
          <property name="font">
           <font>
-           <family>MS Shell Dlg 2</family>
            <pointsize>10</pointsize>
           </font>
          </property>
@@ -284,11 +251,6 @@ background-color: rgb(255, 255, 255);</string>
        </item>
        <item>
         <spacer name="horizontalSpacer_2">
-         <property name="font">
-          <font>
-           <family>MS Shell Dlg 2</family>
-          </font>
-         </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -304,7 +266,6 @@ background-color: rgb(255, 255, 255);</string>
         <widget class="QRadioButton" name="btDescripcion">
          <property name="font">
           <font>
-           <family>MS Shell Dlg 2</family>
            <pointsize>10</pointsize>
           </font>
          </property>
@@ -330,11 +291,6 @@ background-color: rgb(255, 255, 255);</string>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
-      <property name="font">
-       <font>
-        <family>MS Shell Dlg 2</family>
-       </font>
-      </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
@@ -355,7 +311,6 @@ background-color: rgb(255, 255, 255);</string>
         <widget class="QTabWidget" name="tabWidget">
          <property name="font">
           <font>
-           <family>MS Shell Dlg 2</family>
            <pointsize>10</pointsize>
           </font>
          </property>
@@ -386,7 +341,7 @@ background-color: rgb(255, 255, 255);</string>
              </property>
              <property name="font">
               <font>
-               <family>MS Shell Dlg 2</family>
+               <family>Segoe UI</family>
                <pointsize>10</pointsize>
               </font>
              </property>
@@ -471,7 +426,7 @@ QTableView:active {
              </property>
              <property name="font">
               <font>
-               <family>MS Shell Dlg 2</family>
+               <pointsize>10</pointsize>
               </font>
              </property>
              <property name="frameShadow">
@@ -503,7 +458,6 @@ QTableView:active {
                 </property>
                 <property name="font">
                  <font>
-                  <family>MS Shell Dlg 2</family>
                   <pointsize>18</pointsize>
                  </font>
                 </property>
@@ -528,7 +482,6 @@ QTableView:active {
                 </property>
                 <property name="font">
                  <font>
-                  <family>MS Shell Dlg 2</family>
                   <pointsize>11</pointsize>
                  </font>
                 </property>
@@ -546,7 +499,7 @@ QTableView:active {
                  </property>
                  <property name="font">
                   <font>
-                   <family>MS Shell Dlg 2</family>
+                   <pointsize>11</pointsize>
                   </font>
                  </property>
                  <property name="readOnly">
@@ -584,7 +537,7 @@ QTableView:active {
              </property>
              <property name="font">
               <font>
-               <family>MS Shell Dlg 2</family>
+               <family>Segoe UI</family>
                <pointsize>10</pointsize>
               </font>
              </property>
@@ -679,7 +632,7 @@ QTableView:active {
              </property>
              <property name="font">
               <font>
-               <family>MS Shell Dlg 2</family>
+               <pointsize>10</pointsize>
               </font>
              </property>
              <property name="frameShadow">
@@ -711,7 +664,6 @@ QTableView:active {
                 </property>
                 <property name="font">
                  <font>
-                  <family>MS Shell Dlg 2</family>
                   <pointsize>11</pointsize>
                  </font>
                 </property>
@@ -723,7 +675,7 @@ QTableView:active {
                   <widget class="QLabel" name="label_3">
                    <property name="font">
                     <font>
-                     <family>MS Shell Dlg 2</family>
+                     <pointsize>11</pointsize>
                     </font>
                    </property>
                    <property name="text">
@@ -735,7 +687,7 @@ QTableView:active {
                   <widget class="QLineEdit" name="txtAncho">
                    <property name="font">
                     <font>
-                     <family>MS Shell Dlg 2</family>
+                     <pointsize>11</pointsize>
                     </font>
                    </property>
                   </widget>
@@ -744,7 +696,7 @@ QTableView:active {
                   <widget class="QRadioButton" name="btAnchoCm">
                    <property name="font">
                     <font>
-                     <family>MS Shell Dlg 2</family>
+                     <pointsize>11</pointsize>
                     </font>
                    </property>
                    <property name="text">
@@ -765,7 +717,7 @@ QTableView:active {
                   <widget class="QRadioButton" name="btAnchoM">
                    <property name="font">
                     <font>
-                     <family>MS Shell Dlg 2</family>
+                     <pointsize>11</pointsize>
                     </font>
                    </property>
                    <property name="text">
@@ -786,7 +738,7 @@ QTableView:active {
                   <widget class="QLabel" name="label_4">
                    <property name="font">
                     <font>
-                     <family>MS Shell Dlg 2</family>
+                     <pointsize>11</pointsize>
                     </font>
                    </property>
                    <property name="text">
@@ -798,7 +750,7 @@ QTableView:active {
                   <widget class="QLineEdit" name="txtAlto">
                    <property name="font">
                     <font>
-                     <family>MS Shell Dlg 2</family>
+                     <pointsize>11</pointsize>
                     </font>
                    </property>
                   </widget>
@@ -807,7 +759,7 @@ QTableView:active {
                   <widget class="QRadioButton" name="btAltoCm">
                    <property name="font">
                     <font>
-                     <family>MS Shell Dlg 2</family>
+                     <pointsize>11</pointsize>
                     </font>
                    </property>
                    <property name="text">
@@ -828,7 +780,7 @@ QTableView:active {
                   <widget class="QRadioButton" name="btAltoM">
                    <property name="font">
                     <font>
-                     <family>MS Shell Dlg 2</family>
+                     <pointsize>11</pointsize>
                     </font>
                    </property>
                    <property name="text">
@@ -864,7 +816,6 @@ QTableView:active {
                 </property>
                 <property name="font">
                  <font>
-                  <family>MS Shell Dlg 2</family>
                   <pointsize>18</pointsize>
                  </font>
                 </property>
@@ -891,8 +842,8 @@ QTableView:active {
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="groupButtonAncho"/>
   <buttongroup name="groupButtonAlto"/>
   <buttongroup name="groupButtonFiltro"/>
+  <buttongroup name="groupButtonAncho"/>
  </buttongroups>
 </ui>

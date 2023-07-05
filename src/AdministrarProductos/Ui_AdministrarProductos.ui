@@ -27,6 +27,11 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item alignment="Qt::AlignLeft|Qt::AlignTop">
      <widget class="QFrame" name="frame">
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+       </font>
+      </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
@@ -48,6 +53,11 @@
        </property>
        <item>
         <widget class="QPushButton" name="btRegresar">
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+          </font>
+         </property>
          <property name="cursor">
           <cursorShape>PointingHandCursor</cursorShape>
          </property>
@@ -89,6 +99,7 @@
          </property>
          <property name="font">
           <font>
+           <family>Segoe UI</family>
            <pointsize>18</pointsize>
           </font>
          </property>
@@ -108,6 +119,11 @@
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+       </font>
+      </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
@@ -123,6 +139,11 @@
        </property>
        <item alignment="Qt::AlignTop">
         <widget class="QFrame" name="frame_2">
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+          </font>
+         </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
@@ -144,6 +165,11 @@
           </property>
           <item>
            <widget class="QFrame" name="frame_5">
+            <property name="font">
+             <font>
+              <family>Segoe UI</family>
+             </font>
+            </property>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
@@ -158,6 +184,11 @@
                  <width>41</width>
                  <height>31</height>
                 </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Segoe UI</family>
+                </font>
                </property>
                <property name="toolTip">
                 <string>Filtrar búsqueda por...</string>
@@ -176,6 +207,11 @@
              </item>
              <item>
               <spacer name="horizontalSpacer">
+               <property name="font">
+                <font>
+                 <family>Segoe UI</family>
+                </font>
+               </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -204,6 +240,11 @@
                  <height>31</height>
                 </size>
                </property>
+               <property name="font">
+                <font>
+                 <family>Segoe UI</family>
+                </font>
+               </property>
                <property name="styleSheet">
                 <string notr="true">image: url(:/img/resources/images/magnifier.png);
 background-color: rgb(255, 255, 255);</string>
@@ -223,6 +264,7 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="font">
                 <font>
+                 <family>Segoe UI</family>
                  <pointsize>11</pointsize>
                 </font>
                </property>
@@ -239,6 +281,11 @@ background-color: rgb(255, 255, 255);</string>
           </item>
           <item>
            <widget class="QFrame" name="frame_6">
+            <property name="font">
+             <font>
+              <family>Segoe UI</family>
+             </font>
+            </property>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
@@ -248,6 +295,11 @@ background-color: rgb(255, 255, 255);</string>
              </property>
              <item>
               <widget class="QPushButton" name="btAgregar">
+               <property name="font">
+                <font>
+                 <family>Segoe UI</family>
+                </font>
+               </property>
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
@@ -281,6 +333,11 @@ background-color: rgb(255, 255, 255);</string>
              </item>
              <item>
               <widget class="QPushButton" name="btEditar">
+               <property name="font">
+                <font>
+                 <family>Segoe UI</family>
+                </font>
+               </property>
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
@@ -314,6 +371,11 @@ background-color: rgb(255, 255, 255);</string>
              </item>
              <item>
               <widget class="QPushButton" name="btEliminar">
+               <property name="font">
+                <font>
+                 <family>Segoe UI</family>
+                </font>
+               </property>
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
@@ -353,6 +415,11 @@ background-color: rgb(255, 255, 255);</string>
        </item>
        <item>
         <widget class="QFrame" name="frame_7">
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+          </font>
+         </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
@@ -367,6 +434,7 @@ background-color: rgb(255, 255, 255);</string>
            <widget class="QTableWidget" name="tabla_productos">
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>10</pointsize>
              </font>
             </property>
@@ -471,6 +539,11 @@ QTableView:active {
     </item>
     <item alignment="Qt::AlignBottom">
      <widget class="QFrame" name="frame_4">
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+       </font>
+      </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
@@ -483,6 +556,11 @@ QTableView:active {
        </property>
        <item>
         <widget class="QFrame" name="frame_8">
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+          </font>
+         </property>
          <property name="styleSheet">
           <string notr="true">QFrame { border: none; }</string>
          </property>
@@ -503,8 +581,8 @@ QTableView:active {
             </property>
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>11</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -523,8 +601,8 @@ QTableView:active {
             </property>
             <property name="font">
              <font>
+              <family>Segoe UI</family>
               <pointsize>11</pointsize>
-              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
