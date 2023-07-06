@@ -1,6 +1,7 @@
 """ Provee varias funciones útiles utilizadas frecuentemente. """
 from datetime import datetime
 
+import fdb
 from PySide6.QtCore import QDateTime
 
 from mydecorators import run_in_thread
@@ -120,7 +121,7 @@ def enviarAImpresora(ruta: str, prompt: int | bool):
 
 
 @run_in_thread
-def generarOrdenCompra(crsr, idx: int):
+def generarOrdenCompra(conn: fdb.Connection, idx: int):
     """
     Genera un PDF con el orden de compra correspondiente a la venta con índice
     `idx` en la base de datos. Recibe también un cursor a la base de datos.
@@ -133,51 +134,30 @@ def generarOrdenCompra(crsr, idx: int):
         - Fecha de creación
         - Fecha de entrega
     """
+    import io
+    import os
+    import uuid
+    
     from PyPDF2 import PdfReader, PdfWriter
-
     from reportlab.pdfgen.canvas import Canvas
     from reportlab.platypus import Paragraph
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    
+    from databasemanagers import ManejadorVentas
 
-    import io
-
+    manejadorVentas = ManejadorVentas(conn)
+    
     # leer venta con índice idx de la base de datos y datos principales
-    crsr.execute('''
-    SELECT  Ventas.id_ventas,
-            nombre,
-            telefono,
-            fecha_hora_creacion,
-            fecha_hora_entrega,
-            estado,
-            SUM(importe) AS importe
-    FROM    Ventas
-            LEFT JOIN Clientes
-                   ON Ventas.id_clientes = Clientes.id_clientes
-            LEFT JOIN Ventas_Detallado
-                   ON Ventas.id_ventas = Ventas_Detallado.id_ventas
-    WHERE   Ventas.id_ventas = ?
-    GROUP   BY 1, 2, 3, 4, 5, 6;
-    ''', (idx,))
-
-    folio, nombre, telefono, creacion, entrega, estado, total = crsr.fetchone()
-    anticipo = float(estado.split()[1])
+    nombre, telefono, creacion, entrega \
+        = manejadorVentas.obtenerInformacionPedido(idx)
+    
+    total = manejadorVentas.obtenerImporteTotal(idx)
+    anticipo = manejadorVentas.obtenerAnticipo(idx)
     saldo = total - anticipo
 
     # datos para la tabla de productos
-    crsr.execute('''
-    SELECT  cantidad,
-            abreviado || IIF(duplex, ' (a doble cara)', ''),
-            especificaciones,
-            precio,
-            importe AS importe
-    FROM    Ventas_Detallado
-            LEFT JOIN Productos
-                   ON Ventas_Detallado.id_productos = Productos.id_productos
-    WHERE   id_ventas = ?;
-    ''', (idx,))
-
+    productos = manejadorVentas.obtenerTablaProductosPedido(idx)
     # se dividen los productos de la orden en grupos de 6
-    productos = crsr.fetchall()
     chunks = chunkify(productos, 6)
 
     writer = PdfWriter()
@@ -194,7 +174,7 @@ def generarOrdenCompra(crsr, idx: int):
 
         # <escribir datos en el canvas>
         can.setFont('Helvetica-Bold', 10)
-        can.drawRightString(373, 491, str(folio))
+        can.drawRightString(373, 491, str(idx))
 
         can.setFont('Helvetica', 12)
         can.drawRightString(373, 546, formatDate(creacion))
@@ -256,10 +236,7 @@ def generarOrdenCompra(crsr, idx: int):
         page.merge_page(new_pdf.pages[0])
         writer.add_page(page)
     
-    # crear archivo temporal e imprimir
-    import os
-    import uuid
-    
+    # crear archivo temporal e imprimir    
     os.makedirs('./tmp/', exist_ok=True)
     
     filename = f'.\\tmp\\{uuid.uuid4().hex[:10]}.pdf'
@@ -426,12 +403,12 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
     enviarAImpresora(filename, int(config['IMPRESORAS']['prompt_tickets']))
 
 
-def generarTicketCompra(crsr, idx):
+def generarTicketCompra(conn: fdb.Connection, idx):
     """
     Genera el ticket de compra a partir de un identificador en la base de datos.
     """
     # obtener datos de la compra, de la base de datos
-    crsr.execute('''
+    conn.execute('''
     SELECT	cantidad,
             P.abreviado || IIF(VD.duplex, ' (a doble cara)', ''),
             precio,
@@ -443,10 +420,10 @@ def generarTicketCompra(crsr, idx):
     WHERE	id_ventas = ?;
     ''', (idx,))
 
-    productos = crsr.fetchall()
+    productos = conn.fetchall()
 
     # más datos para el ticket
-    crsr.execute('''
+    conn.execute('''
     SELECT	U.nombre,
             fecha_hora_creacion,
             recibido,
@@ -459,7 +436,7 @@ def generarTicketCompra(crsr, idx):
     WHERE	VD.id_ventas = ?;
     ''', (idx,))
 
-    vendedor, fechaCreacion, pagado, metodo = crsr.fetchone()
+    vendedor, fechaCreacion, pagado, metodo = conn.fetchone()
     
     # cambiar método de pago (abreviatura)
     if metodo == 'Efectivo': metodo = 'EFEC'

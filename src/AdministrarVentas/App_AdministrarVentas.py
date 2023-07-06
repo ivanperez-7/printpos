@@ -8,7 +8,7 @@ from PySide6.QtGui import QFont, QColor, QIcon, QRegularExpressionValidator
 from PySide6.QtCore import (QDate, QDateTime, QModelIndex,
                           QRegularExpression, Qt, Signal)
 
-from databasemanagers import ManejadorVentas
+from databasemanagers import ManejadorCaja, ManejadorVentas
 from mydecorators import con_fondo
 from myutils import (chunkify, clamp, enviarWhatsApp, formatDate, generarOrdenCompra, 
                      generarTicketCompra, ColorsEnum, son_similar)
@@ -525,7 +525,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                           f'con folio {idVenta}. ¿Desea continuar?', qm.Yes | qm.No)
 
         if ret == qm.Yes:
-            generarOrdenCompra(self.conn.cursor(), idVenta)
+            generarOrdenCompra(self.conn, idVenta)
 
     def goHome(self):
         """
@@ -789,9 +789,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
     # FUNCIONES ÚTILES #
     ####################
     def calcularCambio(self, txt):
-        """
-        Recalcular cambio a entregar.
-        """
+        """ Recalcular cambio a entregar. """
         try:
             pago = float(txt)
         except ValueError:
@@ -801,9 +799,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         self.ui.lbCambio.setText(f'{cambio:,.2f}')
     
     def done(self):
-        """
-        Acepta los cambios y modifica la fecha seleccionada en la ventana principal (CrearVenta).
-        """
+        """ Verifica restricciones y termina venta. """
         try:
             pago = float(self.ui.txtPago.text())
         except ValueError:
@@ -816,51 +812,40 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         if not pagoAceptado:
             return
         
-        conn = self.conn
-        crsr = conn.cursor()
+        manejadorCaja = ManejadorCaja(self.conn)
+        hoy = QDateTime.currentDateTime().toPython()
         
-        try:
-            crsr.execute('''
-            UPDATE  Ventas
-            SET     estado = 'Terminada'
-            WHERE   id_ventas = ?;
-            ''', (self.id_ventas,))
-            
-            # registrar ingreso (sin cambio) en caja
-            hoy = QDateTime.currentDateTime().toPython()
-            
-            caja_db_parametros = [(
+        # registrar ingreso (sin cambio) en caja
+        ingreso_db_parametros = (
+            hoy,
+            pago,
+            f'Pago de venta con folio {self.id_ventas}',
+            metodo_pago,
+            self.user.id
+        )
+        
+        if not manejadorCaja.insertarMovimiento(ingreso_db_parametros,
+                                                 commit=False):
+            return
+        
+        # registrar egreso (cambio) en caja
+        if (cambio := pago - self.paraPagar):
+            egreso_db_parametros = (
                 hoy,
-                pago,
-                f'Pago de venta con folio {self.id_ventas}',
+                -cambio,
+                f'Cambio de venta con folio {self.id_ventas}',
                 metodo_pago,
                 self.user.id
-            )]
-            
-            # registrar egreso (cambio) en caja
-            if (cambio := pago - self.paraPagar):
-                caja_db_parametros.append((
-                    hoy,
-                    -cambio,
-                    f'Cambio de venta con folio {self.id_ventas}',
-                    metodo_pago,
-                    self.user.id
-                ))
-            
-            crsr.executemany('''
-            INSERT INTO Caja (
-                fecha_hora, monto,
-                descripcion, metodo, id_usuarios
             )
-            VALUES
-                (?,?,?,?,?);
-            ''', caja_db_parametros)
-
-            conn.commit()
-        except fdb.Error as err:
-            conn.rollback()
-
-            WarningDialog('¡Hubo un error!', str(err))
+            if not manejadorCaja.insertarMovimiento(egreso_db_parametros,
+                                                     commit=False):
+                return
+        
+        # marcar venta como terminada
+        manejadorVentas = ManejadorVentas(self.conn)
+        
+        if not manejadorVentas.actualizarEstadoVenta(self.id_ventas, 'Terminada',
+                                                     commit=True):
             return
         
         QtWidgets.QMessageBox.information(

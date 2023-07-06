@@ -280,10 +280,9 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
         nuevo.txtProductoUtiliza.setValidator(validador)
         
         # llenar caja de opciones con elementos del inventario
-        crsr = self.conn.cursor()
-        
-        crsr.execute('SELECT nombre FROM Inventario;')
-        nuevo.boxElemento.addItems([nombre for nombre, in crsr])
+        manejador = ManejadorInventario(self.conn)
+        elementos = manejador.obtenerListaNombres()
+        nuevo.boxElemento.addItems([nombre for nombre, in elementos])
         
         # modificar valores a los de la base de datos
         nuevo.boxElemento.setCurrentText(nombre)
