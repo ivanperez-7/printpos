@@ -1,19 +1,17 @@
 from dataclasses import dataclass, field
 
-import fdb
-
 from PySide6 import QtWidgets
 from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtCore import (QDate, QDateTime, QRegularExpression, Qt,
                           QPropertyAnimation, QRect, QEasingCurve)
 
-from databasemanagers import ManejadorCaja, ManejadorClientes, ManejadorVentas
+from databasemanagers import (ManejadorCaja, ManejadorClientes,
+                              ManejadorProductos, ManejadorVentas)
 from mydecorators import con_fondo, requiere_admin
 from myutils import (clamp, enviarWhatsApp, formatDate,
                      generarOrdenCompra, generarTicketCompra,
                      generarTicketPresupuesto, son_similar)
-from mywidgets import (DimBackground, LabelAdvertencia, 
-                       VentanaPrincipal, WarningDialog)
+from mywidgets import DimBackground, LabelAdvertencia, VentanaPrincipal
 
 
 ##################
@@ -330,18 +328,12 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         qm = QtWidgets.QMessageBox
 
         # se confirma si existe el cliente en la base de datos
-        crsr = self.conn.cursor()
+        manejador = ManejadorClientes(self.conn)
+        
         nombre = self.ui.txtCliente.text().strip()
         telefono = self.ui.txtTelefono.text().strip()
 
-        crsr.execute('''
-        SELECT  *
-        FROM    Clientes
-        WHERE   nombre = ?
-                AND telefono = ?;
-        ''', (nombre, telefono))
-
-        cliente = crsr.fetchone()
+        cliente = manejador.verificarCliente(nombre, telefono)
 
         if not cliente:
             qm.warning(self, '¡Atención!', 
@@ -410,7 +402,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
 #################################
 @con_fondo
 class App_AgregarProducto(QtWidgets.QMainWindow):
-    """Backend para la función de agregar un producto a la venta."""
+    """ Backend para la función de agregar un producto a la venta. """
     def __init__(self, first: App_CrearVenta):
         from CrearVenta.Ui_AgregarProducto import Ui_AgregarProducto
         
@@ -448,21 +440,19 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
             else:
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
 
-        # llena la tabla de productos no gran formato
-        crsr = self.conn.cursor()
+        manejador = ManejadorProductos(self.conn)
         
-        crsr.execute('SELECT * FROM View_Productos_Simples;')
-        self.all_prod = crsr.fetchall()
-        
+        # llena la tabla de productos no gran formato        
+        self.all_prod = manejador.fetchall('SELECT * FROM View_Productos_Simples;')
         # llena la tabla de productos gran formato
-        crsr.execute('SELECT * FROM View_Gran_Formato;')
-        self.all_gran = crsr.fetchall()
+        self.all_gran = manejador.fetchall('SELECT * FROM View_Gran_Formato;')
 
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)
         self.ui.btAgregar.clicked.connect(self.done)
         self.ui.searchBar.textChanged.connect(self.update_display)
         self.ui.tabla_seleccionar.itemDoubleClicked.connect(self.done)
+        self.ui.tabla_granformato.itemDoubleClicked.connect(self.done)
         self.ui.tabWidget.currentChanged.connect(lambda: self.tabla_actual.resizeRowsToContents())
         
         self.ui.groupFiltro.buttonClicked.connect(
@@ -490,11 +480,9 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][self.ui.tabWidget.currentIndex()]
     
     def update_display(self, txt_busqueda: str = ''):
-        """
-        Actualiza la tabla y el contador de clientes.
-        Acepta una cadena de texto para la búsqueda de clientes.
-        También lee de nuevo la tabla de clientes, si se desea.
-        """
+        """ Actualiza la tabla y el contador de clientes.
+            Acepta una cadena de texto para la búsqueda de clientes.
+            También lee de nuevo la tabla de clientes, si se desea. """
         filtro = int(self.ui.btDescripcion.isChecked())
         
         # <tabla de productos normales>
@@ -540,9 +528,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         self.tabla_actual.resizeRowsToContents()
 
     def done(self):
-        """
-        Determina la rutina a ejecutar basándose en la pestaña actual.
-        """
+        """ Determina la rutina a ejecutar basándose en la pestaña actual. """
         current = self.ui.tabWidget.currentIndex()
         
         if current == 0:
@@ -574,35 +560,15 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         
         # obtener información del producto
         codigo = selected[0].text()
+        manejador = ManejadorProductos(self.conn)
         
-        crsr = self.conn.cursor()
-        crsr.execute('SELECT id_productos FROM Productos WHERE codigo = ?;', (codigo,))
-        
-        idProducto, = crsr.fetchone()
+        idProducto, = manejador.obtenerIdProducto(codigo)
         
         # obtener precio basado en cantidad
-        restrict = 'AND duplex' if self.ui.checkDuplex.isChecked() else ''
-
-        query = f'''
-        SELECT * FROM (
-            SELECT  FIRST 1 precio_con_iva
-            FROM    Productos_Intervalos
-            WHERE   id_productos = ?
-                    AND desde <= ?
-                    {restrict}
-            ORDER   BY desde DESC)
-        UNION ALL
-        SELECT * FROM (
-            SELECT  FIRST 1 precio_con_iva
-            FROM    Productos_Intervalos
-            WHERE   id_productos = ?
-                    AND desde <= ?
-            ORDER   BY desde DESC)
-        '''
+        duplex = self.ui.checkDuplex.isChecked()
         
         try:
-            crsr.execute(query, (idProducto, cantidad)*2)
-            precio, = crsr.fetchone()
+            precio, = manejador.obtenerPrecioSimple(idProducto, cantidad, duplex)
         except TypeError:
             QtWidgets.QMessageBox.warning(
                 self, 'Atención',
@@ -647,22 +613,11 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
             return
         
         # obtener información del producto
-        crsr = self.conn.cursor()
-        crsr.execute('SELECT id_productos FROM Productos WHERE codigo = ?;', (codigo,))
-        
-        idProducto, = crsr.fetchone()
-        
-        # obtener precio basado en cantidad
-        crsr.execute('''
-        SELECT  min_ancho,
-                min_alto,
-                precio_m2
-        FROM    Productos_Gran_Formato
-        WHERE   id_productos = ?;
-        ''', (idProducto,))
+        manejador = ManejadorProductos(self.conn)
+        idProducto, = manejador.obtenerIdProducto(codigo)
         
         try:
-            min_ancho, min_alto, precio = crsr.fetchone()
+            min_ancho, min_alto, precio = manejador.obtenerGranFormato(idProducto)
         except TypeError:
             QtWidgets.QMessageBox.warning(
                 self, 'Atención',
@@ -683,9 +638,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
 
 @con_fondo
 class App_SeleccionarCliente(QtWidgets.QMainWindow):
-    """
-    Backend para la función de seleccionar un cliente de la base de datos.
-    """
+    """ Backend para la función de seleccionar un cliente de la base de datos. """
     def __init__(self, first: App_CrearVenta):
         from CrearVenta.Ui_SeleccionarCliente import Ui_SeleccionarCliente
         
@@ -715,9 +668,9 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
 
         # llena la tabla con todos los clientes existentes
-        crsr = self.conn.cursor()
-        crsr.execute('SELECT nombre, telefono, correo, direccion, RFC FROM Clientes;')
-        self.all = crsr.fetchall()
+        manejador = ManejadorClientes(self.conn)
+        
+        self.all = [datos for (id, *datos) in manejador.obtenerTablaPrincipal()]
 
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)
@@ -761,9 +714,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
         tabla.resizeRowsToContents()
 
     def done(self):
-        """
-        Acepta los cambios y modifica la fecha seleccionada en la ventana principal (CrearVenta).
-        """
+        """ Modifica datos de cliente en la ventana principal (CrearVenta). """
         selected = self.ui.tabla_seleccionar.selectedItems()
 
         if not selected:
@@ -779,16 +730,9 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
         self.first.ui.txtCorreo.setText(correo)
 
         # checar si el cliente es especial
-        crsr = self.conn.cursor()
-        crsr.execute('''
-        SELECT  cliente_especial,
-                descuentos
-        FROM    Clientes
-        WHERE   nombre = ?
-                AND telefono = ?;
-        ''', (nombre, telefono))
+        manejador = ManejadorClientes(self.conn)
         
-        especial, descuentos = crsr.fetchone()
+        especial, descuentos = manejador.obtenerDescuentosCliente(nombre, telefono)
         self.first.ui.btDescuentosCliente.setVisible(especial)
         
         if descuentos:

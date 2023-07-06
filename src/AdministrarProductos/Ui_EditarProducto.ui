@@ -533,7 +533,7 @@ QTableView:active {
              <rect>
               <x>20</x>
               <y>60</y>
-              <width>161</width>
+              <width>171</width>
               <height>16</height>
              </rect>
             </property>

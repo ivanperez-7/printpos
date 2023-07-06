@@ -144,7 +144,6 @@
             <property name="font">
              <font>
               <pointsize>11</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -197,7 +196,6 @@
             <property name="font">
              <font>
               <pointsize>11</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -219,7 +217,6 @@
                <property name="font">
                 <font>
                  <pointsize>11</pointsize>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -234,6 +231,7 @@
                 <font>
                  <pointsize>11</pointsize>
                  <italic>false</italic>
+                 <bold>false</bold>
                 </font>
                </property>
                <property name="styleSheet">
@@ -258,7 +256,6 @@
                <property name="font">
                 <font>
                  <pointsize>11</pointsize>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -272,6 +269,7 @@
                <property name="font">
                 <font>
                  <pointsize>11</pointsize>
+                 <bold>false</bold>
                 </font>
                </property>
                <property name="styleSheet">
@@ -296,7 +294,6 @@
                <property name="font">
                 <font>
                  <pointsize>11</pointsize>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -310,6 +307,7 @@
                <property name="font">
                 <font>
                  <pointsize>11</pointsize>
+                 <bold>false</bold>
                 </font>
                </property>
                <property name="styleSheet">
@@ -355,7 +353,6 @@
             <property name="font">
              <font>
               <pointsize>11</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -377,7 +374,6 @@
              <property name="font">
               <font>
                <pointsize>11</pointsize>
-               <weight>50</weight>
                <bold>false</bold>
               </font>
              </property>
@@ -410,7 +406,6 @@
             <property name="font">
              <font>
               <pointsize>11</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -432,7 +427,6 @@
              <property name="font">
               <font>
                <pointsize>11</pointsize>
-               <weight>50</weight>
                <bold>false</bold>
               </font>
              </property>
@@ -610,7 +604,6 @@ QTableWidget {
                <property name="font">
                 <font>
                  <pointsize>14</pointsize>
-                 <weight>50</weight>
                  <bold>false</bold>
                  <underline>true</underline>
                 </font>
@@ -682,7 +675,6 @@ QTableWidget {
                <property name="font">
                 <font>
                  <pointsize>14</pointsize>
-                 <weight>75</weight>
                  <bold>true</bold>
                 </font>
                </property>
@@ -744,7 +736,6 @@ QTableWidget {
                <property name="font">
                 <font>
                  <pointsize>15</pointsize>
-                 <weight>75</weight>
                  <bold>true</bold>
                 </font>
                </property>
@@ -782,7 +773,6 @@ QTableWidget {
                <property name="font">
                 <font>
                  <pointsize>15</pointsize>
-                 <weight>75</weight>
                  <bold>true</bold>
                 </font>
                </property>
@@ -805,7 +795,6 @@ QTableWidget {
                <property name="font">
                 <font>
                  <pointsize>14</pointsize>
-                 <weight>75</weight>
                  <bold>true</bold>
                 </font>
                </property>
@@ -855,7 +844,6 @@ QTableWidget {
                <property name="font">
                 <font>
                  <pointsize>15</pointsize>
-                 <weight>75</weight>
                  <bold>true</bold>
                 </font>
                </property>
