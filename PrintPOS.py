@@ -26,10 +26,6 @@ def main():
     palette.setColor(CR.ButtonText, NEGRO)          # texto de botones -> negro
     palette.setColor(CR.PlaceholderText, GRIS)      # texto placeholder -> gris
     
-    palette.setColor(QPalette.ColorGroup.Disabled,
-                     CR.Base, QColor(0, 0, 0, 0))   # base deshabilitado -> transparente
-    palette.setColor(QPalette.ColorGroup.Disabled,
-                     CR.Text, GRIS)                 # texto deshabilitado -> gris
     app.setPalette(palette)
     
     login = App_Login()    

@@ -7,7 +7,7 @@ from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtCore import (QDate, QDateTime, QRegularExpression, Qt,
                           QPropertyAnimation, QRect, QEasingCurve)
 
-from databasemanagers import ManejadorClientes, ManejadorVentas
+from databasemanagers import ManejadorCaja, ManejadorClientes, ManejadorVentas
 from mydecorators import con_fondo, requiere_admin
 from myutils import (clamp, enviarWhatsApp, formatDate,
                      generarOrdenCompra, generarTicketCompra,
@@ -137,7 +137,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.ui.txtTelefono.textChanged.connect(ocultar_boton)
         
         self.ui.tabla_productos.itemChanged.connect(self.itemChanged_handle)
-        self.ui.btRegistrar.clicked.connect(self.registrarCliente)
+        self.ui.btRegistrar.clicked.connect(self.insertarCliente)
         self.ui.btSeleccionar.clicked.connect(self.seleccionarCliente)
         self.ui.btDescuento.clicked.connect(self.agregarDescuento)
         self.ui.btDescuentosCliente.clicked.connect(self.alternarDescuentos)
@@ -253,7 +253,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         """
         self.new = App_SeleccionarCliente(self)
 
-    def registrarCliente(self):
+    def insertarCliente(self):
         """
         Abre ventana para registrar un cliente.
         """
@@ -1178,64 +1178,51 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             pago = float(self.ui.txtPago.text())
         except ValueError:
             pago = 0.
+            
+        metodo = self.ventaDatos.metodoPago
         
-        pagoAceptado = pago >= self.paraPagar if self.ventaDatos.metodoPago == 'Efectivo' \
+        pagoAceptado = pago >= self.paraPagar if metodo == 'Efectivo' \
                        else pago == self.paraPagar
         minimoCincuentaPorCiento = round(self.total/2, 2) <= self.paraPagar <= self.total
         
         if not pagoAceptado or not minimoCincuentaPorCiento:
             return
-        
-        conn = self.conn
-        crsr = conn.cursor()
 
-        try:
-            # cambiar el estado de la venta a 'Terminada' o 'Recibido xx.xx'
-            estado = 'Terminada' if esDirecta else f'Recibido {self.paraPagar:.2f}'
-            
-            crsr.execute('''
-            UPDATE  Ventas
-            SET     estado = ?,
-                    recibido = ?
-            WHERE   id_ventas = ?;
-            ''', (estado, pago, self.idVentas))
+        if pago >= 0.:
+            manejadorCaja = ManejadorCaja(self.conn)
+            hoy = QDateTime.currentDateTime().toPython()
             
             # registrar ingreso (sin cambio) en caja
-            hoy = QDateTime.currentDateTime().toPython()
-            metodo = self.ventaDatos.metodoPago
-            
-            caja_db_parametros = [(
+            ingreso_db_parametros = (
                 hoy,
                 pago,
                 f'Pago de venta con folio {self.idVentas}',
                 metodo,
                 self.user.id
-            )]
+            )
+            
+            if not manejadorCaja.insertarMovimiento(ingreso_db_parametros,
+                                                     commit=False):
+                return
             
             # registrar egreso (cambio) en caja
             if (cambio := pago - self.paraPagar):
-                caja_db_parametros.append((
+                egreso_db_parametros = (
                     hoy,
                     -cambio,
                     f'Cambio de venta con folio {self.idVentas}',
                     metodo,
                     self.user.id
-                ))
-            
-            if pago > 0.:
-                crsr.executemany('''
-                INSERT INTO Caja (
-                    fecha_hora, monto,
-                    descripcion, metodo, id_usuarios
                 )
-                VALUES
-                    (?,?,?,?,?);
-                ''', caja_db_parametros)
-
-            conn.commit()
-        except fdb.Error as err:
-            conn.rollback()
-            WarningDialog('¡Hubo un error!', str(err))
+                if not manejadorCaja.insertarMovimiento(egreso_db_parametros,
+                                                         commit=False):
+                    return
+        
+        # cambiar el estado de la venta a 'Terminada' o 'Recibido xx.xx'
+        manejadorVentas = ManejadorVentas(self.conn)
+        estado = 'Terminada' if esDirecta else f'Recibido {self.paraPagar:.2f}'
+        
+        if not manejadorVentas.actualizarEstadoVenta(self.idVentas, estado, commit=True):
             return
 
         # abrir pregunta
@@ -1243,20 +1230,14 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
 
         if not esDirecta:
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
-            generarOrdenCompra(conn.cursor(), self.idVentas)
+            generarOrdenCompra(self.conn, self.idVentas)
         else:
-            box = qm(qm.Icon.Question, 'Éxito',
-                     'Venta terminada. ¡Recuerde ofrecer el ticket de compra! ¿Desea imprimirlo?',
-                     qm.Yes | qm.No, self)
-            
-            #box.button(qm.Yes).setText('Imprimir ticket')
-            #box.button(qm.No).setText('Enviar por WhatsApp')
-            ret = box.exec()
-            
+            ret = qm.question(self, 'Éxito',
+                              'Venta terminada. ¡Recuerde ofrecer el ticket de compra! '
+                              '¿Desea imprimirlo?',
+                              qm.Yes | qm.No)
             if ret == qm.Yes:
-                generarTicketCompra(conn.cursor(), self.idVentas)
-            else:
-                print("enviar PDF por wa")
+                generarTicketCompra(self.conn, self.idVentas)
         
         self.goHome()
     
@@ -1264,22 +1245,11 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         """Función para abortar la venta y actualizar estado a 'Cancelada'."""
         @requiere_admin
         def accion(parent):
-            try:
-                conn = self.conn
-                crsr = conn.cursor()
-                
-                crsr.execute('''
-                UPDATE  Ventas
-                SET     estado = 'Cancelada'
-                WHERE   id_ventas = ?;
-                ''', (self.idVentas,))
-
-                conn.commit()
-                
+            manejadorVentas = ManejadorVentas(self.conn)
+            
+            if manejadorVentas.actualizarEstadoVenta(self.idVentas, 'Cancelada',
+                                                     commit=True):
                 self.goHome()
-            except fdb.Error as err:
-                conn.rollback()
-                WarningDialog('¡Hubo un error!', str(err))
         
         qm = QtWidgets.QMessageBox
         

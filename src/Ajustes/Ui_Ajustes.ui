@@ -101,7 +101,6 @@
         <widget class="QTabWidget" name="tabWidget">
          <property name="font">
           <font>
-           <family>Arial</family>
            <pointsize>11</pointsize>
           </font>
          </property>

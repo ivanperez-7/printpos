@@ -468,7 +468,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         manejador = ManejadorCaja(self.conn, 
                                   '¡No se pudo registrar el movimiento!')
         
-        if not manejador.registrarMovimiento(caja_db_parametros):
+        if not manejador.insertarMovimiento(caja_db_parametros):
             return
         
         QtWidgets.QMessageBox.information(

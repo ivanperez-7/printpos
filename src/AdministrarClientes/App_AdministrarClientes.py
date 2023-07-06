@@ -66,7 +66,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
             self.ui.btEliminar.hide()
 
         # añade eventos para los botones
-        self.ui.btAgregar.clicked.connect(self.registrarCliente)
+        self.ui.btAgregar.clicked.connect(self.insertarCliente)
         self.ui.btEditar.clicked.connect(self.editarCliente)
         self.ui.btEliminar.clicked.connect(self.quitarCliente)
         self.ui.btRegresar.clicked.connect(self.goHome)
@@ -190,7 +190,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
-    def registrarCliente(self):
+    def insertarCliente(self):
         """ Abre ventana para registrar un cliente. """
         self.new = App_RegistrarCliente(self)
         self.new.success.connect(
@@ -350,7 +350,7 @@ class App_RegistrarCliente(Base_EditarCliente):
     def ejecutarOperacion(self, conn, params):
         """Insertar nuevo cliente a la base de datos."""
         manejador = ManejadorClientes(conn, self.MENSAJE_ERROR)
-        return manejador.registrarCliente(params)
+        return manejador.insertarCliente(params)
 
 
 class App_EditarCliente(Base_EditarCliente):

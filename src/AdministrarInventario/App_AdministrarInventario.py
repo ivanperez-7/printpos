@@ -248,10 +248,9 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         nuevo.txtProductoUtiliza.setValidator(validador)
         
         # llenar caja de opciones con productos
-        crsr = self.conn.cursor()
-        
-        crsr.execute('SELECT codigo FROM Productos;')
-        nuevo.boxProducto.addItems([codigo for codigo, in crsr])
+        manejador = ManejadorProductos(self.conn)
+        codigos = manejador.obtenerListaCodigos()
+        nuevo.boxProducto.addItems([codigo for codigo, in codigos])
         
         # modificar valores a los de la base de datos
         nuevo.boxProducto.setCurrentText(codigo)
@@ -353,7 +352,7 @@ class App_RegistrarInventario(Base_EditarInventario):
     ####################
     def ejecutarOperacion(self, conn, params):
         manejador = ManejadorInventario(conn, self.MENSAJE_ERROR)
-        return manejador.registrarElemento(params)
+        return manejador.insertarElemento(params)
 
 
 class App_EditarInventario(Base_EditarInventario):

@@ -61,7 +61,7 @@ class DatabaseManager:
         except fdb.Error as err:
             WarningDialog(self.error_txt, str(err))
             return None
-
+        
 
 class ManejadorCaja(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Caja. """
@@ -82,9 +82,10 @@ class ManejadorCaja(DatabaseManager):
             ORDER   BY fecha_hora DESC;
         ''')
     
-    def registrarMovimiento(self, params: tuple):
-        """ Registra ingreso o egreso en tabla historial de movimientos. 
-            Hace commit automáticamente. """
+    def insertarMovimiento(self, params: tuple, commit: bool = True):
+        """ Registra ingreso o egreso en tabla historial de movimientos.
+        
+            Hace commit automáticamente, a menos que se indique lo contrario. """
         return self.execute('''
             INSERT INTO Caja (
                 fecha_hora, monto,
@@ -92,7 +93,7 @@ class ManejadorCaja(DatabaseManager):
             )
             VALUES
                 (?,?,?,?,?);
-        ''', params, commit=True)
+        ''', params, commit=commit)
 
 
 class ManejadorClientes(DatabaseManager):
@@ -125,7 +126,7 @@ class ManejadorClientes(DatabaseManager):
             WHERE id_clientes = ?;
         ''', (idx,))
     
-    def registrarCliente(self, datosCliente: tuple):
+    def insertarCliente(self, datosCliente: tuple):
         """ Sentencia para registrar cliente. Hace commit automáticamente. """
         return self.execute('''
             INSERT INTO Clientes (
@@ -196,6 +197,10 @@ class ManejadorInventario(DatabaseManager):
             WHERE   nombre = ?;
         ''', (nombre,))
     
+    def obtenerListaNombres(self):
+        """ Obtener lista con nombres de todos los elementos de inventario. """
+        return self.fetchall('SELECT nombre FROM Inventario;')
+    
     def obtenerProdUtilizaInv(self, id_inventario: int):
         """ Obtener relación con productos en la tabla productos_utiliza_inventario. """
         return self.fetchall('''
@@ -215,7 +220,7 @@ class ManejadorInventario(DatabaseManager):
             WHERE   id_inventario = ?;
         ''', (num_lotes, id_inventario), commit=True)
     
-    def registrarElemento(self, datos_elemento: tuple):
+    def insertarElemento(self, datos_elemento: tuple):
         """ Intenta registrar un elemento en la tabla y regresar 
             tupla con el índice recién insertado. No hace commit. """
         return self.fetchone('''
@@ -322,6 +327,10 @@ class ManejadorProductos(DatabaseManager):
             FROM    Productos 
             WHERE   id_productos = ?;
         ''', (id_productos,))
+    
+    def obtenerListaCodigos(self):
+        """ Obtener lista con códigos de todos los productos. """
+        return self.fetchall('SELECT codigo FROM Productos;')
     
     def obtenerIdProducto(self, codigo: str):
         """ Obtener id_producto dado código de un producto. """
@@ -538,6 +547,65 @@ class ManejadorVentas(DatabaseManager):
             WHERE   id_ventas = ?;
         ''', (idx,))
     
+    def obtenerInformacionPedido(self, idx: int):
+        """ Obtener información sobre órden de compra: 
+            nombre, telefono, fecha y hora de creación, fecha y hora de entrega. """
+        return self.fetchone('''
+            SELECT  nombre,
+                    telefono,
+                    fecha_hora_creacion,
+                    fecha_hora_entrega
+            FROM    Ventas
+                    LEFT JOIN Clientes
+                        ON Ventas.id_clientes = Clientes.id_clientes
+            WHERE   id_ventas = ?;
+        ''', (idx,))
+    
+    def obtenerTablaProductosPedido(self, idx: int):
+        """ Obtiene tabla de productos para las órdenes de compra:
+        
+            Cantidad | Producto | Especificaciones | Precio | Importe """
+        return self.fetchall('''
+            SELECT  cantidad,
+                    abreviado || IIF(duplex, ' (a doble cara)', ''),
+                    especificaciones,
+                    precio,
+                    importe
+            FROM    Ventas_Detallado
+                    LEFT JOIN Productos
+                        ON Ventas_Detallado.id_productos = Productos.id_productos
+            WHERE   id_ventas = ?;
+        ''', (idx,))
+    
+    def obtenerImporteTotal(self, idx: int):
+        """ Obtiene el importe total de una venta. """
+        t = self.fetchone('''
+            SELECT  SUM(importe)
+            FROM    Ventas_Detallado
+            WHERE   id_ventas = ?;
+        ''', (idx,))
+        
+        try:
+            importe, = t
+            return importe
+        except ValueError:
+            return None
+    
+    def obtenerAnticipo(self, idx: int):
+        """ Obtiene el anticipo recibido de una orden pendiente.
+            Si no es una orden pendiente, regresa None. """
+        t: str = self.fetchone('''
+            SELECT  estado
+            FROM    Ventas
+            WHERE   id_ventas = ?;
+        ''', (idx,))
+        
+        try:
+            estado, = t
+            return float(estado.split()[1])
+        except ValueError:
+            return None
+    
     def insertarVenta(self, params: tuple):
         """ Insertar venta nueva en la tabla ventas e intenta 
             regresar tupla con índice de venta recién insertada.
@@ -570,3 +638,13 @@ class ManejadorVentas(DatabaseManager):
             VALUES 
                 (?,?,?,?,?,?,?);
         ''', params, commit=True)
+    
+    def actualizarEstadoVenta(self, id_ventas: int, estado: str, commit: bool = False):
+        """ Actualiza estado de venta a parámetro.
+        
+            No hace `commit`, a menos que se indique lo contrario. """
+        return self.execute('''
+            UPDATE  Ventas
+            SET     estado = ?
+            WHERE   id_ventas = ?;
+        ''', (estado, id_ventas), commit=commit)
