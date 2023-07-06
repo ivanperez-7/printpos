@@ -118,13 +118,32 @@ class ManejadorClientes(DatabaseManager):
             ORDER   BY C.id_clientes;
         ''')
     
-    def obtenerCliente(self, idx):
+    def obtenerCliente(self, id_cliente: int):
         """ Sentencia para obtener un cliente. """
         return self.fetchone('''
             SELECT  * 
             FROM    Clientes 
             WHERE id_clientes = ?;
-        ''', (idx,))
+        ''', (id_cliente,))
+    
+    def verificarCliente(self, nombre: str, telefono: str):
+        """ Regresa cliente dados el nombre y el teléfono. """
+        return self.fetchone('''
+            SELECT  *
+            FROM    Clientes
+            WHERE   nombre = ?
+                    AND telefono = ?;
+        ''', (nombre, telefono))
+    
+    def obtenerDescuentosCliente(self, nombre: str, telefono: str):
+        """ Obtener booleano de cliente especial, y cadena de descuentos. """
+        return self.fetchone('''
+            SELECT  cliente_especial,
+                    descuentos
+            FROM    Clientes
+            WHERE   nombre = ?
+                    AND telefono = ?;
+        ''', (nombre, telefono))
     
     def insertarCliente(self, datosCliente: tuple):
         """ Sentencia para registrar cliente. Hace commit automáticamente. """
@@ -178,7 +197,8 @@ class ManejadorInventario(DatabaseManager):
         ''')
     
     def obtenerInformacionPrincipal(self, id_inventario: int):
-        """ Regresa información principal de un elemento. """
+        """ Regresa información principal de un elemento:
+            nombre, tamaño de lote, precio de lote, mínimo de lotes, unidades restantes. """
         return self.fetchone('''
             SELECT  nombre,
                     tamano_lote, 
@@ -359,8 +379,30 @@ class ManejadorProductos(DatabaseManager):
             ORDER   BY desde ASC, duplex ASC;
         ''', (id_productos,))
     
+    def obtenerPrecioSimple(self, id_productos: int, cantidad: int, duplex: bool):
+        """ Obtener precio de producto categoría simple. """
+        restrict = 'AND duplex' if duplex else ''
+        
+        return self.fetchone(f'''
+            SELECT * FROM (
+                SELECT  FIRST 1 precio_con_iva
+                FROM    Productos_Intervalos
+                WHERE   id_productos = ?
+                        AND desde <= ?
+                        {restrict}
+                ORDER   BY desde DESC)
+            UNION ALL
+            SELECT * FROM (
+                SELECT  FIRST 1 precio_con_iva
+                FROM    Productos_Intervalos
+                WHERE   id_productos = ?
+                        AND desde <= ?
+                ORDER   BY desde DESC)
+        ''', (id_productos, cantidad)*2)
+    
     def obtenerGranFormato(self, id_productos: int):
-        """ Obtener datos de un producto categoría gran formato. """
+        """ Obtener ancho mínimo, alto mínimo, y precio de metro cuadrado
+            de producto categoría gran formato. """
         return self.fetchone('''
             SELECT  min_ancho,
                     min_alto,
@@ -539,29 +581,35 @@ class ManejadorVentas(DatabaseManager):
             ORDER	BY Ventas.id_ventas DESC;
         ''')
     
-    def obtenerVenta(self, idx):
+    def obtenerVenta(self, id_venta):
         """ Sentencia para obtener una venta. """
         return self.fetchone('''
             SELECT  * 
             FROM    Ventas 
             WHERE   id_ventas = ?;
-        ''', (idx,))
+        ''', (id_venta,))
     
-    def obtenerInformacionPedido(self, idx: int):
-        """ Obtener información sobre órden de compra: 
-            nombre, telefono, fecha y hora de creación, fecha y hora de entrega. """
+    def obtenerDatosGeneralesVenta(self, id_venta: int):
+        """ Obtiene otros datos generales de una venta:
+            nombre de cliente, correo, teléfono, fecha y hora de creación,
+            fecha y hora de entrega, comentarios generales, nombre de vendedor. """
         return self.fetchone('''
-            SELECT  nombre,
+            SELECT  Clientes.nombre,
+                    correo,
                     telefono,
                     fecha_hora_creacion,
-                    fecha_hora_entrega
+                    fecha_hora_entrega,
+                    comentarios,
+                    Usuarios.nombre
             FROM    Ventas
                     LEFT JOIN Clientes
-                        ON Ventas.id_clientes = Clientes.id_clientes
+                           ON Ventas.id_clientes = Clientes.id_clientes
+                    LEFT JOIN Usuarios
+                           ON Ventas.id_usuarios = Usuarios.id_usuarios
             WHERE   id_ventas = ?;
-        ''', (idx,))
+        ''', (id_venta,))
     
-    def obtenerTablaProductosPedido(self, idx: int):
+    def obtenerTablaOrdenCompra(self, id_venta: int):
         """ Obtiene tabla de productos para las órdenes de compra:
         
             Cantidad | Producto | Especificaciones | Precio | Importe """
@@ -571,40 +619,96 @@ class ManejadorVentas(DatabaseManager):
                     especificaciones,
                     precio,
                     importe
+            FROM    Ventas_Detallado AS VD
+                    LEFT JOIN Productos AS P
+                           ON VD.id_productos = P.id_productos
+            WHERE   id_ventas = ?;
+        ''', (id_venta,))
+    
+    def obtenerTablaTicket(self, id_venta: int):
+        """ Obtiene tabla de productos para los tickets de ventas directas.
+        
+            Cantidad | Producto | Precio | Descuento | Importe """
+        return self.fetchall('''
+            SELECT	cantidad,
+                    abreviado || IIF(VD.duplex, ' (a doble cara)', ''),
+                    precio,
+                    descuento,
+                    importe
+            FROM	Ventas_Detallado AS VD
+                    LEFT JOIN Productos AS P
+                        ON VD.id_productos = P.id_productos
+            WHERE	id_ventas = ?;
+        ''', (id_venta,))
+    
+    def obtenerTablaProductosVenta(self, id_venta: int):
+        """ Obtener tabla de productos para widgets de
+            detalles de venta, terminar compra, etc. 
+            
+            Cantidad | Código | Especificaciones | Precio | Descuento | Importe """
+        return self.fetchall('''
+            SELECT  cantidad,
+                    codigo || IIF(duplex, ' (a doble cara)', ''),
+                    especificaciones,
+                    precio,
+                    descuento,
+                    importe
             FROM    Ventas_Detallado
                     LEFT JOIN Productos
-                        ON Ventas_Detallado.id_productos = Productos.id_productos
+                           ON Ventas_Detallado.id_productos = Productos.id_productos
             WHERE   id_ventas = ?;
-        ''', (idx,))
+        ''', (id_venta,))
     
-    def obtenerImporteTotal(self, idx: int):
+    def obtenerClienteAsociado(self, id_venta: int):
+        """ Obtener nombre y teléfono de cliente asociado a la venta. """
+        return self.fetchone('''
+            SELECT  C.nombre,
+                    C.telefono
+            FROM    Ventas AS V
+                    LEFT JOIN Clientes AS C
+                           ON V.id_clientes = C.id_clientes
+            WHERE   id_ventas = ?;
+        ''', (id_venta,))
+    
+    def obtenerImporteTotal(self, id_venta: int):
         """ Obtiene el importe total de una venta. """
         t = self.fetchone('''
             SELECT  SUM(importe)
             FROM    Ventas_Detallado
             WHERE   id_ventas = ?;
-        ''', (idx,))
+        ''', (id_venta,))
         
         try:
             importe, = t
-            return importe
+            return round(importe, 2)
         except ValueError:
             return None
     
-    def obtenerAnticipo(self, idx: int):
+    def obtenerAnticipo(self, id_venta: int):
         """ Obtiene el anticipo recibido de una orden pendiente.
             Si no es una orden pendiente, regresa None. """
         t: str = self.fetchone('''
             SELECT  estado
             FROM    Ventas
             WHERE   id_ventas = ?;
-        ''', (idx,))
+        ''', (id_venta,))
         
         try:
             estado, = t
             return float(estado.split()[1])
-        except ValueError:
+        except (ValueError, IndexError):
             return None
+    
+    def obtenerFechaPrimeraVenta(self, id_usuario: int = None):
+        """ Obtener fecha de la venta más antigüa. 
+            Se puede restringir a cierto usuario. """
+        restrict = f'WHERE id_usuarios = {id_usuario}' if id_usuario else ''
+        
+        return self.fetchone(f'''
+            SELECT  MIN(fecha_hora_creacion) 
+            FROM    Ventas
+            {restrict};
+        ''')
     
     def insertarVenta(self, params: tuple):
         """ Insertar venta nueva en la tabla ventas e intenta 

@@ -147,16 +147,16 @@ def generarOrdenCompra(conn: fdb.Connection, idx: int):
 
     manejadorVentas = ManejadorVentas(conn)
     
-    # leer venta con índice idx de la base de datos y datos principales
-    nombre, telefono, creacion, entrega \
-        = manejadorVentas.obtenerInformacionPedido(idx)
+    # leer datos de venta y de cliente
+    nombre, telefono = manejadorVentas.obtenerClienteAsociado(idx)
+    _, _, _, creacion, entrega, *_ = manejadorVentas.obtenerVenta(idx)
     
     total = manejadorVentas.obtenerImporteTotal(idx)
     anticipo = manejadorVentas.obtenerAnticipo(idx)
     saldo = total - anticipo
 
     # datos para la tabla de productos
-    productos = manejadorVentas.obtenerTablaProductosPedido(idx)
+    productos = manejadorVentas.obtenerTablaOrdenCompra(idx)
     # se dividen los productos de la orden en grupos de 6
     chunks = chunkify(productos, 6)
 
@@ -404,39 +404,26 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
 
 
 def generarTicketCompra(conn: fdb.Connection, idx):
-    """
-    Genera el ticket de compra a partir de un identificador en la base de datos.
-    """
+    """ Genera el ticket de compra a partir de un identificador en la base de datos. """
+    from databasemanagers import ManejadorVentas
+    
     # obtener datos de la compra, de la base de datos
-    conn.execute('''
-    SELECT	cantidad,
-            P.abreviado || IIF(VD.duplex, ' (a doble cara)', ''),
-            precio,
-            descuento,
-            importe
-    FROM	Ventas_Detallado AS VD
-            LEFT JOIN Productos AS P
-                   ON VD.id_productos = P.id_productos
-    WHERE	id_ventas = ?;
-    ''', (idx,))
-
-    productos = conn.fetchall()
+    manejador = ManejadorVentas(conn)
+    productos = manejador.obtenerTablaTicket(idx)
 
     # más datos para el ticket
-    conn.execute('''
+    datos = manejador.fetchone('''
     SELECT	U.nombre,
             fecha_hora_creacion,
             recibido,
             metodo_pago
-    FROM	Ventas_Detallado AS VD
-            LEFT JOIN Ventas AS V
-                   ON VD.id_ventas = V.id_ventas
+    FROM	Ventas AS V
             LEFT JOIN Usuarios AS U
                    ON V.id_usuarios = U.id_usuarios
-    WHERE	VD.id_ventas = ?;
+    WHERE	V.id_ventas = ?;
     ''', (idx,))
 
-    vendedor, fechaCreacion, pagado, metodo = conn.fetchone()
+    vendedor, fechaCreacion, pagado, metodo = datos
     
     # cambiar método de pago (abreviatura)
     if metodo == 'Efectivo': metodo = 'EFEC'

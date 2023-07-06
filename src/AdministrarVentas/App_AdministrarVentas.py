@@ -1,8 +1,6 @@
 from datetime import datetime
 from math import ceil
 
-import fdb
-
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon, QRegularExpressionValidator
 from PySide6.QtCore import (QDate, QDateTime, QModelIndex,
@@ -12,7 +10,7 @@ from databasemanagers import ManejadorCaja, ManejadorVentas
 from mydecorators import con_fondo
 from myutils import (chunkify, clamp, enviarWhatsApp, formatDate, generarOrdenCompra, 
                      generarTicketCompra, ColorsEnum, son_similar)
-from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
+from mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
 #####################
@@ -43,11 +41,12 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.user = parent.user
         
         # fechas por defecto
+        manejador = ManejadorVentas(self.conn)
         hoy = QDate.currentDate()
-        fechaMin, = self.conn \
-                    .cursor() \
-                    .execute('SELECT MIN(fecha_hora_creacion) FROM Ventas;') \
-                    .fetchone()
+        
+        restrict = self.user.id if not self.user.administrador else None
+        fechaMin, = manejador.obtenerFechaPrimeraVenta(restrict)
+        
         fechaMin = QDateTime(fechaMin).date() if fechaMin else hoy
         
         self.ui.dateDesde.setDate(hoy)
@@ -362,21 +361,10 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             return
         
         # obtener número y nombre del cliente
+        manejador = ManejadorVentas(self.conn)
         idVenta = self.tabla_actual.selectedItems()[0].text()
         
-        conn = self.conn
-        crsr = conn.cursor()
-        
-        crsr.execute('''
-        SELECT  C.nombre,
-                C.telefono
-        FROM    Ventas AS V
-                LEFT JOIN Clientes AS C
-                       ON V.id_clientes = C.id_clientes
-        WHERE   id_ventas = ?;
-        ''', (idVenta,))
-        
-        nombre, celular = crsr.fetchone()
+        nombre, celular = manejador.obtenerClienteAsociado(idVenta)
         
         # mensaje a enviar
         mensaje = ' '.join([
@@ -388,21 +376,17 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         enviarWhatsApp(celular, mensaje)
         
     def terminarVenta(self):
-        """
-        Pide confirmación para marcar como cancelada una venta.
-        """
-        selected = self.tabla_actual.selectedItems()
-        
-        try:
-            idVenta = selected[0].text()
-            importe = selected[5].text().replace(',','')
-            estado = selected[6].text()
-            
-            saldo = float(importe) - float(estado.split()[1])
-        except (IndexError, ValueError):
+        """ Pide confirmación para marcar como cancelada una venta. """
+        if not (selected := self.tabla_actual.selectedItems()):
             return
         
-        qm = QtWidgets.QMessageBox
+        idVenta = selected[0].text()
+        manejador = ManejadorVentas(self.conn)
+        
+        if not (anticipo := manejador.obtenerAnticipo(idVenta)):
+            return
+        
+        saldo = manejador.obtenerImporteTotal(idVenta) - anticipo
         
         if saldo > 0.:
             self.new = App_TerminarVenta(self, idVenta)
@@ -410,29 +394,16 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                 lambda: self.update_display(rescan=True))
             return
         
+        qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención', 
                             'Este pedido no tiene saldo restante. '
                             '¿Desea marcar la venta como terminada?', qm.Yes | qm.No)
         
         if ret != qm.Yes:
             return
-        
-        conn = self.conn
-        crsr = conn.cursor()
 
-        # crea un cuadro que notifica el resultado de la operación
-        try:
-            crsr.execute('''
-            UPDATE  Ventas
-            SET     estado = 'Terminada'
-            WHERE   id_ventas = ?;
-            ''', (idVenta,))
-
-            conn.commit()
-        except fdb.Error as err:
-            conn.rollback()
-
-            WarningDialog('¡Hubo un error!', str(err))
+        # terminar venta directamente, al no tener saldo restante
+        if not manejador.actualizarEstadoVenta(idVenta, 'Terminada', commit=True):
             return
         
         qm.information(self, 'Éxito', 'Se marcó como terminada la venta seleccionada.')
@@ -442,13 +413,11 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         """
         Pide confirmación para marcar como cancelada una venta.
         """
-        selected = self.tabla_actual.selectedItems()
-        
-        try:
-            idVenta = selected[0].text()
-            estado = selected[6].text()
-        except IndexError:
+        if not (selected := self.tabla_actual.selectedItems()):
             return
+        
+        idVenta = selected[0].text()
+        estado = selected[6].text()
         
         if estado == 'Cancelada':
             return
@@ -462,22 +431,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         if ret != qm.Yes:
             return
         
-        conn = self.conn
-        crsr = conn.cursor()
-
-        # crea un cuadro que notifica el resultado de la operación
-        try:
-            crsr.execute('''
-            UPDATE  Ventas
-            SET     estado = 'Cancelada'
-            WHERE   id_ventas = ?;
-            ''', (idVenta,))
-
-            conn.commit()
-        except fdb.Error as err:
-            conn.rollback()
-
-            WarningDialog('¡Hubo un error!', str(err))
+        manejador = ManejadorVentas(self.conn)
+        if not manejador.actualizarEstadoVenta(idVenta, 'Cancelada', commit=True):
             return
         
         qm.information(self, 'Éxito', 'Se marcó como cancelada la venta seleccionada.')
@@ -505,7 +460,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                           f'con folio {idVenta}. ¿Desea continuar?', qm.Yes | qm.No)
 
         if ret == qm.Yes:
-            generarTicketCompra(self.conn.cursor(), idVenta)
+            generarTicketCompra(self.conn, idVenta)
 
     def imprimirOrden(self):
         """
@@ -566,25 +521,13 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
         
         # llenar de productos la tabla
-        crsr = first.conn.cursor()
-        
-        crsr.execute('''
-        SELECT  cantidad,
-                codigo || IIF(duplex, ' (a doble cara)', ''),
-                especificaciones,
-                precio,
-                descuento,
-                importe
-        FROM    Ventas_Detallado
-                LEFT JOIN Productos
-                       ON Ventas_Detallado.id_productos = Productos.id_productos
-        WHERE   id_ventas = ?;
-        ''', (idx,))
+        manejador = ManejadorVentas(first.conn)
+        productos = manejador.obtenerTablaProductosVenta(idx)
 
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
 
-        for row, prod in enumerate(crsr):
+        for row, prod in enumerate(productos):
             tabla.insertRow(row)
 
             for col, dato in enumerate(prod):
@@ -598,27 +541,14 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
                 tabla.setItem(row, col, cell)
 
         # total de la venta, anticipo y saldo
-        crsr.execute('''
-        SELECT	SUM(importe) AS total,
-                estado
-        FROM	Ventas AS V
-                LEFT JOIN Ventas_Detallado AS VD
-                       ON V.id_ventas = VD.id_ventas
-        WHERE	V.id_ventas = ?
-        GROUP   BY 2;
-        ''', (idx,))
-
-        total, estado = crsr.fetchone()
+        total = manejador.obtenerImporteTotal(idx)
+        anticipo = manejador.obtenerAnticipo(idx)
         
-        # intenta calcular el saldo restante, asumiendo
-        # que el estado comienza con 'Recibido'
-        try:
-            anticipo = float(estado.split()[1])
-            
+        # intenta calcular el saldo restante
+        if anticipo:
             self.ui.lbAnticipo.setText(f'{anticipo:,.2f}')
-            self.ui.lbSaldo.setText(f'{total-anticipo + 0.:,.2f}')
-        except (IndexError, ValueError):
-            # el estado no comienza con 'Recibido'
+            self.ui.lbSaldo.setText(f'{total-anticipo:,.2f}')
+        else:
             for w in [self.ui.lbAnticipo,
                       self.ui.lbSaldo,
                       self.ui.temp1,
@@ -627,24 +557,9 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
                       self.ui.temp4]:
                 w.hide()
 
-        crsr.execute('''
-        SELECT  Clientes.nombre,
-                correo,
-                telefono,
-                fecha_hora_creacion,
-                fecha_hora_entrega,
-                comentarios,
-                Usuarios.nombre
-        FROM    Ventas
-                LEFT JOIN Clientes
-                       ON Ventas.id_clientes = Clientes.id_clientes
-                LEFT JOIN Usuarios
-                       ON Ventas.id_usuarios = Usuarios.id_usuarios
-        WHERE   id_ventas = ?;
-        ''', (idx,))
-
         nombreCliente, correo, telefono, fechaCreacion, \
-        fechaEntrega, comentarios, nombreUsuario = crsr.fetchone()
+        fechaEntrega, comentarios, nombreUsuario = \
+            manejador.obtenerDatosGeneralesVenta(idx)
         
         # ocultar widgets que no sean necesarios
         if fechaCreacion == fechaEntrega:
@@ -700,25 +615,13 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
         
         # llenar de productos la tabla
-        crsr = first.conn.cursor()
-        
-        crsr.execute('''
-        SELECT  cantidad,
-                codigo || IIF(duplex, ' (a doble cara)', ''),
-                especificaciones,
-                precio,
-                descuento,
-                importe
-        FROM    Ventas_Detallado
-                LEFT JOIN Productos
-                       ON Ventas_Detallado.id_productos = Productos.id_productos
-        WHERE   id_ventas = ?;
-        ''', (idx,))
+        manejador = ManejadorVentas(first.conn)
+        productos = manejador.obtenerTablaProductosVenta(idx)
 
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
 
-        for row, prod in enumerate(crsr):
+        for row, prod in enumerate(productos):
             tabla.insertRow(row)
 
             for col, dato in enumerate(prod):
@@ -730,37 +633,15 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
                     
                 cell = QtWidgets.QTableWidgetItem(cell)
                 tabla.setItem(row, col, cell)
-
-        crsr.execute('''
-        SELECT	SUM(importe) AS total,
-                estado
-        FROM	Ventas AS V
-                LEFT JOIN Ventas_Detallado AS VD
-                       ON V.id_ventas = VD.id_ventas
-        WHERE	V.id_ventas = ?
-        GROUP   BY 2;
-        ''', (idx,))
-
-        total, estado = crsr.fetchone()
         
         # calcular el saldo restante
-        anticipo = float(estado.split()[1])
+        total = manejador.obtenerImporteTotal(idx)
+        anticipo = manejador.obtenerAnticipo(idx)
+        
         self.paraPagar = total-anticipo
 
-        crsr.execute('''
-        SELECT  Clientes.nombre,
-                correo,
-                telefono,
-                fecha_hora_creacion,
-                fecha_hora_entrega
-        FROM    Ventas
-                LEFT JOIN Clientes
-                       ON Ventas.id_clientes = Clientes.id_clientes
-        WHERE   id_ventas = ?;
-        ''', (idx,))
-
-        nombreCliente, correo, telefono, \
-        fechaCreacion, fechaEntrega = crsr.fetchone()
+        nombreCliente, correo, telefono, fechaCreacion, fechaEntrega, *_ \
+            = manejador.obtenerDatosGeneralesVenta(idx)
 
         self.ui.txtCliente.setText(nombreCliente)
         self.ui.txtCorreo.setText(correo)
