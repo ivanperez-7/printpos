@@ -11,7 +11,7 @@ from PySide6.QtCore import QThread, Signal
 # <DECORADOR PARA SOLICITAR CUENTA DE ADMIN> #
 ##############################################
 class Dialog_ObtenerAdmin(QDialog):
-    success = Signal()
+    success = Signal(object)
     
     def __init__(self, parent):
         from PySide6 import QtCore, QtGui, QtWidgets
@@ -86,7 +86,7 @@ def requiere_admin(func):
             QMessageBox.warning(parent, 'Error', 
                                 'Las credenciales no son válidas para una cuenta de administrador.')
         else:
-            dialog.success.emit()
+            dialog.success.emit(conn)
             dialog.close()
             conn.close()
     
