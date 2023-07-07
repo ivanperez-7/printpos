@@ -114,31 +114,19 @@ class App_Home(QtWidgets.QMainWindow):
     
     def agregarNotificaciones(self):
         """ Llena la caja de notificaciones. """
-        items = []
-        crsr = self.conn.cursor()
-
-        crsr.execute('''
-        SELECT	COUNT(*)
-        FROM	Ventas
-        WHERE	fecha_hora_creacion != fecha_hora_entrega
-                AND estado LIKE 'Recibido%'
-                AND id_usuarios = ?;
-        ''', (self.user.id,))
+        from databasemanagers import ManejadorInventario, ManejadorVentas
         
-        numPendientes, = crsr.fetchone()
+        items = []
+        manejador = ManejadorVentas(self.conn)
+        
+        numPendientes, = manejador.obtenerNumPendientes(self.user.id)
 
         if numPendientes:
             items.append(f'Tiene {numPendientes} pedidos pendientes.')
+        
+        manejador = ManejadorInventario(self.conn)
 
-        crsr.execute('''
-        SELECT  nombre,
-                lotes_restantes,
-                minimo_lotes
-        FROM    Inventario 
-        WHERE   lotes_restantes < minimo_lotes;
-        ''')
-
-        for nombre, stock, minimo in crsr:
+        for nombre, stock, minimo in manejador.obtenerInventarioFaltante():
             items.append(
                 f'¡Hay que surtir el material {nombre}! ' +
                 f'Faltan {minimo-stock} lotes para cubrir el mínimo.'
@@ -286,14 +274,13 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         """ Actualiza la tabla y el contador de clientes.
             Acepta una cadena de texto para la búsqueda de clientes.
             También lee de nuevo la tabla de clientes, si se desea. """
+        from databasemanagers import ManejadorProductos
+        
         if rescan:
-            crsr = self.conn.cursor()
+            manejador = ManejadorProductos(self.conn)
             
-            crsr.execute('SELECT * FROM View_Productos_Simples;')
-            self.all_prod = crsr.fetchall()
-            
-            crsr.execute('SELECT * FROM View_Gran_Formato;')
-            self.all_gran = crsr.fetchall()
+            self.all_prod = manejador.fetchall('SELECT * FROM View_Productos_Simples;')
+            self.all_gran = manejador.fetchall('SELECT * FROM View_Gran_Formato;')
         
         filtro = int(self.ui.btDescripcion.isChecked())
         txt_busqueda = self.ui.searchBar.text()
