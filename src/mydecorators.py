@@ -1,6 +1,4 @@
-"""
-Módulo para implementar decoradores útiles varios.
-"""
+""" Módulo para implementar decoradores útiles varios. """
 from functools import wraps
 
 import fdb
@@ -148,9 +146,7 @@ def run_in_thread(func):
 
 
 def con_fondo(modulo):
-    """
-    Decorador para crear un fondo oscurecedor en la ventana principal.
-    """
+    """ Decorador para crear un fondo oscurecedor en la ventana principal. """
     orig_init = modulo.__init__
 
     def __init__(self, *args, **kws):

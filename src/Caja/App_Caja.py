@@ -16,11 +16,7 @@ from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
 # VENTANA PRINCIPAL #
 #####################
 class App_Caja(QtWidgets.QMainWindow):
-    """
-    Backend para la ventana de movimientos de la caja.
-    TODO:
-    -   exportar corte a archivo
-    """
+    """ Backend para la ventana de movimientos de la caja. """
     def __init__(self, parent: VentanaPrincipal):
         from Caja.Ui_Caja import Ui_Caja
         
@@ -37,11 +33,10 @@ class App_Caja(QtWidgets.QMainWindow):
         self.user = parent.user
         
         # fechas por defecto
+        manejador = ManejadorCaja(self.conn)
         hoy = QDate.currentDate()
-        fechaMin, = self.conn \
-                    .cursor() \
-                    .execute('SELECT MIN(fecha_hora) FROM Caja;') \
-                    .fetchone()
+
+        fechaMin, = manejador.obtenerFechaPrimerMov()
         fechaMin = QDateTime(fechaMin).date() if fechaMin else hoy
         
         self.ui.dateDesde.setDate(hoy)
@@ -224,18 +219,16 @@ class App_Caja(QtWidgets.QMainWindow):
     
     @run_in_thread
     def generarCortePDF(self):
-        """
-        Función para generar el corte de caja, comprendido entre fechas dadas.
-        Contiene:
-            - Realizado el: (fecha)
-            - Nombre del usuario activo
-            - Fecha inicial y final
-            - Fondo inicial de caja
-            - Tabla de movimientos 
-                Fecha y hora | Descripción | Método de pago | Cantidad
-            - Tabla de resumen de movimientos
-                Método de pago -> Ingresos | Egresos
-        """
+        """ Función para generar el corte de caja, comprendido entre fechas dadas.
+            Contiene:
+                - Realizado el: (fecha)
+                - Nombre del usuario activo
+                - Fecha inicial y final
+                - Fondo inicial de caja
+                - Tabla de movimientos 
+                    Fecha y hora | Descripción | Método de pago | Cantidad
+                - Tabla de resumen de movimientos
+                    Método de pago -> Ingresos | Egresos """
         from reportlab.lib.units import mm
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.enums import TA_LEFT

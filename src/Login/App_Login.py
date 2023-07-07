@@ -14,9 +14,7 @@ from mydecorators import run_in_thread
 ##################
 @dataclass
 class Usuario:
-    """
-    Clase para mantener registro de un usuario.
-    """
+    """ Clase para mantener registro de un usuario. """
     id: int
     usuario: str
     nombre: str
@@ -25,18 +23,14 @@ class Usuario:
 
     @property
     def administrador(self) -> bool:
-        """
-        Regresa un booleano que dice si el usuario es administrador.
-        """
+        """ Regresa un booleano que dice si el usuario es administrador. """
         return self.permisos == 'Administrador'
 
 #####################
 # VENTANA PRINCIPAL #
 #####################
 class App_Login(QtWidgets.QMainWindow):
-    """
-    Backend para la pantalla de inicio de sesión.
-    """
+    """ Backend para la pantalla de inicio de sesión. """
     validated = Signal(object, object)
     
     def __init__(self):

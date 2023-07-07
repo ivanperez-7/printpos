@@ -17,11 +17,9 @@ from mywidgets import LabelAdvertencia, VentanaPrincipal
 # VENTANA PRINCIPAL #
 #####################
 class App_AdministrarVentas(QtWidgets.QMainWindow):
-    """
-    Backend para la ventana de administración de ventas.
-    TODO:
-    -   ocultamiento de folios
-    """
+    """ Backend para la ventana de administración de ventas.
+        TODO:
+        -   ocultamiento de folios """
     def __init__(self, parent: VentanaPrincipal):
         from AdministrarVentas.Ui_AdministrarVentas import Ui_AdministrarVentas
         
@@ -167,11 +165,9 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.update_display()
         
     def cambiar_pestana(self, nuevo):
-        """
-        Cambia el label con el contador de ventas, según la pestaña,
-        y reajusta la tabla correspondiente a ella. También modifica
-        los valores del navegador de páginas de la tabla
-        """
+        """ Cambia el label con el contador de ventas, según la pestaña,
+            y reajusta la tabla correspondiente a ella. También modifica
+            los valores del navegador de páginas de la tabla. """
         if nuevo == 0:
             label = 'ventas directas'
             compras = self.all_directas
@@ -189,9 +185,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.tabla_actual.resizeRowsToContents()
 
     def cambiarFiltro(self, filtro, idx):
-        """
-        Modifica el filtro de búsqueda.
-        """
+        """ Modifica el filtro de búsqueda. """
         self.filtro = idx
         self.ui.searchBar.setPlaceholderText(f'Busque venta por {filtro}...')
         self.update_display()
@@ -410,9 +404,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.update_display(rescan=True)
             
     def cancelarVenta(self):
-        """
-        Pide confirmación para marcar como cancelada una venta.
-        """
+        """ Pide confirmación para marcar como cancelada una venta. """
         if not (selected := self.tabla_actual.selectedItems()):
             return
         
@@ -439,15 +431,11 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.update_display(rescan=True)
 
     def detallesVenta(self, idxs: QModelIndex):
-        """
-        Abre ventana que muestra los detalles de una venta seleccionada.
-        """
+        """ Abre ventana que muestra los detalles de una venta seleccionada. """
         self.new = App_DetallesVenta(self, idxs.siblingAtColumn(0).data())
 
     def imprimirTicket(self):
-        """
-        Imprime ticket de una venta dado el folio de esta.
-        """
+        """ Imprime ticket de una venta dado el folio de esta. """
         try:
             idVenta = self.tabla_actual.selectedItems()[0].text()
         except IndexError:
@@ -463,9 +451,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             generarTicketCompra(self.conn, idVenta)
 
     def imprimirOrden(self):
-        """
-        Imprime orden de compra de un pedido dado el folio de esta.
-        """
+        """ Imprime orden de compra de un pedido dado el folio de esta. """
         selected = self.tabla_actual.selectedItems()
 
         if not len(selected) or not selected[6].text().startswith('Recibido'):
@@ -483,9 +469,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             generarOrdenCompra(self.conn, idVenta)
 
     def goHome(self):
-        """
-        Cierra la ventana y regresa al inicio.
-        """
+        """ Cierra la ventana y regresa al inicio. """
         from Home import App_Home
 
         parent = self.parentWidget()       # QMainWindow
@@ -498,9 +482,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
 #################################
 @con_fondo
 class App_DetallesVenta(QtWidgets.QMainWindow):
-    """
-    Backend para la ventana que muestra los detalles de una venta.
-    """
+    """ Backend para la ventana que muestra los detalles de una venta. """
     def __init__(self, first: App_AdministrarVentas, idx):
         from AdministrarVentas.Ui_DetallesVenta import Ui_DetallesVenta
         
@@ -586,7 +568,7 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
 
 @con_fondo
 class App_TerminarVenta(QtWidgets.QMainWindow):
-    """Backend para la ventana para terminar una venta sobre pedido."""
+    """ Backend para la ventana para terminar una venta sobre pedido. """
     success = Signal()
     
     def __init__(self, first: App_AdministrarVentas, idx):        

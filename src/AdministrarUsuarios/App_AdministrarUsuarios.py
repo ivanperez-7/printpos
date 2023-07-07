@@ -199,7 +199,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
 #################################
 @con_fondo
 class Base_EditarUsuario(QtWidgets.QMainWindow):
-    """Clase base para la ventana de registrar o editar usuario."""
+    """ Clase base para la ventana de registrar o editar usuario. """
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
     
@@ -289,12 +289,12 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
         self.close()
     
     def ejecutarOperacion(self, params: tuple) -> bool:
-        """Método que insertará o modificará usuario."""
+        """ Método que insertará o modificará usuario. """
         pass
 
 
 class App_RegistrarUsuario(Base_EditarUsuario):
-    """Backend para la ventana de registrar usuario."""
+    """ Backend para la ventana de registrar usuario. """
     MENSAJE_EXITO = '¡Se registró el usuario!'
     MENSAJE_ERROR = '¡No se pudo registrar el usuario!'
     
@@ -331,7 +331,7 @@ class App_RegistrarUsuario(Base_EditarUsuario):
 
 
 class App_EditarUsuario(Base_EditarUsuario):
-    """Backend para la ventana de editar usuario."""
+    """ Backend para la ventana de editar usuario. """
     MENSAJE_EXITO = '¡Se editó el usuario!'
     MENSAJE_ERROR = '¡No se pudo editar el usuario!'
     

@@ -72,9 +72,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
     #  FUNCIONES ÚTILES
     # ==================
     def cambiarFiltro(self, filtro, idx):
-        """
-        Modifica el filtro de búsqueda.
-        """
+        """ Modifica el filtro de búsqueda. """
         self.filtro = idx
         self.ui.searchBar.setPlaceholderText(f'Busque producto por {filtro}...')
         
@@ -82,11 +80,9 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
             self.update_display()
             
     def update_display(self, rescan: bool = False):
-        """
-        Actualiza la tabla y el contador de productos.
-        Acepta una cadena de texto para la búsqueda de productos.
-        También lee de nuevo la tabla de productos, si se desea.
-        """
+        """ Actualiza la tabla y el contador de productos.
+            Acepta una cadena de texto para la búsqueda de productos.
+            También lee de nuevo la tabla de productos, si se desea. """
         if rescan:
             manejador = ManejadorProductos(self.conn)
             self.all = manejador.obtenerTablaPrincipal() or []
@@ -179,9 +175,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         self.update_display(rescan=True)        
     
     def goHome(self):
-        """
-        Cierra la ventana y regresa al inicio.
-        """
+        """ Cierra la ventana y regresa al inicio. """
         from Home import App_Home
 
         parent = self.parentWidget()       # QMainWindow
@@ -194,9 +188,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
 #################################
 @con_fondo
 class Base_EditarProducto(QtWidgets.QMainWindow):
-    """
-    Backend para la ventana para editar un producto de la base de datos.
-    """
+    """ Backend para la ventana para editar un producto de la base de datos. """
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
     
@@ -363,7 +355,7 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
             return None
     
     def done(self):
-        """Función donde se registrará o actualizará producto."""
+        """ Función donde se registrará o actualizará producto. """
         qm = QtWidgets.QMessageBox
         
         #### obtención de parámetros ####
@@ -414,7 +406,7 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
 
 
 class App_RegistrarProducto(Base_EditarProducto):
-    """Backend para la ventana para insertar un producto a la base de datos."""
+    """ Backend para la ventana para insertar un producto a la base de datos. """
     MENSAJE_EXITO = '¡Se registró el producto!'
     MENSAJE_ERROR = '¡No se pudo registrar el producto!'
     
@@ -431,7 +423,7 @@ class App_RegistrarProducto(Base_EditarProducto):
 
 
 class App_EditarProducto(Base_EditarProducto):
-    """Backend para la ventana para editar un producto de la base de datos."""
+    """ Backend para la ventana para editar un producto de la base de datos. """
     MENSAJE_EXITO = '¡Se editó el producto!'
     MENSAJE_ERROR = '¡No se pudo editar el producto!'
     

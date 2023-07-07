@@ -7,9 +7,7 @@ from mywidgets import VentanaPrincipal
 
 
 class App_Home(QtWidgets.QMainWindow):
-    """
-    Backend para la pantalla principal.
-    """
+    """ Backend para la pantalla principal. """
     def __init__(self, parent: VentanaPrincipal):
         from Home.Ui_Home import Ui_Home
         

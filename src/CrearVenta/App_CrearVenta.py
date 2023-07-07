@@ -19,38 +19,37 @@ from mywidgets import DimBackground, LabelAdvertencia, VentanaPrincipal
 ##################
 @dataclass
 class ItemVenta:
-    """
-    Clase para mantener registro de un producto de la venta.
-    """
+    """ Clase para mantener registro de un producto de la venta. """
     id: int               # identificador interno en la base de datos
     codigo: str           # nombre del producto
     precio_unit: float    # precio por unidad
     descuento_unit: float # cantidad a descontar por unidad
     cantidad: int         # cantidad solicitada por el cliente
     notas: str            # especificaciones del producto
-    duplex: bool          # dicta si el producto es a doble cara
+    duplex: bool          # dicta si el producto es duplex
 
     @property
     def importe(self) -> float:
-        """
-        Costo total del producto.
-        """
+        """ Costo total del producto. """
         return (self.precio_unit - self.descuento_unit) * self.cantidad
     
     def __iter__(self) -> tuple:
-        """
-        Regresa iterable para alimentar las tablas de productos.
-        Cantidad | Código | Especificaciones | Precio | Descuento | Importe
-        """
-        return iter((self.cantidad, self.codigo, self.notas, 
-                     self.precio_unit, self.descuento_unit, self.importe))
+        """ Regresa iterable para alimentar las tablas de productos.
+            Cantidad | Código | Especificaciones | Precio | Descuento | Importe """
+        return iter((self.cantidad,
+                    self.codigo + (' (a doble cara)' if self.duplex else ''), 
+                    self.notas, 
+                    self.precio_unit, 
+                    self.descuento_unit, 
+                    self.importe))
 
 
 @dataclass
 class Venta:
+    """ Clase para mantener registro de una venta. """
     productos: list[ItemVenta] = field(default_factory=list)
     fechaCreacion: QDateTime = QDateTime.currentDateTime()
-    fechaEntrega: QDateTime = QDateTime.currentDateTime()
+    fechaEntrega: QDateTime = QDateTime(fechaCreacion)
     metodoPago: str = 'Efectivo'
     requiereFactura: bool = False
     comentarios: str = ''
@@ -67,17 +66,27 @@ class Venta:
     @property
     def total_descuentos(self) -> float:
         return sum(prod.descuento_unit * prod.cantidad for prod in self.productos)
+    
+    @property
+    def esVentaDirecta(self) -> bool:
+        """ Compara fechas de creación y entrega para determinar si la venta será un pedido. """
+        return self.fechaCreacion == self.fechaEntrega
+    
+    def obtenerProductosExistentes(self, codigo: str):
+        return [p for p in self.productos if p.codigo == codigo]
+    
+    def __contains__(self, item: ItemVenta) -> bool:
+        """ Indica si un item se halla en la venta. """
+        return item.codigo in {p.codigo for p in self.productos}
 
 
 #####################
 # VENTANA PRINCIPAL #
 #####################
 class App_CrearVenta(QtWidgets.QMainWindow):
-    """
-    Backend para la función de crear ventas.
-    TODO:
-    -   mandar ticket por whatsapp o imprimir, sí o sí
-    """
+    """ Backend para la función de crear ventas.
+        TODO:
+            - mandar ticket por whatsapp o imprimir, sí o sí """
     def __init__(self, parent: VentanaPrincipal):
         from CrearVenta.Ui_CrearVenta import Ui_CrearVenta
         
@@ -164,10 +173,8 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         parent.setCentralWidget(new)
         
     def colorearActualizar(self):
-        """
-        Llenar tabla con los productos seleccionados,
-        luego calcular precios y actualizar los QLabel.
-        """       
+        """ Llenar tabla con los productos seleccionados,
+            luego calcular precios y actualizar los QLabel. """       
         # <llenar tabla>
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
@@ -210,10 +217,8 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         tabla.resizeRowsToContents()
     
     def alternarDescuentos(self):
-        """
-        Se llama a esta función al hacer click en la foto de perfil
-        del usuario. Anima el tamaño de la caja de notificaciones.
-        """
+        """ Se llama a esta función al hacer click en la foto de perfil
+        del usuario. Anima el tamaño de la caja de notificaciones. """
         hiddenGeom = QRect(610, 28, 0, 165)
         shownGeom = QRect(610, 28, 345, 165)
 
@@ -240,21 +245,15 @@ class App_CrearVenta(QtWidgets.QMainWindow):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def cambiarFecha(self):
-        """
-        Abre ventana para cambiar la fecha de entrega.
-        """
+        """ Abre ventana para cambiar la fecha de entrega. """
         self.new = App_FechaEntrega(self)
 
     def seleccionarCliente(self):
-        """
-        Abre ventana para seleccionar un cliente de la base de datos.
-        """
+        """ Abre ventana para seleccionar un cliente de la base de datos. """
         self.new = App_SeleccionarCliente(self)
 
     def insertarCliente(self):
-        """
-        Abre ventana para registrar un cliente.
-        """
+        """ Abre ventana para registrar un cliente. """
         from AdministrarClientes import App_RegistrarCliente
 
         self.new = App_RegistrarCliente(
@@ -270,15 +269,11 @@ class App_CrearVenta(QtWidgets.QMainWindow):
                     or self.ui.txtCorreo.setText(correo))
 
     def agregarProducto(self):
-        """
-        Abre ventana para agregar un producto a la orden.
-        """
+        """ Abre ventana para agregar un producto a la orden. """
         self.new = App_AgregarProducto(self)
         
     def quitarProducto(self):
-        """
-        Pide confirmación para eliminar un producto de la tabla.
-        """
+        """ Pide confirmación para eliminar un producto de la tabla. """
         @requiere_admin
         def accion(parent, selected):
             for row in sorted(selected, reverse=True):
@@ -299,9 +294,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             accion(self, selected)
     
     def agregarDescuento(self):
-        """
-        Abre ventana para agregar un descuento a la orden si el cliente es especial.
-        """
+        """ Abre ventana para agregar un descuento a la orden si el cliente es especial. """
         @requiere_admin
         def accion(parent):
             self.new = App_AgregarDescuento(self)
@@ -310,18 +303,14 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             accion(self)
     
     def generarCotizacion(self):
-        """
-        Genera PDF con cotización de la orden actual.
-        """
+        """ Genera PDF con cotización de la orden actual. """
         if not self.ui.tabla_productos.rowCount():
             return
         
         self.new = App_EnviarCotizacion(self)
 
     def confirmarVenta(self):
-        """
-        Abre ventana para confirmar y terminar la venta.
-        """
+        """ Abre ventana para confirmar y terminar la venta. """
         if not self.ui.tabla_productos.rowCount():
             return
         
@@ -344,17 +333,11 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         # indices para acceder a la tupla `cliente`
         id, nombre, telefono, correo, direccion, rfc, _, _ = range(8)
         
-        if self.ui.tickDirectaNo.isChecked():
-            if cliente[nombre] == 'Público general':
+        if not self.ventaDatos.esVentaDirecta \
+           and cliente[nombre] == 'Público general':
                 qm.warning(self, '¡Atención!', 
                            'No se puede generar un pedido a nombre de "Público general".\n'
                            'Por favor, seleccione un cliente y/o regístrelo.')
-                return
-
-            if self.ventaDatos.fechaCreacion == self.ventaDatos.fechaEntrega:
-                qm.warning(self, '¡Atención!', 
-                           '¡La fecha de entrega del pedido no ha sido cambiada!\n'
-                           'Verifique que esta sea correcta.')
                 return
 
         if self.ui.tickFacturaSi.isChecked():
@@ -388,7 +371,6 @@ class App_CrearVenta(QtWidgets.QMainWindow):
 
         if ret == qm.Yes:    
             self.ventaDatos.idCliente = cliente[id]
-            self.ventaDatos.fechaCreacion = QDateTime.currentDateTime()
             self.ventaDatos.metodoPago = self.ui.btMetodoGrupo.checkedButton().text()
             self.ventaDatos.requiereFactura = self.ui.boxFactura.isChecked()
             self.ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
@@ -576,9 +558,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
                 'asociado a la cantidad proporcionada.')
             return
 
-        # insertar información del producto con cantidad y especificaciones
-        codigo += ' (a doble cara)' if self.ui.checkDuplex.isChecked() else ''
-        
+        # insertar información del producto con cantidad y especificaciones        
         return ItemVenta(
                 idProducto, codigo, precio, 0.0, cantidad, 
                 self.ui.txtNotas.text().strip(), self.ui.checkDuplex.isChecked())
@@ -691,11 +671,9 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
     #  FUNCIONES ÚTILES
     # ==================
     def update_display(self, txt_busqueda: str = ''):
-        """
-        Actualiza la tabla y el contador de clientes.
-        Acepta una cadena de texto para la búsqueda de clientes.
-        También lee de nuevo la tabla de clientes, si se desea.
-        """
+        """ Actualiza la tabla y el contador de clientes.
+            Acepta una cadena de texto para la búsqueda de clientes.
+            También lee de nuevo la tabla de clientes, si se desea. """
         tabla = self.ui.tabla_seleccionar
         tabla.setRowCount(0)
 
@@ -746,9 +724,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
 
 @con_fondo
 class App_FechaEntrega(QtWidgets.QMainWindow):
-    """
-    Backend para la función de cambiar fecha de entrega.
-    """
+    """ Backend para la función de cambiar fecha de entrega. """
     def __init__(self, first: App_CrearVenta):
         from CrearVenta.Ui_FechaEntrega import Ui_FechaEntrega
         
@@ -781,9 +757,8 @@ class App_FechaEntrega(QtWidgets.QMainWindow):
             self.done()
 
     def done(self):
-        """
-        Acepta los cambios y modifica la fecha seleccionada en la ventana principal (CrearVenta).
-        """
+        """ Acepta los cambios y modifica la fecha seleccionada 
+            en la ventana principal (CrearVenta). """
         dateTime = QDateTime(
             self.ui.calendario.selectedDate(), 
             self.ui.horaEdit.time())
@@ -796,9 +771,7 @@ class App_FechaEntrega(QtWidgets.QMainWindow):
 
 @con_fondo
 class App_AgregarDescuento(QtWidgets.QMainWindow):
-    """
-    Backend para agregar descuento a la orden.
-    """
+    """ Backend para agregar descuento a la orden. """
     def __init__(self, first: App_CrearVenta):
         from CrearVenta.Ui_AgregarDescuento import Ui_AgregarDescuento
         
@@ -858,9 +831,7 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
     # FUNCIONES ÚTILES #
     # ================ #
     def done(self):
-        """
-        Acepta los cambios e inserta descuento en la lista de productos.
-        """
+        """ Acepta los cambios e inserta descuento en la lista de productos. """
         selected = self.ui.tabla_productos.selectedItems()
         
         if not selected:
@@ -886,9 +857,7 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
 
 @con_fondo
 class App_EnviarCotizacion(QtWidgets.QMainWindow):
-    """
-    Backend para agregar descuento a la orden.
-    """
+    """ Backend para agregar descuento a la orden. """
     def __init__(self, first: App_CrearVenta):
         from CrearVenta.Ui_Cotizacion import Ui_EnviarCotizacion
         
@@ -954,7 +923,7 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
 
 
 class App_ConfirmarVenta(QtWidgets.QMainWindow):
-    """Backend para la ventana de finalización de venta."""
+    """ Backend para la ventana de finalización de venta. """
     def __init__(self, first: App_CrearVenta, ventaDatos: Venta):
         from CrearVenta.Ui_ConfirmarVenta import Ui_ConfirmarVenta
         
@@ -964,7 +933,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
 
-        esDirecta = first.ui.tickDirectaSi.isChecked()
+        esDirecta = ventaDatos.esVentaDirecta
+        ventaDatos.fechaCreacion = QDateTime.currentDateTime()
         
         # guardar conexión y usuarios como atributos
         self.conn = first.conn
@@ -1094,7 +1064,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 for prod in self.ventaDatos.productos]
     
     def calcularCambio(self, txt):
-        """Recalcular cambio a entregar."""
+        """ Recalcular cambio a entregar. """
         try:
             pago = float(txt)
         except ValueError:
@@ -1104,7 +1074,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ui.lbCambio.setText(f'{cambio:,.2f}')
     
     def cambiarAnticipo(self, txt):
-        """Cambiar el anticipo pagado por el cliente."""
+        """ Cambiar el anticipo pagado por el cliente. """
         try:
             self.paraPagar = float(txt)
         except ValueError:
@@ -1114,8 +1084,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.calcularCambio(self.ui.txtPago.text())
     
     def done(self):
-        """Intenta finalizar la compra o pedido, actualizando el estado
-        e insertando los correspondientes movimientos en la tabla Caja."""
+        """ Intenta finalizar la compra o pedido, actualizando el estado
+            e insertando los correspondientes movimientos en la tabla Caja. """
         esDirecta = not self.ui.boxFechaEntrega.isVisible()
         
         try:
@@ -1186,7 +1156,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.goHome()
     
     def abortar(self):
-        """Función para abortar la venta y actualizar estado a 'Cancelada'."""
+        """ Función para abortar la venta y actualizar estado a 'Cancelada'. """
         @requiere_admin
         def accion(parent):
             manejadorVentas = ManejadorVentas(self.conn)
@@ -1204,7 +1174,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             accion(self)
     
     def goHome(self):
-        """Cierra la ventana y crea otra venta."""
+        """ Cierra la ventana y crea otra venta. """
         from Home import App_Home
         
         parent = self.parentWidget().parentWidget() # QMainWindow, ventana principal
@@ -1231,7 +1201,7 @@ class SpeechBubble(QWidget):
         layout.setContentsMargins(17, 17, 17, 17)
 
         self.text_browser = QTextBrowser()
-        self.text_browser.setStyleSheet("""
+        self.text_browser.setStyleSheet('''
             QTextBrowser { border: none; background-color: transparent; }
             QScrollBar:vertical {
                 border: 0px solid;
@@ -1260,7 +1230,7 @@ class SpeechBubble(QWidget):
             QScrollBar::add-page:vertical {
             background: none;
             }
-        """)
+        ''')
         self.text_browser.setPlainText(text)
         self.text_browser.setFont(QFont("MS Shell Dlg 2", 11))
         self.text_browser.setLineWrapMode(QTextBrowser.LineWrapMode.FixedPixelWidth)
@@ -1297,3 +1267,40 @@ class SpeechBubble(QWidget):
         # Draw the bubble and triangle
         painter.drawPath(bubble_path.simplified())
         painter.drawPolygon(triangle_path)
+
+
+"""
+function agregarProducto(nuevo: Item){
+    prods = Obtener productos no duplex y duplex existentes con el código nuevo
+
+    Si prods no es vacío:
+        prods += nuevo
+
+        Calcular número total de unidades entre existentes y nuevo (prods)
+        Verificar si alguno de lo anterior es duplex
+
+        Para cada producto en prods:
+            Establecer nuevo precio(codigo, cantidad total, duplex)
+    
+    ventaDatos.productos.append(prod)
+    tabla()
+    cerrar()
+}
+
+function eliminarProducto(idx: int){
+    codigo = ventaDatos.productos[idx].codigo
+
+    ventaDatos.productos.pop(idx)
+    prods = Obtener productos no duplex y duplex existentes con el código dado
+
+    Si prods no es vacío:
+        Calcular número total de unidades entre existentes y nuevo (prods)
+        Verificar si alguno de lo anterior es duplex
+
+        Para cada producto en prods:
+            Establecer nuevo precio(codigo, cantidad total, duplex)
+
+    tabla()
+    cerrar()
+}
+"""
