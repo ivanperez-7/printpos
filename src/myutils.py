@@ -122,18 +122,17 @@ def enviarAImpresora(ruta: str, prompt: int | bool):
 
 @run_in_thread
 def generarOrdenCompra(conn: fdb.Connection, idx: int):
-    """
-    Genera un PDF con el orden de compra correspondiente a la venta con índice
-    `idx` en la base de datos. Recibe también un cursor a la base de datos.
+    """ Genera un PDF con el orden de compra correspondiente a la venta con índice
+        `idx` en la base de datos. Recibe también un cursor a la base de datos.
 
-    La orden de compra contiene:
-        - Folio de venta
-        - Cliente: Nombre y teléfono
-        - Tabla de productos: (Cantidad, producto, especificaciones, precio, importe), máx. 6 por página
-        - Total a pagar, anticipo recibido y saldo restante
-        - Fecha de creación
-        - Fecha de entrega
-    """
+        La orden de compra contiene:
+            - Folio de venta
+            - Cliente: Nombre y teléfono
+            - Tabla de productos: (Cantidad, producto, especificaciones, precio, importe)
+                Máx. 6 por página
+            - Total a pagar, anticipo recibido y saldo restante
+            - Fecha de creación
+            - Fecha de entrega """
     import io
     import os
     import uuid
@@ -241,9 +240,9 @@ def generarOrdenCompra(conn: fdb.Connection, idx: int):
     
     filename = f'.\\tmp\\{uuid.uuid4().hex[:10]}.pdf'
     
-    writer.write(open(filename, 'wb'))
+    with open(filename, 'wb') as f:
+        writer.write(f)
     enviarAImpresora(filename, True)
-
 
 
 ####################################
@@ -251,16 +250,14 @@ def generarOrdenCompra(conn: fdb.Connection, idx: int):
 ####################################
 @run_in_thread
 def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_pago):
-    """
-    Función abstracta para generar el ticket de compra o presupuesto.
-    Contiene:
-        - Logo
-        - Tabla de productos [Cantidad | Producto | Precio | Descuento | Importe]
-        - Precio total
-        - Nombre del vendedor
-        - Folio de venta
-        - Fecha y hora de creación
-    """
+    """ Función abstracta para generar el ticket de compra o presupuesto.
+        Contiene:
+            - Logo
+            - Tabla de productos [Cantidad | Producto | Precio | Descuento | Importe]
+            - Precio total
+            - Nombre del vendedor
+            - Folio de venta
+            - Fecha y hora de creación """
     from reportlab.lib.units import mm
     from reportlab.lib import colors
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -285,6 +282,8 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name='Center', fontName='Helvetica', 
                               fontSize=8, alignment=TA_CENTER))
+    styles.add(ParagraphStyle(name='Center_2', fontName='Helvetica', 
+                              fontSize=11, alignment=TA_CENTER))
     styles.add(ParagraphStyle(name='Left', fontName='Helvetica',
                               fontSize=8, alignment=TA_LEFT))
 
@@ -380,7 +379,7 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
     elements += [
         Spacer(1, 6),
         
-        Paragraph(f'¡Hoy se ahorró ${total_desc:,.2f}!', styles['Center']), 
+        Paragraph(f'¡Hoy se ahorró ${total_desc:,.2f}!', styles['Center_2']), 
         Spacer(1, 25),
         
         Paragraph('Autoriza descuentos: ' + '_'*24, styles['Left'])] if firma else []
@@ -393,6 +392,10 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
 
     # Build the PDF document
     doc.build(elements)
+
+    # ????? asegurar archivo cerrado
+    with open(filename, 'rb') as f:
+        pass
     
     # imprimir archivo temporal
     from configparser import ConfigParser
@@ -400,7 +403,8 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
     config = ConfigParser(inline_comment_prefixes=';')
     config.read('config.ini')
     
-    enviarAImpresora(filename, int(config['IMPRESORAS']['prompt_tickets']))
+    prompt = int(config['IMPRESORAS']['prompt_tickets'])
+    enviarAImpresora(filename, prompt)
 
 
 def generarTicketCompra(conn: fdb.Connection, idx):

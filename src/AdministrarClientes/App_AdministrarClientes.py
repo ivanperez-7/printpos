@@ -87,27 +87,21 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
     #  FUNCIONES ÚTILES
     # ==================
     def resaltarTrigger(self, *args):
-        """
-        Recolorea la tabla para resaltar clientes que no han
-        visitado en una cantidad escogida de días.
-        """
+        """ Recolorea la tabla para resaltar clientes que no han
+        visitado en una cantidad escogida de días. """
         if self.ui.resaltarCheck.isChecked():
             self.update_display()
     
     def cambiarFiltro(self, filtro, idx):
-        """
-        Modifica el filtro de búsqueda.
-        """
+        """ Modifica el filtro de búsqueda. """
         self.filtro = idx
         self.ui.searchBar.setPlaceholderText(f'Busque cliente por {filtro}...')
         self.update_display()
 
     def update_display(self, rescan: bool = False):
-        """
-        Actualiza la tabla y el contador de clientes.
-        Acepta una cadena de texto para la búsqueda de clientes.
-        También lee de nuevo la tabla de clientes, si se desea.
-        """
+        """ Actualiza la tabla y el contador de clientes.
+            Acepta una cadena de texto para la búsqueda de clientes.
+            También lee de nuevo la tabla de clientes, si se desea. """
         if rescan:
             manejador = ManejadorClientes(self.conn)
             self.all = manejador.obtenerTablaPrincipal()
@@ -159,9 +153,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         tabla.resizeRowsToContents()
     
     def exportarExcel(self):
-        """
-        Exportar clientes a un archivo .xlsx.
-        """      
+        """ Exportar clientes a un archivo .xlsx. """      
         # abrir widget para determinar ubicación de archivo
         fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Guardar archivo...',
                                                             filter='Libro de Excel (*.xlsx)')
@@ -246,7 +238,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
 #################################
 @con_fondo
 class Base_EditarCliente(QtWidgets.QMainWindow):
-    """Clase base para registrar o editar cliente."""
+    """ Clase base para registrar o editar cliente. """
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
     
@@ -292,7 +284,7 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
         return f'+{self.ui.txtLada.text()} {self.ui.txtCelular.displayText()}'
     
     def agregarDatosPorDefecto(self, nombre: str, celular: str, correo: str):
-        """Datos por defecto, proveído por ambas clases heredadas."""
+        """ Datos por defecto, proveído por ambas clases heredadas. """
         celular = celular.replace(' ', '')
         
         self.ui.txtNombre.setText(nombre)
@@ -301,7 +293,7 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
         self.ui.txtCorreo.setText(correo)
     
     def done(self):
-        """Método en el que se modificará o insertará un cliente."""
+        """ Método en el que se modificará o insertará un cliente. """
         clientes_db_parametros = tuple(v.strip() or None if isinstance(v, str)
                                        else v for v in (
             self.ui.txtNombre.text(),
@@ -325,12 +317,12 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
         self.close()
     
     def ejecutarOperacion(self, conn: fdb.Connection, params: tuple):
-        """Función a sobreescribir donde se realiza consulta SQL."""
+        """ Función a sobreescribir donde se realiza consulta SQL. """
         pass
 
 
 class App_RegistrarCliente(Base_EditarCliente):
-    """Backend para la función de registrar cliente."""
+    """ Backend para la función de registrar cliente. """
     MENSAJE_EXITO = '¡Se registró el cliente!'
     MENSAJE_ERROR = '¡No se pudo registrar el cliente!'
     
@@ -348,13 +340,13 @@ class App_RegistrarCliente(Base_EditarCliente):
     # FUNCIONES ÚTILES #
     ####################
     def ejecutarOperacion(self, conn, params):
-        """Insertar nuevo cliente a la base de datos."""
+        """ Insertar nuevo cliente a la base de datos. """
         manejador = ManejadorClientes(conn, self.MENSAJE_ERROR)
         return manejador.insertarCliente(params)
 
 
 class App_EditarCliente(Base_EditarCliente):
-    """Backend para la función de editar cliente."""
+    """ Backend para la función de editar cliente. """
     MENSAJE_EXITO = '¡Se editó el cliente!'
     MENSAJE_ERROR = '¡No se pudo editar el cliente!'
     
@@ -385,6 +377,6 @@ class App_EditarCliente(Base_EditarCliente):
     # FUNCIONES ÚTILES #
     ####################
     def ejecutarOperacion(self, conn, params):
-        """Actualizar datos del cliente en la base de datos."""
+        """ Actualizar datos del cliente en la base de datos. """
         manejador = ManejadorClientes(conn, self.MENSAJE_ERROR)
         return manejador.actualizarCliente(self.idx, params)

@@ -33,9 +33,7 @@ class VentanaPrincipal(QMainWindow):
         self.show()
     
     def closeEvent(self, event):
-        """
-        En eventos específicos, restringimos el cerrado del sistema.
-        """
+        """ En eventos específicos, restringimos el cerrado del sistema. """
         if self.en_venta and not self.user.administrador:
             event.ignore()
         else:

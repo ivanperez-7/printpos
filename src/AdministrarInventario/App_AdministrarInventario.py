@@ -194,7 +194,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
 #################################
 @con_fondo
 class Base_EditarInventario(QtWidgets.QMainWindow):
-    """Clase base para módulo de registrar o modificar elemento."""
+    """ Clase base para módulo de registrar o modificar elemento. """
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
     
@@ -302,7 +302,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         return PUI_db_parametros
         
     def done(self):
-        """Función donde se registrará o actualizará elemento del inventario."""
+        """ Función donde se registrará o actualizará elemento del inventario. """
         qm = QtWidgets.QMessageBox
         
         #### obtención de parámetros ####
@@ -336,7 +336,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
 
 
 class App_RegistrarInventario(Base_EditarInventario):
-    """Backend para la ventana para registrar un material del inventario."""
+    """ Backend para la ventana para registrar un material del inventario. """
     MENSAJE_EXITO = '¡Se registró el elemento!'
     MENSAJE_ERROR = '¡No se pudo registrar el elemento!'
     
@@ -356,7 +356,7 @@ class App_RegistrarInventario(Base_EditarInventario):
 
 
 class App_EditarInventario(Base_EditarInventario):
-    """Backend para la ventana para editar un material del inventario."""
+    """ Backend para la ventana para editar un material del inventario. """
     MENSAJE_EXITO = '¡Se editó el elemento!'
     MENSAJE_ERROR = '¡No se pudo editar el elemento!'
     

@@ -82,6 +82,10 @@ class ManejadorCaja(DatabaseManager):
             ORDER   BY fecha_hora DESC;
         ''')
     
+    def obtenerFechaPrimerMov(self, id_usuario: int = None):
+        """ Obtener fecha del movimiento más antigüo. """        
+        return self.fetchone('SELECT MIN(fecha_hora) FROM Caja;')
+    
     def insertarMovimiento(self, params: tuple, commit: bool = True):
         """ Registra ingreso o egreso en tabla historial de movimientos.
         
