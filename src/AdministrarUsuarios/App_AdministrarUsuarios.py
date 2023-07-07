@@ -1,14 +1,13 @@
 from datetime import datetime
 
-import fdb
-
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QPixmap, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QRegularExpression, Signal
 
+from databasemanagers import ManejadorUsuarios
 from mydecorators import con_fondo
 from myutils import formatDate, son_similar
-from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
+from mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
 #####################
@@ -16,14 +15,12 @@ from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
 #####################
 
 class App_AdministrarUsuarios(QtWidgets.QMainWindow):
-    """
-    Backend para la ventana de administración de usuarios.
-    TODO:
-        - mecanismo de reseteo de contraseña (sin permisos de admin)
-        - registros de acciones: inicios de sesión, modificación de ajustes y usuarios, acciones en general
-        - personalización: foto de perfil y colores del UI
-        - reportes de actividad de usuario: inicios de sesión, # de ventas realizadas, ganancias generadas
-    """
+    """ Backend para la ventana de administración de usuarios.
+        TODO:
+            - mecanismo de reseteo de contraseña (sin permisos de admin)
+            - registros de acciones: inicios de sesión, modificación de ajustes y usuarios, acciones en general
+            - personalización: foto de perfil y colores del UI
+            - reportes de actividad de usuario: inicios de sesión, # de ventas realizadas, ganancias generadas """
     def __init__(self, parent: VentanaPrincipal):
         from AdministrarUsuarios.Ui_AdministrarUsuarios import Ui_AdministrarUsuarios
         
@@ -88,9 +85,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         self.update_display(rescan=True)
 
     def cambiarFiltro(self, filtro):
-        """
-        Modifica el filtro de búsqueda.
-        """
+        """ Modifica el filtro de búsqueda. """
         self.filtro = [
             'usuario',
             'nombre',
@@ -104,30 +99,12 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
             self.update_display()
 
     def update_display(self, rescan: bool = False):
-        """
-        Actualiza la tabla y el contador de usuarios.
-        Acepta una cadena de texto para la búsqueda de usuarios.
-        También lee de nuevo la tabla de usuarios, si se desea.
-        """
+        """ Actualiza la tabla y el contador de usuarios.
+            Acepta una cadena de texto para la búsqueda de usuarios.
+            También lee de nuevo la tabla de usuarios, si se desea. """
         if rescan:
-            filtrar = 'WHERE permisos IS NOT NULL' \
-                      if not self.ui.mostrarCheck.isChecked() else ''
-
-            crsr = self.conn.cursor()
-            crsr.execute(f'''
-            SELECT  usuario,
-                    nombre,
-                    permisos,
-                    MAX(fecha_hora_creacion) AS ultimaVenta
-            FROM    Usuarios AS U
-                    LEFT JOIN Ventas AS V
-                           ON U.id_usuarios = V.id_usuarios
-            {filtrar}
-            GROUP   BY 1, 2, 3
-            ORDER   BY U.nombre ASC;
-            ''')
-
-            self.all = crsr.fetchall()
+            manejador = ManejadorUsuarios(self.conn)
+            self.all = manejador.obtenerTablaPrincipal()
             self.ui.lbContador.setText(
                 f'{len(self.all)} usuarios en la base de datos.')
 
@@ -145,6 +122,9 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
                     lambda c: c[self.filtro] 
                               and son_similar(txt_busqueda, c[self.filtro]), 
                     self.all)
+        
+        found = filter(lambda c: c[2] if not self.ui.mostrarCheck.isChecked()
+                                 else True, found)
 
         for row, usuario in enumerate(found):
             tabla.insertRow(row)
@@ -164,17 +144,13 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def registrarUsuario(self):
-        """
-        Abre ventana para registrar un usuario.
-        """
+        """ Abre ventana para registrar un usuario."""
         self.new = App_RegistrarUsuario(self)
         self.new.success.connect(
             lambda: self.update_display(rescan=True))
 
     def editarUsuario(self):
-        """
-        Abre ventana para editar un usuario seleccionado.
-        """
+        """ Abre ventana para editar un usuario seleccionado. """
         selected = self.ui.tabla_usuarios.selectedItems()
 
         if selected:
@@ -183,9 +159,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
                 lambda: self.update_display(rescan=True))
 
     def quitarUsuario(self):
-        """
-        Pide confirmación para eliminar usuarios de la base de datos.
-        """
+        """ Pide confirmación para eliminar usuarios de la base de datos. """
         selected = self.ui.tabla_usuarios.selectedItems()
 
         if not selected:
@@ -201,34 +175,18 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         if ret != qm.Yes:
             return
         
-        values = selected[0].text()
-
-        conn = self.conn
-        crsr = conn.cursor()
+        usuario = selected[0].text()
 
         # crea un cuadro que notifica el resultado de la operación
-        try:
-            crsr.execute('''
-            UPDATE  Usuarios
-            SET     permisos = NULL
-            WHERE   usuario = ?;
-            ''', (values,))
-            
-            crsr.execute(f'DROP USER {values};')
-
-            conn.commit()
-        except fdb.Error as err:
-            conn.rollback()
-            WarningDialog('¡Hubo un error!', str(err))
+        manejador = ManejadorUsuarios(self.conn)
+        if not manejador.eliminarUsuario(usuario):
             return
         
         qm.information(self, 'Éxito', 'Se dieron de baja los usuarios seleccionados.')
         self.update_display(rescan=True)
 
     def goHome(self):
-        """
-        Cierra la ventana y regresa al inicio.
-        """
+        """ Cierra la ventana y regresa al inicio. """
         from Home import App_Home
 
         parent = self.parentWidget()       # QMainWindow
@@ -284,14 +242,12 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
     # ==================
     @property
     def cambioContrasena(self) -> bool:
-        """Cada clase tiene su manera de decidir si hay cambio de contraseña."""
+        """ Cada clase tiene su manera de decidir si hay cambio de contraseña. """
         pass
     
     def editar(self):
-        """
-        Intenta editar datos de la tabla Usuarios y
-        se notifica al usuario del resultado de la operación.
-        """
+        """ Intenta editar datos de la tabla Usuarios y
+            se notifica al usuario del resultado de la operación. """
         if self.cambioContrasena:
             psswd = self.ui.txtPsswd.text()
             psswd_conf = self.ui.txtPsswdConf.text()
@@ -312,22 +268,18 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
             self.ui.txtNombre.text().strip(),
             permisos
         ))
+          
+        if not self.ejecutarOperacion(usuarios_db_parametros):
+            return
         
-        conn = self.conn
-        crsr = conn.cursor()
-
-        try:            
-            self.ejecutarOperacion(crsr, usuarios_db_parametros)
+        manejador = ManejadorUsuarios(self.conn)
+        
+        if permisos == 'Administrador':
+            result = manejador.otorgarRolAdministrador(usuario)
+        else:
+            result = manejador.otorgarRolVendedor(usuario)
             
-            if permisos == 'Administrador':
-                crsr.execute(f'GRANT ADMINISTRADOR, VENDEDOR TO {usuario} WITH ADMIN OPTION;')
-            else:
-                crsr.execute(f'GRANT VENDEDOR TO {usuario};')
-
-            conn.commit()
-        except fdb.Error as err:
-            conn.rollback()
-            WarningDialog(self.MENSAJE_ERROR, str(err))
+        if not result:
             return
         
         QtWidgets.QMessageBox.information(
@@ -336,7 +288,7 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
         self.success.emit()
         self.close()
     
-    def ejecutarOperacion(self, crsr: fdb.Cursor, params: tuple):
+    def ejecutarOperacion(self, params: tuple) -> bool:
         """Método que insertará o modificará usuario."""
         pass
 
@@ -362,24 +314,20 @@ class App_RegistrarUsuario(Base_EditarUsuario):
     # ==================
     @property
     def cambioContrasena(self) -> bool:
-        """Siempre hay cambio de contraseña."""
+        """ Siempre hay cambio de contraseña. """
         return True
     
-    def ejecutarOperacion(self, crsr, params):
-        crsr.execute('''
-        INSERT INTO Usuarios (
-            usuario, nombre, permisos
-        )
-        VALUES
-            (?,?,?);
-        ''', params)
+    def ejecutarOperacion(self, params):
+        manejador = ManejadorUsuarios(self.conn)
+        if not manejador.insertarUsuario(params):
+            return False
         
         usuario, _, permisos = params
         psswd = self.ui.txtPsswd.text()
         
-        admin_role = 'GRANT ADMIN ROLE' if permisos == 'Administrador' else ''
+        admin_role = (permisos == 'Administrador')
         
-        crsr.execute(f'''CREATE USER {usuario} PASSWORD '{psswd}' {admin_role};''')
+        return manejador.crearUsuarioServidor(usuario, psswd, admin_role)
 
 
 class App_EditarUsuario(Base_EditarUsuario):
@@ -390,17 +338,9 @@ class App_EditarUsuario(Base_EditarUsuario):
     def __init__(self, first: App_AdministrarUsuarios, usuario: str):
         super().__init__(first)
 
-        crsr = self.conn.cursor()
+        manejador = ManejadorUsuarios(self.conn)
         
-        crsr.execute('''
-        SELECT  usuario,
-                nombre,
-                permisos
-        FROM    Usuarios
-        WHERE   usuario = ?;
-        ''', (usuario,))
-        
-        usuario, nombre, permisos = crsr.fetchone()
+        id, usuario, nombre, permisos, *_ = manejador.obtenerUsuario(usuario)
 
         self.ui.txtUsuario.setText(usuario)
         self.ui.txtNombre.setText(nombre)
@@ -416,29 +356,24 @@ class App_EditarUsuario(Base_EditarUsuario):
     # ==================
     @property
     def cambioContrasena(self) -> bool:
-        """Hay cambio de contraseña si se solicita."""
+        """ Hay cambio de contraseña si se solicita. """
         return self.ui.cambiarPsswd.isChecked()
     
     def cambiarTrigger(self, state):
-        """
-        Indica si se desea cambiar la contraseña en la operación.
-        """
+        """ Indica si se desea cambiar la contraseña en la operación. """
         enable = bool(state)
 
         self.ui.groupPsswd.setEnabled(enable)
         self.ui.groupPsswdConf.setEnabled(enable)
     
-    def ejecutarOperacion(self, crsr, params):
-        crsr.execute('''
-        UPDATE  Usuarios
-        SET     usuario = ?,
-                nombre = ?,
-                permisos = ?
-        WHERE   usuario = ?;
-        ''', (*params, self.usuario))
-        
-        crsr.execute(f'REVOKE ADMINISTRADOR, VENDEDOR FROM {self.usuario};')
+    def ejecutarOperacion(self, params):
+        manejador = ManejadorUsuarios(self.conn)
+        if not manejador.actualizarUsuario(self.usuario, params):
+            return False
         
         if self.cambioContrasena:
-            psswd = self.ui.txtPsswd.text()
-            crsr.execute(f'''ALTER USER {self.usuario} PASSWORD '{psswd}';''')
+            if not manejador.cambiarPsswd(self.usuario, 
+                                          self.ui.txtPsswd.text()):
+                return False
+        
+        return manejador.retirarRoles(self.usuario)

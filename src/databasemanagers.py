@@ -209,6 +209,17 @@ class ManejadorInventario(DatabaseManager):
             WHERE   id_inventario = ?;
         ''', (id_inventario,))
     
+    def obtenerInventarioFaltante(self):
+        """ Obtener inventario faltante (lotes < mínimo de lotes):
+            nombre, lotes restantes, mínimo de lotes. """
+        return self.fetchall('''
+            SELECT  nombre,
+                    lotes_restantes,
+                    minimo_lotes
+            FROM    Inventario 
+            WHERE   lotes_restantes < minimo_lotes;
+        ''')
+    
     def obtenerIdInventario(self, nombre: str):
         """ Obtener id_inventario dado nombre de un elemento de inventario. """
         return self.fetchone('''
@@ -589,6 +600,16 @@ class ManejadorVentas(DatabaseManager):
             WHERE   id_ventas = ?;
         ''', (id_venta,))
     
+    def obtenerNumPendientes(self, id_usuario: int):
+        """ Obtener número de pedidos pendientes del usuario. """
+        return self.fetchone('''
+            SELECT	COUNT(*)
+            FROM	Ventas
+            WHERE	fecha_hora_creacion != fecha_hora_entrega
+                    AND estado LIKE 'Recibido%'
+                    AND id_usuarios = ?;
+        ''', (id_usuario,))
+    
     def obtenerDatosGeneralesVenta(self, id_venta: int):
         """ Obtiene otros datos generales de una venta:
             nombre de cliente, correo, teléfono, fecha y hora de creación,
@@ -752,3 +773,102 @@ class ManejadorVentas(DatabaseManager):
             SET     estado = ?
             WHERE   id_ventas = ?;
         ''', (estado, id_ventas), commit=commit)
+
+
+class ManejadorUsuarios(DatabaseManager):
+    """ Clase para manejar sentencias hacia/desde la tabla Usuarios. """
+    def __init__(self, conn: fdb.Connection, error_txt: str = ''):
+        super().__init__(conn, error_txt)
+    
+    def obtenerTablaPrincipal(self):
+        """ Obtener tabla principal para el módulo de administrar usuarios. """
+        return self.fetchall('''
+            SELECT  usuario,
+                    nombre,
+                    permisos,
+                    MAX(fecha_hora_creacion) AS ultimaVenta
+            FROM    Usuarios AS U
+                    LEFT JOIN Ventas AS V
+                           ON U.id_usuarios = V.id_usuarios
+            GROUP   BY 1, 2, 3
+            ORDER   BY U.nombre ASC;
+        ''')
+    
+    def obtenerUsuario(self, usuario: str):
+        """ Obtener tupla de usuario dado el nombre de usuario. """
+        return self.fetchone('''
+            SELECT  *
+            FROM    Usuarios
+            WHERE   usuario = ?;
+        ''', (usuario,))
+    
+    def crearUsuarioServidor(self, usuario: str, psswd: str, esAdmin: bool):
+        """ Registrar usuario en servidor Firebird. Otorgar permisos
+            de administrar usuarios, si se desea.
+            
+            No hace commit. """
+        admin_role = 'GRANT ADMIN ROLE' if esAdmin else ''
+        
+        return self.execute(f"CREATE USER {usuario} PASSWORD '{psswd}' {admin_role};")
+    
+    def insertarUsuario(self, params: tuple):
+        """ Insertar nuevo usuario en tabla de Usuarios. No hace commit. """
+        return self.execute('''
+            INSERT INTO Usuarios (
+                usuario, nombre, permisos
+            )
+            VALUES
+                (?,?,?);
+        ''', params)
+    
+    def actualizarUsuario(self, usuario: str, params: tuple):
+        """ Actualizar usuario, nombre y permisos de usuario dado. 
+        
+            No hace commit. """
+        return self.execute('''
+            UPDATE  Usuarios
+            SET     usuario = ?,
+                    nombre = ?,
+                    permisos = ?
+            WHERE   usuario = ?;
+        ''', (*params, usuario))
+    
+    def eliminarUsuario(self, usuario: str):
+        """ Dar de baja usuario del sistema. Se eliminan los permisos
+            y se elimina del servidor Firebird. 
+            
+            Hace commit automáticamente. """
+        if not self.execute('''
+            UPDATE  Usuarios
+            SET     permisos = NULL
+            WHERE   usuario = ?;
+        ''', (usuario,), commit=False):
+            return False
+        
+        return self.execute(f'DROP USER {usuario};', commit=True)
+    
+    def otorgarRolVendedor(self, usuario: str):
+        """ Otorgar rol de vendedor en servidor Firebird.
+        
+            Hace commit automáticamente, al ser última operación 
+            del proceso de creación/modificación. """
+        return self.execute(f'GRANT VENDEDOR TO {usuario};', commit=True)
+    
+    def otorgarRolAdministrador(self, usuario: str):
+        """ Otorgar rol de vendedor y administrador en servidor Firebird, con
+            permisos para otorgar y remover roles de otros usuarios.
+        
+            Hace commit automáticamente, al ser última operación 
+            del proceso de creación/modificación. """
+        return self.execute(f'GRANT ADMINISTRADOR, VENDEDOR TO {usuario} WITH ADMIN OPTION;',
+                            commit=True)
+    
+    def retirarRoles(self, usuario: str):
+        """ Retirar roles VENDEDOR, ADMINISTRADOR del usuario. 
+        
+            No hace commit. """
+        return self.execute(f'REVOKE ADMINISTRADOR, VENDEDOR FROM {usuario};')
+    
+    def cambiarPsswd(self, usuario: str, psswd: str):
+        """ Cambiar contraseña del usuario. No hace commit. """
+        return self.execute(f"ALTER USER {usuario} PASSWORD '{psswd}';")
