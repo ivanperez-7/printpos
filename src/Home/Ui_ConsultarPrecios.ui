@@ -315,7 +315,7 @@ background-color: rgb(255, 255, 255);</string>
           </font>
          </property>
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <property name="documentMode">
           <bool>true</bool>
@@ -607,12 +607,7 @@ QTableView:active {
              </column>
              <column>
               <property name="text">
-               <string>Ancho mínimo (m)</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Alto mínimo (m)</string>
+               <string>Mínimo m²</string>
               </property>
              </column>
              <column>
@@ -843,7 +838,7 @@ QTableView:active {
  <connections/>
  <buttongroups>
   <buttongroup name="groupButtonAlto"/>
-  <buttongroup name="groupButtonFiltro"/>
   <buttongroup name="groupButtonAncho"/>
+  <buttongroup name="groupButtonFiltro"/>
  </buttongroups>
 </ui>

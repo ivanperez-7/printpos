@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>457</width>
-    <height>457</height>
+    <width>461</width>
+    <height>500</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -112,10 +112,10 @@ QLineEdit::placeholder {
    <widget class="QLabel" name="lbEstado">
     <property name="geometry">
      <rect>
-      <x>63</x>
-      <y>405</y>
-      <width>331</width>
-      <height>20</height>
+      <x>30</x>
+      <y>430</y>
+      <width>191</width>
+      <height>55</height>
      </rect>
     </property>
     <property name="font">
@@ -131,6 +131,9 @@ QLineEdit::placeholder {
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+    <property name="wordWrap">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QLabel" name="label">
@@ -194,9 +197,9 @@ QLineEdit::placeholder {
    <widget class="QPushButton" name="btIngresar">
     <property name="geometry">
      <rect>
-      <x>143</x>
-      <y>350</y>
-      <width>171</width>
+      <x>250</x>
+      <y>435</y>
+      <width>181</width>
       <height>41</height>
      </rect>
     </property>
@@ -228,10 +231,76 @@ QPushButton:focus {
      <string>Ingresar</string>
     </property>
    </widget>
+   <widget class="QLabel" name="lbContrasenia_2">
+    <property name="geometry">
+     <rect>
+      <x>60</x>
+      <y>356</y>
+      <width>111</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Ingresar como:</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radioButton">
+    <property name="geometry">
+     <rect>
+      <x>110</x>
+      <y>388</y>
+      <width>111</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Vendedor</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+    <attribute name="buttonGroup">
+     <string notr="true">groupRol</string>
+    </attribute>
+   </widget>
+   <widget class="QRadioButton" name="radioButton_2">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>388</y>
+      <width>121</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Administrador</string>
+    </property>
+    <attribute name="buttonGroup">
+     <string notr="true">groupRol</string>
+    </attribute>
+   </widget>
   </widget>
  </widget>
  <resources>
   <include location="../../resources.qrc"/>
  </resources>
  <connections/>
+ <buttongroups>
+  <buttongroup name="groupRol"/>
+ </buttongroups>
 </ui>

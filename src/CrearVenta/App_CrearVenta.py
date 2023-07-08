@@ -19,7 +19,7 @@ from mywidgets import DimBackground, LabelAdvertencia, VentanaPrincipal
 ##################
 @dataclass
 class ItemVenta:
-    """ Clase para mantener registro de un producto de la venta. """
+    """ Clase para mantener registro de un producto simple de la venta. """
     id: int               # identificador interno en la base de datos
     codigo: str           # nombre del producto
     precio_unit: float    # precio por unidad
@@ -45,6 +45,19 @@ class ItemVenta:
 
 
 @dataclass
+class ItemGranFormato(ItemVenta):
+    """ Clase para un producto de tipo gran formato.
+        Reimplementa el método `importe`. """
+    min_m2: float
+    
+    @property
+    def importe(self) -> float:
+        """ Costo total del producto. """
+        cantidad = max(self.min_m2, self.cantidad)
+        return (self.precio_unit - self.descuento_unit) * cantidad
+
+
+@dataclass
 class Venta:
     """ Clase para mantener registro de una venta. """
     productos: list[ItemVenta] = field(default_factory=list)
@@ -53,7 +66,7 @@ class Venta:
     metodoPago: str = 'Efectivo'
     requiereFactura: bool = False
     comentarios: str = ''
-    idCliente: int = 1
+    id_cliente: int = 1
         
     @property
     def total(self) -> float:
@@ -72,12 +85,9 @@ class Venta:
         """ Compara fechas de creación y entrega para determinar si la venta será un pedido. """
         return self.fechaCreacion == self.fechaEntrega
     
-    def obtenerProductosExistentes(self, codigo: str):
-        return [p for p in self.productos if p.codigo == codigo]
-    
-    def __contains__(self, item: ItemVenta) -> bool:
-        """ Indica si un item se halla en la venta. """
-        return item.codigo in {p.codigo for p in self.productos}
+    def obtenerProductosExistentes(self, id: int):
+        """ Obtiene todos los productos que tienen el identificador dado. """
+        return [p for p in self.productos if p.id == id]
 
 
 #####################
@@ -273,13 +283,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.new = App_AgregarProducto(self)
         
     def quitarProducto(self):
-        """ Pide confirmación para eliminar un producto de la tabla. """
-        @requiere_admin
-        def accion(parent, selected):
-            for row in sorted(selected, reverse=True):
-                self.ventaDatos.productos.pop(row)
-            self.colorearActualizar()
-            
+        """ Pide confirmación para eliminar un producto de la tabla. """    
         selected = {i.row() for i in self.ui.tabla_productos.selectedIndexes()}
         
         if not selected:
@@ -291,7 +295,32 @@ class App_CrearVenta(QtWidgets.QMainWindow):
                           qm.Yes | qm.No)
         
         if ret == qm.Yes:
-            accion(self, selected)
+            self._quitarProducto(selected)
+    
+    @requiere_admin
+    def _quitarProducto(self, selected: set[int]):
+        """ En método separado para solicitar contraseña. """
+        manejador = ManejadorProductos(self.conn)
+        
+        for row in sorted(selected, reverse=True):
+            idProducto = self.ventaDatos.productos[row].id
+            
+            self.ventaDatos.productos.pop(row)
+            restantes = self.ventaDatos.obtenerProductosExistentes(idProducto)
+            
+            if not restantes:
+                continue
+            
+            cantidad = sum(p.cantidad for p in restantes)
+            duplex = any(p.duplex for p in restantes)
+            result = manejador.obtenerPrecioSimple(idProducto, cantidad, duplex)
+            
+            try: nuevoPrecio, = result
+            except TypeError: pass
+            else: 
+                for p in restantes: p.precio_unit = nuevoPrecio
+        
+        self.colorearActualizar()
     
     def agregarDescuento(self):
         """ Abre ventana para agregar un descuento a la orden si el cliente es especial. """
@@ -370,7 +399,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
                           qm.Yes | qm.No)
 
         if ret == qm.Yes:    
-            self.ventaDatos.idCliente = cliente[id]
+            self.ventaDatos.id_cliente = cliente[id]
             self.ventaDatos.metodoPago = self.ui.btMetodoGrupo.checkedButton().text()
             self.ventaDatos.requiereFactura = self.ui.boxFactura.isChecked()
             self.ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
@@ -518,10 +547,25 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         elif current == 1:
             item = self.agregarGranFormato()
         
-        if item:
-            self.first.ventaDatos.productos.append(item)
-            self.first.colorearActualizar()
-            self.close()
+        if not item:
+            return
+        
+        restantes = self.first.ventaDatos.obtenerProductosExistentes(item.id)
+        manejador = ManejadorProductos(self.conn)
+        
+        if restantes and current == 0: # sólo para productos por intervalos
+            restantes.append(item)
+            
+            cantidad = sum(p.cantidad for p in restantes)
+            duplex = any(p.duplex for p in restantes)
+            nuevoPrecio, = manejador.obtenerPrecioSimple(item.id, cantidad, duplex)
+            
+            for p in restantes:
+                p.precio_unit = nuevoPrecio
+            
+        self.first.ventaDatos.productos.append(item)
+        self.first.colorearActualizar()
+        self.close()
     
     def agregarSimple(self):
         selected = self.ui.tabla_seleccionar.selectedItems()
@@ -597,23 +641,17 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         idProducto, = manejador.obtenerIdProducto(codigo)
         
         try:
-            min_ancho, min_alto, precio = manejador.obtenerGranFormato(idProducto)
+            min_m2, precio = manejador.obtenerGranFormato(idProducto)
         except TypeError:
             QtWidgets.QMessageBox.warning(
                 self, 'Atención',
                 'No existe ningún precio de este producto.')
             return
-        
-        if ancho < min_ancho or alto < min_alto:
-            QtWidgets.QMessageBox.warning(
-                self, 'Atención',
-                'Asegúrese de que las medidas satisfagan los mínimos.')
-            return
 
         # insertar información del producto con cantidad y especificaciones
-        return ItemVenta(
+        return ItemGranFormato(
                 idProducto, codigo, precio, 0.0, cantidad, 
-                self.ui.txtNotas_2.text().strip(), False)
+                self.ui.txtNotas_2.text().strip(), False, min_m2)
 
 
 @con_fondo
@@ -982,7 +1020,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         
         # mostrar datos del cliente, fechas, etc.
         manejadorClientes = ManejadorClientes(self.conn)
-        _, nombre, telefono, correo, *_ = manejadorClientes.obtenerCliente(ventaDatos.idCliente)
+        _, nombre, telefono, correo, *_ = manejadorClientes.obtenerCliente(ventaDatos.id_cliente)
 
         self.ui.txtCliente.setText(nombre)
         self.ui.txtCorreo.setText(correo)
@@ -1044,7 +1082,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         
     def obtenerParametrosVentas(self):
         """ Parámetros para tabla ventas (datos generales). """
-        return (self.ventaDatos.idCliente,
+        return (self.ventaDatos.id_cliente,
                 self.user.id,
                 self.ventaDatos.fechaCreacion.toPython(),
                 self.ventaDatos.fechaEntrega.toPython(),
@@ -1267,40 +1305,3 @@ class SpeechBubble(QWidget):
         # Draw the bubble and triangle
         painter.drawPath(bubble_path.simplified())
         painter.drawPolygon(triangle_path)
-
-
-"""
-function agregarProducto(nuevo: Item){
-    prods = Obtener productos no duplex y duplex existentes con el código nuevo
-
-    Si prods no es vacío:
-        prods += nuevo
-
-        Calcular número total de unidades entre existentes y nuevo (prods)
-        Verificar si alguno de lo anterior es duplex
-
-        Para cada producto en prods:
-            Establecer nuevo precio(codigo, cantidad total, duplex)
-    
-    ventaDatos.productos.append(prod)
-    tabla()
-    cerrar()
-}
-
-function eliminarProducto(idx: int){
-    codigo = ventaDatos.productos[idx].codigo
-
-    ventaDatos.productos.pop(idx)
-    prods = Obtener productos no duplex y duplex existentes con el código dado
-
-    Si prods no es vacío:
-        Calcular número total de unidades entre existentes y nuevo (prods)
-        Verificar si alguno de lo anterior es duplex
-
-        Para cada producto en prods:
-            Establecer nuevo precio(codigo, cantidad total, duplex)
-
-    tabla()
-    cerrar()
-}
-"""

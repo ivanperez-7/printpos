@@ -706,12 +706,7 @@ QTableView:active {
              </column>
              <column>
               <property name="text">
-               <string>Ancho mínimo (m)</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Alto mínimo (m)</string>
+               <string>Mínimo m²</string>
               </property>
              </column>
              <column>
@@ -963,13 +958,33 @@ QTableView:active {
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>tabla_seleccionar</tabstop>
+  <tabstop>txtCantidad</tabstop>
+  <tabstop>txtNotas</tabstop>
+  <tabstop>btAgregar</tabstop>
+  <tabstop>btDescripcion</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>btRegresar</tabstop>
+  <tabstop>btCodigo</tabstop>
+  <tabstop>searchBar</tabstop>
+  <tabstop>checkDuplex</tabstop>
+  <tabstop>tabla_granformato</tabstop>
+  <tabstop>txtNotas_2</tabstop>
+  <tabstop>txtAncho</tabstop>
+  <tabstop>btAnchoCm</tabstop>
+  <tabstop>btAnchoM</tabstop>
+  <tabstop>txtAlto</tabstop>
+  <tabstop>btAltoCm</tabstop>
+  <tabstop>btAltoM</tabstop>
+ </tabstops>
  <resources>
   <include location="../../resources.qrc"/>
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
   <buttongroup name="groupFiltro"/>
-  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>

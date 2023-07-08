@@ -493,47 +493,12 @@ QTableView:active {
            <attribute name="title">
             <string>Gran formato</string>
            </attribute>
-           <widget class="QLabel" name="label_4">
-            <property name="geometry">
-             <rect>
-              <x>20</x>
-              <y>20</y>
-              <width>181</width>
-              <height>21</height>
-             </rect>
-            </property>
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-              <pointsize>11</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string>Ancho mínimo (en metros)</string>
-            </property>
-           </widget>
-           <widget class="QLineEdit" name="txtAnchoMin">
-            <property name="geometry">
-             <rect>
-              <x>210</x>
-              <y>22</y>
-              <width>113</width>
-              <height>20</height>
-             </rect>
-            </property>
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-              <pointsize>11</pointsize>
-             </font>
-            </property>
-           </widget>
            <widget class="QLabel" name="label_5">
             <property name="geometry">
              <rect>
               <x>20</x>
-              <y>60</y>
-              <width>171</width>
+              <y>38</y>
+              <width>201</width>
               <height>16</height>
              </rect>
             </property>
@@ -544,15 +509,15 @@ QTableView:active {
              </font>
             </property>
             <property name="text">
-             <string>Alto mínimo (en metros)</string>
+             <string>Mínimo de metros cuadrados</string>
             </property>
            </widget>
-           <widget class="QLineEdit" name="txtAltoMin">
+           <widget class="QLineEdit" name="txtMinM2">
             <property name="geometry">
              <rect>
-              <x>210</x>
-              <y>62</y>
-              <width>113</width>
+              <x>232</x>
+              <y>40</y>
+              <width>91</width>
               <height>20</height>
              </rect>
             </property>
@@ -567,7 +532,7 @@ QTableView:active {
             <property name="geometry">
              <rect>
               <x>20</x>
-              <y>100</y>
+              <y>78</y>
               <width>181</width>
               <height>21</height>
              </rect>
@@ -586,7 +551,7 @@ QTableView:active {
             <property name="geometry">
              <rect>
               <x>210</x>
-              <y>102</y>
+              <y>80</y>
               <width>113</width>
               <height>20</height>
              </rect>
@@ -726,8 +691,7 @@ QTableView:active {
   <tabstop>txtDescripcion</tabstop>
   <tabstop>tabWidget</tabstop>
   <tabstop>btAceptar</tabstop>
-  <tabstop>txtAnchoMin</tabstop>
-  <tabstop>txtAltoMin</tabstop>
+  <tabstop>txtMinM2</tabstop>
   <tabstop>txtPrecio</tabstop>
   <tabstop>scrollArea</tabstop>
   <tabstop>btAgregar</tabstop>

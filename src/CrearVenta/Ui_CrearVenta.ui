@@ -920,84 +920,6 @@ QTableView:active {
               <number>30</number>
              </property>
              <item row="0" column="0">
-              <widget class="QGroupBox" name="boxDirecta">
-               <property name="minimumSize">
-                <size>
-                 <width>143</width>
-                 <height>61</height>
-                </size>
-               </property>
-               <property name="font">
-                <font>
-                 <family>Segoe UI</family>
-                 <pointsize>11</pointsize>
-                </font>
-               </property>
-               <property name="title">
-                <string>Venta directa</string>
-               </property>
-               <widget class="QCheckBox" name="tickDirectaSi">
-                <property name="geometry">
-                 <rect>
-                  <x>10</x>
-                  <y>30</y>
-                  <width>70</width>
-                  <height>17</height>
-                 </rect>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>70</width>
-                  <height>17</height>
-                 </size>
-                </property>
-                <property name="font">
-                 <font>
-                  <family>Segoe UI</family>
-                  <pointsize>11</pointsize>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>Sí</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-                <property name="autoExclusive">
-                 <bool>true</bool>
-                </property>
-               </widget>
-               <widget class="QCheckBox" name="tickDirectaNo">
-                <property name="geometry">
-                 <rect>
-                  <x>80</x>
-                  <y>30</y>
-                  <width>70</width>
-                  <height>17</height>
-                 </rect>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>70</width>
-                  <height>17</height>
-                 </size>
-                </property>
-                <property name="font">
-                 <font>
-                  <family>Segoe UI</family>
-                  <pointsize>11</pointsize>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>No</string>
-                </property>
-                <property name="autoExclusive">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </widget>
-             </item>
-             <item row="0" column="1">
               <widget class="QGroupBox" name="boxFactura">
                <property name="minimumSize">
                 <size>
@@ -1769,8 +1691,6 @@ border-radius: 0px;</string>
   <tabstop>tabla_productos</tabstop>
   <tabstop>txtComentarios</tabstop>
   <tabstop>txtVendedor</tabstop>
-  <tabstop>tickDirectaSi</tabstop>
-  <tabstop>tickDirectaNo</tabstop>
   <tabstop>tickFacturaSi</tabstop>
   <tabstop>tickFacturaNo</tabstop>
   <tabstop>btDescuento</tabstop>

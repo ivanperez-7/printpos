@@ -72,6 +72,7 @@ def LabelAdvertencia(parent: QTableWidget, msj: str):
     label.setFont(font)
     label.setAlignment(Qt.AlignCenter)
     label.setText(msj)
+    label.setAttribute(Qt.WA_TransparentForMouseEvents)
 
     def relocate(event):
         w_t, h_t = parent.width(), parent.height()
