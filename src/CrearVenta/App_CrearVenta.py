@@ -1270,7 +1270,9 @@ class SpeechBubble(QWidget):
             }
         ''')
         self.text_browser.setPlainText(text)
-        self.text_browser.setFont(QFont("MS Shell Dlg 2", 11))
+        font = QFont()
+        font.setPointSize(11)
+        self.text_browser.setFont(font)
         self.text_browser.setLineWrapMode(QTextBrowser.LineWrapMode.FixedPixelWidth)
         self.text_browser.setLineWrapColumnOrWidth(295)
         self.text_browser.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
