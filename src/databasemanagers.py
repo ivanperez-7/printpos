@@ -416,11 +416,10 @@ class ManejadorProductos(DatabaseManager):
         ''', (id_productos, cantidad)*2)
     
     def obtenerGranFormato(self, id_productos: int):
-        """ Obtener ancho mínimo, alto mínimo, y precio de metro cuadrado
+        """ Obtener mínimo de metros cuadrados y precio de metro cuadrado
             de producto categoría gran formato. """
         return self.fetchone('''
-            SELECT  min_ancho,
-                    min_alto,
+            SELECT  min_m2,
                     precio_m2
             FROM    Productos_Gran_Formato
             WHERE 	id_productos = ?;
@@ -529,10 +528,10 @@ class ManejadorProductos(DatabaseManager):
             Hace commit, al ser parte final del proceso de registro/modificación."""
         return self.execute('''
             INSERT INTO Productos_Gran_Formato (
-                id_productos, min_ancho, min_alto, precio_m2
+                id_productos, min_m2, precio_m2
             )
             VALUES
-                (?,?,?,?);
+                (?,?,?);
         ''', (id_productos,) + params, commit=True)
 
 

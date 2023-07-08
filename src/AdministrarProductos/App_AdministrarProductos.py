@@ -345,8 +345,7 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
     def obtenerParametrosProdGranFormato(self):
         """ Parámetros para la tabla productos_gran_formato. """
         try:
-            return (float(self.ui.txtAnchoMin.text()),
-                    float(self.ui.txtAltoMin.text()),
+            return (float(self.ui.txtMinM2.text()),
                     float(self.ui.txtPrecio.text()))
         except ValueError:
             QtWidgets.QMessageBox.warning(
@@ -450,10 +449,9 @@ class App_EditarProducto(Base_EditarProducto):
         elif categoria == 'G':
             self.ui.tabWidget.setCurrentIndex(1)
 
-            min_ancho, min_alto, precio = manejador.obtenerGranFormato(idx)
+            min_m2, precio = manejador.obtenerGranFormato(idx)
             
-            self.ui.txtAnchoMin.setText(f'{min_ancho:,.2f}')
-            self.ui.txtAltoMin.setText(f'{min_alto:,.2f}')
+            self.ui.txtMinM2.setText(f'{min_m2:,.2f}')
             self.ui.txtPrecio.setText(f'{precio:,.2f}')
         
         # agregar elementos de la segunda página

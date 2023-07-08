@@ -20,6 +20,7 @@ class Usuario:
     nombre: str
     permisos: str
     foto_perfil: bytes
+    rol: str
 
     @property
     def administrador(self) -> bool:
@@ -75,31 +76,31 @@ class App_Login(QtWidgets.QMainWindow):
         self.ui.lbEstado.setStyleSheet('color: rgb(0, 0, 0);')
         self.ui.lbEstado.setText('Conectando a la base de datos...')
         
-        conn_a = crear_conexion(usuario, psswd, 'ADMINISTRADOR')
+        rol = self.ui.groupRol.checkedButton().text()
+        conn = crear_conexion(usuario, psswd, rol)
         
-        if conn_a:
-            conn_v = crear_conexion(usuario, psswd, 'VENDEDOR')
-        else:
-            self.ui.lbEstado.setStyleSheet('color: rgb(255, 0, 0);')
-            self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
-            self.lock = False
+        if not conn:
+            self.errorLogin()
             return
         
         try:
-            conn = conn_a
             crsr = conn.cursor()
             crsr.execute('SELECT * FROM Usuarios WHERE usuario = ?;', (usuario,))
         except fdb.Error as err:
             print(str(err))
-            
-            conn = conn_v
-            crsr = conn.cursor()
-            crsr.execute('SELECT * FROM Usuarios WHERE usuario = ?;', (usuario,))
+            self.errorLogin()
+            return
         
         result = crsr.fetchone()
-        user = Usuario(*result)
+        user = Usuario(*result, rol)
         
         self.validated.emit(conn, user)
+
+    def errorLogin(self):
+        """ Error al iniciar sesión. """
+        self.ui.lbEstado.setStyleSheet('color: rgb(255, 0, 0);')
+        self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
+        self.lock = False
 
     def crearVentanaPrincipal(self, conn, user):
         """ En método separado para regresar al hilo principal."""
