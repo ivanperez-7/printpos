@@ -56,40 +56,42 @@ def DimBackground(window: QMainWindow):
     return bg
 
 
-def LabelAdvertencia(parent: QTableWidget, msj: str):
+class LabelAdvertencia(QLabel):
     """ Crea un label de advertencia para las tablas, ya que en Qt Designer no se puede.
+    
         Añade método `resizeEvent` al padre para posicionar el label en el centro.
-        Añade método al padre para actualizar el texto, que verifica si hay items o no en la tabla.
-    """
-    w,h = 282, 52   # tamaño del QLabel, hardcoded
-    label = QLabel(parent)
-    label.setMinimumSize(QSize(w,h))
+        
+        Añade método al padre para actualizar el texto, que verifica si hay items o no en la tabla. """    
+    def __init__(self, parent: QTableWidget, msj: str):
+        super().__init__(parent)
+        
+        self._parent = parent
+        self.msj = msj
+        
+        self.setMinimumSize(QSize(282, 52))
+        
+        font = QFont()
+        font.setPointSize(14)
 
-    font = QFont()
-    font.setFamily('MS Shell Dlg 2')
-    font.setPointSize(14)
-
-    label.setFont(font)
-    label.setAlignment(Qt.AlignCenter)
-    label.setText(msj)
-    label.setAttribute(Qt.WA_TransparentForMouseEvents)
-
-    def relocate(event):
-        w_t, h_t = parent.width(), parent.height()
-        pm_x = (w_t - w) // 2
-        pm_y = (h_t - h) // 2
-
-        label.move(pm_x, pm_y)
-        QTableWidget.resizeEvent(parent, event)
+        self.setFont(font)
+        self.setAlignment(Qt.AlignCenter)
+        self.setText(msj)
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        
+        parent.resizeEvent = self.relocate
+        parent.model().rowsInserted.connect(self.actualizarLabel)
+        parent.model().rowsRemoved.connect(self.actualizarLabel)
     
-    def actualizarLabel():
-        label.setText(msj if parent.rowCount() == 0 else '')
+    def relocate(self, event):
+        w_t, h_t = self._parent.width(), self._parent.height()
+        pm_x = (w_t - self.width()) // 2
+        pm_y = (h_t - self.height()) // 2
+
+        self.move(pm_x, pm_y)
+        QTableWidget.resizeEvent(self._parent, event)
     
-    parent.resizeEvent = relocate
-    parent.model().rowsInserted.connect(actualizarLabel)
-    parent.model().rowsRemoved.connect(actualizarLabel)
-    
-    return label
+    def actualizarLabel(self):
+        self.setText(self.msj if not self._parent.rowCount() else '')
 
 
 class WarningDialog(QMessageBox):

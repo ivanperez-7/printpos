@@ -320,8 +320,12 @@ class App_Caja(QtWidgets.QMainWindow):
         # Build the PDF document
         doc.build(elements)
         
+        # ????? asegurar archivo cerrado
+        with open(filename, 'rb') as f:
+            pass
+        
         # imprimir archivo temporal        
-        enviarAImpresora(filename, True)
+        enviarAImpresora(filename, False)
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
@@ -373,7 +377,6 @@ class Dialog_Registrar(QtWidgets.QDialog):
         formLayout.setObjectName("formLayout")
         label = QtWidgets.QLabel(self)
         font = QFont()
-        font.setFamily("MS Shell Dlg 2")
         font.setPointSize(10)
         label.setFont(font)
         label.setText("Monto:")
