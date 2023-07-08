@@ -482,7 +482,6 @@ class WidgetElemento(QtWidgets.QWidget):
         boxElemento.setGeometry(QtCore.QRect(35, 10, 271, 22))
         boxElemento.setMinimumSize(QtCore.QSize(271, 22))
         font = QFont()
-        font.setFamily("MS Shell Dlg 2")
         font.setPointSize(11)
         boxElemento.setFont(font)
         lbContador = QtWidgets.QLabel(self)

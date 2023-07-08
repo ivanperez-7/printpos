@@ -396,15 +396,8 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
     # ????? asegurar archivo cerrado
     with open(filename, 'rb') as f:
         pass
-    
-    # imprimir archivo temporal
-    from configparser import ConfigParser
-    
-    config = ConfigParser(inline_comment_prefixes=';')
-    config.read('config.ini')
-    
-    prompt = int(config['IMPRESORAS']['prompt_tickets'])
-    enviarAImpresora(filename, prompt)
+
+    enviarAImpresora(filename, False)
 
 
 def generarTicketCompra(conn: fdb.Connection, idx):
