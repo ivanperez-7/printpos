@@ -14,7 +14,7 @@ Sales Trends Report: You can display a report that shows the sales trends in you
 quarterly. This can help you identify the seasonal trends in your business and make informed decisions about inventory and promotions.
 """
 from PySide6 import QtWidgets, QtGui
-from PySide6.QtChart import QChart, QChartView, QBarSeries, QBarSet, QBarCategoryAxis
+from PySide6.QtCharts import QChart, QChartView, QBarSeries, QBarSet, QBarCategoryAxis
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter
 
@@ -116,7 +116,6 @@ class App_Reportes(QtWidgets.QMainWindow):
         series.append(set1)
         
         font = QtGui.QFont()
-        font.setFamily('MS Shell Dlg 2')
         font.setPointSize(11)
  
         chart = QChart()
@@ -177,7 +176,6 @@ class App_Reportes(QtWidgets.QMainWindow):
         series.append(set1)
         
         font = QtGui.QFont()
-        font.setFamily('MS Shell Dlg 2')
         font.setPointSize(11)
  
         chart = QChart()

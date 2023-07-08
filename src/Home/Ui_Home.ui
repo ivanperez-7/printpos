@@ -75,7 +75,6 @@
             <property name="font">
              <font>
               <pointsize>12</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -243,7 +242,6 @@
                </property>
                <property name="font">
                 <font>
-                 <family>MS Shell Dlg 2</family>
                  <pointsize>10</pointsize>
                 </font>
                </property>
@@ -382,7 +380,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>10</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -439,7 +436,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>14</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -494,7 +490,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>14</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -536,7 +531,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>10</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -579,7 +573,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>14</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -602,7 +595,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>10</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -705,7 +697,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>10</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -734,7 +725,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>14</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -811,7 +801,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>14</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -834,7 +823,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>10</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -895,7 +883,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>14</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -918,7 +905,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>10</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -1002,7 +988,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>14</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -1044,7 +1029,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>10</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -1109,7 +1093,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>14</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -1151,7 +1134,6 @@ QFrame {border: 2px solid;}</string>
           <property name="font">
            <font>
             <pointsize>10</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
