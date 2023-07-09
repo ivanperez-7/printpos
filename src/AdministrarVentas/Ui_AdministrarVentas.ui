@@ -73,6 +73,9 @@
         background-color: rgba(255, 255, 255, 0);
     }</string>
          </property>
+         <property name="text">
+          <string notr="true"/>
+         </property>
          <property name="icon">
           <iconset resource="../../resources.qrc">
            <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
@@ -166,7 +169,7 @@
                 <string>Filtrar búsqueda por...</string>
                </property>
                <property name="text">
-                <string>...</string>
+                <string notr="true">...</string>
                </property>
                <property name="icon">
                 <iconset resource="../../resources.qrc">
@@ -276,6 +279,9 @@ background-color: rgb(255, 255, 255);</string>
         background-color: rgba(255, 255, 255, 0);
     }</string>
                </property>
+               <property name="text">
+                <string notr="true"/>
+               </property>
                <property name="icon">
                 <iconset resource="../../resources.qrc">
                  <normaloff>:/img/resources/images/accept.png</normaloff>:/img/resources/images/accept.png</iconset>
@@ -311,6 +317,9 @@ background-color: rgb(255, 255, 255);</string>
     QPushButton:pressed {
         background-color: rgba(255, 255, 255, 0);
     }</string>
+               </property>
+               <property name="text">
+                <string notr="true"/>
                </property>
                <property name="icon">
                 <iconset resource="../../resources.qrc">
@@ -466,7 +475,7 @@ background-color: rgb(255, 255, 255);</string>
                 </font>
                </property>
                <property name="text">
-                <string>Hoy</string>
+                <string notr="true">Hoy</string>
                </property>
               </widget>
              </item>
@@ -485,7 +494,7 @@ background-color: rgb(255, 255, 255);</string>
                 </font>
                </property>
                <property name="text">
-                <string>Esta semana</string>
+                <string notr="true">Esta semana</string>
                </property>
               </widget>
              </item>
@@ -504,7 +513,7 @@ background-color: rgb(255, 255, 255);</string>
                 </font>
                </property>
                <property name="text">
-                <string>Este mes</string>
+                <string notr="true">Este mes</string>
                </property>
               </widget>
              </item>
@@ -934,7 +943,7 @@ QTableView:active {
              </font>
             </property>
             <property name="text">
-             <string/>
+             <string notr="true"/>
             </property>
             <property name="icon">
              <iconset resource="../../resources.qrc">
@@ -956,7 +965,7 @@ QTableView:active {
              </font>
             </property>
             <property name="text">
-             <string/>
+             <string notr="true"/>
             </property>
             <property name="icon">
              <iconset resource="../../resources.qrc">
@@ -993,7 +1002,7 @@ QTableView:active {
              </font>
             </property>
             <property name="text">
-             <string/>
+             <string notr="true"/>
             </property>
             <property name="icon">
              <iconset resource="../../resources.qrc">
@@ -1015,7 +1024,7 @@ QTableView:active {
              </font>
             </property>
             <property name="text">
-             <string/>
+             <string notr="true"/>
             </property>
             <property name="icon">
              <iconset resource="../../resources.qrc">
@@ -1082,7 +1091,7 @@ QTableView:active {
              <string notr="true"/>
             </property>
             <property name="text">
-             <string>Imprimir recibo</string>
+             <string notr="true">Imprimir recibo</string>
             </property>
             <property name="icon">
              <iconset resource="../../resources.qrc">
@@ -1122,7 +1131,7 @@ QTableView:active {
              </font>
             </property>
             <property name="text">
-             <string>Imprimir orden de compra</string>
+             <string notr="true">Imprimir orden de compra</string>
             </property>
             <property name="icon">
              <iconset resource="../../resources.qrc">

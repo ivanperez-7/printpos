@@ -106,6 +106,9 @@
         background-color: rgba(255, 255, 255, 0);
     }</string>
                </property>
+               <property name="text">
+                <string notr="true"/>
+               </property>
                <property name="icon">
                 <iconset resource="../../resources.qrc">
                  <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
@@ -174,7 +177,7 @@
                 </font>
                </property>
                <property name="text">
-                <string>Fecha y hora de entrega</string>
+                <string notr="true">Fecha y hora de entrega</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -198,6 +201,9 @@
     QPushButton:pressed {
         background-color: rgba(255, 255, 255, 0);
     }</string>
+               </property>
+               <property name="text">
+                <string notr="true"/>
                </property>
                <property name="icon">
                 <iconset resource="../../resources.qrc">
@@ -230,7 +236,7 @@
                 </font>
                </property>
                <property name="text">
-                <string>19/01/2023 12:00p.m.</string>
+                <string notr="true">19/01/2023 12:00p.m.</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -296,7 +302,7 @@
                 </font>
                </property>
                <property name="text">
-                <string>Registrar cliente</string>
+                <string notr="true">Registrar cliente</string>
                </property>
                <property name="icon">
                 <iconset resource="../../resources.qrc">
@@ -324,7 +330,7 @@
                 </font>
                </property>
                <property name="text">
-                <string>Seleccionar cliente</string>
+                <string notr="true">Seleccionar cliente</string>
                </property>
                <property name="icon">
                 <iconset resource="../../resources.qrc">
@@ -349,14 +355,13 @@
                <property name="font">
                 <font>
                  <pointsize>10</pointsize>
-                 <bold>false</bold>
                 </font>
                </property>
                <property name="styleSheet">
                 <string notr="true">background-color: rgb(255, 255, 0);</string>
                </property>
                <property name="text">
-                <string>Ver descuentos del cliente</string>
+                <string notr="true">Ver descuentos del cliente</string>
                </property>
                <property name="icon">
                 <iconset resource="../../resources.qrc">
@@ -590,6 +595,9 @@
         background-color: rgba(255, 255, 255, 0);
     }</string>
                </property>
+               <property name="text">
+                <string notr="true"/>
+               </property>
                <property name="icon">
                 <iconset resource="../../resources.qrc">
                  <normaloff>:/img/resources/images/plus.png</normaloff>:/img/resources/images/plus.png</iconset>
@@ -622,6 +630,9 @@
     QPushButton:pressed {
         background-color: rgba(255, 255, 255, 0);
     }</string>
+               </property>
+               <property name="text">
+                <string notr="true"/>
                </property>
                <property name="icon">
                 <iconset resource="../../resources.qrc">
@@ -964,7 +975,7 @@ QTableView:active {
                  </font>
                 </property>
                 <property name="text">
-                 <string>Sí</string>
+                 <string notr="true">Sí</string>
                 </property>
                 <property name="checked">
                  <bool>false</bool>
@@ -995,7 +1006,7 @@ QTableView:active {
                  </font>
                 </property>
                 <property name="text">
-                 <string>No</string>
+                 <string notr="true">No</string>
                 </property>
                 <property name="checked">
                  <bool>true</bool>
@@ -1368,7 +1379,7 @@ color: rgb(255, 255, 255);
 border-radius: 0px;</string>
             </property>
             <property name="text">
-             <string>Descuento</string>
+             <string notr="true">Descuento</string>
             </property>
             <property name="icon">
              <iconset resource="../../resources.qrc">
@@ -1404,7 +1415,7 @@ color: rgb(255, 255, 255);
 border-radius: 0px;</string>
             </property>
             <property name="text">
-             <string>Cotización</string>
+             <string notr="true">Cotización</string>
             </property>
             <property name="icon">
              <iconset resource="../../resources.qrc">
@@ -1488,7 +1499,7 @@ border-radius: 0px;</string>
                 <string notr="true">color: rgb(0, 0, 0);</string>
                </property>
                <property name="text">
-                <string>Efectivo</string>
+                <string notr="true">Efectivo</string>
                </property>
                <property name="icon">
                 <iconset resource="../../resources.qrc">
@@ -1531,7 +1542,7 @@ border-radius: 0px;</string>
                 <string notr="true">color: rgb(0, 0, 0);</string>
                </property>
                <property name="text">
-                <string>Tarjeta de crédito</string>
+                <string notr="true">Tarjeta de crédito</string>
                </property>
                <property name="icon">
                 <iconset resource="../../resources.qrc">
@@ -1571,7 +1582,7 @@ border-radius: 0px;</string>
                 <string notr="true">color: rgb(0, 0, 0);</string>
                </property>
                <property name="text">
-                <string>Tarjeta de débito</string>
+                <string notr="true">Tarjeta de débito</string>
                </property>
                <property name="icon">
                 <iconset resource="../../resources.qrc">
@@ -1611,7 +1622,7 @@ border-radius: 0px;</string>
                 <string notr="true">color: rgb(0, 0, 0);</string>
                </property>
                <property name="text">
-                <string>Transferencia bancaria</string>
+                <string notr="true">Transferencia bancaria</string>
                </property>
                <property name="icon">
                 <iconset resource="../../resources.qrc">
@@ -1658,7 +1669,7 @@ border-radius: 0px;</string>
              </font>
             </property>
             <property name="text">
-             <string>Listo</string>
+             <string notr="true">Listo</string>
             </property>
             <property name="icon">
              <iconset resource="../../resources.qrc">

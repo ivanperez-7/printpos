@@ -143,8 +143,11 @@
      <pointsize>11</pointsize>
     </font>
    </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
    <property name="displayFormat">
-    <string>h:mm ap</string>
+    <string notr="true">h:mm ap</string>
    </property>
   </widget>
   <zorder>btListo</zorder>
@@ -153,9 +156,10 @@
   <zorder>horaEdit</zorder>
  </widget>
  <tabstops>
-  <tabstop>calendario</tabstop>
   <tabstop>horaEdit</tabstop>
+  <tabstop>calendario</tabstop>
   <tabstop>btListo</tabstop>
+  <tabstop>btRegresar</tabstop>
  </tabstops>
  <resources>
   <include location="../../resources.qrc"/>
