@@ -1147,7 +1147,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             # registrar ingreso (sin cambio) en caja
             ingreso_db_parametros = (
                 hoy,
-                pago,
+                self.paraPagar,
                 f'Pago de venta con folio {self.idVentas}',
                 metodo,
                 self.user.id
@@ -1156,19 +1156,6 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             if not manejadorCaja.insertarMovimiento(ingreso_db_parametros,
                                                      commit=False):
                 return
-            
-            # registrar egreso (cambio) en caja
-            if (cambio := pago - self.paraPagar):
-                egreso_db_parametros = (
-                    hoy,
-                    -cambio,
-                    f'Cambio de venta con folio {self.idVentas}',
-                    metodo,
-                    self.user.id
-                )
-                if not manejadorCaja.insertarMovimiento(egreso_db_parametros,
-                                                         commit=False):
-                    return
         
         # cambiar el estado de la venta a 'Terminada' o 'Recibido xx.xx'
         manejadorVentas = ManejadorVentas(self.conn)
