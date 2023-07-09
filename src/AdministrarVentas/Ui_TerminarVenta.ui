@@ -890,6 +890,9 @@ QTableWidget {
              </font>
             </property>
             <layout class="QGridLayout" name="gridLayout_2">
+             <property name="horizontalSpacing">
+              <number>20</number>
+             </property>
              <item row="0" column="0">
               <widget class="QRadioButton" name="radioButton">
                <property name="minimumSize">

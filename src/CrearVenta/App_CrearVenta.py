@@ -63,7 +63,6 @@ class Venta:
     productos: list[ItemVenta] = field(default_factory=list)
     fechaCreacion: QDateTime = QDateTime.currentDateTime()
     fechaEntrega: QDateTime = QDateTime(fechaCreacion)
-    metodoPago: str = 'Efectivo'
     requiereFactura: bool = False
     comentarios: str = ''
     id_cliente: int = 1
@@ -122,6 +121,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         # datos por defecto
         self.ui.txtVendedor.setText(self.user.nombre)
         self.ui.lbFecha.setText(formatDate(self.ventaDatos.fechaEntrega))
+        self.ui.btDeshacer.setVisible(False)
 
         # dar formato a la tabla principal
         header = self.ui.tabla_productos.horizontalHeader()
@@ -158,6 +158,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.ui.btSeleccionar.clicked.connect(self.seleccionarCliente)
         self.ui.btDescuento.clicked.connect(self.agregarDescuento)
         self.ui.btDescuentosCliente.clicked.connect(self.alternarDescuentos)
+        self.ui.btDeshacer.clicked.connect(self.deshacerFechaEntrega)
         self.ui.btCotizacion.clicked.connect(self.generarCotizacion)
         self.ui.btListo.clicked.connect(self.confirmarVenta)
         
@@ -173,14 +174,17 @@ class App_CrearVenta(QtWidgets.QMainWindow):
     def itemChanged_handle(self, item: QtWidgets.QTableWidgetItem):
         if item.column() == 2:
             self.ventaDatos.productos[item.row()].notas = item.text()
-    
-    @requiere_admin
-    def goHome(self):
-        from Home import App_Home
+            
+    def actualizarLabelFecha(self):
+        """ Actualizar widget de fecha de entrega:
+            label y botón de deshacer. """
+        self.ui.lbFecha.setText(formatDate(self.ventaDatos.fechaEntrega))
+        self.ui.btDeshacer.setVisible(not self.ventaDatos.esVentaDirecta)
         
-        parent = self.parentWidget()    # QMainWindow
-        new = App_Home(parent)
-        parent.setCentralWidget(new)
+    def deshacerFechaEntrega(self):
+        """ Deshacer cambio de fecha de entrega. """
+        self.ventaDatos.fechaEntrega = QDateTime(self.ventaDatos.fechaCreacion)
+        self.actualizarLabelFecha()
         
     def colorearActualizar(self):
         """ Llenar tabla con los productos seleccionados,
@@ -400,12 +404,19 @@ class App_CrearVenta(QtWidgets.QMainWindow):
 
         if ret == qm.Yes:    
             self.ventaDatos.id_cliente = cliente[id]
-            self.ventaDatos.metodoPago = self.ui.btMetodoGrupo.checkedButton().text()
             self.ventaDatos.requiereFactura = self.ui.boxFactura.isChecked()
             self.ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
             
             bg = DimBackground(self)
             self.new = App_ConfirmarVenta(self, self.ventaDatos)
+    
+    @requiere_admin
+    def goHome(self):
+        from Home import App_Home
+        
+        parent = self.parentWidget()    # QMainWindow
+        new = App_Home(parent)
+        parent.setCentralWidget(new)
 
 
 #################################
@@ -802,7 +813,7 @@ class App_FechaEntrega(QtWidgets.QMainWindow):
             self.ui.horaEdit.time())
 
         self.first.ventaDatos.fechaEntrega = dateTime
-        self.first.ui.lbFecha.setText(formatDate(dateTime))
+        self.first.actualizarLabelFecha()
 
         self.close()
 
@@ -1060,6 +1071,10 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
     # ================
     # FUNCIONES ÚTILES
     # ================
+    @property
+    def metodoSeleccionado(self):
+        return self.ui.buttonGroupMetodo.checkedButton().text()
+    
     def update_display(self):
         """ Llenar tabla de productos. """
         tabla = self.ui.tabla_productos
@@ -1087,7 +1102,6 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 self.ventaDatos.fechaCreacion.toPython(),
                 self.ventaDatos.fechaEntrega.toPython(),
                 self.ventaDatos.comentarios.strip(),
-                self.ventaDatos.metodoPago,
                 int(self.ventaDatos.requiereFactura),
                 'No terminada')
     
@@ -1130,10 +1144,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             pago = float(self.ui.txtPago.text())
         except ValueError:
             pago = 0.
-            
-        metodo = self.ventaDatos.metodoPago
         
-        pagoAceptado = pago >= self.paraPagar if metodo == 'Efectivo' \
+        pagoAceptado = pago >= self.paraPagar if self.metodoSeleccionado == 'Efectivo' \
                        else pago == self.paraPagar
         minimoCincuentaPorCiento = round(self.total/2, 2) <= self.paraPagar <= self.total
         
@@ -1149,19 +1161,23 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 hoy,
                 self.paraPagar,
                 f'Pago de venta con folio {self.idVentas}',
-                metodo,
+                self.metodoSeleccionado,
                 self.user.id
             )
             
             if not manejadorCaja.insertarMovimiento(ingreso_db_parametros,
-                                                     commit=False):
+                                                    commit=False):
                 return
         
         # cambiar el estado de la venta a 'Terminada' o 'Recibido xx.xx'
+        # y también cambiar método de pago
         manejadorVentas = ManejadorVentas(self.conn)
         estado = 'Terminada' if esDirecta else f'Recibido {self.paraPagar:.2f}'
         
-        if not manejadorVentas.actualizarEstadoVenta(self.idVentas, estado, commit=True):
+        if not manejadorVentas.actualizarEstadoVenta(self.idVentas, estado):
+            return
+        if not manejadorVentas.actualizarMetodoPago(self.idVentas,
+                                                    self.metodoSeleccionado, commit=True):
             return
 
         # abrir pregunta
@@ -1181,22 +1197,22 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.goHome()
     
     def abortar(self):
-        """ Función para abortar la venta y actualizar estado a 'Cancelada'. """
-        @requiere_admin
-        def accion(parent):
-            manejadorVentas = ManejadorVentas(self.conn)
-            
-            if manejadorVentas.actualizarEstadoVenta(self.idVentas, 'Cancelada',
-                                                     commit=True):
-                self.goHome()
-        
+        """ Función para abortar la venta y actualizar estado a 'Cancelada'. """    
         qm = QtWidgets.QMessageBox
         
         ret = qm.question(self, 'Atención', 
                           '¿Desea cancelar la venta? Esta acción no puede deshacerse.',
                           qm.Yes | qm.No)
         if ret == qm.Yes:
-            accion(self)
+            self._abortar()
+    
+    @requiere_admin
+    def _abortar(self):
+        manejadorVentas = ManejadorVentas(self.conn)
+        
+        if manejadorVentas.actualizarEstadoVenta(self.idVentas, 'Cancelada',
+                                                 commit=True):
+            self.goHome()
     
     def goHome(self):
         """ Cierra la ventana y crea otra venta. """

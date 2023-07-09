@@ -159,32 +159,65 @@
             </property>
             <layout class="QGridLayout" name="gridLayout">
              <property name="horizontalSpacing">
-              <number>12</number>
+              <number>9</number>
              </property>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_5">
-               <property name="minimumSize">
+             <item row="0" column="0" rowspan="2">
+              <widget class="QPushButton" name="btDeshacer">
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="toolTip">
+                <string>Deshacer fecha de entrega</string>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QPushButton {
+        background-color: transparent;
+        border: none;
+        padding: 0px;
+    }
+    QPushButton:hover {
+        background-color: rgba(255, 255, 255, 0);
+    }
+    QPushButton:pressed {
+        background-color: rgba(255, 255, 255, 0);
+    }</string>
+               </property>
+               <property name="text">
+                <string notr="true"/>
+               </property>
+               <property name="icon">
+                <iconset resource="../../resources.qrc">
+                 <normaloff>:/img/resources/images/undo.png</normaloff>:/img/resources/images/undo.png</iconset>
+               </property>
+               <property name="iconSize">
                 <size>
-                 <width>181</width>
-                 <height>10</height>
+                 <width>20</width>
+                 <height>20</height>
                 </size>
                </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1" alignment="Qt::AlignRight">
+              <widget class="QLabel" name="lbFecha">
                <property name="font">
                 <font>
                  <family>Segoe UI</family>
                  <pointsize>11</pointsize>
-                 <bold>true</bold>
+                 <bold>false</bold>
                 </font>
                </property>
                <property name="text">
-                <string notr="true">Fecha y hora de entrega</string>
+                <string notr="true">19/01/2023 12:00p.m.</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
               </widget>
              </item>
-             <item row="0" column="1" rowspan="2">
+             <item row="0" column="3" rowspan="2">
               <widget class="QPushButton" name="btCalendario">
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
@@ -220,28 +253,35 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="lbFecha">
-               <property name="minimumSize">
-                <size>
-                 <width>251</width>
-                 <height>21</height>
-                </size>
-               </property>
+             <item row="0" column="1" alignment="Qt::AlignRight">
+              <widget class="QLabel" name="label_5">
                <property name="font">
                 <font>
                  <family>Segoe UI</family>
                  <pointsize>11</pointsize>
-                 <bold>false</bold>
+                 <bold>true</bold>
                 </font>
                </property>
                <property name="text">
-                <string notr="true">19/01/2023 12:00p.m.</string>
+                <string notr="true">Fecha y hora de entrega</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
               </widget>
+             </item>
+             <item row="0" column="2">
+              <spacer name="horizontalSpacer_2">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>8</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
              </item>
             </layout>
            </widget>
