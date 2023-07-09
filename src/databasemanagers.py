@@ -742,11 +742,11 @@ class ManejadorVentas(DatabaseManager):
         return self.fetchone('''
             INSERT INTO Ventas (
                 id_clientes, id_usuarios, fecha_hora_creacion, 
-                fecha_hora_entrega, comentarios, metodo_pago, 
+                fecha_hora_entrega, comentarios,
                 requiere_factura, estado
             ) 
             VALUES 
-                (?,?,?,?,?,?,?,?)
+                (?,?,?,?,?,?,?)
             RETURNING
                 id_ventas;
         ''', params)
@@ -776,6 +776,16 @@ class ManejadorVentas(DatabaseManager):
             SET     estado = ?
             WHERE   id_ventas = ?;
         ''', (estado, id_ventas), commit=commit)
+    
+    def actualizarMetodoPago(self, id_ventas: int, metodo: str, commit: bool = False):
+        """ Actualiza método de pago de venta a parámetro.
+        
+            No hace `commit`, a menos que se indique lo contrario. """
+        return self.execute('''
+            UPDATE  Ventas
+            SET     metodo_pago = ?
+            WHERE   id_ventas = ?;
+        ''', (metodo, id_ventas), commit=commit)
 
 
 class ManejadorUsuarios(DatabaseManager):

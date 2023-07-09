@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>842</width>
-    <height>680</height>
+    <height>758</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -572,6 +572,9 @@ QTableWidget {
        <property name="leftMargin">
         <number>55</number>
        </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
        <property name="rightMargin">
         <number>64</number>
        </property>
@@ -583,10 +586,7 @@ QTableWidget {
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_7">
-          <property name="spacing">
-           <number>6</number>
-          </property>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
           <item>
            <widget class="QFrame" name="frame_14">
             <property name="frameShadow">
@@ -595,9 +595,6 @@ QTableWidget {
             <layout class="QHBoxLayout" name="horizontalLayout_7">
              <property name="spacing">
               <number>20</number>
-             </property>
-             <property name="bottomMargin">
-              <number>15</number>
              </property>
              <item>
               <widget class="QLabel" name="label_13">
@@ -855,10 +852,121 @@ QTableWidget {
             </layout>
            </widget>
           </item>
+          <item alignment="Qt::AlignHCenter">
+           <widget class="QFrame" name="frame_9">
+            <property name="maximumSize">
+             <size>
+              <width>469</width>
+              <height>62</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>Segoe UI</family>
+             </font>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_2">
+             <property name="horizontalSpacing">
+              <number>20</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QRadioButton" name="radioButton">
+               <property name="minimumSize">
+                <size>
+                 <width>40</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Segoe UI</family>
+                 <pointsize>11</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Efectivo</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+               <attribute name="buttonGroup">
+                <string notr="true">buttonGroupMetodo</string>
+               </attribute>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QRadioButton" name="radioButton_2">
+               <property name="minimumSize">
+                <size>
+                 <width>40</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Segoe UI</family>
+                 <pointsize>11</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Tarjeta de crédito</string>
+               </property>
+               <attribute name="buttonGroup">
+                <string notr="true">buttonGroupMetodo</string>
+               </attribute>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QRadioButton" name="radioButton_4">
+               <property name="minimumSize">
+                <size>
+                 <width>40</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Segoe UI</family>
+                 <pointsize>11</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Tarjeta de débito</string>
+               </property>
+               <attribute name="buttonGroup">
+                <string notr="true">buttonGroupMetodo</string>
+               </attribute>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QRadioButton" name="radioButton_3">
+               <property name="minimumSize">
+                <size>
+                 <width>40</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Segoe UI</family>
+                 <pointsize>11</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Transferencia bancaria</string>
+               </property>
+               <attribute name="buttonGroup">
+                <string notr="true">buttonGroupMetodo</string>
+               </attribute>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>
-       <item>
+       <item alignment="Qt::AlignVCenter">
         <widget class="QFrame" name="frame_16">
          <property name="minimumSize">
           <size>
@@ -870,6 +978,9 @@ QTableWidget {
           <enum>QFrame::Raised</enum>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_8">
+          <property name="spacing">
+           <number>30</number>
+          </property>
           <item>
            <widget class="QPushButton" name="btListo">
             <property name="minimumSize">
@@ -939,4 +1050,7 @@ QTableWidget {
   <include location="../../resources.qrc"/>
  </resources>
  <connections/>
+ <buttongroups>
+  <buttongroup name="buttonGroupMetodo"/>
+ </buttongroups>
 </ui>

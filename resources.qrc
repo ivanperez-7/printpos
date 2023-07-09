@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="img">
+    <file>resources/images/undo.png</file>
     <file>resources/images/calculator.png</file>
     <file>resources/images/plus2.png</file>
     <file>resources/images/minus2.png</file>
