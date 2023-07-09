@@ -582,9 +582,7 @@ background-color: rgb(255, 255, 255);</string>
 	font: bold 10pt;
 	color: rgb(255, 255, 255);
 	background-color: rgb(52, 172, 224);
-
-	padding-top: 7px;
-	padding-bottom: 7px;
+	padding: 7px;
 }
 
 QTableView::item{
@@ -708,9 +706,7 @@ QTableView:active {
 	font: bold 10pt;
 	color: rgb(255, 255, 255);
 	background-color: rgb(52, 172, 224);
-
-	padding-top: 7px;
-	padding-bottom: 7px;
+	padding: 7px;
 }
 
 QTableView::item{
