@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+import copy
+
 from PySide6 import QtWidgets
 from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtCore import (QDate, QDateTime, QRegularExpression, Qt,
@@ -976,6 +978,9 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
 
 class App_ConfirmarVenta(QtWidgets.QMainWindow):
     """ Backend para la ventana de finalización de venta. """
+    COMISION_DEBITO  = 1.98
+    COMISION_CREDITO = 3.16
+
     def __init__(self, first: App_CrearVenta, ventaDatos: Venta):
         from CrearVenta.Ui_ConfirmarVenta import Ui_ConfirmarVenta
         
@@ -984,39 +989,25 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ui = Ui_ConfirmarVenta()
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
-
-        esDirecta = ventaDatos.esVentaDirecta
-        ventaDatos.fechaCreacion = QDateTime.currentDateTime()
-        
+    
         # guardar conexión y usuarios como atributos
         self.conn = first.conn
         self.user = first.user
         
         self.ventaDatos = ventaDatos
 
-        # total de la compra y precio a pagarse ahora mismo
-        self.total = ventaDatos.total
-        self.paraPagar = self.total if esDirecta else round(self.total/2, 2)
-
-        # dar formato a la tabla principal
-        header = self.ui.tabla_productos.horizontalHeader()
-        header.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        
-        for col in range(self.ui.tabla_productos.columnCount()):
-            if col == 2:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-
         # si la venta es directa, ocultar los widgets para apartados
-        if esDirecta:
+        if ventaDatos.esVentaDirecta:
+            ventaDatos.fechaCreacion = QDateTime.currentDateTime()
+            ventaDatos.fechaEntrega = QDateTime(ventaDatos.fechaCreacion)
+
             for w in [self.ui.boxFechaEntrega,
                       self.ui.lbAnticipo1,
                       self.ui.lbAnticipo2,
                       self.ui.txtAnticipo]:
                 w.hide()
-            
-            ventaDatos.fechaEntrega = ventaDatos.fechaCreacion
+        else:        
+            ventaDatos.fechaCreacion = QDateTime.currentDateTime()
 
         #### registrar venta en tablas ####
         manejadorVentas = ManejadorVentas(self.conn)
@@ -1041,8 +1032,6 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ui.txtTelefono.setText(telefono)
         self.ui.txtCreacion.setText(formatDate(ventaDatos.fechaCreacion))
         self.ui.txtEntrega.setText(formatDate(ventaDatos.fechaEntrega))
-        self.ui.lbTotal.setText(f'{ventaDatos.total:,.2f}')
-        self.ui.txtAnticipo.setText(f'{self.paraPagar:.2f}')
         self.ui.lbFolio.setText(f'{self.idVentas}')
         
         # validadores para datos numéricos
@@ -1057,7 +1046,9 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ui.btCancelar.clicked.connect(self.abortar)
         self.ui.txtPago.textChanged.connect(self.calcularCambio)
         self.ui.txtAnticipo.textChanged.connect(self.cambiarAnticipo)
+        self.ui.buttonGroupMetodo.buttonClicked.connect(self.handleComision)
 
+        self.recalcularImportes(ventaDatos)
         self.show()
         
         # brincar el proceso si el pago es de cero
@@ -1065,7 +1056,17 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             self.done()
     
     def showEvent(self, event):
-        self.update_display()
+        # dar formato a la tabla principal
+        header = self.ui.tabla_productos.horizontalHeader()
+        header.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        
+        for col in range(self.ui.tabla_productos.columnCount()):
+            if col == 2:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
+            else:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
+        
+        self.update_display(self.ventaDatos)
         event.accept()
     
     def closeEvent(self, event):
@@ -1076,14 +1077,37 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
     # ================
     @property
     def metodoSeleccionado(self):
+        """ Texto de botón de método de pago seleccionado. """
         return self.ui.buttonGroupMetodo.checkedButton().text()
     
-    def update_display(self):
+    def handleComision(self, bt: QtWidgets.QRadioButton):
+        """ Mostrar u ocultar comisión según método de pago. """
+        manejador = ManejadorProductos(self.conn)
+        idProducto, = manejador.obtenerIdProducto('COMISION')
+        venta = copy.deepcopy(self.ventaDatos)
+
+        if bt.text().endswith('crédito'):
+            item = ItemVenta(idProducto, 'COMISION', 1., 0., 
+                             self.total * self.COMISION_CREDITO/100, 
+                             'COMISIÓN POR PAGO CON TARJETA', False)
+            venta.productos.append(item)
+        elif bt.text().endswith('débito'):
+            item  = ItemVenta(idProducto, 'COMISION', 1., 0., 
+                              self.total * self.COMISION_DEBITO/100, 
+                              'COMISIÓN POR PAGO CON TARJETA', False)
+            venta.productos.append(item)
+        else:
+            venta = self.ventaDatos
+        
+        self.update_display(venta)
+        self.recalcularImportes(venta)
+    
+    def update_display(self, venta: Venta):
         """ Llenar tabla de productos. """
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
 
-        for row, prod in enumerate(self.ventaDatos.productos):
+        for row, prod in enumerate(venta.productos):
             tabla.insertRow(row)
 
             for col, dato in enumerate(prod):
@@ -1095,8 +1119,17 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                     
                 cell = QtWidgets.QTableWidgetItem(cell)
                 tabla.setItem(row, col, cell)
-                
+
         tabla.resizeRowsToContents()
+    
+    def recalcularImportes(self, venta: Venta):
+        """ Calcular total de la compra y precio a pagarse ahora mismo. """
+        self.total = venta.total
+        self.paraPagar = venta.total if venta.esVentaDirecta \
+                         else round(venta.total/2, 2)
+
+        self.ui.lbTotal.setText(f'{self.total:,.2f}')
+        self.ui.txtAnticipo.setText(f'{self.paraPagar:.2f}')
         
     def obtenerParametrosVentas(self):
         """ Parámetros para tabla ventas (datos generales). """
