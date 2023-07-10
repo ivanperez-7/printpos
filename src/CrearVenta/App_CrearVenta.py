@@ -156,7 +156,8 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.ui.tabla_productos.itemChanged.connect(self.itemChanged_handle)
         self.ui.btRegistrar.clicked.connect(self.insertarCliente)
         self.ui.btSeleccionar.clicked.connect(self.seleccionarCliente)
-        self.ui.btDescuento.clicked.connect(self.agregarDescuento)
+        self.ui.btDescuento.clicked.connect(
+            lambda: self.agregarDescuento() if self.ui.tabla_productos.rowCount() else None)
         self.ui.btDescuentosCliente.clicked.connect(self.alternarDescuentos)
         self.ui.btDeshacer.clicked.connect(self.deshacerFechaEntrega)
         self.ui.btCotizacion.clicked.connect(self.generarCotizacion)
@@ -312,35 +313,36 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             self.ventaDatos.productos.pop(row)
             restantes = self.ventaDatos.obtenerProductosExistentes(idProducto)
             
-            if not restantes:
-                continue
+            if not restantes: continue
             
-            cantidad = sum(p.cantidad for p in restantes)
-            duplex = any(p.duplex for p in restantes)
-            result = manejador.obtenerPrecioSimple(idProducto, cantidad, duplex)
+            productosNormal = sum(p.cantidad for p in restantes if not p.duplex)
+            productosDuplex = sum(p.cantidad for p in restantes if p.duplex)
             
-            try: nuevoPrecio, = result
-            except TypeError: pass
-            else: 
-                for p in restantes: p.precio_unit = nuevoPrecio
-        
+            precioNormal = manejador.obtenerPrecioSimple(
+                idProducto, 
+                productosNormal + productosDuplex, 
+                False)
+            
+            if not precioNormal: continue
+            
+            precioDuplex = manejador.obtenerPrecioSimple(
+                idProducto, 
+                productosDuplex,
+                True)
+            nuevoPrecio = min(precioNormal, precioDuplex or precioNormal)
+            
+            for p in restantes: p.precio_unit = nuevoPrecio
         self.colorearActualizar()
     
+    @requiere_admin
     def agregarDescuento(self):
-        """ Abre ventana para agregar un descuento a la orden si el cliente es especial. """
-        @requiere_admin
-        def accion(parent):
-            self.new = App_AgregarDescuento(self)
-        
-        if self.ui.tabla_productos.rowCount():
-            accion(self)
+        """ Abre ventana para agregar un descuento a la orden si el cliente es especial. """    
+        self.new = App_AgregarDescuento(self)
     
     def generarCotizacion(self):
         """ Genera PDF con cotización de la orden actual. """
-        if not self.ui.tabla_productos.rowCount():
-            return
-        
-        self.new = App_EnviarCotizacion(self)
+        if self.ui.tabla_productos.rowCount():
+            self.new = App_EnviarCotizacion(self)
 
     def confirmarVenta(self):
         """ Abre ventana para confirmar y terminar la venta. """
@@ -567,12 +569,20 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         if restantes and current == 0: # sólo para productos por intervalos
             restantes.append(item)
             
-            cantidad = sum(p.cantidad for p in restantes)
-            duplex = any(p.duplex for p in restantes)
-            nuevoPrecio, = manejador.obtenerPrecioSimple(item.id, cantidad, duplex)
+            productosNormal = sum(p.cantidad for p in restantes if not p.duplex)
+            productosDuplex = sum(p.cantidad for p in restantes if p.duplex)
             
-            for p in restantes:
-                p.precio_unit = nuevoPrecio
+            precioNormal = manejador.obtenerPrecioSimple(
+                item.id, 
+                productosNormal + productosDuplex, 
+                False)
+            precioDuplex = manejador.obtenerPrecioSimple(
+                item.id, 
+                productosDuplex,
+                True) 
+            nuevoPrecio = min(precioNormal, precioDuplex or precioNormal)
+            
+            for p in restantes: p.precio_unit = nuevoPrecio
             
         self.first.ventaDatos.productos.append(item)
         self.first.colorearActualizar()
@@ -603,10 +613,9 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         
         # obtener precio basado en cantidad
         duplex = self.ui.checkDuplex.isChecked()
+        precio = manejador.obtenerPrecioSimple(idProducto, cantidad, duplex)
         
-        try:
-            precio, = manejador.obtenerPrecioSimple(idProducto, cantidad, duplex)
-        except TypeError:
+        if not precio:
             QtWidgets.QMessageBox.warning(
                 self, 'Atención',
                 'No existe ningún precio de este producto '
@@ -651,13 +660,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         manejador = ManejadorProductos(self.conn)
         idProducto, = manejador.obtenerIdProducto(codigo)
         
-        try:
-            min_m2, precio = manejador.obtenerGranFormato(idProducto)
-        except TypeError:
-            QtWidgets.QMessageBox.warning(
-                self, 'Atención',
-                'No existe ningún precio de este producto.')
-            return
+        min_m2, precio = manejador.obtenerGranFormato(idProducto)
 
         # insertar información del producto con cantidad y especificaciones
         return ItemGranFormato(

@@ -398,7 +398,7 @@ class ManejadorProductos(DatabaseManager):
         """ Obtener precio de producto categoría simple. """
         restrict = 'AND duplex' if duplex else ''
         
-        return self.fetchone(f'''
+        result = self.fetchone(f'''
             SELECT * FROM (
                 SELECT  FIRST 1 precio_con_iva
                 FROM    Productos_Intervalos
@@ -414,6 +414,12 @@ class ManejadorProductos(DatabaseManager):
                         AND desde <= ?
                 ORDER   BY desde DESC)
         ''', (id_productos, cantidad)*2)
+        
+        try:
+            precio, = result
+            return precio
+        except TypeError:
+            return None
     
     def obtenerGranFormato(self, id_productos: int):
         """ Obtener mínimo de metros cuadrados y precio de metro cuadrado
