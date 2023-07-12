@@ -352,10 +352,13 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         modificador_ancho = 100 if self.ui.btAnchoCm.isChecked() else 1
         
         try:
-            precio = float(selected[4].text().replace(',',''))
+            minimo = float(selected[2].text().replace(',',''))
+            precio_m2 = float(selected[3].text().replace(',',''))
+            
             alto = float(alto) / modificador_alto
             ancho = float(ancho) / modificador_ancho
+            precio = precio_m2 * alto * ancho if alto * ancho >= minimo else precio_m2
             
-            self.ui.lbTotalGranFormato.setText(f'Total: ${precio * alto * ancho:,.2f}')
+            self.ui.lbTotalGranFormato.setText(f'Total: ${precio:,.2f}')
         except (ValueError, IndexError):
             self.ui.lbTotalGranFormato.setText('Total: $0.00')

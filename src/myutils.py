@@ -193,7 +193,7 @@ def generarOrdenCompra(conn: fdb.Connection, idx: int):
                 prodPrecio, prodImporte) in enumerate(chunk):
             y_sep = -32.4*i     # separador por renglón de la tabla
 
-            can.drawCentredString(49, 381+y_sep, str(prodCantidad))
+            can.drawCentredString(49, 381+y_sep, f'{prodCantidad:,.2f}')
             can.drawCentredString(306, 381+y_sep, f'{prodPrecio:,.2f}')
             can.drawCentredString(353, 381+y_sep, f'{prodImporte:,.2f}')
 
@@ -297,7 +297,7 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
 
     for cantidad, nombre, precio, descuento, importe in productos:
         data.append([
-            cantidad,
+            f'{cantidad:,.2f}',
             Paragraph(nombre, styles['Center']),
             f'{precio:,.2f}',
             f'{descuento:,.2f}' if descuento > 0 else '',
@@ -324,11 +324,14 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
     
     # total a pagar       
     total = sum(importe for _, _, _, _, importe in productos)
+    total = round(total, 2)
+    pagado = round(pagado, 2)
+    
     table2 = [['IMPORTE:', f'{total:,.2f}']]
     
     if pagado:
         table2.extend([['Pagado:', f'{pagado:,.2f}'],
-                       ['Cambio:', f'{pagado-total + 0.:,.2f}']])
+                       ['Cambio:', f'{pagado-total:,.2f}']])
     
     table2 = Table(table2, hAlign='RIGHT')
 
