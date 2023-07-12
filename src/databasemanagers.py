@@ -421,6 +421,19 @@ class ManejadorProductos(DatabaseManager):
         except TypeError:
             return None
     
+    def obtenerPrecioGranFormato(self, id_productos: int, ancho: float, alto: float):
+        """ Obtener precio de producto gran formato.
+
+            Verifica si las medidas caen dentro del mínimo. Si no, regresa precio normal. """
+        result = self.obtenerGranFormato(id_productos)
+        if not result:
+            return None
+        
+        min_m2, precio_m2 = result
+        cantidad = ancho * alto
+        
+        return cantidad * precio_m2 if cantidad >= min_m2 else precio_m2
+    
     def obtenerGranFormato(self, id_productos: int):
         """ Obtener mínimo de metros cuadrados y precio de metro cuadrado
             de producto categoría gran formato. """

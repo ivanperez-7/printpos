@@ -173,6 +173,7 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
     dataChanged = Signal()  # señal para actualizar tabla en hilo principal
     
     def __init__(self, principal: VentanaPrincipal):
+        from databasemanagers import ManejadorProductos
         from Home.Ui_ConsultarPrecios import Ui_ConsultarPrecios
         
         super().__init__()
@@ -185,26 +186,8 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
         LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
         
-        # guardar conexión y usuarios como atributos
-        self.conn = principal.conn
-        self.user = principal.user
-
-        # dar formato a las tablas
-        header = self.ui.tabla_seleccionar.horizontalHeader()
-
-        for col in range(self.ui.tabla_seleccionar.columnCount()):
-            if col == 1:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-        
-        header = self.ui.tabla_granformato.horizontalHeader()
-
-        for col in range(self.ui.tabla_granformato.columnCount()):
-            if col == 1:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
+        # manejador de DB, en tabla productos
+        self.manejador = ManejadorProductos(principal.conn)
         
         # eventos para widgets
         self.ui.searchBar.textChanged.connect(
@@ -216,6 +199,7 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         
         self.ui.tabla_seleccionar.itemClicked.connect(self.calcularPrecio)
         self.ui.txtCantidad.textChanged.connect(self.calcularPrecio)
+        self.ui.checkDuplex.toggled.connect(self.calcularPrecio)
         
         self.ui.tabla_granformato.itemClicked.connect(self.calcularPrecio)
         self.ui.txtAncho.textChanged.connect(self.calcularPrecio)
@@ -239,6 +223,23 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         self.showMinimized()
     
     def showEvent(self, event):
+        # dar formato a las tablas
+        header = self.ui.tabla_seleccionar.horizontalHeader()
+
+        for col in range(self.ui.tabla_seleccionar.columnCount()):
+            if col == 1:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
+            else:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
+        
+        header = self.ui.tabla_granformato.horizontalHeader()
+
+        for col in range(self.ui.tabla_granformato.columnCount()):
+            if col == 1:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
+            else:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
+        
         self.update_display(True)
         event.accept()
     
@@ -272,13 +273,9 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         """ Actualiza la tabla y el contador de clientes.
             Acepta una cadena de texto para la búsqueda de clientes.
             También lee de nuevo la tabla de clientes, si se desea. """
-        from databasemanagers import ManejadorProductos
-        
         if rescan:
-            manejador = ManejadorProductos(self.conn)
-            
-            self.all_prod = manejador.fetchall('SELECT * FROM View_Productos_Simples;')
-            self.all_gran = manejador.fetchall('SELECT * FROM View_Gran_Formato;')
+            self.all_prod = self.manejador.fetchall('SELECT * FROM View_Productos_Simples;')
+            self.all_gran = self.manejador.fetchall('SELECT * FROM View_Gran_Formato;')
         
         filtro = int(self.ui.btDescripcion.isChecked())
         txt_busqueda = self.ui.searchBar.text()
@@ -332,33 +329,39 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
             self.calcularGranFormato()
     
     def calcularSimple(self):
-        selected = self.ui.tabla_seleccionar.selectedItems()
+        if not (selected := self.ui.tabla_seleccionar.selectedItems()):
+            return
+        
+        idProducto, = self.manejador.obtenerIdProducto(selected[0].text())
         
         try:
-            precio = float(selected[2].text().replace(',',''))
             cantidad = float(self.ui.txtCantidad.text())
+            precio = self.manejador.obtenerPrecioSimple(idProducto, cantidad,
+                                                        self.ui.checkDuplex.isChecked())
             
-            self.ui.lbTotalSimple.setText(f'Total: ${precio * cantidad:,.2f}')
-        except (ValueError, IndexError):
-            self.ui.lbTotalSimple.setText('Total: $0.00')
+            txt = f'Total: ${precio * cantidad:,.2f}'
+        except ValueError:
+            txt = 'Total: $0.00'
+            
+        self.ui.lbTotalSimple.setText(txt)
     
     def calcularGranFormato(self):
-        selected = self.ui.tabla_granformato.selectedItems()
+        if not (selected := self.ui.tabla_granformato.selectedItems()):
+            return
         
-        alto = self.ui.txtAlto.text()
         modificador_alto = 100 if self.ui.btAltoCm.isChecked() else 1
-        
-        ancho = self.ui.txtAncho.text()
         modificador_ancho = 100 if self.ui.btAnchoCm.isChecked() else 1
         
+        idProducto, = self.manejador.obtenerIdProducto(selected[0].text())
+        
         try:
-            minimo = float(selected[2].text().replace(',',''))
-            precio_m2 = float(selected[3].text().replace(',',''))
+            alto = float(self.ui.txtAlto.text()) / modificador_alto
+            ancho = float(self.ui.txtAncho.text()) / modificador_ancho
             
-            alto = float(alto) / modificador_alto
-            ancho = float(ancho) / modificador_ancho
-            precio = precio_m2 * alto * ancho if alto * ancho >= minimo else precio_m2
+            precio = self.manejador.obtenerPrecioGranFormato(idProducto, alto, ancho)
             
-            self.ui.lbTotalGranFormato.setText(f'Total: ${precio:,.2f}')
-        except (ValueError, IndexError):
-            self.ui.lbTotalGranFormato.setText('Total: $0.00')
+            txt = f'Total: ${precio:,.2f}'
+        except ValueError:
+            txt = 'Total: $0.00'
+            
+        self.ui.lbTotalGranFormato.setText(txt)
