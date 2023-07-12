@@ -35,6 +35,11 @@ class ItemVenta:
         """ Costo total del producto. """
         return (self.precio_unit - self.descuento_unit) * self.cantidad
     
+    @property
+    def total_descuentos(self) -> float:
+        """ Regresa el total de descuentos (descuento * cantidad). """
+        return self.descuento_unit * self.cantidad
+    
     def __iter__(self) -> tuple:
         """ Regresa iterable para alimentar las tablas de productos.
             Cantidad | Código | Especificaciones | Precio | Descuento | Importe """
@@ -56,7 +61,7 @@ class ItemVenta:
 @dataclass
 class ItemGranFormato(ItemVenta):
     """ Clase para un producto de tipo gran formato.
-        Reimplementa el método `importe`. """
+        Reimplementa el método `importe` y `total_descuentos`. """
     min_m2: float
     
     @property
@@ -64,6 +69,11 @@ class ItemGranFormato(ItemVenta):
         """ Costo total del producto. """
         cantidad = max(self.min_m2, self.cantidad)
         return (self.precio_unit - self.descuento_unit) * cantidad
+    
+    @property
+    def total_descuentos(self) -> float:
+        cantidad = max(self.min_m2, self.cantidad)
+        return self.descuento_unit * cantidad
 
 
 @dataclass
@@ -86,7 +96,7 @@ class Venta:
     
     @property
     def total_descuentos(self) -> float:
-        return sum(prod.descuento_unit * prod.cantidad for prod in self.productos)
+        return sum(prod.total_descuentos for prod in self.productos)
     
     @property
     def esVentaDirecta(self) -> bool:
@@ -703,7 +713,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
         header = self.ui.tabla_seleccionar.horizontalHeader()
 
         for col in range(self.ui.tabla_seleccionar.columnCount()):
-            if col == 3:
+            if col in {1, 4}:
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
             else:
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
