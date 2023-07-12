@@ -1,5 +1,6 @@
 """ Módulo con manejadores para tablas en la base de datos. """
 import fdb
+from PySide6.QtCore import QDate
 
 from mywidgets import WarningDialog
 
@@ -68,8 +69,10 @@ class ManejadorCaja(DatabaseManager):
     def __init__(self, conn: fdb.Connection, error_txt: str = ''):
         super().__init__(conn, error_txt)
     
-    def obtenerMovimientos(self):
-        """ Obtener historial completo de movimientos de caja. """
+    def obtenerMovimientos(self, inicio: QDate, final: QDate):
+        """ Obtener historial completo de movimientos de caja.
+            
+            Requiere fechas de inicio y final, de tipo QDate. """
         return self.fetchall('''
             SELECT 	fecha_hora,
                     monto,
@@ -79,10 +82,12 @@ class ManejadorCaja(DatabaseManager):
             FROM 	Caja AS C
                     LEFT JOIN Usuarios AS U
                            ON C.id_usuarios = U.id_usuarios
+            WHERE   ? <= CAST(fecha_hora AS DATE)
+                    AND CAST(fecha_hora AS DATE) <= ?
             ORDER   BY fecha_hora DESC;
-        ''')
+        ''', (inicio.toPython(), final.toPython()))
     
-    def obtenerFechaPrimerMov(self, id_usuario: int = None):
+    def obtenerFechaPrimerMov(self):
         """ Obtener fecha del movimiento más antigüo. """        
         return self.fetchone('SELECT MIN(fecha_hora) FROM Caja;')
     
@@ -559,8 +564,11 @@ class ManejadorVentas(DatabaseManager):
     def __init__(self, conn: fdb.Connection, error_txt: str = ''):
         super().__init__(conn, error_txt)
     
-    def tablaVentas(self, restrict: int = None):
+    def tablaVentas(self, inicio: QDate, final: QDate, restrict: int = None):
         """ Sentencia para alimentar la tabla principal de ventas directas. 
+        
+            Requiere fechas de inicio y final, tipo QDate.
+            
             Restringir a un solo usuario, si se desea. """
         restrict = f'AND Usuarios.id_usuarios = {restrict}' if restrict else ''
         
@@ -581,13 +589,18 @@ class ManejadorVentas(DatabaseManager):
                     LEFT JOIN Ventas_Detallado
                            ON Ventas.id_ventas = Ventas_Detallado.id_ventas
 			WHERE   fecha_hora_creacion = fecha_hora_entrega
+                    AND ? <= CAST(fecha_hora_creacion AS DATE)
+                    AND CAST(fecha_hora_creacion AS DATE) <= ?
                     {restrict}
             GROUP   BY 1, 2, 3, 4, 6, 7, 8
             ORDER	BY Ventas.id_ventas DESC;
-        ''')
+        ''', (inicio.toPython(), final.toPython()))
     
-    def tablaPedidos(self, restrict: int = None):
+    def tablaPedidos(self, inicio: QDate, final: QDate, restrict: int = None):
         """ Sentencia para alimentar la tabla principal de pedidos. 
+        
+            Requiere fechas de inicio y final, tipo QDate.
+            
             Restringir a un solo usuario, si se desea. """
         restrict = f'AND Usuarios.id_usuarios = {restrict}' if restrict else ''
         
@@ -609,10 +622,13 @@ class ManejadorVentas(DatabaseManager):
                     LEFT JOIN Ventas_Detallado
                            ON Ventas.id_ventas = Ventas_Detallado.id_ventas
 			WHERE   fecha_hora_creacion != fecha_hora_entrega
+                    AND (? <= CAST(fecha_hora_creacion AS DATE)
+                         AND CAST(fecha_hora_creacion AS DATE) <= ?
+                         OR estado LIKE 'Recibido%')
                     {restrict}
             GROUP   BY 1, 2, 3, 4, 5, 7, 8, 9
             ORDER	BY Ventas.id_ventas DESC;
-        ''')
+        ''', (inicio.toPython(), final.toPython()))
     
     def obtenerVenta(self, id_venta):
         """ Sentencia para obtener una venta. """
