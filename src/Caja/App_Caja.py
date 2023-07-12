@@ -1,7 +1,5 @@
 from datetime import datetime
 
-import fdb
-
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt, QDateTime, QDate
@@ -9,7 +7,7 @@ from PySide6.QtCore import Qt, QDateTime, QDate
 from databasemanagers import ManejadorCaja
 from mydecorators import run_in_thread
 from myutils import enviarAImpresora, formatDate
-from mywidgets import LabelAdvertencia, VentanaPrincipal, WarningDialog
+from mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
 #####################
@@ -47,6 +45,19 @@ class App_Caja(QtWidgets.QMainWindow):
         self.ui.dateHasta.setMaximumDate(hoy)
         self.ui.dateHasta.setMinimumDate(fechaMin)
 
+        # añade eventos para los botones
+        self.ui.btRegresar.clicked.connect(self.goHome)
+        self.ui.btIngreso.clicked.connect(self.registrarIngreso)
+        self.ui.btEgreso.clicked.connect(self.registrarEgreso)
+        
+        self.ui.dateDesde.dateChanged.connect(self.update_display)
+        self.ui.dateHasta.dateChanged.connect(self.update_display)
+        self.ui.btHoy.clicked.connect(self.hoy_handle)
+        self.ui.btEstaSemana.clicked.connect(self.semana_handle)
+        self.ui.btEsteMes.clicked.connect(self.mes_handle)
+        self.ui.btImprimir.clicked.connect(self.confirmarImprimir)
+
+    def showEvent(self, event):
         # dar formato a la tabla principal
         header_i = self.ui.tabla_ingresos.horizontalHeader()
         header_e = self.ui.tabla_egresos.horizontalHeader()
@@ -58,21 +69,8 @@ class App_Caja(QtWidgets.QMainWindow):
             else:
                 header_i.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
                 header_e.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-
-        # añade eventos para los botones
-        self.ui.btRegresar.clicked.connect(self.goHome)
-        self.ui.btIngreso.clicked.connect(self.registrarIngreso)
-        self.ui.btEgreso.clicked.connect(self.registrarEgreso)
         
-        self.ui.dateDesde.dateChanged.connect(lambda: self.update_display())
-        self.ui.dateHasta.dateChanged.connect(lambda: self.update_display())
-        self.ui.btHoy.clicked.connect(self.hoy_handle)
-        self.ui.btEstaSemana.clicked.connect(self.semana_handle)
-        self.ui.btEsteMes.clicked.connect(self.mes_handle)
-        self.ui.btImprimir.clicked.connect(self.confirmarImprimir)
-
-    def showEvent(self, event):
-        self.update_display(rescan=True)
+        self.update_display()
     
     def resizeEvent(self, event):
         if self.isVisible():
@@ -105,33 +103,30 @@ class App_Caja(QtWidgets.QMainWindow):
         self.ui.dateDesde.setDate(start)
         self.ui.dateHasta.setDate(end)
         
-    def update_display(self, rescan: bool = False):
+    def update_display(self):
         """ Actualiza la tabla y el contador de usuarios.
             Acepta una cadena de texto para la búsqueda de usuarios.
             También lee de nuevo la tabla de usuarios, si se desea. """
-        if rescan:
-            manejador = ManejadorCaja(self.conn)
+        fechaDesde = self.ui.dateDesde.date()
+        fechaHasta = self.ui.dateHasta.date()
+        manejador = ManejadorCaja(self.conn)
 
-            all_movimientos = manejador.obtenerMovimientos()
-            self.all_ingresos = []
-            self.all_egresos  = []
-            
-            for m in all_movimientos:
-                lista = self.all_ingresos if m[1] > 0 else self.all_egresos
-                lista.append(m)
+        all_movimientos = manejador.obtenerMovimientos(fechaDesde, fechaHasta)
+        self.all_ingresos = []
+        self.all_egresos  = []
+        
+        for m in all_movimientos:
+            lista = self.all_ingresos if m[1] > 0 else self.all_egresos
+            lista.append(m)
 
         bold = QFont()
         bold.setBold(True)
-        
-        fechaDesde = self.ui.dateDesde.date()
-        fechaHasta = self.ui.dateHasta.date()
         
         # <tabla de ingresos>
         tabla = self.ui.tabla_ingresos
         tabla.setRowCount(0)
         
-        movimientos = [m for m in self.all_ingresos
-                       if fechaDesde <= QDate(m[0]) <= fechaHasta]
+        movimientos = self.all_ingresos
         
         ingresos_efectivo = sum(m[1] for m in movimientos if m[3] == 'Efectivo')
         ingresos_transferencia = sum(m[1] for m in movimientos if m[3] == 'Transferencia bancaria')
@@ -167,8 +162,7 @@ class App_Caja(QtWidgets.QMainWindow):
         tabla = self.ui.tabla_egresos
         tabla.setRowCount(0)
         
-        movimientos = [m for m in self.all_egresos
-                       if fechaDesde <= QDate(m[0]) <= fechaHasta]
+        movimientos = self.all_egresos
         
         egresos_efectivo = sum(-m[1] for m in movimientos if m[3] == 'Efectivo')
         egresos_transferencia = sum(-m[1] for m in movimientos if m[3] == 'Transferencia bancaria')
@@ -252,28 +246,21 @@ class App_Caja(QtWidgets.QMainWindow):
                                   fontSize=9, alignment=TA_LEFT))
         styles.add(ParagraphStyle(name='Foot', fontName='Helvetica',
                                   fontSize=11, alignment=TA_LEFT))
-
-        # contenido del PDF
-        fechaDesde = self.ui.dateDesde.date()
-        fechaHasta = self.ui.dateHasta.date()
         
         # cálculos extra de ingresos
-        movimientos = [m for m in self.all_ingresos
-                       if fechaDesde <= QDate(m[0]) <= fechaHasta]
+        movimientos = self.all_ingresos
         
         ingresos_credito = sum(m[1] for m in movimientos if m[3].endswith('crédito'))
         ingresos_debito = sum(m[1] for m in movimientos if m[3].endswith('débito'))
         
         # cálculos extra de egresos
-        movimientos = [m for m in self.all_egresos
-                       if fechaDesde <= QDate(m[0]) <= fechaHasta]
+        movimientos = self.all_egresos
         
         egresos_credito = -sum(m[1] for m in movimientos if m[3].endswith('crédito'))
         egresos_debito = -sum(m[1] for m in movimientos if m[3].endswith('débito'))
         
         # totales (todos los métodos)
-        movimientos = [m for m in self.all_ingresos + self.all_egresos
-                       if fechaDesde <= QDate(m[0]) <= fechaHasta]
+        movimientos = self.all_ingresos + self.all_egresos
         
         total_efectivo = sum(m[1] for m in movimientos if m[3] == 'Efectivo')
         total_transferencia = sum(m[1] for m in movimientos if m[3] == 'Transferencia bancaria')
@@ -470,7 +457,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         QtWidgets.QMessageBox.information(
             self, 'Éxito', '¡Movimiento registrado!')
         
-        self.parent_.update_display(rescan=True)
+        self.parent_.update_display()
         self.close()
     
     @property

@@ -33,6 +33,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         
         # otras variables importantes
         self.filtro = 0
+        self.chunk_size = 50
         
         # guardar conexión y usuario como atributos
         self.conn = parent.conn
@@ -55,7 +56,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.ui.dateHasta.setMaximumDate(hoy)
         self.ui.dateHasta.setMinimumDate(fechaMin)
         
-        # deshabilitar botones (¿cuáles?) es caso de no ser administrador
+        # deshabilitar botones es caso de no ser administrador
         if not self.user.administrador:
             self.ui.btCancelar.hide()
 
@@ -73,7 +74,30 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
 
         self.ui.btFiltrar.setMenu(popup)
         self.ui.btFiltrar.clicked.connect(lambda: self.cambiarFiltro('folio', 0))
-
+        
+        # crear eventos para los botones
+        self.ui.btRegresar.clicked.connect(self.goHome)
+        self.ui.btTerminar.clicked.connect(self.terminarVenta)
+        self.ui.btCancelar.clicked.connect(self.cancelarVenta)
+        self.ui.btOrden.clicked.connect(self.imprimirOrden)
+        self.ui.btRecibo.clicked.connect(self.imprimirTicket)
+        self.ui.searchBar.textChanged.connect(lambda: self.update_display())
+        
+        self.ui.dateDesde.dateChanged.connect(lambda: self.update_display(rescan=True))
+        self.ui.dateHasta.dateChanged.connect(lambda: self.update_display(rescan=True))
+        self.ui.btHoy.clicked.connect(self.hoy_handle)
+        self.ui.btEstaSemana.clicked.connect(self.semana_handle)
+        self.ui.btEsteMes.clicked.connect(self.mes_handle)
+        
+        self.ui.tabla_ventasDirectas.doubleClicked.connect(self.detallesVenta)
+        self.ui.tabla_pedidos.doubleClicked.connect(self.detallesVenta)
+        self.ui.tabWidget.currentChanged.connect(self.cambiar_pestana)
+        self.ui.btAdelante.clicked.connect(self.ir_adelante)
+        self.ui.btUltimo.clicked.connect(self.ir_ultimo)
+        self.ui.btAtras.clicked.connect(self.ir_atras)
+        self.ui.btPrimero.clicked.connect(self.ir_primero)
+    
+    def showEvent(self, event):
         # dar formato a las tabla principales
         # TABLA DE VENTAS DIRECTAS
         header = self.ui.tabla_ventasDirectas.horizontalHeader()
@@ -93,32 +117,6 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             else:
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
         
-        # tamaño de elementos para cada página de la tabla
-        self.chunk_size = 50
-        
-        # crear eventos para los botones
-        self.ui.btRegresar.clicked.connect(self.goHome)
-        self.ui.btTerminar.clicked.connect(self.terminarVenta)
-        self.ui.btCancelar.clicked.connect(self.cancelarVenta)
-        self.ui.btOrden.clicked.connect(self.imprimirOrden)
-        self.ui.btRecibo.clicked.connect(self.imprimirTicket)
-        self.ui.searchBar.textChanged.connect(lambda: self.update_display())
-        
-        self.ui.dateDesde.dateChanged.connect(lambda: self.update_display())
-        self.ui.dateHasta.dateChanged.connect(lambda: self.update_display())
-        self.ui.btHoy.clicked.connect(self.hoy_handle)
-        self.ui.btEstaSemana.clicked.connect(self.semana_handle)
-        self.ui.btEsteMes.clicked.connect(self.mes_handle)
-        
-        self.ui.tabla_ventasDirectas.doubleClicked.connect(self.detallesVenta)
-        self.ui.tabla_pedidos.doubleClicked.connect(self.detallesVenta)
-        self.ui.tabWidget.currentChanged.connect(self.cambiar_pestana)
-        self.ui.btAdelante.clicked.connect(self.ir_adelante)
-        self.ui.btUltimo.clicked.connect(self.ir_ultimo)
-        self.ui.btAtras.clicked.connect(self.ir_atras)
-        self.ui.btPrimero.clicked.connect(self.ir_primero)
-    
-    def showEvent(self, event):
         self.update_display(rescan=True)        
         
         self.ui.lbContador.setText(
@@ -183,7 +181,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             f'{num_pagina + 1} de {ceil(len(compras) / self.chunk_size) or 1}')
         
         self.tabla_actual.resizeRowsToContents()
-
+        
     def cambiarFiltro(self, filtro, idx):
         """ Modifica el filtro de búsqueda. """
         self.filtro = idx
@@ -217,35 +215,37 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         """ Actualiza la tabla y el contador de clientes.
             Lee de nuevo la tabla de clientes, si se desea. """
         if rescan:
+            fechaDesde = self.ui.dateDesde.date()
+            fechaHasta = self.ui.dateHasta.date()
             restrict = self.user.id if not self.user.administrador else None
             
             manejador = ManejadorVentas(self.conn)
 
-            self.all_directas = manejador.tablaVentas(restrict)
-            self.all_pedidos = manejador.tablaPedidos(restrict)
-
+            self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, restrict)
+            self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta, restrict)
+        
+        self.update_ventas()
+        self.update_pedidos()
+        
+        self.tabla_actual.resizeRowsToContents()
+    
+    def update_ventas(self):
+        """ Actualizar tabla de ventas directas. """
         bold = QFont()
         bold.setBold(True)
-        
-        fechaDesde = self.ui.dateDesde.date()
-        fechaHasta = self.ui.dateHasta.date()
         
         # texto introducido por el usuario
         txt_busqueda = self.ui.searchBar.text().strip()
 
-        # <llenar primera tabla>
         tabla = self.ui.tabla_ventasDirectas
         tabla.setRowCount(0)
-        
-        compras = filter(
-                      lambda c: fechaDesde <= QDate(c[3]) <= fechaHasta, 
-                      self.all_directas)
-                
+
         if txt_busqueda:
             compras = filter(
                           lambda c: c[self.filtro] 
                                     and son_similar(txt_busqueda, c[self.filtro]),
                           compras)
+        else: compras = self.all_directas
         
         compras = list(compras)
         chunks = chunkify(compras, self.chunk_size) or [[]]
@@ -277,22 +277,24 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                 tabla.item(row, 5).setBackground(QColor(ColorsEnum.ROJO))
             elif estado.startswith('Terminada'):
                 tabla.item(row, 5).setBackground(QColor(ColorsEnum.VERDE))
-        # </llenar primera tabla>
 
-        # <llenar segunda tabla>
+    def update_pedidos(self):
+        """ Actualizar tabla de ventas sobre pedido. """
+        bold = QFont()
+        bold.setBold(True)
+        
+        # texto introducido por el usuario
+        txt_busqueda = self.ui.searchBar.text().strip()
+        
         tabla = self.ui.tabla_pedidos
         tabla.setRowCount(0)
-
-        compras = filter(
-                      lambda c: fechaDesde <= QDate(c[3]) <= fechaHasta
-                                or c[6].startswith('Recibido'), 
-                      self.all_pedidos)
                 
         if txt_busqueda:
             compras = filter(
                           lambda c: c[self.filtro] 
                                     and son_similar(txt_busqueda, c[self.filtro]),
                           compras)
+        else: compras = self.all_pedidos
         
         compras = list(compras)
         chunks = chunkify(compras, self.chunk_size) or [[]]
@@ -334,13 +336,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                 tabla.setCellWidget(row, col+1, button_cell)
             
                 # resaltar pedidos con fechas de entrega ya pasadas
-                entrega = compra[4]
-                
-                if QDateTime.currentDateTime() > entrega:
-                    tabla.item(row, 4).setBackground(QColor(ColorsEnum.ROJO))
-        # </llenar segunda tabla>
-        
-        self.tabla_actual.resizeRowsToContents() 
+                if QDateTime.currentDateTime() > compra[4]:
+                    tabla.item(row, 4).setBackground(QColor(ColorsEnum.ROJO)) 
 
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
