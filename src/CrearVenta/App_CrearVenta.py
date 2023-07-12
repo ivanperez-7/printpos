@@ -1,6 +1,6 @@
-from dataclasses import dataclass, field
-
 import copy
+
+from dataclasses import dataclass, field
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QRegularExpressionValidator
@@ -44,6 +44,13 @@ class ItemVenta:
                     self.precio_unit, 
                     self.descuento_unit, 
                     self.importe))
+    
+    @classmethod
+    def generarItemComision(cls, importe: float, porcentaje: float):
+        """ Generar item de comisión por pago con tarjeta """
+        return cls(0, 'COMISION', 1., 0., 
+                   importe * porcentaje/100, 
+                   'COMISIÓN POR PAGO CON TARJETA', False)
 
 
 @dataclass
@@ -994,6 +1001,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.conn = first.conn
         self.user = first.user
         
+        # venta inicial, SIN NIGUNA COMISIÓN POR TARJETA
         self.ventaDatos = ventaDatos
 
         # si la venta es directa, ocultar los widgets para apartados
@@ -1008,6 +1016,11 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 w.hide()
         else:        
             ventaDatos.fechaCreacion = QDateTime.currentDateTime()
+        
+        # seleccionar botón de método de pago
+        for bt in self.ui.buttonGroupMetodo.buttons():
+            bt.setChecked(
+                first.ui.btMetodoGrupo.checkedButton().text() == bt.text())
 
         #### registrar venta en tablas ####
         manejadorVentas = ManejadorVentas(self.conn)
@@ -1046,7 +1059,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ui.btCancelar.clicked.connect(self.abortar)
         self.ui.txtPago.textChanged.connect(self.calcularCambio)
         self.ui.txtAnticipo.textChanged.connect(self.cambiarAnticipo)
-        self.ui.buttonGroupMetodo.buttonClicked.connect(self.handleComision)
+        #self.ui.buttonGroupMetodo.buttonClicked.connect(self.handleComision)
 
         self.recalcularImportes(ventaDatos)
         self.show()
@@ -1082,19 +1095,14 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
     
     def handleComision(self, bt: QtWidgets.QRadioButton):
         """ Mostrar u ocultar comisión según método de pago. """
-        manejador = ManejadorProductos(self.conn)
-        idProducto, = manejador.obtenerIdProducto('COMISION')
         venta = copy.deepcopy(self.ventaDatos)
+        total = venta.total
 
         if bt.text().endswith('crédito'):
-            item = ItemVenta(idProducto, 'COMISION', 1., 0., 
-                             self.total * self.COMISION_CREDITO/100, 
-                             'COMISIÓN POR PAGO CON TARJETA', False)
+            item = ItemVenta.generarItemComision(total, self.COMISION_CREDITO)
             venta.productos.append(item)
         elif bt.text().endswith('débito'):
-            item  = ItemVenta(idProducto, 'COMISION', 1., 0., 
-                              self.total * self.COMISION_DEBITO/100, 
-                              'COMISIÓN POR PAGO CON TARJETA', False)
+            item = ItemVenta.generarItemComision(total, self.COMISION_DEBITO)
             venta.productos.append(item)
         else:
             venta = self.ventaDatos
@@ -1138,17 +1146,18 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 self.ventaDatos.fechaCreacion.toPython(),
                 self.ventaDatos.fechaEntrega.toPython(),
                 self.ventaDatos.comentarios.strip(),
-                int(self.ventaDatos.requiereFactura),
+                self.ventaDatos.requiereFactura,
                 'No terminada')
     
     def obtenerParametrosVentasDetallado(self):
         """ Parámetros para tabla ventas_detallado (datos de productos). """
-        return [(int(prod.id),
-                 float(prod.cantidad),
-                 float(prod.precio_unit),
-                 float(prod.descuento_unit),
+        return [(prod.id,
+                 prod.cantidad,
+                 prod.precio_unit,
+                 prod.descuento_unit,
                  prod.notas,
-                 prod.duplex) 
+                 prod.duplex,
+                 prod.importe) 
                 for prod in self.ventaDatos.productos]
     
     def calcularCambio(self, txt):
@@ -1187,8 +1196,10 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         
         if not pagoAceptado or not minimoCincuentaPorCiento:
             return
+        
+        manejadorVentas = ManejadorVentas(self.conn)
 
-        if pago >= 0.:
+        if pago > 0.:
             manejadorCaja = ManejadorCaja(self.conn)
             hoy = QDateTime.currentDateTime().toPython()
             
@@ -1201,19 +1212,19 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                 self.user.id
             )
             
-            if not manejadorCaja.insertarMovimiento(ingreso_db_parametros,
-                                                    commit=False):
+            if not manejadorCaja.insertarMovimiento(ingreso_db_parametros, commit=False):
                 return
         
         # cambiar el estado de la venta a 'Terminada' o 'Recibido xx.xx'
         # y también cambiar método de pago
-        manejadorVentas = ManejadorVentas(self.conn)
         estado = 'Terminada' if esDirecta else f'Recibido {self.paraPagar:.2f}'
         
+        if not manejadorVentas.actualizarRecibido(self.idVentas, pago):
+            return
         if not manejadorVentas.actualizarEstadoVenta(self.idVentas, estado):
             return
-        if not manejadorVentas.actualizarMetodoPago(self.idVentas,
-                                                    self.metodoSeleccionado, commit=True):
+        if not manejadorVentas.actualizarMetodoPago(self.idVentas, self.metodoSeleccionado,
+                                                    commit=True):
             return
 
         # abrir pregunta

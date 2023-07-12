@@ -491,38 +491,13 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
         self.ui = Ui_DetallesVenta()
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
-
-        # dar formato a la tabla principal
-        header = self.ui.tabla_productos.horizontalHeader()
-        header.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         
-        for col in range(self.ui.tabla_productos.columnCount()):
-            if col == 2:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-        
-        # llenar de productos la tabla
-        manejador = ManejadorVentas(first.conn)
-        productos = manejador.obtenerTablaProductosVenta(idx)
-
-        tabla = self.ui.tabla_productos
-        tabla.setRowCount(0)
-
-        for row, prod in enumerate(productos):
-            tabla.insertRow(row)
-
-            for col, dato in enumerate(prod):
-                if isinstance(dato, float):
-                    if col == 4 and not dato: cell = ''
-                    else: cell = f'{dato:,.2f}'
-                else:
-                    cell = str(dato or '')
-                    
-                cell = QtWidgets.QTableWidgetItem(cell)
-                tabla.setItem(row, col, cell)
+        self.conn = first.conn
+        self.id_ventas = idx
 
         # total de la venta, anticipo y saldo
+        manejador = ManejadorVentas(self.conn)
+        
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
         
@@ -563,7 +538,41 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
         self.show()
     
     def showEvent(self, event):
-        self.ui.tabla_productos.resizeRowsToContents()
+        # dar formato a la tabla principal
+        header = self.ui.tabla_productos.horizontalHeader()
+        header.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        
+        for col in range(self.ui.tabla_productos.columnCount()):
+            if col == 2:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
+            else:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
+        
+        self.update_display()
+        event.accept()
+    
+    def update_display(self):
+        # llenar de productos la tabla
+        manejador = ManejadorVentas(self.conn)
+        productos = manejador.obtenerTablaProductosVenta(self.id_ventas)
+
+        tabla = self.ui.tabla_productos
+        tabla.setRowCount(0)
+
+        for row, prod in enumerate(productos):
+            tabla.insertRow(row)
+
+            for col, dato in enumerate(prod):
+                if isinstance(dato, float):
+                    if col == 4 and not dato: cell = ''
+                    else: cell = f'{dato:,.2f}'
+                else:
+                    cell = str(dato or '')
+                    
+                cell = QtWidgets.QTableWidgetItem(cell)
+                tabla.setItem(row, col, cell)
+        
+        tabla.resizeRowsToContents()
 
 
 @con_fondo
@@ -585,42 +594,14 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         # guardar conexión y usuario como atributos
         self.conn = first.conn
         self.user = first.user
-
-        # dar formato a la tabla principal
-        header = self.ui.tabla_productos.horizontalHeader()
-        header.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         
-        for col in range(self.ui.tabla_productos.columnCount()):
-            if col == 2:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-        
-        # llenar de productos la tabla
         manejador = ManejadorVentas(first.conn)
-        productos = manejador.obtenerTablaProductosVenta(idx)
-
-        tabla = self.ui.tabla_productos
-        tabla.setRowCount(0)
-
-        for row, prod in enumerate(productos):
-            tabla.insertRow(row)
-
-            for col, dato in enumerate(prod):
-                if isinstance(dato, float):
-                    if col == 4 and not dato: cell = ''
-                    else: cell = f'{dato:,.2f}'
-                else:
-                    cell = str(dato or '')
-                    
-                cell = QtWidgets.QTableWidgetItem(cell)
-                tabla.setItem(row, col, cell)
         
         # calcular el saldo restante
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
         
-        self.paraPagar = total-anticipo
+        self.paraPagar = round(total-anticipo, 2)
 
         nombreCliente, correo, telefono, fechaCreacion, fechaEntrega, *_ \
             = manejador.obtenerDatosGeneralesVenta(idx)
@@ -646,11 +627,45 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         self.show()
     
     def showEvent(self, event):
-        self.ui.tabla_productos.resizeRowsToContents()
+        # dar formato a la tabla principal
+        header = self.ui.tabla_productos.horizontalHeader()
+        header.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        
+        for col in range(self.ui.tabla_productos.columnCount()):
+            if col == 2:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
+            else:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
+        
+        self.update_display()
+        event.accept()
 
     ####################
     # FUNCIONES ÚTILES #
     ####################
+    def update_display(self):
+        """ Llenar de productos la tabla. """
+        manejador = ManejadorVentas(self.conn)
+        productos = manejador.obtenerTablaProductosVenta(self.id_ventas)
+
+        tabla = self.ui.tabla_productos
+        tabla.setRowCount(0)
+
+        for row, prod in enumerate(productos):
+            tabla.insertRow(row)
+
+            for col, dato in enumerate(prod):
+                if isinstance(dato, float):
+                    if col == 4 and not dato: cell = ''
+                    else: cell = f'{dato:,.2f}'
+                else:
+                    cell = str(dato or '')
+                    
+                cell = QtWidgets.QTableWidgetItem(cell)
+                tabla.setItem(row, col, cell)
+        
+        tabla.resizeRowsToContents()
+    
     def calcularCambio(self, txt):
         """ Recalcular cambio a entregar. """
         try:
@@ -688,7 +703,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         )
         
         if not manejadorCaja.insertarMovimiento(ingreso_db_parametros,
-                                                 commit=False):
+                                                commit=False):
             return
         
         # marcar venta como terminada

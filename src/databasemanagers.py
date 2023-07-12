@@ -767,10 +767,10 @@ class ManejadorVentas(DatabaseManager):
         return self.executemany('''
             INSERT INTO Ventas_Detallado (
                 id_ventas, id_productos, cantidad, precio, 
-                descuento, especificaciones, duplex
+                descuento, especificaciones, duplex, importe
             ) 
             VALUES 
-                (?,?,?,?,?,?,?);
+                (?,?,?,?,?,?,?,?);
         ''', params, commit=True)
     
     def actualizarEstadoVenta(self, id_ventas: int, estado: str, commit: bool = False):
@@ -783,6 +783,28 @@ class ManejadorVentas(DatabaseManager):
             WHERE   id_ventas = ?;
         ''', (estado, id_ventas), commit=commit)
     
+    def agregarComision(self, id_ventas: int, importe: float, commit: bool = False):
+        """ Agregar producto de comisión por pago con tarjeta a venta.
+        
+            No hace `commit`, a menos que se indique lo contrario. """
+        if importe <= 0.:
+            return True
+        
+        manejador = ManejadorProductos(self.conn)
+        id_producto, = manejador.obtenerIdProducto('COMISION')
+        
+        params = (id_ventas, id_producto, importe,
+                  1., 0., 'COMISIÓN POR PAGO CON TARJETA', False)
+        
+        return self.execute('''
+            INSERT INTO Ventas_Detallado (
+                id_ventas, id_productos, cantidad, precio, 
+                descuento, especificaciones, duplex
+            ) 
+            VALUES 
+                (?,?,?,?,?,?,?);
+        ''', params, commit=commit)
+    
     def actualizarMetodoPago(self, id_ventas: int, metodo: str, commit: bool = False):
         """ Actualiza método de pago de venta a parámetro.
         
@@ -792,6 +814,16 @@ class ManejadorVentas(DatabaseManager):
             SET     metodo_pago = ?
             WHERE   id_ventas = ?;
         ''', (metodo, id_ventas), commit=commit)
+    
+    def actualizarRecibido(self, id_ventas: int, pago: float, commit: bool = False):
+        """ Actualizar pago recibido para esta venta, en tabla ventas. 
+        
+            No hace `commit`, a menos que se indique lo contrario."""
+        return self.execute('''
+            UPDATE  Ventas
+            SET     recibido = ?
+            WHERE   id_ventas = ?;
+        ''', (pago, id_ventas), commit=commit)
 
 
 class ManejadorUsuarios(DatabaseManager):
