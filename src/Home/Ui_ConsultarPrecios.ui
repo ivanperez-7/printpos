@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1066</width>
-    <height>642</height>
+    <height>640</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -431,40 +431,13 @@ QTableView:active {
               <enum>QFrame::Raised</enum>
              </property>
              <layout class="QGridLayout" name="gridLayout">
-              <property name="rightMargin">
-               <number>0</number>
-              </property>
-              <property name="bottomMargin">
-               <number>18</number>
-              </property>
               <property name="horizontalSpacing">
                <number>90</number>
               </property>
-              <item row="0" column="1" alignment="Qt::AlignHCenter|Qt::AlignBottom">
-               <widget class="QLabel" name="lbTotalSimple">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>40</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>40</height>
-                 </size>
-                </property>
-                <property name="font">
-                 <font>
-                  <pointsize>18</pointsize>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>Total: $0.00</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="0" alignment="Qt::AlignLeft">
+              <property name="verticalSpacing">
+               <number>10</number>
+              </property>
+              <item row="0" column="0">
                <widget class="QGroupBox" name="groupBox">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -507,6 +480,36 @@ QTableView:active {
                   <string>1</string>
                  </property>
                 </widget>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="checkDuplex">
+                <property name="font">
+                 <font>
+                  <pointsize>11</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Producto a doble cara</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1" rowspan="2">
+               <widget class="QLabel" name="lbTotalSimple">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>40</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <pointsize>18</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Total: $0.00</string>
+                </property>
                </widget>
               </item>
              </layout>
@@ -833,8 +836,8 @@ QTableView:active {
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="groupButtonAlto"/>
   <buttongroup name="groupButtonFiltro"/>
+  <buttongroup name="groupButtonAlto"/>
   <buttongroup name="groupButtonAncho"/>
  </buttongroups>
 </ui>

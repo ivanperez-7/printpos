@@ -466,23 +466,6 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         self.conn = first.conn
         self.user = first.user
 
-        # dar formato a las tablas
-        header = self.ui.tabla_seleccionar.horizontalHeader()
-
-        for col in range(self.ui.tabla_seleccionar.columnCount()):
-            if col == 1:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-        
-        header = self.ui.tabla_granformato.horizontalHeader()
-
-        for col in range(self.ui.tabla_granformato.columnCount()):
-            if col == 1:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-
         manejador = ManejadorProductos(self.conn)
         
         # llena la tabla de productos no gran formato        
@@ -509,7 +492,25 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         self.show()
     
     def showEvent(self, event):
+        # dar formato a las tablas
+        header = self.ui.tabla_seleccionar.horizontalHeader()
+
+        for col in range(self.ui.tabla_seleccionar.columnCount()):
+            if col == 1:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
+            else:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
+        
+        header = self.ui.tabla_granformato.horizontalHeader()
+
+        for col in range(self.ui.tabla_granformato.columnCount()):
+            if col == 1:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
+            else:
+                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
+        
         self.update_display()
+        event.accept()
 
     def keyPressEvent(self, qKeyEvent):
         if qKeyEvent.key() in {Qt.Key_Return, Qt.Key_Enter}:
