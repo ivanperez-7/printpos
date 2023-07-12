@@ -120,10 +120,11 @@ def crear_conexion(usuario: str, psswd: str, rol: str):
     config.read('config.ini')
 
     red_local = config['DEFAULT']['red_local']
+    nombre = config['SUCURSAL']['nombre']
     
     try:
         conn = fdb.connect(
-                    dsn=red_local + ':pensiones.fdb',
+                    dsn=red_local + f':{nombre}.fdb',
                     user=usuario,
                     password=psswd,
                     charset='UTF8',

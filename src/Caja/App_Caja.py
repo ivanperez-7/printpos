@@ -280,7 +280,7 @@ class App_Caja(QtWidgets.QMainWindow):
         total_credito = ingresos_credito - egresos_credito
         total_debito = ingresos_debito - egresos_debito
         
-        esperado = sum(m[1] for m in self.all_egresos + self.all_ingresos)
+        esperado = sum(m[1] for m in movimientos)
         
         # elementos para constuir el PDF
         elements = [
@@ -288,7 +288,7 @@ class App_Caja(QtWidgets.QMainWindow):
             Spacer(1, 6),
             
             Paragraph('Realizado por: ' + self.user.nombre, styles['Left']),
-            Paragraph(f'Fecha y hora: {formatDate(QDateTime.currentDateTime())}', styles['Left']),
+            Paragraph('Fecha y hora: ' + formatDate(QDateTime.currentDateTime()), styles['Left']),
             Spacer(1, 6),
             
             Paragraph('Resumen de ingresos', styles['Heading3']),
@@ -305,7 +305,7 @@ class App_Caja(QtWidgets.QMainWindow):
             Paragraph(self.ui.lbEgresosTransferencia.text(), styles['Left'], bulletText='•'),
             Spacer(1, 6),
             
-            Paragraph('Total', styles['Heading3']),
+            Paragraph('Esperado', styles['Heading3']),
             Paragraph(f'Efectivo: ${total_efectivo:,.2f}', styles['Left'], bulletText='•'),
             Paragraph(f'Tarjeta de crédito: ${total_credito:,.2f}', styles['Left'], bulletText='•'),
             Paragraph(f'Tarjeta de débito: ${total_debito:,.2f}', styles['Left'], bulletText='•'),

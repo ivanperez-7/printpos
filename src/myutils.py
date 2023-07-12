@@ -354,17 +354,24 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
         titulo = 'COTIZACIÓN DE VENTA'
         pie = '¡Muchas gracias por su visita!'
         folio = ''
+    
+    # leer datos de sucursal de archivo de configuración
+    from configparser import ConfigParser
+    
+    config = ConfigParser(inline_comment_prefixes=';')
+    config.read('config.ini', encoding='utf8')
+    SUCURSAL = config['SUCURSAL']
 
     # elementos para constuir el PDF
     elements = [
         logo,
         Spacer(1, 6),
 
-        Paragraph('Avenida 15 No. 394 entre 52 y 54', styles['Center']),
-        Paragraph('Fracc. Residencial Pensiones', styles['Center']),
+        Paragraph(SUCURSAL['p1'], styles['Center']),
+        Paragraph(SUCURSAL['p2'], styles['Center']),
         Spacer(1, 6),
 
-        Paragraph('Teléfono: 999 649 0443', styles['Center']),
+        Paragraph(SUCURSAL['p3'], styles['Center']),
         Spacer(1, 6),
 
         Paragraph('* '*40, styles['Center']),

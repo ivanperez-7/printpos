@@ -95,7 +95,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         
         # tamaño de elementos para cada página de la tabla
         self.chunk_size = 50
-                
+        
         # crear eventos para los botones
         self.ui.btRegresar.clicked.connect(self.goHome)
         self.ui.btTerminar.clicked.connect(self.terminarVenta)
