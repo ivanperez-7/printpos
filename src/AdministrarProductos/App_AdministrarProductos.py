@@ -36,13 +36,13 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         popup = QtWidgets.QMenu(self.ui.btFiltrar)
 
         default = popup.addAction(
-            'Código', lambda: self.cambiarFiltro('código', 1))
+            'Código', lambda: self.cambiar_filtro('código', 1))
         popup.addAction(
-            'Descripción', lambda: self.cambiarFiltro('descripción', 2))
+            'Descripción', lambda: self.cambiar_filtro('descripción', 2))
         popup.setDefaultAction(default)
 
         self.ui.btFiltrar.setMenu(popup)
-        self.ui.btFiltrar.clicked.connect(lambda: self.cambiarFiltro('código', 1))
+        self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('código', 1))
         
         # dar formato a la tabla principal
         header = self.ui.tabla_productos.horizontalHeader()
@@ -71,7 +71,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def cambiarFiltro(self, filtro, idx):
+    def cambiar_filtro(self, filtro, idx):
         """ Modifica el filtro de búsqueda. """
         self.filtro = idx
         self.ui.searchBar.setPlaceholderText(f'Busque producto por {filtro}...')
@@ -202,7 +202,7 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
         self.ui = Ui_EditarProducto()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
+        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         
         # guardar conexión y usuario como atributos
         self.conn = first.conn

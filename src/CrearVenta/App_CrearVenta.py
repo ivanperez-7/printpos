@@ -454,7 +454,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         self.ui = Ui_AgregarProducto()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
+        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
         LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
@@ -699,7 +699,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
         self.ui = Ui_SeleccionarCliente()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
+        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún cliente!')
 
@@ -805,7 +805,7 @@ class App_FechaEntrega(QtWidgets.QMainWindow):
         self.ui = Ui_FechaEntrega()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
+        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         self.first = first
         
@@ -852,7 +852,7 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
         self.ui = Ui_AgregarDescuento()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
+        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         self.first = first
         
@@ -938,7 +938,7 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
         self.ui = Ui_EnviarCotizacion()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
+        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         self.first = first
 
@@ -1006,7 +1006,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
 
         self.ui = Ui_ConfirmarVenta()
         self.ui.setupUi(self)
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
+        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
     
         # guardar conexión y usuarios como atributos
         self.conn = first.conn

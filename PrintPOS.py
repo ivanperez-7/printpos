@@ -6,10 +6,7 @@ from PySide6.QtGui import QPalette, QColor
 from Login import App_Login
 
 
-def main():
-    app = QApplication()
-    app.setStyle(QStyleFactory.create('Fusion'))
-    
+def configurarPaleta(app: QApplication):
     BLANCO = QColor(255, 255, 255)
     NEGRO = QColor(0, 0, 0)
     GRIS = QColor(128, 128, 128)
@@ -27,9 +24,16 @@ def main():
     palette.setColor(CR.PlaceholderText, GRIS)      # texto placeholder -> gris
     
     app.setPalette(palette)
+
+def main():
+    app = QApplication()
+    app.setStyle(QStyleFactory.create('Fusion'))
+    
+    configurarPaleta(app)
     
     login = App_Login()    
     app.exec()
+
 
 if __name__ == '__main__':
     main()

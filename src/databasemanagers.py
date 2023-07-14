@@ -1,8 +1,32 @@
 """ Módulo con manejadores para tablas en la base de datos. """
 import fdb
+
 from PySide6.QtCore import QDate
 
 from mywidgets import WarningDialog
+
+
+def crear_conexion(usuario: str, psswd: str, rol: str):
+    from configparser import ConfigParser
+    
+    # leer datos de config.ini
+    config = ConfigParser(inline_comment_prefixes=';')
+    config.read('config.ini')
+
+    red_local = config['DEFAULT']['red_local']
+    nombre = config['SUCURSAL']['nombre']
+    
+    try:
+        conn = fdb.connect(
+                    dsn=red_local + f':{nombre}.fdb',
+                    user=usuario,
+                    password=psswd,
+                    charset='UTF8',
+                    role=rol)
+        return conn
+    except fdb.Error as err:
+        print(f'Cannot open connection to database: {str(err)}')
+        return None
 
 
 class DatabaseManager:
@@ -88,7 +112,7 @@ class ManejadorCaja(DatabaseManager):
         ''', (inicio.toPython(), final.toPython()))
     
     def obtenerFechaPrimerMov(self):
-        """ Obtener fecha del movimiento más antigüo. """        
+        """ Obtener fecha del movimiento más antiguo. """        
         return self.fetchone('SELECT MIN(fecha_hora) FROM Caja;')
     
     def insertarMovimiento(self, params: tuple, commit: bool = True):
@@ -728,6 +752,22 @@ class ManejadorVentas(DatabaseManager):
                            ON V.id_clientes = C.id_clientes
             WHERE   id_ventas = ?;
         ''', (id_venta,))
+    
+    def obtenerUsuarioAsociado(self, id_venta: int):
+        """ Obtener nombre de vendedor asociado a la venta. """
+        result = self.fetchone('''
+            SELECT	U.nombre
+            FROM	Ventas AS V
+                    LEFT JOIN Usuarios AS U
+                           ON V.id_usuarios = U.id_usuarios
+            WHERE	V.id_ventas = ?;
+        ''', (id_venta,))
+        
+        if result:
+            nombre, = result
+            return nombre
+        
+        return None
     
     def obtenerImporteTotal(self, id_venta: int):
         """ Obtiene el importe total de una venta. """

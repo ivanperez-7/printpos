@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 
-import fdb
-
 from PySide6 import QtWidgets
 from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtCore import Qt, QRegularExpression, Signal
@@ -63,6 +61,8 @@ class App_Login(QtWidgets.QMainWindow):
     @run_in_thread
     def verificar_info(self):
         """ Verifica datos ingresados consultando la tabla Usuarios. """
+        from databasemanagers import crear_conexion, DatabaseManager
+        
         self.lock = True
             
         usuario = self.ui.inputUsuario.text().upper()
@@ -84,14 +84,14 @@ class App_Login(QtWidgets.QMainWindow):
             return
         
         try:
-            crsr = conn.cursor()
-            crsr.execute('SELECT * FROM Usuarios WHERE usuario = ?;', (usuario,))
-        except fdb.Error as err:
+            manejador = DatabaseManager(conn)
+            manejador.crsr.execute('SELECT * FROM Usuarios WHERE usuario = ?;', (usuario,))
+        except Exception as err:
             print(str(err))
             self.errorLogin()
             return
         
-        result = crsr.fetchone()
+        result = manejador.crsr.fetchone()
         user = Usuario(*result, rol)
         
         self.validated.emit(conn, user)
@@ -108,28 +108,3 @@ class App_Login(QtWidgets.QMainWindow):
         
         self.close()
         self.mainWindow = VentanaPrincipal(conn, user)
-
-########################
-# FUNCIONES DEL MÓDULO #
-########################
-def crear_conexion(usuario: str, psswd: str, rol: str):
-    from configparser import ConfigParser
-    
-    # leer datos de config.ini
-    config = ConfigParser(inline_comment_prefixes=';')
-    config.read('config.ini')
-
-    red_local = config['DEFAULT']['red_local']
-    nombre = config['SUCURSAL']['nombre']
-    
-    try:
-        conn = fdb.connect(
-                    dsn=red_local + f':{nombre}.fdb',
-                    user=usuario,
-                    password=psswd,
-                    charset='UTF8',
-                    role=rol)
-        return conn
-    except fdb.Error as err:
-        print(f'Cannot open connection to database: {str(err)}')
-        return None

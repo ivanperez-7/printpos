@@ -22,7 +22,7 @@ class VentanaPrincipal(QMainWindow):
         self.en_venta = False   # bandera levantada al entrar en CrearVenta
         
         icon = QIcon()
-        icon.addPixmap(QPixmap(':/img/icon.ico'), QIcon.Normal, QIcon.Off)
+        icon.addPixmap(QPixmap(':/img/icon.ico'), QIcon.Mode.Normal, QIcon.State.Off)
         self.setWindowIcon(icon)
         
         from Home import App_ConsultarPrecios, App_Home
@@ -52,7 +52,7 @@ def DimBackground(window: QMainWindow):
     bg.setFixedSize(window.size())
     bg.setStyleSheet('background: rgba(64, 64, 64, 64);')
     bg.show()
-
+    
     return bg
 
 
@@ -74,9 +74,9 @@ class LabelAdvertencia(QLabel):
         font.setPointSize(14)
 
         self.setFont(font)
-        self.setAlignment(Qt.AlignCenter)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setText(msj)
-        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         
         parent.resizeEvent = self.relocate
         parent.model().rowsInserted.connect(self.actualizarLabel)
@@ -96,17 +96,19 @@ class LabelAdvertencia(QLabel):
 
 class WarningDialog(QMessageBox):
     """ Crea un widget simple con un ícono de advertencia. """
-    def __init__(self, body: str, error: str):
+    def __init__(self, body: str, error: str = None):
         super().__init__()
 
         icon = QIcon()
-        icon.addPixmap(QPixmap(':/img/icon.ico'), QIcon.Normal, QIcon.Off)
+        icon.addPixmap(QPixmap(':/img/icon.ico'), QIcon.Mode.Normal, QIcon.State.Off)
         self.setWindowIcon(icon)
 
         self.setWindowTitle('Atención')
         self.setIcon(QMessageBox.Icon.Warning)
-        self.setStandardButtons(QMessageBox.Ok)
+        self.setStandardButtons(QMessageBox.StandardButton.Ok)
         self.setText(body)
-        self.setDetailedText(error)
+        
+        if error:
+            self.setDetailedText(error)
 
         self.exec()

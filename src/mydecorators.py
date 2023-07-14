@@ -62,7 +62,7 @@ def requiere_admin(func):
         global dialog
         global parent
         
-        from Login.App_Login import crear_conexion
+        from databasemanagers import crear_conexion, DatabaseManager
         
         usuario = dialog.txtUsuario.text().upper()
         psswd = dialog.txtPsswd.text()
@@ -79,8 +79,8 @@ def requiere_admin(func):
             return
         
         try:
-            crsr = conn.cursor()
-            crsr.execute('SELECT permisos FROM Usuarios WHERE usuario = ?;', (usuario,))
+            manejador = DatabaseManager(conn)
+            manejador.crsr.execute('SELECT permisos FROM Usuarios WHERE usuario = ?;', (usuario,))
         except fdb.Error:
             dialog.close()
             QMessageBox.warning(parent, 'Error', 
