@@ -208,7 +208,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         self.ui = Ui_EditarInventario()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
+        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         
         # guardar conexión y usuarios como atributos
         self.conn = first.conn

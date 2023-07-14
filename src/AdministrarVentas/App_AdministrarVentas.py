@@ -7,7 +7,7 @@ from PySide6.QtCore import (QDate, QDateTime, QModelIndex,
                           QRegularExpression, Qt, Signal)
 
 from databasemanagers import ManejadorCaja, ManejadorVentas
-from mydecorators import con_fondo
+from mydecorators import con_fondo, run_in_thread
 from myutils import (chunkify, clamp, enviarWhatsApp, formatDate, generarOrdenCompra, 
                      generarTicketCompra, ColorsEnum, son_similar)
 from mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -20,6 +20,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
     """ Backend para la ventana de administración de ventas.
         TODO:
         -   ocultamiento de folios """
+    rescaned = Signal()
+    
     def __init__(self, parent: VentanaPrincipal):
         from AdministrarVentas.Ui_AdministrarVentas import Ui_AdministrarVentas
         
@@ -64,16 +66,16 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         popup = QtWidgets.QMenu(self.ui.btFiltrar)
 
         default = popup.addAction(
-            'Folio', lambda: self.cambiarFiltro('folio', 0))
+            'Folio', lambda: self.cambiar_filtro('folio', 0))
         popup.addAction(
-            'Vendedor', lambda: self.cambiarFiltro('vendedor', 1))
+            'Vendedor', lambda: self.cambiar_filtro('vendedor', 1))
         popup.addAction(
-            'Cliente', lambda: self.cambiarFiltro('cliente', 2))
+            'Cliente', lambda: self.cambiar_filtro('cliente', 2))
         
         popup.setDefaultAction(default)
 
         self.ui.btFiltrar.setMenu(popup)
-        self.ui.btFiltrar.clicked.connect(lambda: self.cambiarFiltro('folio', 0))
+        self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('folio', 0))
         
         # crear eventos para los botones
         self.ui.btRegresar.clicked.connect(self.goHome)
@@ -96,6 +98,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.ui.btUltimo.clicked.connect(self.ir_ultimo)
         self.ui.btAtras.clicked.connect(self.ir_atras)
         self.ui.btPrimero.clicked.connect(self.ir_primero)
+        
+        self.rescaned.connect(self.update_display)
     
     def showEvent(self, event):
         # dar formato a las tabla principales
@@ -117,12 +121,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             else:
                 header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
         
-        self.update_display(rescan=True)        
-        
-        self.ui.lbContador.setText(
-            f'{len(self.all_directas)} ventas directas en la base de datos.')
-        self.ui.lbPagina.setText(
-            f'1 de {ceil(len(self.all_directas) / self.chunk_size) or 1}')
+        self.update_display(rescan=True)
     
     def resizeEvent(self, event):
         if self.isVisible():
@@ -182,7 +181,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         
         self.tabla_actual.resizeRowsToContents()
         
-    def cambiarFiltro(self, filtro, idx):
+    def cambiar_filtro(self, filtro, idx):
         """ Modifica el filtro de búsqueda. """
         self.filtro = idx
         self.ui.searchBar.setPlaceholderText(f'Busque venta por {filtro}...')
@@ -215,21 +214,29 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         """ Actualiza la tabla y el contador de clientes.
             Lee de nuevo la tabla de clientes, si se desea. """
         if rescan:
-            fechaDesde = self.ui.dateDesde.date()
-            fechaHasta = self.ui.dateHasta.date()
-            restrict = self.user.id if not self.user.administrador else None
-            
-            manejador = ManejadorVentas(self.conn)
+            self.rescan_db()
+            return
+        
+        self.llenar_tabla_ventas()
+        self.llenar_tabla_pedidos()
+        
+        self.cambiar_pestana(self.ui.tabWidget.currentIndex())
 
-            self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, restrict)
-            self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta, restrict)
+    def rescan_db(self):
+        """ Releer base de datos y almacenar en atributos.
+            TODO: en hilo separado. """
+        fechaDesde = self.ui.dateDesde.date()
+        fechaHasta = self.ui.dateHasta.date()
+        restrict = self.user.id if not self.user.administrador else None
+            
+        manejador = ManejadorVentas(self.conn)
+
+        self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, restrict)
+        self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta, restrict)
         
-        self.update_ventas()
-        self.update_pedidos()
-        
-        self.tabla_actual.resizeRowsToContents()
+        self.rescaned.emit()
     
-    def update_ventas(self):
+    def llenar_tabla_ventas(self):
         """ Actualizar tabla de ventas directas. """
         bold = QFont()
         bold.setBold(True)
@@ -239,13 +246,14 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
 
         tabla = self.ui.tabla_ventasDirectas
         tabla.setRowCount(0)
+        
+        compras = self.all_directas
 
         if txt_busqueda:
             compras = filter(
                           lambda c: c[self.filtro] 
                                     and son_similar(txt_busqueda, c[self.filtro]),
                           compras)
-        else: compras = self.all_directas
         
         compras = list(compras)
         chunks = chunkify(compras, self.chunk_size) or [[]]
@@ -278,7 +286,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             elif estado.startswith('Terminada'):
                 tabla.item(row, 5).setBackground(QColor(ColorsEnum.VERDE))
 
-    def update_pedidos(self):
+    def llenar_tabla_pedidos(self):
         """ Actualizar tabla de ventas sobre pedido. """
         bold = QFont()
         bold.setBold(True)
@@ -288,13 +296,14 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         
         tabla = self.ui.tabla_pedidos
         tabla.setRowCount(0)
+        
+        compras = self.all_pedidos
                 
         if txt_busqueda:
             compras = filter(
                           lambda c: c[self.filtro] 
                                     and son_similar(txt_busqueda, c[self.filtro]),
                           compras)
-        else: compras = self.all_pedidos
         
         compras = list(compras)
         chunks = chunkify(compras, self.chunk_size) or [[]]
@@ -487,7 +496,7 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
 
         self.ui = Ui_DetallesVenta()
         self.ui.setupUi(self)
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
+        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         
         self.conn = first.conn
         self.id_ventas = idx
@@ -584,7 +593,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
 
         self.ui = Ui_TerminarVenta()
         self.ui.setupUi(self)
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
+        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         
         self.id_ventas = idx
         

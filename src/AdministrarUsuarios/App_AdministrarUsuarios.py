@@ -42,15 +42,15 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         popup = QtWidgets.QMenu(self.ui.btFiltrar)
 
         default = popup.addAction(
-            'Usuario', lambda: self.cambiarFiltro('usuario'))
+            'Usuario', lambda: self.cambiar_filtro('usuario'))
         popup.addAction(
-            'Nombre', lambda: self.cambiarFiltro('nombre'))
+            'Nombre', lambda: self.cambiar_filtro('nombre'))
         popup.addAction(
-            'Permisos', lambda: self.cambiarFiltro('permisos'))
+            'Permisos', lambda: self.cambiar_filtro('permisos'))
         popup.setDefaultAction(default)
 
         self.ui.btFiltrar.setMenu(popup)
-        self.ui.btFiltrar.clicked.connect(lambda: self.cambiarFiltro('nombre'))
+        self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('nombre'))
 
         # dar formato a la tabla principal
         header = self.ui.tabla_usuarios.horizontalHeader()
@@ -84,7 +84,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
     def mostrarTrigger(self, state):
         self.update_display(rescan=True)
 
-    def cambiarFiltro(self, filtro):
+    def cambiar_filtro(self, filtro):
         """ Modifica el filtro de búsqueda. """
         self.filtro = [
             'usuario',
@@ -213,7 +213,7 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
         self.ui = Ui_EditarUsuario()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
+        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         # guardar conexión y usuario como atributos
         self.conn = first.conn

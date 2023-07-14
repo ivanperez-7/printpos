@@ -38,19 +38,19 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         popup = QtWidgets.QMenu(self.ui.btFiltrar)
 
         default = popup.addAction(
-            'Nombre',lambda: self.cambiarFiltro('nombre', 1))
+            'Nombre',lambda: self.cambiar_filtro('nombre', 1))
         popup.addAction(
-            'Teléfono', lambda: self.cambiarFiltro('teléfono', 2))
+            'Teléfono', lambda: self.cambiar_filtro('teléfono', 2))
         popup.addAction(
-            'Correo', lambda: self.cambiarFiltro('correo', 3))
+            'Correo', lambda: self.cambiar_filtro('correo', 3))
         popup.addAction(
-            'Dirección', lambda: self.cambiarFiltro('dirección', 4))
+            'Dirección', lambda: self.cambiar_filtro('dirección', 4))
         popup.addAction(
-            'RFC', lambda: self.cambiarFiltro('RFC', 5))
+            'RFC', lambda: self.cambiar_filtro('RFC', 5))
         popup.setDefaultAction(default)
 
         self.ui.btFiltrar.setMenu(popup)
-        self.ui.btFiltrar.clicked.connect(lambda: self.cambiarFiltro('nombre', 1))
+        self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('nombre', 1))
 
         # dar formato a la tabla principal
         header = self.ui.tabla_clientes.horizontalHeader()
@@ -92,7 +92,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         if self.ui.resaltarCheck.isChecked():
             self.update_display()
     
-    def cambiarFiltro(self, filtro, idx):
+    def cambiar_filtro(self, filtro, idx):
         """ Modifica el filtro de búsqueda. """
         self.filtro = idx
         self.ui.searchBar.setPlaceholderText(f'Busque cliente por {filtro}...')
@@ -252,7 +252,7 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
         self.ui = Ui_EditarCliente()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.Window)
+        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         # guardar conexión y usuarios como atributos
         self.conn = first.conn

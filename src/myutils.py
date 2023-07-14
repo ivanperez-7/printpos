@@ -2,7 +2,7 @@
 from datetime import datetime
 
 import fdb
-from PySide6.QtCore import QDateTime
+from PySide6.QtCore import QDateTime, QObject
 
 from mydecorators import run_in_thread
 
@@ -419,18 +419,10 @@ def generarTicketCompra(conn: fdb.Connection, idx):
     productos = manejador.obtenerTablaTicket(idx)
 
     # más datos para el ticket
-    datos = manejador.fetchone('''
-    SELECT	U.nombre,
-            fecha_hora_creacion,
-            recibido,
-            metodo_pago
-    FROM	Ventas AS V
-            LEFT JOIN Usuarios AS U
-                   ON V.id_usuarios = U.id_usuarios
-    WHERE	V.id_ventas = ?;
-    ''', (idx,))
+    vendedor = manejador.obtenerUsuarioAsociado(idx)
+    datos = manejador.obtenerVenta(idx)
 
-    vendedor, fechaCreacion, pagado, metodo = datos
+    _, _, _, fechaCreacion, _, _, metodo, _, _, pagado = datos
     
     # cambiar método de pago (abreviatura)
     if metodo == 'Efectivo': metodo = 'EFEC'
