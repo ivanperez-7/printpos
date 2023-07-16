@@ -59,7 +59,7 @@ class App_Reportes(QtWidgets.QMainWindow):
     Backend para la ventana de reportes varios.
     """
     def __init__(self, parent):
-        from Reportes.Ui_Reportes import Ui_Reportes
+        from ui.Ui_Reportes import Ui_Reportes
         
         super().__init__()
 

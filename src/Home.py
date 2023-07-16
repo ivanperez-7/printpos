@@ -3,13 +3,13 @@ from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtCore import (QDate, Qt, QPropertyAnimation,
                             QRect, QEasingCurve, Signal)
 
-from mywidgets import VentanaPrincipal
+from utils.mywidgets import VentanaPrincipal
 
 
 class App_Home(QtWidgets.QMainWindow):
     """ Backend para la pantalla principal. """
     def __init__(self, parent: VentanaPrincipal):
-        from Home.Ui_Home import Ui_Home
+        from ui.Ui_Home import Ui_Home
         
         super().__init__()
 
@@ -112,7 +112,7 @@ class App_Home(QtWidgets.QMainWindow):
     
     def agregarNotificaciones(self):
         """ Llena la caja de notificaciones. """
-        from databasemanagers import ManejadorInventario, ManejadorVentas
+        from utils.databasemanagers import ManejadorInventario, ManejadorVentas
         
         items = []
         manejador = ManejadorVentas(self.conn)
@@ -163,9 +163,9 @@ class App_Home(QtWidgets.QMainWindow):
 ##################################
 # VENTANA PARA CONSULTAR PRECIOS #
 ##################################
-from mydecorators import Runner
-from myutils import son_similar
-from mywidgets import LabelAdvertencia
+from utils.mydecorators import Runner
+from utils.myutils import son_similar
+from utils.mywidgets import LabelAdvertencia
 
 class App_ConsultarPrecios(QtWidgets.QMainWindow):
     """ Backend para el módulo de consultar precios.
@@ -173,8 +173,8 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
     dataChanged = Signal()  # señal para actualizar tabla en hilo principal
     
     def __init__(self, principal: VentanaPrincipal):
-        from databasemanagers import ManejadorProductos
-        from Home.Ui_ConsultarPrecios import Ui_ConsultarPrecios
+        from utils.databasemanagers import ManejadorProductos
+        from ui.Ui_ConsultarPrecios import Ui_ConsultarPrecios
         
         super().__init__()
         

@@ -4,10 +4,10 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt, QDateTime, QDate
 
-from databasemanagers import ManejadorCaja
-from mydecorators import run_in_thread
-from myutils import enviarAImpresora, formatDate
-from mywidgets import LabelAdvertencia, VentanaPrincipal
+from utils.databasemanagers import ManejadorCaja
+from utils.mydecorators import run_in_thread
+from utils.myutils import enviarAImpresora, formatDate
+from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
 #####################
@@ -16,7 +16,7 @@ from mywidgets import LabelAdvertencia, VentanaPrincipal
 class App_Caja(QtWidgets.QMainWindow):
     """ Backend para la ventana de movimientos de la caja. """
     def __init__(self, parent: VentanaPrincipal):
-        from Caja.Ui_Caja import Ui_Caja
+        from ui.Ui_Caja import Ui_Caja
         
         super().__init__()
 

@@ -3,7 +3,7 @@ import fdb
 
 from PySide6.QtCore import QDate
 
-from mywidgets import WarningDialog
+from utils.mywidgets import WarningDialog
 
 
 def crear_conexion(usuario: str, psswd: str, rol: str):

@@ -13,7 +13,7 @@ class App_Ajustes(QtWidgets.QMainWindow):
     Backend para la ventana de administración de ventas.
     """
     def __init__(self, parent):
-        from Ajustes.Ui_Ajustes import Ui_Ajustes
+        from ui.Ui_Ajustes import Ui_Ajustes
         
         super().__init__()
 

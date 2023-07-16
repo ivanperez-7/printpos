@@ -4,10 +4,10 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QPixmap, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QRegularExpression, Signal
 
-from databasemanagers import ManejadorUsuarios
-from mydecorators import con_fondo
-from myutils import formatDate, son_similar
-from mywidgets import LabelAdvertencia, VentanaPrincipal
+from utils.databasemanagers import ManejadorUsuarios
+from utils.mydecorators import con_fondo
+from utils.myutils import formatDate, son_similar
+from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
 #####################
@@ -22,7 +22,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
             - personalización: foto de perfil y colores del UI
             - reportes de actividad de usuario: inicios de sesión, # de ventas realizadas, ganancias generadas """
     def __init__(self, parent: VentanaPrincipal):
-        from AdministrarUsuarios.Ui_AdministrarUsuarios import Ui_AdministrarUsuarios
+        from ui.Ui_AdministrarUsuarios import Ui_AdministrarUsuarios
         
         super().__init__()
 
@@ -206,7 +206,7 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
     success = Signal()
     
     def __init__(self, first: App_AdministrarUsuarios):
-        from AdministrarUsuarios.Ui_EditarUsuario import Ui_EditarUsuario
+        from ui.Ui_EditarUsuario import Ui_EditarUsuario
         
         super().__init__(first)
 

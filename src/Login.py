@@ -4,7 +4,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtCore import Qt, QRegularExpression, Signal
 
-from mydecorators import run_in_thread
+from utils.mydecorators import run_in_thread
 
 
 ##################
@@ -33,7 +33,7 @@ class App_Login(QtWidgets.QMainWindow):
     validated = Signal(object, object)
     
     def __init__(self):
-        from Login.Ui_Login import Ui_Login
+        from ui.Ui_Login import Ui_Login
         
         super().__init__()
 
@@ -61,7 +61,7 @@ class App_Login(QtWidgets.QMainWindow):
     @run_in_thread
     def verificar_info(self):
         """ Verifica datos ingresados consultando la tabla Usuarios. """
-        from databasemanagers import crear_conexion, DatabaseManager
+        from utils.databasemanagers import crear_conexion, DatabaseManager
         
         self.lock = True
             
@@ -104,7 +104,7 @@ class App_Login(QtWidgets.QMainWindow):
 
     def crearVentanaPrincipal(self, conn, user):
         """ En método separado para regresar al hilo principal."""
-        from mywidgets import VentanaPrincipal
+        from utils.mywidgets import VentanaPrincipal
         
         self.close()
         self.mainWindow = VentanaPrincipal(conn, user)

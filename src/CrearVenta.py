@@ -7,13 +7,13 @@ from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtCore import (QDate, QDateTime, QRegularExpression, Qt,
                           QPropertyAnimation, QRect, QEasingCurve)
 
-from databasemanagers import (ManejadorCaja, ManejadorClientes,
+from utils.databasemanagers import (ManejadorCaja, ManejadorClientes,
                               ManejadorProductos, ManejadorVentas)
-from mydecorators import con_fondo, requiere_admin
-from myutils import (clamp, enviarWhatsApp, formatDate,
+from utils.mydecorators import con_fondo, requiere_admin
+from utils.myutils import (clamp, enviarWhatsApp, formatDate,
                      generarOrdenCompra, generarTicketCompra,
                      generarTicketPresupuesto, son_similar)
-from mywidgets import DimBackground, LabelAdvertencia, VentanaPrincipal
+from utils.mywidgets import DimBackground, LabelAdvertencia, VentanaPrincipal
 
 
 ##################
@@ -66,7 +66,6 @@ class ItemGranFormato(ItemVenta):
     
     @property
     def importe(self) -> float:
-        """ Costo total del producto. """
         cantidad = max(self.min_m2, self.cantidad)
         return (self.precio_unit - self.descuento_unit) * cantidad
     
@@ -116,7 +115,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         TODO:
             - mandar ticket por whatsapp o imprimir, sí o sí """
     def __init__(self, parent: VentanaPrincipal):
-        from CrearVenta.Ui_CrearVenta import Ui_CrearVenta
+        from ui.Ui_CrearVenta import Ui_CrearVenta
         
         super().__init__()
 
@@ -447,7 +446,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
 class App_AgregarProducto(QtWidgets.QMainWindow):
     """ Backend para la función de agregar un producto a la venta. """
     def __init__(self, first: App_CrearVenta):
-        from CrearVenta.Ui_AgregarProducto import Ui_AgregarProducto
+        from ui.Ui_AgregarProducto import Ui_AgregarProducto
         
         super().__init__(first)
 
@@ -692,7 +691,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
 class App_SeleccionarCliente(QtWidgets.QMainWindow):
     """ Backend para la función de seleccionar un cliente de la base de datos. """
     def __init__(self, first: App_CrearVenta):
-        from CrearVenta.Ui_SeleccionarCliente import Ui_SeleccionarCliente
+        from ui.Ui_SeleccionarCliente import Ui_SeleccionarCliente
         
         super().__init__(first)
 
@@ -798,7 +797,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
 class App_FechaEntrega(QtWidgets.QMainWindow):
     """ Backend para la función de cambiar fecha de entrega. """
     def __init__(self, first: App_CrearVenta):
-        from CrearVenta.Ui_FechaEntrega import Ui_FechaEntrega
+        from ui.Ui_FechaEntrega import Ui_FechaEntrega
         
         super().__init__(first)
 
@@ -845,7 +844,7 @@ class App_FechaEntrega(QtWidgets.QMainWindow):
 class App_AgregarDescuento(QtWidgets.QMainWindow):
     """ Backend para agregar descuento a la orden. """
     def __init__(self, first: App_CrearVenta):
-        from CrearVenta.Ui_AgregarDescuento import Ui_AgregarDescuento
+        from ui.Ui_AgregarDescuento import Ui_AgregarDescuento
         
         super().__init__(first)
 
@@ -931,7 +930,7 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
 class App_EnviarCotizacion(QtWidgets.QMainWindow):
     """ Backend para agregar descuento a la orden. """
     def __init__(self, first: App_CrearVenta):
-        from CrearVenta.Ui_Cotizacion import Ui_EnviarCotizacion
+        from ui.Ui_Cotizacion import Ui_EnviarCotizacion
         
         super().__init__(first)
 
@@ -1000,7 +999,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
     COMISION_CREDITO = 3.16
 
     def __init__(self, first: App_CrearVenta, ventaDatos: Venta):
-        from CrearVenta.Ui_ConfirmarVenta import Ui_ConfirmarVenta
+        from ui.Ui_ConfirmarVenta import Ui_ConfirmarVenta
         
         super().__init__(first)
 

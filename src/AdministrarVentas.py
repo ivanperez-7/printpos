@@ -6,11 +6,11 @@ from PySide6.QtGui import QFont, QColor, QIcon, QRegularExpressionValidator
 from PySide6.QtCore import (QDate, QDateTime, QModelIndex,
                           QRegularExpression, Qt, Signal)
 
-from databasemanagers import ManejadorCaja, ManejadorVentas
-from mydecorators import con_fondo, run_in_thread
-from myutils import (chunkify, clamp, enviarWhatsApp, formatDate, generarOrdenCompra, 
+from utils.databasemanagers import ManejadorCaja, ManejadorVentas
+from utils.mydecorators import con_fondo, run_in_thread
+from utils.myutils import (chunkify, clamp, enviarWhatsApp, formatDate, generarOrdenCompra, 
                      generarTicketCompra, ColorsEnum, son_similar)
-from mywidgets import LabelAdvertencia, VentanaPrincipal
+from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
 #####################
@@ -23,7 +23,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
     rescaned = Signal()
     
     def __init__(self, parent: VentanaPrincipal):
-        from AdministrarVentas.Ui_AdministrarVentas import Ui_AdministrarVentas
+        from ui.Ui_AdministrarVentas import Ui_AdministrarVentas
         
         super().__init__()
 
@@ -490,7 +490,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
 class App_DetallesVenta(QtWidgets.QMainWindow):
     """ Backend para la ventana que muestra los detalles de una venta. """
     def __init__(self, first: App_AdministrarVentas, idx):
-        from AdministrarVentas.Ui_DetallesVenta import Ui_DetallesVenta
+        from ui.Ui_DetallesVenta import Ui_DetallesVenta
         
         super().__init__(first)
 
@@ -587,7 +587,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
     success = Signal()
     
     def __init__(self, first: App_AdministrarVentas, idx):        
-        from AdministrarVentas.Ui_TerminarVenta import Ui_TerminarVenta
+        from ui.Ui_TerminarVenta import Ui_TerminarVenta
         
         super().__init__(first)
 
