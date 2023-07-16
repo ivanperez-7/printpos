@@ -295,7 +295,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
             if not codigo or cantidad < 1:
                 return None
             
-            idProducto, = manejador.obtenerIdProducto(codigo)
+            idProducto = manejador.obtenerIdProducto(codigo)
             
             PUI_db_parametros.append((idProducto, cantidad))
         
