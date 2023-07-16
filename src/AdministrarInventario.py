@@ -4,10 +4,10 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QPixmap, QIcon, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QRegularExpression, Signal
 
-from databasemanagers import ManejadorInventario, ManejadorProductos
-from mydecorators import con_fondo
-from myutils import ColorsEnum, son_similar
-from mywidgets import LabelAdvertencia, VentanaPrincipal
+from utils.databasemanagers import ManejadorInventario, ManejadorProductos
+from utils.mydecorators import con_fondo
+from utils.myutils import ColorsEnum, son_similar
+from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
 #####################
@@ -16,7 +16,7 @@ from mywidgets import LabelAdvertencia, VentanaPrincipal
 class App_AdministrarInventario(QtWidgets.QMainWindow):
     """ Backend para la ventana de administración de inventario. """
     def __init__(self, parent: VentanaPrincipal):
-        from AdministrarInventario.Ui_AdministrarInventario import Ui_AdministrarInventario
+        from ui.Ui_AdministrarInventario import Ui_AdministrarInventario
         
         super().__init__()
 
@@ -201,7 +201,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
     success = Signal()
     
     def __init__(self, first: App_AdministrarInventario):
-        from AdministrarInventario.Ui_EditarInventario import Ui_EditarInventario
+        from ui.Ui_EditarInventario import Ui_EditarInventario
         
         super().__init__(first)
 

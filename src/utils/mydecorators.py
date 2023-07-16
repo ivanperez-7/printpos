@@ -62,7 +62,7 @@ def requiere_admin(func):
         global dialog
         global parent
         
-        from databasemanagers import crear_conexion, DatabaseManager
+        from utils.databasemanagers import crear_conexion, DatabaseManager
         
         usuario = dialog.txtUsuario.text().upper()
         psswd = dialog.txtPsswd.text()
@@ -150,7 +150,7 @@ def con_fondo(modulo):
     orig_init = modulo.__init__
 
     def __init__(self, *args, **kws):
-        from mywidgets import DimBackground
+        from utils.mywidgets import DimBackground
         
         orig_init(self, *args, **kws)
         

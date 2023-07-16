@@ -2,9 +2,9 @@
 from datetime import datetime
 
 import fdb
-from PySide6.QtCore import QDateTime, QObject
+from PySide6.QtCore import QDateTime
 
-from mydecorators import run_in_thread
+from utils.mydecorators import run_in_thread
 
 
 class ColorsEnum:
@@ -142,7 +142,7 @@ def generarOrdenCompra(conn: fdb.Connection, idx: int):
     from reportlab.platypus import Paragraph
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     
-    from databasemanagers import ManejadorVentas
+    from utils.databasemanagers import ManejadorVentas
 
     manejadorVentas = ManejadorVentas(conn)
     
@@ -412,7 +412,7 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
 
 def generarTicketCompra(conn: fdb.Connection, idx):
     """ Genera el ticket de compra a partir de un identificador en la base de datos. """
-    from databasemanagers import ManejadorVentas
+    from utils.databasemanagers import ManejadorVentas
     
     # obtener datos de la compra, de la base de datos
     manejador = ManejadorVentas(conn)

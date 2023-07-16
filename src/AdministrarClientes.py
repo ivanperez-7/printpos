@@ -6,10 +6,10 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon, QPixmap, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QDate, QRegularExpression, Signal
 
-from databasemanagers import ManejadorClientes
-from mydecorators import con_fondo
-from myutils import exportarXlsx, formatDate, ColorsEnum, son_similar
-from mywidgets import LabelAdvertencia, VentanaPrincipal
+from utils.databasemanagers import ManejadorClientes
+from utils.mydecorators import con_fondo
+from utils.myutils import exportarXlsx, formatDate, ColorsEnum, son_similar
+from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
 #####################
@@ -18,7 +18,7 @@ from mywidgets import LabelAdvertencia, VentanaPrincipal
 class App_AdministrarClientes(QtWidgets.QMainWindow):
     """ Backend para la ventana de administración de clientes. """
     def __init__(self, parent: VentanaPrincipal):
-        from AdministrarClientes.Ui_AdministrarClientes import Ui_AdministrarClientes
+        from ui.Ui_AdministrarClientes import Ui_AdministrarClientes
         
         super().__init__()
 
@@ -245,7 +245,7 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
     success = Signal(str, str, str)
     
     def __init__(self, first: App_AdministrarClientes):
-        from AdministrarClientes.Ui_EditarCliente import Ui_EditarCliente
+        from ui.Ui_EditarCliente import Ui_EditarCliente
         
         super().__init__(first)
 

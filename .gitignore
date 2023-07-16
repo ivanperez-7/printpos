@@ -12,6 +12,6 @@ resources_rc.py
 # PDF generados
 tmp/
 # archivos generados por pyuic5
-src/**/Ui_*.py
+ui/Ui_*.py
 # carpetas generadas por nuitka
 PrintPOS.*/

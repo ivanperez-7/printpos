@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QMainWindow, QMessageBox, QWidget, QLabel, QTableW
 from PySide6.QtGui import QFont, QIcon, QPixmap
 from PySide6.QtCore import Qt, QSize
 
-from Login.App_Login import Usuario
+from Login import Usuario
 
 
 class VentanaPrincipal(QMainWindow):

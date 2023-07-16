@@ -5,10 +5,10 @@ all: setup launch
 resources_rc.py: resources.qrc resources/images/*
 	pyside6-rcc -o $@ $<
 
-src/%.py: src/%.ui
+ui/%.py: ui/%.ui
 	pyside6-uic -o $@ $<
 
-setup: resources_rc.py $(addsuffix .py, $(basename $(wildcard src/**/*.ui)))
+setup: resources_rc.py $(addsuffix .py, $(basename $(wildcard ui/*.ui)))
 
 launch:
 	python $(EXEC).py
