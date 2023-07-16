@@ -332,7 +332,7 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         if not (selected := self.ui.tabla_seleccionar.selectedItems()):
             return
         
-        idProducto, = self.manejador.obtenerIdProducto(selected[0].text())
+        idProducto = self.manejador.obtenerIdProducto(selected[0].text())
         
         try:
             cantidad = float(self.ui.txtCantidad.text())
@@ -352,7 +352,7 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         modificador_alto = 100 if self.ui.btAltoCm.isChecked() else 1
         modificador_ancho = 100 if self.ui.btAnchoCm.isChecked() else 1
         
-        idProducto, = self.manejador.obtenerIdProducto(selected[0].text())
+        idProducto = self.manejador.obtenerIdProducto(selected[0].text())
         
         try:
             alto = float(self.ui.txtAlto.text()) / modificador_alto

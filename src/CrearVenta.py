@@ -350,6 +350,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             nuevoPrecio = min(precioNormal, precioDuplex or precioNormal)
             
             for p in restantes: p.precio_unit = nuevoPrecio
+        
         self.colorearActualizar()
     
     @requiere_admin
@@ -628,7 +629,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         codigo = selected[0].text()
         manejador = ManejadorProductos(self.conn)
         
-        idProducto, = manejador.obtenerIdProducto(codigo)
+        idProducto = manejador.obtenerIdProducto(codigo)
         
         # obtener precio basado en cantidad
         duplex = self.ui.checkDuplex.isChecked()
@@ -677,7 +678,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         
         # obtener información del producto
         manejador = ManejadorProductos(self.conn)
-        idProducto, = manejador.obtenerIdProducto(codigo)
+        idProducto = manejador.obtenerIdProducto(codigo)
         
         min_m2, precio = manejador.obtenerGranFormato(idProducto)
 
@@ -1042,8 +1043,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         if not result:
             return
 
-        self.idVentas, = result
-        manejadorVentas.insertarDetallesVenta(self.idVentas,
+        self.id_ventas, = result
+        manejadorVentas.insertarDetallesVenta(self.id_ventas,
                                               ventas_detallado_db_parametros)
         
         # mostrar datos del cliente, fechas, etc.
@@ -1055,7 +1056,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ui.txtTelefono.setText(telefono)
         self.ui.txtCreacion.setText(formatDate(ventaDatos.fechaCreacion))
         self.ui.txtEntrega.setText(formatDate(ventaDatos.fechaEntrega))
-        self.ui.lbFolio.setText(f'{self.idVentas}')
+        self.ui.lbFolio.setText(f'{self.id_ventas}')
         
         # validadores para datos numéricos
         regexp_numero = QRegularExpression(r'\d*\.?\d*')
@@ -1217,7 +1218,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             ingreso_db_parametros = (
                 hoy,
                 self.paraPagar,
-                f'Pago de venta con folio {self.idVentas}',
+                f'Pago de venta con folio {self.id_ventas}',
                 self.metodoSeleccionado,
                 self.user.id
             )
@@ -1229,11 +1230,11 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         # y también cambiar método de pago
         estado = 'Terminada' if esDirecta else f'Recibido {self.paraPagar:.2f}'
         
-        if not manejadorVentas.actualizarRecibido(self.idVentas, pago):
+        if not manejadorVentas.actualizarRecibido(self.id_ventas, pago):
             return
-        if not manejadorVentas.actualizarEstadoVenta(self.idVentas, estado):
+        if not manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado):
             return
-        if not manejadorVentas.actualizarMetodoPago(self.idVentas, self.metodoSeleccionado,
+        if not manejadorVentas.actualizarMetodoPago(self.id_ventas, self.metodoSeleccionado,
                                                     commit=True):
             return
 
@@ -1242,14 +1243,14 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
 
         if not esDirecta:
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
-            generarOrdenCompra(self.conn, self.idVentas)
+            generarOrdenCompra(self.conn, self.id_ventas)
         else:
             ret = qm.question(self, 'Éxito',
                               'Venta terminada. ¡Recuerde ofrecer el ticket de compra! '
                               '¿Desea imprimirlo?',
                               qm.Yes | qm.No)
             if ret == qm.Yes:
-                generarTicketCompra(self.conn, self.idVentas)
+                generarTicketCompra(self.conn, self.id_ventas)
         
         self.goHome()
     
@@ -1267,7 +1268,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
     def _abortar(self):
         manejadorVentas = ManejadorVentas(self.conn)
         
-        if manejadorVentas.actualizarEstadoVenta(self.idVentas, 'Cancelada',
+        if manejadorVentas.actualizarEstadoVenta(self.id_ventas, 'Cancelada',
                                                  commit=True):
             self.goHome()
     

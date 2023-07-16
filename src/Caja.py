@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 
 from PySide6 import QtWidgets
@@ -8,6 +9,61 @@ from utils.databasemanagers import ManejadorCaja
 from utils.mydecorators import run_in_thread
 from utils.myutils import enviarAImpresora, formatDate
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
+
+
+##################
+# CLASE AUXILIAR #
+##################
+@dataclass
+class Movimiento:
+    """ Clase para mantener registro de un movimiento en la caja. """
+    fecha_hora: datetime    # tipo de dato recibido por la DB
+    monto: float
+    descripcion: str
+    metodo: str
+    usuario: str
+    
+    @property
+    def esIngreso(self):
+        return self.monto > 0
+    
+    def __iter__(self):
+        """ Alimenta las tablas principales:
+        
+            Fecha y hora | Monto | Descripción | Método | Usuario. """
+        return iter((self.fecha_hora, self.monto, self.descripcion,
+                     self.metodo, self.usuario))
+
+
+@dataclass
+class Caja:
+    """ Clase para manejar todos los movimientos en caja. """
+    movimientos: list[Movimiento]
+    
+    @property
+    def todoIngresos(self):
+        """ Regresa lista de movimientos que son ingresos. """
+        return [m for m in self.movimientos if m.esIngreso]
+    
+    @property
+    def todoEgresos(self):
+        """ Regresa lista de movimientos que son egresos. """
+        return [m for m in self.movimientos if not m.esIngreso]
+    
+    def __total(self, iter: list[Movimiento], metodo: str = None) -> float:
+        if metodo:
+            return sum(m.monto for m in iter if m.metodo.startswith(metodo))
+        else:
+            return sum(m.monto for m in iter)
+    
+    def totalIngresos(self, metodo: str = None):
+        return self.__total(self.todoIngresos, metodo)
+    
+    def totalEgresos(self, metodo: str = None):
+        return self.__total(self.todoEgresos, metodo)
+    
+    def totalCorte(self, metodo: str = None):
+        return self.__total(self.movimientos, metodo)
 
 
 #####################
@@ -104,101 +160,91 @@ class App_Caja(QtWidgets.QMainWindow):
         self.ui.dateHasta.setDate(end)
         
     def update_display(self):
-        """ Actualiza la tabla y el contador de usuarios.
-            Acepta una cadena de texto para la búsqueda de usuarios.
-            También lee de nuevo la tabla de usuarios, si se desea. """
+        """ Actualiza las tablas de ingresos y egresos.
+        
+            Relee base de datos en cualquier evento (en este caso, al mover fechas). """
         fechaDesde = self.ui.dateDesde.date()
         fechaHasta = self.ui.dateHasta.date()
         manejador = ManejadorCaja(self.conn)
 
-        all_movimientos = manejador.obtenerMovimientos(fechaDesde, fechaHasta)
-        self.all_ingresos = []
-        self.all_egresos  = []
+        movimientos = manejador.obtenerMovimientos(fechaDesde, fechaHasta)
+        self.all_movimientos = Caja([Movimiento(*m) for m in movimientos])
         
-        for m in all_movimientos:
-            lista = self.all_ingresos if m[1] > 0 else self.all_egresos
-            lista.append(m)
-
-        bold = QFont()
-        bold.setBold(True)
+        self.llenar_ingresos()
+        self.llenar_egresos()
         
-        # <tabla de ingresos>
-        tabla = self.ui.tabla_ingresos
-        tabla.setRowCount(0)
-        
-        movimientos = self.all_ingresos
-        
-        ingresos_efectivo = sum(m[1] for m in movimientos if m[3] == 'Efectivo')
-        ingresos_transferencia = sum(m[1] for m in movimientos if m[3] == 'Transferencia bancaria')
-        ingresos_tarjeta = sum(m[1] for m in movimientos if m[3].startswith('Tarjeta'))
-        
-        self.ui.lbTotalIngresos.setText(
-            f'Total de ingresos: ${sum(m[1] for m in movimientos):,.2f}')
-        self.ui.lbIngresosEfectivo.setText(
-            f'Efectivo: ${ingresos_efectivo:,.2f}')
-        self.ui.lbIngresosTarjeta.setText(
-            f'Tarjeta de crédito/débito: ${ingresos_tarjeta:,.2f}')
-        self.ui.lbIngresosTransferencia.setText(
-            f'Transferencias bancarias: ${ingresos_transferencia:,.2f}')
-
-        for row, movimiento in enumerate(movimientos):
-            tabla.insertRow(row)
-
-            for col, dato in enumerate(movimiento):
-                if isinstance(dato, datetime):
-                    cell = formatDate(dato)
-                elif isinstance(dato, float):
-                    cell = f'{dato:,.2f}'
-                else:
-                    cell = str(dato or '')
-                tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
-            
-            tabla.item(row, 1).setFont(bold)
-
-        tabla.resizeRowsToContents()
-        # </tabla de ingresos>
-        
-        # <tabla de egresos>
-        tabla = self.ui.tabla_egresos
-        tabla.setRowCount(0)
-        
-        movimientos = self.all_egresos
-        
-        egresos_efectivo = sum(-m[1] for m in movimientos if m[3] == 'Efectivo')
-        egresos_transferencia = sum(-m[1] for m in movimientos if m[3] == 'Transferencia bancaria')
-        egresos_tarjeta = sum(-m[1] for m in movimientos if m[3].startswith('Tarjeta'))
-        
-        self.ui.lbTotalEgresos.setText(
-            f'Total de egresos: ${-sum(m[1] for m in movimientos):,.2f}')
-        self.ui.lbEgresosEfectivo.setText(
-            f'Efectivo: ${egresos_efectivo:,.2f}')
-        self.ui.lbEgresosTarjeta.setText(
-            f'Tarjeta de crédito/débito: ${egresos_tarjeta:,.2f}')
-        self.ui.lbEgresosTransferencia.setText(
-            f'Transferencias bancarias: ${egresos_transferencia:,.2f}')
-
-        for row, movimiento in enumerate(movimientos):
-            tabla.insertRow(row)
-
-            for col, dato in enumerate(movimiento):
-                if isinstance(dato, datetime):
-                    cell = formatDate(dato)
-                elif isinstance(dato, float):
-                    cell = f'{dato:,.2f}'
-                else:
-                    cell = str(dato or '')
-                tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
-            
-            tabla.item(row, 1).setFont(bold)
-
-        tabla.resizeRowsToContents()
-        # </tabla de egresos>
-        
-        total = ingresos_tarjeta + ingresos_efectivo + ingresos_transferencia \
-              - (egresos_efectivo + egresos_tarjeta + egresos_transferencia)
+        total = self.all_movimientos.totalCorte()
                 
         self.ui.lbTotal.setText(
             f'Total del corte: ${total:,.2f}')
+
+    def llenar_ingresos(self):
+        bold = QFont()
+        bold.setBold(True)
+        
+        tabla = self.ui.tabla_ingresos
+        tabla.setRowCount(0)
+        
+        movimientos = self.all_movimientos
+        
+        self.ui.lbTotalIngresos.setText(
+            'Total de ingresos: ${:,.2f}'.format(movimientos.totalIngresos()))
+        self.ui.lbIngresosEfectivo.setText(
+            'Efectivo: ${:,.2f}'.format(movimientos.totalIngresos('Efectivo')))
+        self.ui.lbIngresosTarjeta.setText(
+            'Tarjeta de crédito/débito: ${:,.2f}'.format(movimientos.totalIngresos('Tarjeta')))
+        self.ui.lbIngresosTransferencia.setText(
+            'Transferencias bancarias: ${:,.2f}'.format(movimientos.totalIngresos('Transferencia')))
+
+        for row, movimiento in enumerate(movimientos.todoIngresos):
+            tabla.insertRow(row)
+
+            for col, dato in enumerate(movimiento):
+                if isinstance(dato, datetime):
+                    cell = formatDate(dato)
+                elif isinstance(dato, float):
+                    cell = f'{dato:,.2f}'
+                else:
+                    cell = str(dato or '')
+                tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
+            
+            tabla.item(row, 1).setFont(bold)
+
+        tabla.resizeRowsToContents()
+    
+    def llenar_egresos(self):
+        bold = QFont()
+        bold.setBold(True)
+        
+        tabla = self.ui.tabla_egresos
+        tabla.setRowCount(0)
+        
+        movimientos = self.all_movimientos
+        
+        self.ui.lbTotalEgresos.setText(
+            'Total de egresos: ${:,.2f}'.format(-movimientos.totalEgresos()))
+        self.ui.lbEgresosEfectivo.setText(
+            'Efectivo: ${:,.2f}'.format(-movimientos.totalEgresos('Efectivo')))
+        self.ui.lbEgresosTarjeta.setText(
+            'Tarjeta de crédito/débito: ${:,.2f}'.format(-movimientos.totalEgresos('Tarjeta')))
+        self.ui.lbEgresosTransferencia.setText(
+            'Transferencias bancarias: ${:,.2f}'.format(-movimientos.totalEgresos('Transferencia')))
+
+        for row, movimiento in enumerate(movimientos.todoEgresos):
+            tabla.insertRow(row)
+
+            for col, dato in enumerate(movimiento):
+                if isinstance(dato, datetime):
+                    cell = formatDate(dato)
+                elif isinstance(dato, float):
+                    cell = f'{dato:,.2f}'
+                else:
+                    cell = str(dato or '')
+                tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
+            
+            tabla.item(row, 1).setFont(bold)
+
+        tabla.resizeRowsToContents()
     
     def confirmarImprimir(self):
         """ Ventana de confirmación para imprimir corte. """
@@ -240,7 +286,7 @@ class App_Caja(QtWidgets.QMainWindow):
                                 topMargin=0., bottomMargin=0.,
                                 leftMargin=0., rightMargin=0.)
 
-        # Define styles for the document
+        # estilos de párrafos
         styles = getSampleStyleSheet()
         styles.add(ParagraphStyle(name='Left', fontName='Helvetica',
                                   fontSize=9, alignment=TA_LEFT))
@@ -248,26 +294,20 @@ class App_Caja(QtWidgets.QMainWindow):
                                   fontSize=11, alignment=TA_LEFT))
         
         # cálculos extra de ingresos
-        movimientos = self.all_ingresos
-        
-        ingresos_credito = sum(m[1] for m in movimientos if m[3].endswith('crédito'))
-        ingresos_debito = sum(m[1] for m in movimientos if m[3].endswith('débito'))
+        ingresos_credito = self.all_movimientos.totalIngresos('Tarjeta de crédito')
+        ingresos_debito = self.all_movimientos.totalIngresos('Tarjeta de débito')
         
         # cálculos extra de egresos
-        movimientos = self.all_egresos
-        
-        egresos_credito = -sum(m[1] for m in movimientos if m[3].endswith('crédito'))
-        egresos_debito = -sum(m[1] for m in movimientos if m[3].endswith('débito'))
+        egresos_credito = -self.all_movimientos.totalEgresos('Tarjeta de crédito')
+        egresos_debito = -self.all_movimientos.totalEgresos('Tarjeta de débito')
         
         # totales (todos los métodos)
-        movimientos = self.all_ingresos + self.all_egresos
-        
-        total_efectivo = sum(m[1] for m in movimientos if m[3] == 'Efectivo')
-        total_transferencia = sum(m[1] for m in movimientos if m[3] == 'Transferencia bancaria')
+        total_efectivo = self.all_movimientos.totalCorte('Efectivo')
+        total_transferencia = self.all_movimientos.totalCorte('Transferencia')
         total_credito = ingresos_credito - egresos_credito
         total_debito = ingresos_debito - egresos_debito
         
-        esperado = sum(m[1] for m in movimientos)
+        esperado = self.all_movimientos.totalCorte()
         
         # elementos para constuir el PDF
         elements = [

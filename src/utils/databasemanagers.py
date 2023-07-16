@@ -398,11 +398,17 @@ class ManejadorProductos(DatabaseManager):
     
     def obtenerIdProducto(self, codigo: str):
         """ Obtener id_producto dado código de un producto. """
-        return self.fetchone('''
+        result = self.fetchone('''
             SELECT  id_productos
             FROM    Productos 
             WHERE   codigo = ?;
         ''', (codigo,))
+        
+        if result:
+            id, = result
+            return id
+        
+        return None
         
     def obtenerRelacionVentas(self, id_productos: int):
         """ Obtener relación con ventas en la tabla ventas_detallado. """
@@ -860,7 +866,7 @@ class ManejadorVentas(DatabaseManager):
             return True
         
         manejador = ManejadorProductos(self.conn)
-        id_producto, = manejador.obtenerIdProducto('COMISION')
+        id_producto = manejador.obtenerIdProducto('COMISION')
         
         params = (id_ventas, id_producto, importe,
                   1., 0., 'COMISIÓN POR PAGO CON TARJETA', False)
