@@ -430,7 +430,9 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             return
         
         manejador = ManejadorVentas(self.conn)
-        if not manejador.actualizarEstadoVenta(idVenta, 'Cancelada', commit=True):
+        estado = 'Cancelada por ' + manejador.obtenerUsuario()
+        
+        if not manejador.actualizarEstadoVenta(idVenta, estado, commit=True):
             return
         
         qm.information(self, 'Éxito', 'Se marcó como cancelada la venta seleccionada.')
