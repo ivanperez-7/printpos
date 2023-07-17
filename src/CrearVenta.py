@@ -321,7 +321,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             self._quitarProducto(selected)
     
     @requiere_admin
-    def _quitarProducto(self, selected: set[int]):
+    def _quitarProducto(self, selected: set[int], conn):
         """ En método separado para solicitar contraseña. """
         manejador = ManejadorProductos(self.conn)
         
@@ -354,7 +354,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.colorearActualizar()
     
     @requiere_admin
-    def agregarDescuento(self):
+    def agregarDescuento(self, conn):
         """ Abre ventana para agregar un descuento a la orden si el cliente es especial. """    
         self.new = App_AgregarDescuento(self)
     
@@ -432,7 +432,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             self.new = App_ConfirmarVenta(self, self.ventaDatos)
     
     @requiere_admin
-    def goHome(self):
+    def goHome(self, conn):
         from Home import App_Home
         
         parent = self.parentWidget()    # QMainWindow
@@ -1265,10 +1265,15 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             self._abortar()
     
     @requiere_admin
-    def _abortar(self):
-        manejadorVentas = ManejadorVentas(self.conn)
+    def _abortar(self, conn):
+        from utils.databasemanagers import DatabaseManager
         
-        if manejadorVentas.actualizarEstadoVenta(self.id_ventas, 'Cancelada',
+        manejadorVentas = ManejadorVentas(self.conn)
+        manejadorAdmin = DatabaseManager(conn)
+        
+        estado = 'Cancelada por ' + manejadorAdmin.obtenerUsuario()
+        
+        if manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado,
                                                  commit=True):
             self.goHome()
     

@@ -86,6 +86,23 @@ class DatabaseManager:
         except fdb.Error as err:
             WarningDialog(self.error_txt, str(err))
             return None
+    
+    def obtenerUsuario(self) -> str | None:
+        """ Obtiene nombre del usuario activo de la conexión. """
+        result = self.fetchone("""
+        SELECT  nombre
+        FROM    usuarios
+        WHERE   usuario = (
+                            SELECT  USER 
+                            FROM    RDB$DATABASE
+                        );
+        """)
+        
+        if result:
+            nombre, = result
+            return nombre
+        
+        return None
         
 
 class ManejadorCaja(DatabaseManager):

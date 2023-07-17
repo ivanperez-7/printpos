@@ -40,12 +40,10 @@ class Caja:
     """ Clase para manejar todos los movimientos en caja. """
     movimientos: list[Movimiento]
     
-    @property
     def todoIngresos(self):
         """ Regresa lista de movimientos que son ingresos. """
         return [m for m in self.movimientos if m.esIngreso]
     
-    @property
     def todoEgresos(self):
         """ Regresa lista de movimientos que son egresos. """
         return [m for m in self.movimientos if not m.esIngreso]
@@ -57,10 +55,10 @@ class Caja:
             return sum(m.monto for m in iter)
     
     def totalIngresos(self, metodo: str = None):
-        return self.__total(self.todoIngresos, metodo)
+        return self.__total(self.todoIngresos(), metodo)
     
     def totalEgresos(self, metodo: str = None):
-        return self.__total(self.todoEgresos, metodo)
+        return self.__total(self.todoEgresos(), metodo)
     
     def totalCorte(self, metodo: str = None):
         return self.__total(self.movimientos, metodo)
@@ -196,7 +194,7 @@ class App_Caja(QtWidgets.QMainWindow):
         self.ui.lbIngresosTransferencia.setText(
             'Transferencias bancarias: ${:,.2f}'.format(movimientos.totalIngresos('Transferencia')))
 
-        for row, movimiento in enumerate(movimientos.todoIngresos):
+        for row, movimiento in enumerate(movimientos.todoIngresos()):
             tabla.insertRow(row)
 
             for col, dato in enumerate(movimiento):
@@ -230,7 +228,7 @@ class App_Caja(QtWidgets.QMainWindow):
         self.ui.lbEgresosTransferencia.setText(
             'Transferencias bancarias: ${:,.2f}'.format(-movimientos.totalEgresos('Transferencia')))
 
-        for row, movimiento in enumerate(movimientos.todoEgresos):
+        for row, movimiento in enumerate(movimientos.todoEgresos()):
             tabla.insertRow(row)
 
             for col, dato in enumerate(movimiento):

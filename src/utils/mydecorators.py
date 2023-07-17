@@ -58,6 +58,12 @@ class Dialog_ObtenerAdmin(QDialog):
         self.show()
 
 def requiere_admin(func):
+    """ Decorador para solicitar contraseña de administrador
+        antes de ejecutar alguna función dada.
+        
+        Añadir parámetro nombrado `conn` al final de la función, ya que
+        es devuelto por el decorador para extraer información que se requiera
+        de la conexión de administrador, por ejemplo, nombre del administrador. """
     def accept_handle():
         global dialog
         global parent
@@ -98,12 +104,12 @@ def requiere_admin(func):
         parent = args[0]    # QMainWindow (módulo) actual
         
         if parent.user.administrador:
-            func(*args, **kwargs)
+            func(*args, **kwargs, conn=parent.conn)
             return
         
         dialog = Dialog_ObtenerAdmin(parent)
         dialog.accept = accept_handle
-        dialog.success.connect(lambda: func(*args, **kwargs))
+        dialog.success.connect(lambda conn: func(*args, **kwargs, conn=conn))
         
         dialog.show()
         
@@ -130,6 +136,7 @@ class Runner(QThread):
         self.success.emit()
 
 def run_in_thread(func):
+    """ Decorador para ejecutar alguna función dada en otro hilo. """
     @wraps(func)
     def async_func(*args, **kwargs):
         runner = Runner(func, *args, **kwargs)
