@@ -23,7 +23,7 @@
    <string>Resumen de venta</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../resources.qrc">
+   <iconset resource="../resources.qrc">
     <normaloff>:/img/icon.ico</normaloff>:/img/icon.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -1025,7 +1025,7 @@ QTableWidget {
              <string> Terminar</string>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/accept.png</normaloff>:/img/resources/images/accept.png</iconset>
             </property>
             <property name="iconSize">
@@ -1054,7 +1054,7 @@ QTableWidget {
              <string> Descartar</string>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/cancel.png</normaloff>:/img/resources/images/cancel.png</iconset>
             </property>
             <property name="iconSize">
@@ -1075,7 +1075,7 @@ QTableWidget {
   </widget>
  </widget>
  <resources>
-  <include location="../../resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections/>
  <buttongroups>

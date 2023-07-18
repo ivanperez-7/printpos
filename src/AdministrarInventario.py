@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QRegularExpression, Signal
 
 from utils.databasemanagers import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import con_fondo
-from utils.myutils import ColorsEnum, son_similar
+from utils.myutils import ColorsEnum, configurarCabecera, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -29,15 +29,6 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         self.conn = parent.conn
         self.user = parent.user
 
-        # dar formato a la tabla principal
-        header = self.ui.tabla_inventario.horizontalHeader()
-        
-        for col in range(self.ui.tabla_inventario.columnCount()):
-            if col > 1:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-
         # añade eventos para los botones
         self.ui.btAgregar.clicked.connect(self.agregarInventario)
         self.ui.btEditar.clicked.connect(self.editarInventario)
@@ -46,6 +37,8 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         self.ui.searchBar.textChanged.connect(lambda: self.update_display())
     
     def showEvent(self, event):
+        configurarCabecera(self.ui.tabla_inventario,
+                           lambda col: col == 0)
         self.update_display(rescan=True)
     
     def resizeEvent(self, event):

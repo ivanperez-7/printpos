@@ -20,7 +20,7 @@
    <string>Administrar usuarios</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../resources.qrc">
+   <iconset resource="../resources.qrc">
     <normaloff>:/img/icon.ico</normaloff>:/img/icon.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -78,7 +78,7 @@
     }</string>
          </property>
          <property name="icon">
-          <iconset resource="../../resources.qrc">
+          <iconset resource="../resources.qrc">
            <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
          </property>
          <property name="iconSize">
@@ -796,7 +796,7 @@ QTableView:active {
   </widget>
  </widget>
  <resources>
-  <include location="../../resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections/>
 </ui>

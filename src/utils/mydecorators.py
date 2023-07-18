@@ -1,8 +1,6 @@
 """ Módulo para implementar decoradores útiles varios. """
 from functools import wraps
 
-import fdb
-
 from PySide6.QtWidgets import QMessageBox, QDialog
 from PySide6.QtCore import QThread, Signal
 
@@ -64,11 +62,13 @@ def requiere_admin(func):
         Añadir parámetro nombrado `conn` al final de la función, ya que
         es devuelto por el decorador para extraer información que se requiera
         de la conexión de administrador, por ejemplo, nombre del administrador. """
+    import fdb
+    
+    from utils.databasemanagers import crear_conexion, DatabaseManager
+    
     def accept_handle():
         global dialog
         global parent
-        
-        from utils.databasemanagers import crear_conexion, DatabaseManager
         
         usuario = dialog.txtUsuario.text().upper()
         psswd = dialog.txtPsswd.text()

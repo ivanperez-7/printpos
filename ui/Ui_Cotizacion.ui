@@ -17,7 +17,7 @@
    <string>Form</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../resources.qrc">
+   <iconset resource="../resources.qrc">
     <normaloff>:/img/icon.ico</normaloff>:/img/icon.ico</iconset>
   </property>
   <widget class="QFrame" name="frame">
@@ -79,7 +79,7 @@
     }</string>
     </property>
     <property name="icon">
-     <iconset resource="../../resources.qrc">
+     <iconset resource="../resources.qrc">
       <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
     </property>
     <property name="iconSize">
@@ -264,8 +264,8 @@
   <zorder>label_65</zorder>
  </widget>
  <resources>
-  <include location="../../resources.qrc"/>
-  <include location="../../resources.qrc"/>
+  <include location="../resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections/>
 </ui>

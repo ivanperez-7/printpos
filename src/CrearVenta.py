@@ -10,9 +10,9 @@ from PySide6.QtCore import (QDate, QDateTime, QRegularExpression, Qt,
 from utils.databasemanagers import (ManejadorCaja, ManejadorClientes,
                               ManejadorProductos, ManejadorVentas)
 from utils.mydecorators import con_fondo, requiere_admin
-from utils.myutils import (clamp, enviarWhatsApp, formatDate,
-                     generarOrdenCompra, generarTicketCompra,
-                     generarTicketPresupuesto, son_similar)
+from utils.myutils import (clamp, configurarCabecera, enviarWhatsApp, formatDate,
+                           generarOrdenCompra, generarTicketCompra,
+                           generarTicketPresupuesto, son_similar)
 from utils.mywidgets import DimBackground, LabelAdvertencia, VentanaPrincipal
 
 
@@ -141,16 +141,6 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.ui.lbFecha.setText(formatDate(self.ventaDatos.fechaEntrega))
         self.ui.btDeshacer.setVisible(False)
 
-        # dar formato a la tabla principal
-        header = self.ui.tabla_productos.horizontalHeader()
-        header.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-
-        for col in range(self.ui.tabla_productos.columnCount()):
-            if col == 2:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-
         # deshabilita eventos del mouse para los textos en los botones
         items = vars(self.ui)
         items = [items[name] for name in items if 'label_' in name]
@@ -184,6 +174,10 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.ui.btDescuentosCliente.hide()
     
     def showEvent(self, event):
+        configurarCabecera(self.ui.tabla_productos,
+                           lambda col: col != 2,
+                           Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        
         self.parentWidget().en_venta = True
         event.accept()
 
@@ -492,22 +486,10 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         self.show()
     
     def showEvent(self, event):
-        # dar formato a las tablas
-        header = self.ui.tabla_seleccionar.horizontalHeader()
-
-        for col in range(self.ui.tabla_seleccionar.columnCount()):
-            if col == 1:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-        
-        header = self.ui.tabla_granformato.horizontalHeader()
-
-        for col in range(self.ui.tabla_granformato.columnCount()):
-            if col == 1:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
+        configurarCabecera(self.ui.tabla_seleccionar,
+                           lambda col: col != 1)
+        configurarCabecera(self.ui.tabla_granformato,
+                           lambda col: col != 1)
         
         self.update_display()
         event.accept()
@@ -710,15 +692,6 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
         self.conn = first.conn
         self.user = first.user
 
-        # dar formato a la tabla principal
-        header = self.ui.tabla_seleccionar.horizontalHeader()
-
-        for col in range(self.ui.tabla_seleccionar.columnCount()):
-            if col in {1, 4}:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-
         # llena la tabla con todos los clientes existentes
         manejador = ManejadorClientes(self.conn)
         
@@ -733,6 +706,8 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
         self.show()
     
     def showEvent(self, event):
+        configurarCabecera(self.ui.tabla_seleccionar,
+                           lambda col: col in [1, 4])
         self.update_display()
     
     def keyPressEvent(self, qKeyEvent):
@@ -855,34 +830,6 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         self.first = first
-        
-        # dar formato a la tabla principal
-        header = self.ui.tabla_productos.horizontalHeader()
-        header.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-
-        for col in range(self.ui.tabla_productos.columnCount()):
-            if col == 2:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-                
-        # insertar productos a la tabla
-        tabla = self.ui.tabla_productos
-        tabla.setRowCount(0)
-        
-        self.productosVenta = first.ventaDatos.productos
-
-        for row, prod in enumerate(self.productosVenta):
-            tabla.insertRow(row)
-
-            for col, dato in enumerate(prod):
-                if isinstance(dato, float):
-                    cell = f'{dato:,.2f}'
-                else:
-                    cell = str(dato or '')
-                    
-                cell = QtWidgets.QTableWidgetItem(cell)
-                tabla.setItem(row, col, cell)
 
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)
@@ -895,6 +842,12 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
         
         self.show()
     
+    def showEvent(self, event):
+        configurarCabecera(self.ui.tabla_productos,
+                           lambda col: col != 2,
+                           Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.update_display()
+    
     def keyPressEvent(self, qKeyEvent):
         if qKeyEvent.key() in {Qt.Key_Return, Qt.Key_Enter}:
             self.done()
@@ -902,6 +855,25 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
     # ================ #
     # FUNCIONES ÚTILES #
     # ================ #
+    def update_display(self):
+        """ Insertar productos a la tabla. """
+        tabla = self.ui.tabla_productos
+        tabla.setRowCount(0)
+        
+        self.productosVenta = self.first.ventaDatos.productos
+
+        for row, prod in enumerate(self.productosVenta):
+            tabla.insertRow(row)
+
+            for col, dato in enumerate(prod):
+                if isinstance(dato, float):
+                    cell = f'{dato:,.2f}'
+                else:
+                    cell = str(dato or '')
+                    
+                cell = QtWidgets.QTableWidgetItem(cell)
+                tabla.setItem(row, col, cell)
+    
     def done(self):
         """ Acepta los cambios e inserta descuento en la lista de productos. """
         selected = self.ui.tabla_productos.selectedItems()
@@ -1080,15 +1052,9 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             self.done()
     
     def showEvent(self, event):
-        # dar formato a la tabla principal
-        header = self.ui.tabla_productos.horizontalHeader()
-        header.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        
-        for col in range(self.ui.tabla_productos.columnCount()):
-            if col == 2:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
+        configurarCabecera(self.ui.tabla_productos,
+                           lambda col: col != 2,
+                           Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         
         self.update_display(self.ventaDatos)
         event.accept()

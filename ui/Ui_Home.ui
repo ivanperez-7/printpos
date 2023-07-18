@@ -297,7 +297,7 @@ QFrame {border: 2px solid;}</string>
     }</string>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/user.png</normaloff>:/img/resources/images/user.png</iconset>
             </property>
             <property name="iconSize">
@@ -1231,7 +1231,7 @@ QFrame {border: 2px solid;}</string>
           <string notr="true">Ajustes</string>
          </property>
          <property name="icon">
-          <iconset resource="../../resources.qrc">
+          <iconset resource="../resources.qrc">
            <normaloff>:/img/resources/images/settings.png</normaloff>:/img/resources/images/settings.png</iconset>
          </property>
          <property name="iconSize">
@@ -1249,8 +1249,8 @@ QFrame {border: 2px solid;}</string>
   </widget>
  </widget>
  <resources>
-  <include location="../../resources.qrc"/>
-  <include location="../../resources.qrc"/>
+  <include location="../resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections/>
 </ui>
