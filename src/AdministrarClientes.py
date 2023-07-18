@@ -8,7 +8,8 @@ from PySide6.QtCore import Qt, QDate, QRegularExpression, Signal
 
 from utils.databasemanagers import ManejadorClientes
 from utils.mydecorators import con_fondo
-from utils.myutils import exportarXlsx, formatDate, ColorsEnum, son_similar
+from utils.myutils import (configurarCabecera, exportarXlsx, formatDate,
+                           ColorsEnum, son_similar)
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -51,15 +52,6 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
 
         self.ui.btFiltrar.setMenu(popup)
         self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('nombre', 1))
-
-        # dar formato a la tabla principal
-        header = self.ui.tabla_clientes.horizontalHeader()
-        
-        for col in range(self.ui.tabla_clientes.columnCount()):
-            if col in {0, 2, 5}:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
         
         # restringir botón de eliminar cliente
         if not self.user.administrador:
@@ -77,6 +69,8 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         self.ui.btExportar.clicked.connect(self.exportarExcel)
     
     def showEvent(self, event):
+        configurarCabecera(self.ui.tabla_clientes,
+                           lambda col: col in [0, 2, 5, 6])
         self.update_display(rescan=True)
     
     def resizeEvent(self, event):

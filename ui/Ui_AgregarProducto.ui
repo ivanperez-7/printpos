@@ -17,7 +17,7 @@
    <string>MainWindow</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../resources.qrc">
+   <iconset resource="../resources.qrc">
     <normaloff>:/img/icon.ico</normaloff>:/img/icon.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -114,7 +114,7 @@ background-color: rgb(52, 172, 224);</string>
     }</string>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
             </property>
             <property name="iconSize">
@@ -214,7 +214,7 @@ background-color: rgb(52, 172, 224);</string>
              <string>Agregar a la venta</string>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/accept.png</normaloff>:/img/resources/images/accept.png</iconset>
             </property>
            </widget>
@@ -975,7 +975,7 @@ QTableView:active {
   <tabstop>btAltoM</tabstop>
  </tabstops>
  <resources>
-  <include location="../../resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections/>
  <buttongroups>

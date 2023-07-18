@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QRegularExpression, Signal
 
 from utils.databasemanagers import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import con_fondo
-from utils.myutils import ColorsEnum, son_similar
+from utils.myutils import ColorsEnum, configurarCabecera, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -44,15 +44,6 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         self.ui.btFiltrar.setMenu(popup)
         self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('código', 1))
         
-        # dar formato a la tabla principal
-        header = self.ui.tabla_productos.horizontalHeader()
-        
-        for col in range(self.ui.tabla_productos.columnCount()):
-            if col not in {1, 2, 3}:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-        
         # eventos para los botones
         self.ui.btAgregar.clicked.connect(self.agregarProducto)
         self.ui.btEditar.clicked.connect(self.editarProducto)
@@ -62,6 +53,8 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         self.ui.searchBar.textChanged.connect(lambda: self.update_display())
     
     def showEvent(self, event):
+        configurarCabecera(self.ui.tabla_productos,
+                           lambda col: col not in [1, 2, 3])
         self.update_display(rescan=True)
     
     def resizeEvent(self, event):
@@ -209,10 +202,7 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
         self.user = first.user
         
         # formato tabla de precios
-        header = self.ui.tabla_precios.horizontalHeader()
-        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Fixed)
-        header.setSectionResizeMode(1, QtWidgets.QHeaderView.Fixed)
-        header.setSectionResizeMode(2, QtWidgets.QHeaderView.Fixed)
+        configurarCabecera(self.ui.tabla_precios)
         
         # eventos para botones
         self.ui.btAceptar.clicked.connect(self.done)

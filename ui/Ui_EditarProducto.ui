@@ -76,7 +76,7 @@
     }</string>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
             </property>
             <property name="iconSize">
@@ -349,8 +349,7 @@
 	color: rgb(255, 255, 255);
 	background-color: rgb(0, 170, 0);
 
-	padding-top: 7px;
-	padding-bottom: 7px;
+	padding: 7px;
 }
 
 QTableWidget {
@@ -431,7 +430,7 @@ QTableView:active {
     }</string>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/plus2.png</normaloff>:/img/resources/images/plus2.png</iconset>
             </property>
             <property name="iconSize">
@@ -475,7 +474,7 @@ QTableView:active {
     }</string>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/minus2.png</normaloff>:/img/resources/images/minus2.png</iconset>
             </property>
             <property name="iconSize">
@@ -642,7 +641,7 @@ QTableView:active {
              <string>Agregar elemento</string>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/add.png</normaloff>:/img/resources/images/add.png</iconset>
             </property>
            </widget>
@@ -674,7 +673,7 @@ QTableView:active {
           <string notr="true"> Aceptar cambios</string>
          </property>
          <property name="icon">
-          <iconset resource="../../resources.qrc">
+          <iconset resource="../resources.qrc">
            <normaloff>:/img/resources/images/edit.png</normaloff>:/img/resources/images/edit.png</iconset>
          </property>
         </widget>
@@ -698,7 +697,7 @@ QTableView:active {
   <tabstop>tabla_precios</tabstop>
  </tabstops>
  <resources>
-  <include location="../../resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections/>
 </ui>

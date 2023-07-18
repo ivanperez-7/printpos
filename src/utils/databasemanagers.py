@@ -130,7 +130,11 @@ class ManejadorCaja(DatabaseManager):
     
     def obtenerFechaPrimerMov(self):
         """ Obtener fecha del movimiento más antiguo. """        
-        return self.fetchone('SELECT MIN(fecha_hora) FROM Caja;')
+        result = self.fetchone('SELECT MIN(fecha_hora) FROM Caja;')
+        
+        if result:
+            fecha, = result
+            return fecha
     
     def insertarMovimiento(self, params: tuple, commit: bool = True):
         """ Registra ingreso o egreso en tabla historial de movimientos.
@@ -826,11 +830,14 @@ class ManejadorVentas(DatabaseManager):
             Se puede restringir a cierto usuario. """
         restrict = f'WHERE id_usuarios = {id_usuario}' if id_usuario else ''
         
-        return self.fetchone(f'''
+        result = self.fetchone(f'''
             SELECT  MIN(fecha_hora_creacion) 
             FROM    Ventas
             {restrict};
         ''')
+        if result:
+            fecha, = result
+            return fecha
     
     def insertarVenta(self, params: tuple):
         """ Insertar venta nueva en la tabla ventas e intenta 

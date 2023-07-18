@@ -3,13 +3,14 @@ from math import ceil
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon, QRegularExpressionValidator
-from PySide6.QtCore import (QDate, QDateTime, QModelIndex,
-                          QRegularExpression, Qt, Signal)
+from PySide6.QtCore import (QDateTime, QModelIndex,
+                            QRegularExpression, Qt, Signal)
 
 from utils.databasemanagers import ManejadorCaja, ManejadorVentas
 from utils.mydecorators import con_fondo, run_in_thread
-from utils.myutils import (chunkify, clamp, enviarWhatsApp, formatDate, generarOrdenCompra, 
-                     generarTicketCompra, ColorsEnum, son_similar)
+from utils.myinterfaces import InterfazFechas, InterfazPaginas
+from utils.myutils import (configurarCabecera, chunkify, clamp, enviarWhatsApp, formatDate, 
+                           generarOrdenCompra, generarTicketCompra, ColorsEnum, son_similar)
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -43,20 +44,12 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         
         # fechas por defecto
         manejador = ManejadorVentas(self.conn)
-        hoy = QDate.currentDate()
         
         restrict = self.user.id if not self.user.administrador else None
-        fechaMin, = manejador.obtenerFechaPrimeraVenta(restrict)
+        fechaMin = manejador.obtenerFechaPrimeraVenta(restrict)
         
-        fechaMin = QDateTime(fechaMin).date() if fechaMin else hoy
-        
-        self.ui.dateDesde.setDate(hoy)
-        self.ui.dateDesde.setMaximumDate(hoy)
-        self.ui.dateDesde.setMinimumDate(fechaMin)
-        
-        self.ui.dateHasta.setDate(hoy)
-        self.ui.dateHasta.setMaximumDate(hoy)
-        self.ui.dateHasta.setMinimumDate(fechaMin)
+        InterfazFechas(self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
+                       self.ui.dateDesde, self.ui.dateHasta, fechaMin)
         
         # deshabilitar botones es caso de no ser administrador
         if not self.user.administrador:
@@ -87,40 +80,27 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         
         self.ui.dateDesde.dateChanged.connect(lambda: self.update_display(rescan=True))
         self.ui.dateHasta.dateChanged.connect(lambda: self.update_display(rescan=True))
-        self.ui.btHoy.clicked.connect(self.hoy_handle)
-        self.ui.btEstaSemana.clicked.connect(self.semana_handle)
-        self.ui.btEsteMes.clicked.connect(self.mes_handle)
         
         self.ui.tabla_ventasDirectas.doubleClicked.connect(self.detallesVenta)
         self.ui.tabla_pedidos.doubleClicked.connect(self.detallesVenta)
         self.ui.tabWidget.currentChanged.connect(self.cambiar_pestana)
-        self.ui.btAdelante.clicked.connect(self.ir_adelante)
-        self.ui.btUltimo.clicked.connect(self.ir_ultimo)
-        self.ui.btAtras.clicked.connect(self.ir_atras)
-        self.ui.btPrimero.clicked.connect(self.ir_primero)
-        
         self.rescaned.connect(self.update_display)
+        
+        InterfazPaginas(
+            self.ui.btAdelante, self.ui.btUltimo,
+            self.ui.btAtras, self.ui.btPrimero, self.ui.tabla_ventasDirectas)\
+        .paginaCambiada.connect(self.update_display)
+        
+        InterfazPaginas(
+            self.ui.btAdelante, self.ui.btUltimo,
+            self.ui.btAtras, self.ui.btPrimero, self.ui.tabla_pedidos)\
+        .paginaCambiada.connect(self.update_display)
     
     def showEvent(self, event):
-        # dar formato a las tabla principales
-        # TABLA DE VENTAS DIRECTAS
-        header = self.ui.tabla_ventasDirectas.horizontalHeader()
-
-        for col in range(self.ui.tabla_ventasDirectas.columnCount()):
-            if col not in {0, 3, 4, 5, 6}:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-
-        # TABLA DE VENTAS SOBRE PEDIDO
-        header = self.ui.tabla_pedidos.horizontalHeader()
-
-        for col in range(self.ui.tabla_pedidos.columnCount()):
-            if col not in {0, 5, 6, 7}:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-        
+        configurarCabecera(self.ui.tabla_ventasDirectas,
+                           lambda col: col in [0, 3, 4, 5, 6])
+        configurarCabecera(self.ui.tabla_pedidos,
+                           lambda col: col in [0, 5, 6, 7])        
         self.update_display(rescan=True)
     
     def resizeEvent(self, event):
@@ -133,33 +113,6 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
     @property
     def tabla_actual(self):
         return [self.ui.tabla_ventasDirectas, self.ui.tabla_pedidos][self.ui.tabWidget.currentIndex()]
-    
-    def ir_adelante(self):
-        tabla = self.tabla_actual
-        
-        currentPage = tabla.property('paginaActual')
-        tabla.setProperty('paginaActual', currentPage + 1)
-        
-        self.update_display()
-    
-    def ir_ultimo(self):
-        self.tabla_actual.setProperty(
-            'paginaActual',
-            len(self.all_directas) + len(self.all_pedidos))
-            
-        self.update_display()
-    
-    def ir_atras(self):
-        tabla = self.tabla_actual
-        
-        currentPage = tabla.property('paginaActual')
-        tabla.setProperty('paginaActual', currentPage - 1)
-        
-        self.update_display()
-    
-    def ir_primero(self):
-        self.tabla_actual.setProperty('paginaActual', 0)
-        self.update_display()
         
     def cambiar_pestana(self, nuevo):
         """ Cambia el label con el contador de ventas, según la pestaña,
@@ -167,17 +120,17 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             los valores del navegador de páginas de la tabla. """
         if nuevo == 0:
             label = 'ventas directas'
-            compras = self.all_directas
+            num_compras = len(self.all_directas)
         else:
             label = 'pedidos'
-            compras = self.all_pedidos
+            num_compras = len(self.all_pedidos)
         
         num_pagina = self.tabla_actual.property('paginaActual')
         
         self.ui.lbContador.setText(
-            f'{len(compras)} {label} en la base de datos.')
+            f'{num_compras} {label} en la base de datos.')
         self.ui.lbPagina.setText(
-            f'{num_pagina + 1} de {ceil(len(compras) / self.chunk_size) or 1}')
+            f'{num_pagina + 1} de {ceil(num_compras / self.chunk_size) or 1}')
         
         self.tabla_actual.resizeRowsToContents()
         
@@ -186,29 +139,6 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.filtro = idx
         self.ui.searchBar.setPlaceholderText(f'Busque venta por {filtro}...')
         self.update_display()
-    
-    def hoy_handle(self):
-        hoy = QDate.currentDate()
-        self.ui.dateDesde.setDate(hoy)
-        self.ui.dateHasta.setDate(hoy)
-        
-    def semana_handle(self):
-        hoy = QDate.currentDate()
-        
-        start = hoy.addDays(-hoy.dayOfWeek())
-        end = hoy.addDays(6 - hoy.dayOfWeek())
-        
-        self.ui.dateDesde.setDate(start)
-        self.ui.dateHasta.setDate(end)
-    
-    def mes_handle(self):
-        hoy = QDate.currentDate()
-        
-        start = QDate(hoy.year(), hoy.month(), 1)
-        end = QDate(hoy.year(), hoy.month(), hoy.daysInMonth())
-        
-        self.ui.dateDesde.setDate(start)
-        self.ui.dateHasta.setDate(end)
 
     def update_display(self, rescan: bool = False):
         """ Actualiza la tabla y el contador de clientes.
@@ -546,15 +476,9 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
         self.show()
     
     def showEvent(self, event):
-        # dar formato a la tabla principal
-        header = self.ui.tabla_productos.horizontalHeader()
-        header.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        
-        for col in range(self.ui.tabla_productos.columnCount()):
-            if col == 2:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
+        configurarCabecera(self.ui.tabla_productos,
+                           lambda col: col != 2,
+                           Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         
         self.update_display()
         event.accept()
@@ -635,15 +559,9 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         self.show()
     
     def showEvent(self, event):
-        # dar formato a la tabla principal
-        header = self.ui.tabla_productos.horizontalHeader()
-        header.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        
-        for col in range(self.ui.tabla_productos.columnCount()):
-            if col == 2:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
+        configurarCabecera(self.ui.tabla_productos,
+                           lambda col: col != 2,
+                           Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         
         self.update_display()
         event.accept()

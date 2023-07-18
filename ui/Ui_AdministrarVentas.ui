@@ -20,7 +20,7 @@
    <string>Administrar ventas</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../resources.qrc">
+   <iconset resource="../resources.qrc">
     <normaloff>:/img/icon.ico</normaloff>:/img/icon.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -77,7 +77,7 @@
           <string notr="true"/>
          </property>
          <property name="icon">
-          <iconset resource="../../resources.qrc">
+          <iconset resource="../resources.qrc">
            <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
          </property>
          <property name="iconSize">
@@ -172,7 +172,7 @@
                 <string notr="true">...</string>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/filter.png</normaloff>:/img/resources/images/filter.png</iconset>
                </property>
                <property name="popupMode">
@@ -283,7 +283,7 @@ background-color: rgb(255, 255, 255);</string>
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/accept.png</normaloff>:/img/resources/images/accept.png</iconset>
                </property>
                <property name="iconSize">
@@ -322,7 +322,7 @@ background-color: rgb(255, 255, 255);</string>
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/cancel.png</normaloff>:/img/resources/images/cancel.png</iconset>
                </property>
                <property name="iconSize">
@@ -942,7 +942,7 @@ QTableView:active {
              <string notr="true"/>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/backward.png</normaloff>:/img/resources/images/backward.png</iconset>
             </property>
            </widget>
@@ -964,7 +964,7 @@ QTableView:active {
              <string notr="true"/>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/back.png</normaloff>:/img/resources/images/back.png</iconset>
             </property>
            </widget>
@@ -1001,7 +1001,7 @@ QTableView:active {
              <string notr="true"/>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/next.png</normaloff>:/img/resources/images/next.png</iconset>
             </property>
            </widget>
@@ -1023,7 +1023,7 @@ QTableView:active {
              <string notr="true"/>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/last.png</normaloff>:/img/resources/images/last.png</iconset>
             </property>
            </widget>
@@ -1090,7 +1090,7 @@ QTableView:active {
              <string notr="true">Imprimir recibo</string>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/bill.png</normaloff>:/img/resources/images/bill.png</iconset>
             </property>
             <property name="iconSize">
@@ -1130,7 +1130,7 @@ QTableView:active {
              <string notr="true">Imprimir orden de compra</string>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/order.png</normaloff>:/img/resources/images/order.png</iconset>
             </property>
             <property name="iconSize">
@@ -1151,7 +1151,7 @@ QTableView:active {
   </widget>
  </widget>
  <resources>
-  <include location="../../resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections/>
 </ui>

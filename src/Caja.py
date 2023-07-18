@@ -3,11 +3,12 @@ from datetime import datetime
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont
-from PySide6.QtCore import Qt, QDateTime, QDate
+from PySide6.QtCore import Qt, QDateTime
 
 from utils.databasemanagers import ManejadorCaja
 from utils.mydecorators import run_in_thread
-from utils.myutils import enviarAImpresora, formatDate
+from utils.myinterfaces import InterfazFechas
+from utils.myutils import configurarCabecera, enviarAImpresora, formatDate
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -84,20 +85,12 @@ class App_Caja(QtWidgets.QMainWindow):
         self.conn = parent.conn
         self.user = parent.user
         
-        # fechas por defecto
+        # interfaz de widgets de fechas
         manejador = ManejadorCaja(self.conn)
-        hoy = QDate.currentDate()
-
-        fechaMin, = manejador.obtenerFechaPrimerMov()
-        fechaMin = QDateTime(fechaMin).date() if fechaMin else hoy
+        fechaMin = manejador.obtenerFechaPrimerMov()
         
-        self.ui.dateDesde.setDate(hoy)
-        self.ui.dateDesde.setMaximumDate(hoy)
-        self.ui.dateDesde.setMinimumDate(fechaMin)
-        
-        self.ui.dateHasta.setDate(hoy)
-        self.ui.dateHasta.setMaximumDate(hoy)
-        self.ui.dateHasta.setMinimumDate(fechaMin)
+        InterfazFechas(self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
+                       self.ui.dateDesde, self.ui.dateHasta, fechaMin)
 
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.goHome)
@@ -106,24 +99,13 @@ class App_Caja(QtWidgets.QMainWindow):
         
         self.ui.dateDesde.dateChanged.connect(self.update_display)
         self.ui.dateHasta.dateChanged.connect(self.update_display)
-        self.ui.btHoy.clicked.connect(self.hoy_handle)
-        self.ui.btEstaSemana.clicked.connect(self.semana_handle)
-        self.ui.btEsteMes.clicked.connect(self.mes_handle)
         self.ui.btImprimir.clicked.connect(self.confirmarImprimir)
 
     def showEvent(self, event):
-        # dar formato a la tabla principal
-        header_i = self.ui.tabla_ingresos.horizontalHeader()
-        header_e = self.ui.tabla_egresos.horizontalHeader()
-
-        for col in range(self.ui.tabla_ingresos.columnCount()):
-            if col not in {0, 2}:
-                header_i.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-                header_e.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-            else:
-                header_i.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-                header_e.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-        
+        configurarCabecera(self.ui.tabla_ingresos,
+                           lambda col: col not in [0, 2])
+        configurarCabecera(self.ui.tabla_egresos,
+                           lambda col: col not in [0, 2])
         self.update_display()
     
     def resizeEvent(self, event):
@@ -134,29 +116,6 @@ class App_Caja(QtWidgets.QMainWindow):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def hoy_handle(self):
-        hoy = QDate.currentDate()
-        self.ui.dateDesde.setDate(hoy)
-        self.ui.dateHasta.setDate(hoy)
-        
-    def semana_handle(self):
-        hoy = QDate.currentDate()
-        
-        start = hoy.addDays(-hoy.dayOfWeek())
-        end = hoy.addDays(6 - hoy.dayOfWeek())
-        
-        self.ui.dateDesde.setDate(start)
-        self.ui.dateHasta.setDate(end)
-    
-    def mes_handle(self):
-        hoy = QDate.currentDate()
-        
-        start = QDate(hoy.year(), hoy.month(), 1)
-        end = QDate(hoy.year(), hoy.month(), hoy.daysInMonth())
-        
-        self.ui.dateDesde.setDate(start)
-        self.ui.dateHasta.setDate(end)
-        
     def update_display(self):
         """ Actualiza las tablas de ingresos y egresos.
         

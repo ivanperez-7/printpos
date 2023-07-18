@@ -3,6 +3,7 @@ from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtCore import (QDate, Qt, QPropertyAnimation,
                             QRect, QEasingCurve, Signal)
 
+from utils.myutils import configurarCabecera
 from utils.mywidgets import VentanaPrincipal
 
 
@@ -223,22 +224,10 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         self.showMinimized()
     
     def showEvent(self, event):
-        # dar formato a las tablas
-        header = self.ui.tabla_seleccionar.horizontalHeader()
-
-        for col in range(self.ui.tabla_seleccionar.columnCount()):
-            if col == 1:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
-        
-        header = self.ui.tabla_granformato.horizontalHeader()
-
-        for col in range(self.ui.tabla_granformato.columnCount()):
-            if col == 1:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.ResizeToContents)
+        configurarCabecera(self.ui.tabla_seleccionar,
+                           lambda col: col != 1)
+        configurarCabecera(self.ui.tabla_granformato,
+                           lambda col: col != 1)
         
         self.update_display(True)
         event.accept()

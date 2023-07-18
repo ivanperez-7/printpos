@@ -20,7 +20,7 @@
    <string>Realizar una venta</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../resources.qrc">
+   <iconset resource="../resources.qrc">
     <normaloff>:/img/icon.ico</normaloff>:/img/icon.ico</iconset>
   </property>
   <property name="styleSheet">
@@ -110,7 +110,7 @@
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
                </property>
                <property name="iconSize">
@@ -186,7 +186,7 @@
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/undo.png</normaloff>:/img/resources/images/undo.png</iconset>
                </property>
                <property name="iconSize">
@@ -239,7 +239,7 @@
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/calendar.png</normaloff>:/img/resources/images/calendar.png</iconset>
                </property>
                <property name="iconSize">
@@ -345,7 +345,7 @@
                 <string notr="true">Registrar cliente</string>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/new-user.png</normaloff>:/img/resources/images/new-user.png</iconset>
                </property>
               </widget>
@@ -373,7 +373,7 @@
                 <string notr="true">Seleccionar cliente</string>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/search.png</normaloff>:/img/resources/images/search.png</iconset>
                </property>
               </widget>
@@ -404,7 +404,7 @@
                 <string notr="true">Ver descuentos del cliente</string>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/tag.png</normaloff>:/img/resources/images/tag.png</iconset>
                </property>
               </widget>
@@ -639,7 +639,7 @@
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/plus.png</normaloff>:/img/resources/images/plus.png</iconset>
                </property>
                <property name="iconSize">
@@ -675,7 +675,7 @@
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/trash.png</normaloff>:/img/resources/images/trash.png</iconset>
                </property>
                <property name="iconSize">
@@ -1422,7 +1422,7 @@ border-radius: 0px;</string>
              <string notr="true">Descuento</string>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/discounts.png</normaloff>:/img/resources/images/discounts.png</iconset>
             </property>
             <property name="iconSize">
@@ -1458,7 +1458,7 @@ border-radius: 0px;</string>
              <string notr="true">Cotización</string>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/receipt.png</normaloff>:/img/resources/images/receipt.png</iconset>
             </property>
             <property name="iconSize">
@@ -1542,7 +1542,7 @@ border-radius: 0px;</string>
                 <string notr="true">Efectivo</string>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/money.png</normaloff>:/img/resources/images/money.png</iconset>
                </property>
                <property name="iconSize">
@@ -1585,7 +1585,7 @@ border-radius: 0px;</string>
                 <string notr="true">Tarjeta de crédito</string>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/pay.png</normaloff>:/img/resources/images/pay.png</iconset>
                </property>
                <property name="iconSize">
@@ -1625,7 +1625,7 @@ border-radius: 0px;</string>
                 <string notr="true">Tarjeta de débito</string>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/pay.png</normaloff>:/img/resources/images/pay.png</iconset>
                </property>
                <property name="iconSize">
@@ -1665,7 +1665,7 @@ border-radius: 0px;</string>
                 <string notr="true">Transferencia bancaria</string>
                </property>
                <property name="icon">
-                <iconset resource="../../resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/img/resources/images/deposit.png</normaloff>:/img/resources/images/deposit.png</iconset>
                </property>
                <property name="iconSize">
@@ -1712,7 +1712,7 @@ border-radius: 0px;</string>
              <string notr="true">Listo</string>
             </property>
             <property name="icon">
-             <iconset resource="../../resources.qrc">
+             <iconset resource="../resources.qrc">
               <normaloff>:/img/resources/images/shopping-cart.png</normaloff>:/img/resources/images/shopping-cart.png</iconset>
             </property>
             <property name="iconSize">
@@ -1753,7 +1753,7 @@ border-radius: 0px;</string>
   <tabstop>btListo</tabstop>
  </tabstops>
  <resources>
-  <include location="../../resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections/>
  <buttongroups>

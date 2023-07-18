@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QRegularExpression, Signal
 
 from utils.databasemanagers import ManejadorUsuarios
 from utils.mydecorators import con_fondo
-from utils.myutils import formatDate, son_similar
+from utils.myutils import configurarCabecera, formatDate, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -52,16 +52,6 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         self.ui.btFiltrar.setMenu(popup)
         self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('nombre'))
 
-        # dar formato a la tabla principal
-        header = self.ui.tabla_usuarios.horizontalHeader()
-
-        for col in range(self.ui.tabla_usuarios.columnCount()):
-            if col in {0, 2}:
-                header.setSectionResizeMode(
-                    col, QtWidgets.QHeaderView.ResizeToContents)
-            else:
-                header.setSectionResizeMode(col, QtWidgets.QHeaderView.Stretch)
-
         # añade eventos para los botones
         self.ui.btAgregar.clicked.connect(self.registrarUsuario)
         self.ui.btEditar.clicked.connect(self.editarUsuario)
@@ -72,6 +62,8 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         self.ui.mostrarCheck.stateChanged.connect(self.mostrarTrigger)
 
     def showEvent(self, event):
+        configurarCabecera(self.ui.tabla_usuarios,
+                           lambda col: col in [0, 2])
         self.update_display(rescan=True)
     
     def resizeEvent(self, event):
