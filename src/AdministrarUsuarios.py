@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt, QRegularExpression, Signal
 
 from utils.databasemanagers import ManejadorUsuarios
 from utils.mydecorators import con_fondo
+from utils.myinterfaces import InterfazFiltro
 from utils.myutils import configurarCabecera, formatDate, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
@@ -30,27 +31,19 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         
         LabelAdvertencia(self.ui.tabla_usuarios, '¡No se encontró ningún usuario!')
-
-        # otras variables importantes
-        self.filtro = 0
         
         # guardar conexión y usuario como atributos
         self.conn = parent.conn
         self.user = parent.user
 
         # añadir menú de opciones al botón para filtrar
-        popup = QtWidgets.QMenu(self.ui.btFiltrar)
-
-        default = popup.addAction(
-            'Usuario', lambda: self.cambiar_filtro('usuario'))
-        popup.addAction(
-            'Nombre', lambda: self.cambiar_filtro('nombre'))
-        popup.addAction(
-            'Permisos', lambda: self.cambiar_filtro('permisos'))
-        popup.setDefaultAction(default)
-
-        self.ui.btFiltrar.setMenu(popup)
-        self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('nombre'))
+        self.filtro = InterfazFiltro(self.ui.btFiltrar, [
+            ('Nombre', 'nombre', 1),
+            ('Usuario', 'nombre de usuario', 0)
+        ])
+        self.filtro.filtroCambiado.connect(
+            lambda txt: self.ui.searchBar.setPlaceholderText(f'Busque usuario por {txt}...')
+                        or self.update_display())
 
         # añade eventos para los botones
         self.ui.btAgregar.clicked.connect(self.registrarUsuario)
@@ -61,10 +54,12 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         self.ui.searchBar.textChanged.connect(lambda: self.update_display())
         self.ui.mostrarCheck.stateChanged.connect(self.mostrarTrigger)
 
-    def showEvent(self, event):
         configurarCabecera(self.ui.tabla_usuarios,
                            lambda col: col in [0, 2])
         self.update_display(rescan=True)
+    
+    def showEvent(self, event):
+        self.ui.tabla_usuarios.resizeRowsToContents()
     
     def resizeEvent(self, event):
         if self.isVisible():
@@ -75,20 +70,6 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
     # ==================
     def mostrarTrigger(self, state):
         self.update_display(rescan=True)
-
-    def cambiar_filtro(self, filtro):
-        """ Modifica el filtro de búsqueda. """
-        self.filtro = [
-            'usuario',
-            'nombre',
-            'permisos',
-            'ultima'
-        ].index(filtro)
-                
-        self.ui.searchBar.setPlaceholderText(f'Busque usuario por {filtro}...')
-        
-        if self.ui.searchBar.text():
-            self.update_display()
 
     def update_display(self, rescan: bool = False):
         """ Actualiza la tabla y el contador de usuarios.
@@ -111,8 +92,8 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         
         found = self.all if not txt_busqueda else \
                 filter(
-                    lambda c: c[self.filtro] 
-                              and son_similar(txt_busqueda, c[self.filtro]), 
+                    lambda c: c[self.filtro.filtro] 
+                              and son_similar(txt_busqueda, c[self.filtro.filtro]), 
                     self.all)
         
         found = filter(lambda c: c[2] if not self.ui.mostrarCheck.isChecked()

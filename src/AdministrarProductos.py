@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt, QRegularExpression, Signal
 
 from utils.databasemanagers import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import con_fondo
+from utils.myinterfaces import InterfazFiltro
 from utils.myutils import ColorsEnum, configurarCabecera, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
@@ -25,24 +26,18 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         
         LabelAdvertencia(self.ui.tabla_productos, '¡No se encontró ningún producto!')
         
-        # otras variables importantes
-        self.filtro = 1
-        
         # guardar conexión y usuario como atributos
         self.conn = parent.conn
         self.user = parent.user
         
         # añadir menú de opciones al botón para filtrar
-        popup = QtWidgets.QMenu(self.ui.btFiltrar)
-
-        default = popup.addAction(
-            'Código', lambda: self.cambiar_filtro('código', 1))
-        popup.addAction(
-            'Descripción', lambda: self.cambiar_filtro('descripción', 2))
-        popup.setDefaultAction(default)
-
-        self.ui.btFiltrar.setMenu(popup)
-        self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('código', 1))
+        self.filtro = InterfazFiltro(self.ui.btFiltrar, [
+            ('Código', 'código', 1),
+            ('Descripción', 'descripción', 2)
+        ])
+        self.filtro.filtroCambiado.connect(
+            lambda txt: self.ui.searchBar.setPlaceholderText(f'Busque producto por {txt}...')
+                        or self.update_display())
         
         # eventos para los botones
         self.ui.btAgregar.clicked.connect(self.agregarProducto)
@@ -51,11 +46,13 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         self.ui.btRegresar.clicked.connect(self.goHome)
         
         self.ui.searchBar.textChanged.connect(lambda: self.update_display())
-    
-    def showEvent(self, event):
+        
         configurarCabecera(self.ui.tabla_productos,
                            lambda col: col not in [1, 2, 3])
         self.update_display(rescan=True)
+    
+    def showEvent(self, event):
+        self.ui.tabla_productos.resizeRowsToContents()
     
     def resizeEvent(self, event):
         if self.isVisible():
@@ -63,15 +60,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
     
     # ==================
     #  FUNCIONES ÚTILES
-    # ==================
-    def cambiar_filtro(self, filtro, idx):
-        """ Modifica el filtro de búsqueda. """
-        self.filtro = idx
-        self.ui.searchBar.setPlaceholderText(f'Busque producto por {filtro}...')
-        
-        if self.ui.searchBar.text():
-            self.update_display()
-            
+    # ==================    
     def update_display(self, rescan: bool = False):
         """ Actualiza la tabla y el contador de productos.
             Acepta una cadena de texto para la búsqueda de productos.
@@ -92,8 +81,8 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         
         found = self.all if not txt_busqueda else \
                 filter(
-                    lambda c: c[self.filtro] 
-                              and son_similar(txt_busqueda, c[self.filtro]), 
+                    lambda c: c[self.filtro.filtro] 
+                              and son_similar(txt_busqueda, c[self.filtro.filtro]),
                     self.all)
         
         for row, item in enumerate(found):

@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt, QDate, QRegularExpression, Signal
 
 from utils.databasemanagers import ManejadorClientes
 from utils.mydecorators import con_fondo
+from utils.myinterfaces import InterfazFiltro
 from utils.myutils import (configurarCabecera, exportarXlsx, formatDate,
                            ColorsEnum, son_similar)
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -27,31 +28,22 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         
         LabelAdvertencia(self.ui.tabla_clientes, '¡No se encontró ningún cliente!')
-
-        # otras variables importantes
-        self.filtro = 1
         
         # guardar conexión y usuarios como atributos
         self.conn = parent.conn
         self.user = parent.user
 
         # añadir menú de opciones al botón para filtrar
-        popup = QtWidgets.QMenu(self.ui.btFiltrar)
-
-        default = popup.addAction(
-            'Nombre',lambda: self.cambiar_filtro('nombre', 1))
-        popup.addAction(
-            'Teléfono', lambda: self.cambiar_filtro('teléfono', 2))
-        popup.addAction(
-            'Correo', lambda: self.cambiar_filtro('correo', 3))
-        popup.addAction(
-            'Dirección', lambda: self.cambiar_filtro('dirección', 4))
-        popup.addAction(
-            'RFC', lambda: self.cambiar_filtro('RFC', 5))
-        popup.setDefaultAction(default)
-
-        self.ui.btFiltrar.setMenu(popup)
-        self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('nombre', 1))
+        self.filtro = InterfazFiltro(self.ui.btFiltrar, [
+            ('Nombre', 'nombre', 1),
+            ('Teléfono', 'teléfono', 2),
+            ('Correo', 'correo', 3),
+            ('Dirección', 'dirección', 4),
+            ('RFC', 'RFC', 5)
+        ])
+        self.filtro.filtroCambiado.connect(
+            lambda txt: self.ui.searchBar.setPlaceholderText(f'Busque cliente por {txt}...')
+                        or self.update_display())
         
         # restringir botón de eliminar cliente
         if not self.user.administrador:
@@ -67,11 +59,13 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         self.ui.resaltarCheck.stateChanged.connect(lambda: self.update_display())
         self.ui.resaltarDias.textChanged.connect(self.resaltarTrigger)
         self.ui.btExportar.clicked.connect(self.exportarExcel)
-    
-    def showEvent(self, event):
+
         configurarCabecera(self.ui.tabla_clientes,
                            lambda col: col in [0, 2, 5, 6])
         self.update_display(rescan=True)
+    
+    def showEvent(self, event):
+        self.ui.tabla_clientes.resizeRowsToContents()
     
     def resizeEvent(self, event):
         if self.isVisible():
@@ -85,12 +79,6 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         visitado en una cantidad escogida de días. """
         if self.ui.resaltarCheck.isChecked():
             self.update_display()
-    
-    def cambiar_filtro(self, filtro, idx):
-        """ Modifica el filtro de búsqueda. """
-        self.filtro = idx
-        self.ui.searchBar.setPlaceholderText(f'Busque cliente por {filtro}...')
-        self.update_display()
 
     def update_display(self, rescan: bool = False):
         """ Actualiza la tabla y el contador de clientes.
@@ -117,8 +105,8 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         
         found = self.all if not txt_busqueda else \
                 filter(
-                    lambda c: c[self.filtro] 
-                              and son_similar(txt_busqueda, c[self.filtro]), 
+                    lambda c: c[self.filtro.filtro] 
+                              and son_similar(txt_busqueda, c[self.filtro.filtro]), 
                     self.all)
     
         for row, cliente in enumerate(found):
