@@ -8,7 +8,7 @@ from PySide6.QtCore import (QDateTime, QModelIndex,
 
 from utils.databasemanagers import ManejadorCaja, ManejadorVentas
 from utils.mydecorators import con_fondo, run_in_thread
-from utils.myinterfaces import InterfazFechas, InterfazPaginas
+from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import (configurarCabecera, chunkify, clamp, enviarWhatsApp, formatDate, 
                            generarOrdenCompra, generarTicketCompra, ColorsEnum, son_similar)
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -35,7 +35,6 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         LabelAdvertencia(self.ui.tabla_pedidos, '¡No se encontró ningún pedido!')
         
         # otras variables importantes
-        self.filtro = 0
         self.chunk_size = 50
         
         # guardar conexión y usuario como atributos
@@ -56,19 +55,14 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             self.ui.btCancelar.hide()
 
         # añadir menú de opciones al botón para filtrar
-        popup = QtWidgets.QMenu(self.ui.btFiltrar)
-
-        default = popup.addAction(
-            'Folio', lambda: self.cambiar_filtro('folio', 0))
-        popup.addAction(
-            'Vendedor', lambda: self.cambiar_filtro('vendedor', 1))
-        popup.addAction(
-            'Cliente', lambda: self.cambiar_filtro('cliente', 2))
-        
-        popup.setDefaultAction(default)
-
-        self.ui.btFiltrar.setMenu(popup)
-        self.ui.btFiltrar.clicked.connect(lambda: self.cambiar_filtro('folio', 0))
+        self.filtro = InterfazFiltro(self.ui.btFiltrar, [
+            ('Folio', 'folio', 0),
+            ('Vendedor', 'vendedor', 1),
+            ('Cliente', 'cliente', 2)
+        ])
+        self.filtro.filtroCambiado.connect(
+            lambda txt: self.ui.searchBar.setPlaceholderText(f'Busque venta por {txt}...')
+                        or self.update_display())
         
         # crear eventos para los botones
         self.ui.btRegresar.clicked.connect(self.goHome)
@@ -95,13 +89,16 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             self.ui.btAdelante, self.ui.btUltimo,
             self.ui.btAtras, self.ui.btPrimero, self.ui.tabla_pedidos)\
         .paginaCambiada.connect(self.update_display)
-    
-    def showEvent(self, event):
+        
+        # configurar y llenar tablas
         configurarCabecera(self.ui.tabla_ventasDirectas,
                            lambda col: col in [0, 3, 4, 5, 6])
         configurarCabecera(self.ui.tabla_pedidos,
                            lambda col: col in [0, 5, 6, 7])        
         self.update_display(rescan=True)
+    
+    def showEvent(self, event):
+        self.ui.tabla_ventasDirectas.resizeRowsToContents()
     
     def resizeEvent(self, event):
         if self.isVisible():
@@ -133,12 +130,6 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             f'{num_pagina + 1} de {ceil(num_compras / self.chunk_size) or 1}')
         
         self.tabla_actual.resizeRowsToContents()
-        
-    def cambiar_filtro(self, filtro, idx):
-        """ Modifica el filtro de búsqueda. """
-        self.filtro = idx
-        self.ui.searchBar.setPlaceholderText(f'Busque venta por {filtro}...')
-        self.update_display()
 
     def update_display(self, rescan: bool = False):
         """ Actualiza la tabla y el contador de clientes.
@@ -181,8 +172,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
 
         if txt_busqueda:
             compras = filter(
-                          lambda c: c[self.filtro] 
-                                    and son_similar(txt_busqueda, c[self.filtro]),
+                          lambda c: c[self.filtro.filtro] 
+                                    and son_similar(txt_busqueda, c[self.filtro.filtro]),
                           compras)
         
         compras = list(compras)
@@ -231,8 +222,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                 
         if txt_busqueda:
             compras = filter(
-                          lambda c: c[self.filtro] 
-                                    and son_similar(txt_busqueda, c[self.filtro]),
+                          lambda c: c[self.filtro.filtro] 
+                                    and son_similar(txt_busqueda, c[self.filtro.filtro]),
                           compras)
         
         compras = list(compras)

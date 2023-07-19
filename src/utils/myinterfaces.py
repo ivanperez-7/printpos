@@ -1,5 +1,6 @@
 """ Módulo para controladores de grupos de widgets y otras funciones. """
-from PySide6.QtWidgets import QDateEdit, QPushButton, QTableWidget
+from PySide6.QtWidgets import (QDateEdit, QPushButton, QTableWidget,
+                               QMenu, QToolButton)
 from PySide6.QtCore import QDate, QObject, Signal
 
 
@@ -100,3 +101,37 @@ class InterfazFechas(QObject):
         
         self.dateDesde.setDate(start)
         self.dateHasta.setDate(end)
+
+
+class InterfazFiltro(QObject):
+    """ Interfaz para manejar filtros de búsqueda.
+    
+        Recibe un widget QToolButton y una lista de opciones:
+        nombre de opción, texto en placeholder e índice de columna asociada. """
+    filtroCambiado = Signal(str)
+    
+    def __init__(self, button: QToolButton, options: list[tuple]):
+        super().__init__(button)
+        
+        popup = QMenu(button)
+        
+        # primera opción y acción por defecto
+        nombre, placeholder, idx = options[0]
+        
+        default = popup.addAction(
+            nombre, lambda p=placeholder, i=idx: self.cambiar_filtro(p, i))
+        button.clicked.connect(lambda p=placeholder, i=idx: self.cambiar_filtro(p, i))
+        
+        popup.setDefaultAction(default)
+        self.filtro = idx
+        
+        # resto de acciones
+        for nombre, placeholder, idx in options[1:]:
+            popup.addAction(
+                nombre, lambda p=placeholder, i=idx: self.cambiar_filtro(p, i))
+
+        button.setMenu(popup)
+    
+    def cambiar_filtro(self, placeholder: str, idx: int):
+        self.filtro = idx
+        self.filtroCambiado.emit(placeholder)
