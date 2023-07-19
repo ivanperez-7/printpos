@@ -100,12 +100,13 @@ class App_Caja(QtWidgets.QMainWindow):
         self.ui.dateDesde.dateChanged.connect(self.update_display)
         self.ui.dateHasta.dateChanged.connect(self.update_display)
         self.ui.btImprimir.clicked.connect(self.confirmarImprimir)
-
-    def showEvent(self, event):
+        
         configurarCabecera(self.ui.tabla_ingresos,
                            lambda col: col not in [0, 2])
         configurarCabecera(self.ui.tabla_egresos,
                            lambda col: col not in [0, 2])
+
+    def showEvent(self, event):
         self.update_display()
     
     def resizeEvent(self, event):

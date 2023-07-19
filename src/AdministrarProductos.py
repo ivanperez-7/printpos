@@ -49,10 +49,9 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
         
         configurarCabecera(self.ui.tabla_productos,
                            lambda col: col not in [1, 2, 3])
-        self.update_display(rescan=True)
     
     def showEvent(self, event):
-        self.ui.tabla_productos.resizeRowsToContents()
+        self.update_display(rescan=True)
     
     def resizeEvent(self, event):
         if self.isVisible():

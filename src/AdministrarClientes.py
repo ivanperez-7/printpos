@@ -62,10 +62,9 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
 
         configurarCabecera(self.ui.tabla_clientes,
                            lambda col: col in [0, 2, 5, 6])
-        self.update_display(rescan=True)
     
     def showEvent(self, event):
-        self.ui.tabla_clientes.resizeRowsToContents()
+        self.update_display(rescan=True)
     
     def resizeEvent(self, event):
         if self.isVisible():

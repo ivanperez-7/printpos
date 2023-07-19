@@ -95,10 +95,9 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                            lambda col: col in [0, 3, 4, 5, 6])
         configurarCabecera(self.ui.tabla_pedidos,
                            lambda col: col in [0, 5, 6, 7])        
-        self.update_display(rescan=True)
     
     def showEvent(self, event):
-        self.ui.tabla_ventasDirectas.resizeRowsToContents()
+        self.update_display(rescan=True)
     
     def resizeEvent(self, event):
         if self.isVisible():
@@ -463,16 +462,14 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
 
         # evento para botón de regresar
         self.ui.btRegresar.clicked.connect(self.close)
-
-        self.show()
-    
-    def showEvent(self, event):
+        
         configurarCabecera(self.ui.tabla_productos,
                            lambda col: col != 2,
                            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        
+        self.show()
+    
+    def showEvent(self, event):
         self.update_display()
-        event.accept()
     
     def update_display(self):
         # llenar de productos la tabla
@@ -546,16 +543,14 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         self.ui.btListo.clicked.connect(self.done)
         self.ui.btCancelar.clicked.connect(self.close)
         self.ui.txtPago.textChanged.connect(self.calcularCambio)
-
-        self.show()
-    
-    def showEvent(self, event):
+        
         configurarCabecera(self.ui.tabla_productos,
                            lambda col: col != 2,
                            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        
+        self.show()
+    
+    def showEvent(self, event):
         self.update_display()
-        event.accept()
 
     ####################
     # FUNCIONES ÚTILES #

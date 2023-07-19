@@ -81,7 +81,6 @@ class App_Home(QtWidgets.QMainWindow):
     
     def showEvent(self, event):
         self.parentWidget().en_venta = False
-        event.accept()
     
     # ==================
     #  FUNCIONES ÚTILES
@@ -221,16 +220,14 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         self.eventReader.success.connect(self.eventReader.deleteLater)
         self.eventReader.start()
         
-        self.showMinimized()
-    
-    def showEvent(self, event):
         configurarCabecera(self.ui.tabla_seleccionar,
                            lambda col: col != 1)
         configurarCabecera(self.ui.tabla_granformato,
                            lambda col: col != 1)
-        
+        self.showMinimized()
+    
+    def showEvent(self, event):
         self.update_display(True)
-        event.accept()
     
     def closeEvent(self, event):
         if event.spontaneous():
