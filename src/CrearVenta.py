@@ -172,14 +172,13 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.ui.btListo.clicked.connect(self.confirmarVenta)
         
         self.ui.btDescuentosCliente.hide()
-    
-    def showEvent(self, event):
+        
         configurarCabecera(self.ui.tabla_productos,
                            lambda col: col != 2,
                            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        
+    
+    def showEvent(self, event):
         self.parentWidget().en_venta = True
-        event.accept()
 
     # ==================
     #  FUNCIONES ÚTILES
@@ -482,17 +481,15 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         regexp_numero = QRegularExpression(r'\d*\.?\d*')
         validador = QRegularExpressionValidator(regexp_numero)
         self.ui.txtCantidad.setValidator(validador)
-
-        self.show()
     
-    def showEvent(self, event):
         configurarCabecera(self.ui.tabla_seleccionar,
                            lambda col: col != 1)
         configurarCabecera(self.ui.tabla_granformato,
                            lambda col: col != 1)
+        self.show()
         
+    def showEvent(self, event):    
         self.update_display()
-        event.accept()
 
     def keyPressEvent(self, qKeyEvent):
         if qKeyEvent.key() in {Qt.Key_Return, Qt.Key_Enter}:
@@ -703,11 +700,11 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
         self.ui.searchBar.textChanged.connect(self.update_display)
         self.ui.tabla_seleccionar.itemDoubleClicked.connect(self.done)
 
+        configurarCabecera(self.ui.tabla_seleccionar,
+                           lambda col: col in [1, 4])
         self.show()
     
     def showEvent(self, event):
-        configurarCabecera(self.ui.tabla_seleccionar,
-                           lambda col: col in [1, 4])
         self.update_display()
     
     def keyPressEvent(self, qKeyEvent):
@@ -840,12 +837,12 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
         validador = QRegularExpressionValidator(regexp_numero)
         self.ui.txtPrecio.setValidator(validador)
         
-        self.show()
-    
-    def showEvent(self, event):
         configurarCabecera(self.ui.tabla_productos,
                            lambda col: col != 2,
                            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.show()
+    
+    def showEvent(self, event):
         self.update_display()
     
     def keyPressEvent(self, qKeyEvent):
@@ -1044,7 +1041,9 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ui.txtAnticipo.textChanged.connect(self.cambiarAnticipo)
         #self.ui.buttonGroupMetodo.buttonClicked.connect(self.handleComision)
 
-        self.recalcularImportes(ventaDatos)
+        configurarCabecera(self.ui.tabla_productos,
+                           lambda col: col != 2,
+                           Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.show()
         
         # brincar el proceso si el pago es de cero
@@ -1052,12 +1051,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             self.done()
     
     def showEvent(self, event):
-        configurarCabecera(self.ui.tabla_productos,
-                           lambda col: col != 2,
-                           Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        
+        self.recalcularImportes(self.ventaDatos)
         self.update_display(self.ventaDatos)
-        event.accept()
     
     def closeEvent(self, event):
         event.ignore()

@@ -35,10 +35,11 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         self.ui.btEliminar.clicked.connect(self.quitarInventario)
         self.ui.btRegresar.clicked.connect(self.goHome)
         self.ui.searchBar.textChanged.connect(lambda: self.update_display())
-    
-    def showEvent(self, event):
+        
         configurarCabecera(self.ui.tabla_inventario,
                            lambda col: col == 0)
+    
+    def showEvent(self, event):
         self.update_display(rescan=True)
     
     def resizeEvent(self, event):

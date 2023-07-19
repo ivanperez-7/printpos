@@ -56,10 +56,9 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
 
         configurarCabecera(self.ui.tabla_usuarios,
                            lambda col: col in [0, 2])
-        self.update_display(rescan=True)
     
     def showEvent(self, event):
-        self.ui.tabla_usuarios.resizeRowsToContents()
+        self.update_display(rescan=True)
     
     def resizeEvent(self, event):
         if self.isVisible():
