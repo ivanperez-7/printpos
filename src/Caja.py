@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt, QDateTime
 from utils.databasemanagers import ManejadorCaja
 from utils.mydecorators import run_in_thread
 from utils.myinterfaces import InterfazFechas
-from utils.myutils import configurarCabecera, enviarAImpresora, formatDate
+from utils.myutils import configurarCabecera, enviarAImpresora, formatDate, generarPDFTemporal
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -232,13 +232,8 @@ class App_Caja(QtWidgets.QMainWindow):
         from reportlab.lib.enums import TA_LEFT
 
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-        import os
-        import uuid
         
-        # archivo y directorio temporales
-        os.makedirs('./tmp/', exist_ok=True)
-        
-        filename = f'.\\tmp\\{uuid.uuid4().hex[:10]}.pdf'
+        filename = generarPDFTemporal()
 
         doc = SimpleDocTemplate(filename, pagesize=(80*mm, 297*mm),
                                 topMargin=0., bottomMargin=0.,

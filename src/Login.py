@@ -61,7 +61,7 @@ class App_Login(QtWidgets.QMainWindow):
     @run_in_thread
     def verificar_info(self):
         """ Verifica datos ingresados consultando la tabla Usuarios. """
-        from utils.databasemanagers import crear_conexion, DatabaseManager
+        from utils.databasemanagers import crear_conexion, ManejadorUsuarios
         
         self.lock = True
             
@@ -84,16 +84,14 @@ class App_Login(QtWidgets.QMainWindow):
             return
         
         try:
-            manejador = DatabaseManager(conn)
-            manejador.crsr.execute('SELECT * FROM Usuarios WHERE usuario = ?;', (usuario,))
+            manejador = ManejadorUsuarios(conn, handle_exceptions=False)
+            result = manejador.obtenerUsuario(usuario)
         except Exception as err:
             print(str(err))
             self.errorLogin()
             return
         
-        result = manejador.crsr.fetchone()
         user = Usuario(*result, rol)
-        
         self.validated.emit(conn, user)
 
     def errorLogin(self):

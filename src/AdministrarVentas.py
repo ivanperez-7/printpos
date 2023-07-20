@@ -533,11 +533,6 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         self.ui.txtEntrega.setText(formatDate(fechaEntrega))
         self.ui.lbFolio.setText(f'{idx}')
         self.ui.lbSaldo.setText(f'{self.paraPagar:,.2f}')
-        
-        # validadores para datos numéricos
-        regexp_numero = QRegularExpression(r'\d*\.?\d*')
-        validador = QRegularExpressionValidator(regexp_numero)
-        self.ui.txtPago.setValidator(validador)
 
         # eventos para widgets
         self.ui.btListo.clicked.connect(self.done)
@@ -580,20 +575,14 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
     
     def calcularCambio(self, txt):
         """ Recalcular cambio a entregar. """
-        try:
-            pago = float(txt)
-        except ValueError:
-            pago = 0.
+        pago = self.ui.txtPago.cantidad
         
         cambio = max(0., pago - self.paraPagar)
         self.ui.lbCambio.setText(f'{cambio:,.2f}')
     
     def done(self):
         """ Verifica restricciones y termina venta. """
-        try:
-            pago = float(self.ui.txtPago.text())
-        except ValueError:
-            pago = 0.
+        pago = self.ui.txtPago.cantidad
         
         metodo_pago = self.ui.groupMetodo.checkedButton().text()
         pagoAceptado = pago >= self.paraPagar if metodo_pago == 'Efectivo' \

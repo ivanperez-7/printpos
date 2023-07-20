@@ -64,7 +64,7 @@ def requiere_admin(func):
         de la conexión de administrador, por ejemplo, nombre del administrador. """
     import fdb
     
-    from utils.databasemanagers import crear_conexion, DatabaseManager
+    from utils.databasemanagers import crear_conexion, ManejadorUsuarios
     
     def accept_handle():
         global dialog
@@ -85,8 +85,8 @@ def requiere_admin(func):
             return
         
         try:
-            manejador = DatabaseManager(conn)
-            manejador.crsr.execute('SELECT permisos FROM Usuarios WHERE usuario = ?;', (usuario,))
+            manejador = ManejadorUsuarios(conn, handle_exceptions=False)
+            manejador.obtenerUsuario(usuario)
         except fdb.Error:
             dialog.close()
             QMessageBox.warning(parent, 'Error', 
