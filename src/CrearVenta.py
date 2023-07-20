@@ -105,6 +105,9 @@ class Venta:
     def obtenerProductosExistentes(self, id: int):
         """ Obtiene todos los productos que tienen el identificador dado. """
         return [p for p in self.productos if p.id == id]
+    
+    def __iter__(self):
+        return iter(self.productos)
 
 
 #####################
@@ -140,13 +143,6 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.ui.txtVendedor.setText(self.user.nombre)
         self.ui.lbFecha.setText(formatDate(self.ventaDatos.fechaEntrega))
         self.ui.btDeshacer.setVisible(False)
-
-        # deshabilita eventos del mouse para los textos en los botones
-        items = vars(self.ui)
-        items = [items[name] for name in items if 'label_' in name]
-
-        for w in items:
-            w.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         # crear eventos para los botones
         self.ui.btCalendario.clicked.connect(self.cambiarFecha)
@@ -205,7 +201,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
 
-        for row, prod in enumerate(self.ventaDatos.productos):
+        for row, prod in enumerate(self.ventaDatos):
             tabla.insertRow(row)
 
             for col, dato in enumerate(prod):
@@ -462,9 +458,9 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         manejador = ManejadorProductos(self.conn)
         
         # llena la tabla de productos no gran formato        
-        self.all_prod = manejador.fetchall('SELECT * FROM View_Productos_Simples;')
+        self.all_prod = manejador.obtenerVista('View_Productos_Simples')
         # llena la tabla de productos gran formato
-        self.all_gran = manejador.fetchall('SELECT * FROM View_Gran_Formato;')
+        self.all_gran = manejador.obtenerVista('View_Gran_Formato')
 
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)
@@ -1026,13 +1022,6 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ui.txtCreacion.setText(formatDate(ventaDatos.fechaCreacion))
         self.ui.txtEntrega.setText(formatDate(ventaDatos.fechaEntrega))
         self.ui.lbFolio.setText(f'{self.id_ventas}')
-        
-        # validadores para datos numéricos
-        regexp_numero = QRegularExpression(r'\d*\.?\d*')
-        validador = QRegularExpressionValidator(regexp_numero)
-        
-        self.ui.txtAnticipo.setValidator(validador)
-        self.ui.txtPago.setValidator(validador)
 
         # añade eventos para los botones
         self.ui.btListo.clicked.connect(self.done)
@@ -1087,7 +1076,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
 
-        for row, prod in enumerate(venta.productos):
+        for row, prod in enumerate(venta):
             tabla.insertRow(row)
 
             for col, dato in enumerate(prod):
@@ -1109,7 +1098,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                          else round(venta.total/2, 2)
 
         self.ui.lbTotal.setText(f'{self.total:,.2f}')
-        self.ui.txtAnticipo.setText(f'{self.paraPagar:.2f}')
+        self.ui.txtAnticipo.cantidad = self.paraPagar
         
     def obtenerParametrosVentas(self):
         """ Parámetros para tabla ventas (datos generales). """
@@ -1132,36 +1121,24 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                  prod.importe) 
                 for prod in self.ventaDatos.productos]
     
-    def calcularCambio(self, txt):
+    def calcularCambio(self, txt = None):
         """ Recalcular cambio a entregar. """
-        try:
-            pago = float(txt)
-        except ValueError:
-            pago = 0.
+        pago = self.ui.txtPago.cantidad
         
         cambio = max(0., pago - self.paraPagar)
         self.ui.lbCambio.setText(f'{cambio:,.2f}')
     
-    def cambiarAnticipo(self, txt):
+    def cambiarAnticipo(self, txt = None):
         """ Cambiar el anticipo pagado por el cliente. """
-        try:
-            self.paraPagar = float(txt)
-        except ValueError:
-            self.paraPagar = round(self.total/2, 2)  # regresar al 50%
-            self.ui.txtAnticipo.setText(f'{self.paraPagar:.2f}')
-        
-        self.calcularCambio(self.ui.txtPago.text())
+        self.paraPagar = self.ui.txtAnticipo.cantidad
+        self.calcularCambio()
     
     def done(self):
         """ Intenta finalizar la compra o pedido, actualizando el estado
             e insertando los correspondientes movimientos en la tabla Caja. """
         esDirecta = not self.ui.boxFechaEntrega.isVisible()
         
-        try:
-            pago = float(self.ui.txtPago.text())
-        except ValueError:
-            pago = 0.
-        
+        pago = self.ui.txtPago.cantidad
         pagoAceptado = pago >= self.paraPagar if self.metodoSeleccionado == 'Efectivo' \
                        else pago == self.paraPagar
         minimoCincuentaPorCiento = round(self.total/2, 2) <= self.paraPagar <= self.total

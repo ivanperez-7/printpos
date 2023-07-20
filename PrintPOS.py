@@ -1,12 +1,14 @@
 """ ARCHIVO PRINCIPAL.
     Inicia una QApplication y abre la ventana de iniciar sesión. """
-from PySide6.QtWidgets import QApplication, QStyleFactory
-from PySide6.QtGui import QPalette, QColor
+from PySide6.QtWidgets import QApplication
 
 from Login import App_Login
 
 
-def configurarPaleta(app: QApplication):
+def configurarEstilo(app: QApplication):
+    from PySide6.QtWidgets import QStyleFactory
+    from PySide6.QtGui import QPalette, QColor
+    
     BLANCO = QColor(255, 255, 255)
     NEGRO = QColor(0, 0, 0)
     GRIS = QColor(128, 128, 128)
@@ -24,14 +26,12 @@ def configurarPaleta(app: QApplication):
     palette.setColor(CR.PlaceholderText, GRIS)      # texto placeholder -> gris
     
     app.setPalette(palette)
+    app.setStyle(QStyleFactory.create('Fusion'))
 
 def main():
     app = QApplication()
-    app.setStyle(QStyleFactory.create('Fusion'))
-    
-    configurarPaleta(app)
-    
-    login = App_Login()    
+    configurarEstilo(app)
+    login = App_Login()
     app.exec()
 
 

@@ -260,8 +260,8 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
             Acepta una cadena de texto para la búsqueda de clientes.
             También lee de nuevo la tabla de clientes, si se desea. """
         if rescan:
-            self.all_prod = self.manejador.fetchall('SELECT * FROM View_Productos_Simples;')
-            self.all_gran = self.manejador.fetchall('SELECT * FROM View_Gran_Formato;')
+            self.all_prod = self.manejador.obtenerVista('View_Productos_Simples')
+            self.all_gran = self.manejador.obtenerVista('View_Gran_Formato')
         
         filtro = int(self.ui.btDescripcion.isChecked())
         txt_busqueda = self.ui.searchBar.text()

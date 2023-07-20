@@ -3,7 +3,8 @@ Módulo con widgets personalizados varios.
 """
 import fdb
 
-from PySide6.QtWidgets import QMainWindow, QMessageBox, QWidget, QLabel, QTableWidget
+from PySide6.QtWidgets import (QMainWindow, QMessageBox, QWidget,
+                               QLabel, QTableWidget, QLineEdit)
 from PySide6.QtGui import QFont, QIcon, QPixmap
 from PySide6.QtCore import Qt, QSize
 
@@ -54,6 +55,44 @@ def DimBackground(window: QMainWindow):
     bg.show()
     
     return bg
+
+
+class NumberEdit(QLineEdit):
+    """ Widget QLineEdit para manejar cantidad monetarias de forma más fácil. """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        self._cantidad = 0
+        
+        font = QFont()
+        font.setPointSize(14)
+        self.setFont(font)
+        self.setReadOnly(True)
+        self.setText('0.00')
+        self.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+    
+    def keyPressEvent(self, event):
+        key = event.key()
+        if Qt.Key_0 <= key <= Qt.Key_9:
+            digit = key - Qt.Key_0
+            self._cantidad = self._cantidad * 10 + digit
+            self.update_amount_text()
+        elif key == Qt.Key_Backspace:
+            self._cantidad = self._cantidad // 10
+            self.update_amount_text()
+
+    def update_amount_text(self):
+        amount_text = f"{self._cantidad / 100:,.2f}"
+        self.setText(amount_text)
+    
+    @property
+    def cantidad(self):
+        return round(self._cantidad / 100, 2)
+    
+    @cantidad.setter
+    def cantidad(self, val: float):
+        self._cantidad = int(val * 100)
+        self.update_amount_text()
 
 
 class LabelAdvertencia(QLabel):
@@ -107,8 +146,5 @@ class WarningDialog(QMessageBox):
         self.setIcon(QMessageBox.Icon.Warning)
         self.setStandardButtons(QMessageBox.StandardButton.Ok)
         self.setText(body)
-        
-        if error:
-            self.setDetailedText(error)
-
+        if error: self.setDetailedText(error)
         self.exec()

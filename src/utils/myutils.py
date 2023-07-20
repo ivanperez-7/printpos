@@ -52,6 +52,16 @@ def son_similar(str1: str, str2: str) -> bool:
     return str1_clean in str2_clean
 
 
+def generarPDFTemporal() -> str:
+    """ Genera para archivo PDF temporal en directorio temporal `tmp`. """
+    import os
+    import uuid
+    
+    os.makedirs('./tmp/', exist_ok=True)
+    
+    return f'.\\tmp\\{uuid.uuid4().hex[:10]}.pdf'
+
+
 def formatDate(date: QDateTime | datetime) -> str:
     """ Da formato en texto a un dato QDateTime.
         Ejemplo: 08 de febrero 2023, 4:56 p. m. """
@@ -160,8 +170,6 @@ def generarOrdenCompra(conn: fdb.Connection, idx: int):
             - Fecha de creación
             - Fecha de entrega """
     import io
-    import os
-    import uuid
     
     from PyPDF2 import PdfReader, PdfWriter
     from reportlab.pdfgen.canvas import Canvas
@@ -261,10 +269,8 @@ def generarOrdenCompra(conn: fdb.Connection, idx: int):
         page.merge_page(new_pdf.pages[0])
         writer.add_page(page)
     
-    # crear archivo temporal e imprimir    
-    os.makedirs('./tmp/', exist_ok=True)
-    
-    filename = f'.\\tmp\\{uuid.uuid4().hex[:10]}.pdf'
+    # crear archivo temporal e imprimir        
+    filename = generarPDFTemporal()
     
     with open(filename, 'wb') as f:
         writer.write(f)
@@ -291,13 +297,9 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
 
     from reportlab.platypus import (Table, TableStyle, SimpleDocTemplate,
                                     Paragraph, Spacer, Image)
-    import os
-    import uuid
     
     # archivo y directorio temporales
-    os.makedirs('./tmp/', exist_ok=True)
-    
-    filename = f'.\\tmp\\{uuid.uuid4().hex[:10]}.pdf'
+    filename = generarPDFTemporal()
 
     doc = SimpleDocTemplate(filename,
                             pagesize=(80*mm, 297*mm),
