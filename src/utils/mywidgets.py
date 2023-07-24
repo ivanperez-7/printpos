@@ -114,7 +114,7 @@ class LabelAdvertencia(QLabel):
 
         self.setFont(font)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setText(msj)
+        self.actualizarLabel()
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         
         parent.resizeEvent = self.relocate
