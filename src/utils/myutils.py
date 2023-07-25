@@ -58,7 +58,7 @@ def generarPDFTemporal():
     base = os.environ['USERPROFILE'] + '\\Documents\\tmp'
     os.makedirs(base, exist_ok=True)
     
-    return base + uuid.uuid4().hex[:10] + '.pdf'
+    return base + '\\' + uuid.uuid4().hex[:10] + '.pdf'
 
 
 def formatDate(date: QDateTime | datetime) -> str:
