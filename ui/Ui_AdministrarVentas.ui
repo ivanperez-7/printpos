@@ -570,65 +570,10 @@ background-color: rgb(255, 255, 255);</string>
             <number>0</number>
            </property>
            <item>
-            <widget class="QTableWidget" name="tabla_ventasDirectas">
-             <property name="font">
-              <font>
-               <family>Segoe UI</family>
-               <pointsize>10</pointsize>
-              </font>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">QHeaderView::section {
-	font: bold 10pt;
-	color: rgb(255, 255, 255);
-	background-color: rgb(52, 172, 224);
-	padding: 7px;
-}
-
-QTableView::item{
-  padding: 5px;
-}
-
-QTableWidget {
-	alternate-background-color: rgb(240, 240, 240);
-}
-
-QTableView {
-    selection-background-color: rgb(85, 85, 255);
-    selection-color: rgb(255, 255, 255);
-}
-QTableView:active {
-    selection-background-color: rgb(85, 85, 255);
-    selection-color: rgb(255, 255, 255);
-}</string>
-             </property>
-             <property name="verticalScrollBarPolicy">
-              <enum>Qt::ScrollBarAlwaysOn</enum>
-             </property>
-             <property name="editTriggers">
-              <set>QAbstractItemView::NoEditTriggers</set>
-             </property>
-             <property name="alternatingRowColors">
-              <bool>true</bool>
-             </property>
-             <property name="selectionMode">
-              <enum>QAbstractItemView::SingleSelection</enum>
-             </property>
-             <property name="selectionBehavior">
-              <enum>QAbstractItemView::SelectRows</enum>
-             </property>
-             <property name="showGrid">
-              <bool>false</bool>
-             </property>
+            <widget class="TablaDatos" name="tabla_ventasDirectas">
              <property name="paginaActual" stdset="0">
               <number>0</number>
              </property>
-             <attribute name="horizontalHeaderMinimumSectionSize">
-              <number>45</number>
-             </attribute>
-             <attribute name="verticalHeaderVisible">
-              <bool>false</bool>
-             </attribute>
              <column>
               <property name="text">
                <string>Folio</string>
@@ -694,65 +639,10 @@ QTableView:active {
             <number>0</number>
            </property>
            <item>
-            <widget class="QTableWidget" name="tabla_pedidos">
-             <property name="font">
-              <font>
-               <family>Segoe UI</family>
-               <pointsize>10</pointsize>
-              </font>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">QHeaderView::section {
-	font: bold 10pt;
-	color: rgb(255, 255, 255);
-	background-color: rgb(52, 172, 224);
-	padding: 7px;
-}
-
-QTableView::item{
-  padding: 5px;
-}
-
-QTableWidget {
-	alternate-background-color: rgb(240, 240, 240);
-}
-
-QTableView {
-    selection-background-color: rgb(85, 85, 255);
-    selection-color: rgb(255, 255, 255);
-}
-QTableView:active {
-    selection-background-color: rgb(85, 85, 255);
-    selection-color: rgb(255, 255, 255);
-}</string>
-             </property>
-             <property name="verticalScrollBarPolicy">
-              <enum>Qt::ScrollBarAlwaysOn</enum>
-             </property>
-             <property name="editTriggers">
-              <set>QAbstractItemView::NoEditTriggers</set>
-             </property>
-             <property name="alternatingRowColors">
-              <bool>true</bool>
-             </property>
-             <property name="selectionMode">
-              <enum>QAbstractItemView::SingleSelection</enum>
-             </property>
-             <property name="selectionBehavior">
-              <enum>QAbstractItemView::SelectRows</enum>
-             </property>
-             <property name="showGrid">
-              <bool>false</bool>
-             </property>
+            <widget class="TablaDatos" name="tabla_pedidos">
              <property name="paginaActual" stdset="0">
               <number>0</number>
              </property>
-             <attribute name="horizontalHeaderMinimumSectionSize">
-              <number>45</number>
-             </attribute>
-             <attribute name="verticalHeaderVisible">
-              <bool>false</bool>
-             </attribute>
              <column>
               <property name="text">
                <string>Folio</string>
@@ -1150,6 +1040,13 @@ QTableView:active {
    </layout>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>TablaDatos</class>
+   <extends>QTableWidget</extends>
+   <header>utils.mywidgets.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../resources.qrc"/>
  </resources>

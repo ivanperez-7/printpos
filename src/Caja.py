@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt, QDateTime
 from utils.databasemanagers import ManejadorCaja
 from utils.mydecorators import run_in_thread
 from utils.myinterfaces import InterfazFechas
-from utils.myutils import configurarCabecera, enviarAImpresora, formatDate, generarPDFTemporal
+from utils.myutils import enviarAImpresora, formatDate, generarPDFTemporal
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -101,10 +101,8 @@ class App_Caja(QtWidgets.QMainWindow):
         self.ui.dateHasta.dateChanged.connect(self.update_display)
         self.ui.btImprimir.clicked.connect(self.confirmarImprimir)
         
-        configurarCabecera(self.ui.tabla_ingresos,
-                           lambda col: col not in [0, 2])
-        configurarCabecera(self.ui.tabla_egresos,
-                           lambda col: col not in [0, 2])
+        self.ui.tabla_ingresos.configurarCabecera(lambda col: col not in [0, 2])
+        self.ui.tabla_egresos.configurarCabecera(lambda col: col not in [0, 2])
 
     def showEvent(self, event):
         self.update_display()

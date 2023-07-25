@@ -7,7 +7,7 @@ from PySide6.QtCore import Qt, QRegularExpression, Signal
 from utils.databasemanagers import ManejadorUsuarios
 from utils.mydecorators import con_fondo
 from utils.myinterfaces import InterfazFiltro
-from utils.myutils import configurarCabecera, formatDate, son_similar
+from utils.myutils import formatDate, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -54,8 +54,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         self.ui.searchBar.textChanged.connect(lambda: self.update_display())
         self.ui.mostrarCheck.stateChanged.connect(self.mostrarTrigger)
 
-        configurarCabecera(self.ui.tabla_usuarios,
-                           lambda col: col in [0, 2])
+        self.ui.tabla_usuarios.configurarCabecera(lambda col: col in [0, 2])
     
     def showEvent(self, event):
         self.update_display(rescan=True)

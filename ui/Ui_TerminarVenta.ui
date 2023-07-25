@@ -535,55 +535,15 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QTableWidget" name="tabla_productos">
+        <widget class="TablaDatos" name="tabla_productos">
          <property name="minimumSize">
           <size>
            <width>791</width>
            <height>210</height>
           </size>
          </property>
-         <property name="font">
-          <font>
-           <family>Segoe UI</family>
-           <pointsize>10</pointsize>
-          </font>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">QHeaderView::section {
-	font: bold 10pt;
-	color: rgb(255, 255, 255);
-	background-color: rgb(52, 172, 224);
-    border: 0px;
-
-	padding-left: 4px;
-	padding-top: 7px;
-	padding-bottom: 7px;
-}
-
-QTableWidget {
-	alternate-background-color: rgb(240, 240, 240);
-}</string>
-         </property>
-         <property name="verticalScrollBarPolicy">
-          <enum>Qt::ScrollBarAlwaysOn</enum>
-         </property>
-         <property name="editTriggers">
-          <set>QAbstractItemView::NoEditTriggers</set>
-         </property>
-         <property name="alternatingRowColors">
-          <bool>true</bool>
-         </property>
-         <property name="selectionMode">
-          <enum>QAbstractItemView::NoSelection</enum>
-         </property>
-         <property name="showGrid">
-          <bool>false</bool>
-         </property>
          <attribute name="horizontalHeaderMinimumSectionSize">
           <number>80</number>
-         </attribute>
-         <attribute name="verticalHeaderVisible">
-          <bool>false</bool>
          </attribute>
          <column>
           <property name="text">
@@ -1063,6 +1023,11 @@ QTableWidget {
   </widget>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>TablaDatos</class>
+   <extends>QTableWidget</extends>
+   <header>utils.mywidgets.h</header>
+  </customwidget>
   <customwidget>
    <class>NumberEdit</class>
    <extends>QLineEdit</extends>

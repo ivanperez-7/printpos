@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QRegularExpression, Signal
 
 from utils.databasemanagers import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import con_fondo
-from utils.myutils import ColorsEnum, configurarCabecera, son_similar
+from utils.myutils import ColorsEnum, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -36,8 +36,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         self.ui.btRegresar.clicked.connect(self.goHome)
         self.ui.searchBar.textChanged.connect(lambda: self.update_display())
         
-        configurarCabecera(self.ui.tabla_inventario,
-                           lambda col: col == 0)
+        self.ui.tabla_inventario.configurarCabecera(lambda col: col == 0)
     
     def showEvent(self, event):
         self.update_display(rescan=True)

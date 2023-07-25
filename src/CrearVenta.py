@@ -10,7 +10,7 @@ from PySide6.QtCore import (QDate, QDateTime, QRegularExpression, Qt,
 from utils.databasemanagers import (ManejadorCaja, ManejadorClientes,
                               ManejadorProductos, ManejadorVentas)
 from utils.mydecorators import con_fondo, requiere_admin
-from utils.myutils import (clamp, configurarCabecera, enviarWhatsApp, formatDate,
+from utils.myutils import (clamp, enviarWhatsApp, formatDate,
                            generarOrdenCompra, generarTicketCompra,
                            generarTicketPresupuesto, son_similar)
 from utils.mywidgets import DimBackground, LabelAdvertencia, VentanaPrincipal
@@ -169,12 +169,15 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         
         self.ui.btDescuentosCliente.hide()
         
-        configurarCabecera(self.ui.tabla_productos,
-                           lambda col: col != 2,
-                           Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.ui.tabla_productos.quitarBordeCabecera()
+        self.ui.tabla_productos.cambiarColorCabecera('#000')
+        self.ui.tabla_productos.configurarCabecera(
+            lambda col: col != 2,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
     
     def showEvent(self, event):
-        self.parentWidget().en_venta = True
+        parent: VentanaPrincipal = self.parentWidget()
+        parent.en_venta = True
 
     # ==================
     #  FUNCIONES ÚTILES
@@ -478,10 +481,9 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         validador = QRegularExpressionValidator(regexp_numero)
         self.ui.txtCantidad.setValidator(validador)
     
-        configurarCabecera(self.ui.tabla_seleccionar,
-                           lambda col: col != 1)
-        configurarCabecera(self.ui.tabla_granformato,
-                           lambda col: col != 1)
+        self.ui.tabla_seleccionar.configurarCabecera(lambda col: col != 1)
+        self.ui.tabla_granformato.configurarCabecera(lambda col: col != 1)
+        
         self.show()
         
     def showEvent(self, event):    
@@ -696,8 +698,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
         self.ui.searchBar.textChanged.connect(self.update_display)
         self.ui.tabla_seleccionar.itemDoubleClicked.connect(self.done)
 
-        configurarCabecera(self.ui.tabla_seleccionar,
-                           lambda col: col in [1, 4])
+        self.ui.tabla_seleccionar.configurarCabecera(lambda col: col in [1, 4])
         self.show()
     
     def showEvent(self, event):
@@ -833,9 +834,12 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
         validador = QRegularExpressionValidator(regexp_numero)
         self.ui.txtPrecio.setValidator(validador)
         
-        configurarCabecera(self.ui.tabla_productos,
-                           lambda col: col != 2,
-                           Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.ui.tabla_productos.quitarBordeCabecera()
+        self.ui.tabla_productos.cambiarColorCabecera('#000')
+        self.ui.tabla_productos.configurarCabecera(
+            lambda col: col != 2,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        
         self.show()
     
     def showEvent(self, event):
@@ -988,7 +992,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             for w in [self.ui.boxFechaEntrega,
                       self.ui.lbAnticipo1,
                       self.ui.lbAnticipo2,
-                      self.ui.txtAnticipo]:
+                      self.ui.txtAnticipo,
+                      self.ui.lbCincuenta]:
                 w.hide()
         else:        
             ventaDatos.fechaCreacion = QDateTime.currentDateTime()
@@ -1022,22 +1027,26 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ui.txtCreacion.setText(formatDate(ventaDatos.fechaCreacion))
         self.ui.txtEntrega.setText(formatDate(ventaDatos.fechaEntrega))
         self.ui.lbFolio.setText(f'{self.id_ventas}')
+        
+        self.ui.lbCincuenta.setText(f'(${round(ventaDatos.total/2, 2):,.2f})')
 
         # añade eventos para los botones
-        self.ui.btListo.clicked.connect(self.done)
+        self.ui.btListo.clicked.connect(self.verificar)
         self.ui.btCancelar.clicked.connect(self.abortar)
         self.ui.txtPago.textChanged.connect(self.calcularCambio)
         self.ui.txtAnticipo.textChanged.connect(self.cambiarAnticipo)
         #self.ui.buttonGroupMetodo.buttonClicked.connect(self.handleComision)
 
-        configurarCabecera(self.ui.tabla_productos,
-                           lambda col: col != 2,
-                           Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.ui.tabla_productos.quitarBordeCabecera()
+        self.ui.tabla_productos.configurarCabecera(
+            lambda col: col != 2,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        
         self.show()
         
         # brincar el proceso si el pago es de cero
         if self.paraPagar <= 0:
-            self.done()
+            self.verificar()
     
     def showEvent(self, event):
         self.recalcularImportes(self.ventaDatos)
@@ -1133,18 +1142,40 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.paraPagar = self.ui.txtAnticipo.cantidad
         self.calcularCambio()
     
-    def done(self):
+    def verificar(self):
         """ Intenta finalizar la compra o pedido, actualizando el estado
             e insertando los correspondientes movimientos en la tabla Caja. """
-        esDirecta = not self.ui.boxFechaEntrega.isVisible()
+        if not 0. <= self.paraPagar <= self.total:
+            return
         
         pago = self.ui.txtPago.cantidad
+        
         pagoAceptado = pago >= self.paraPagar if self.metodoSeleccionado == 'Efectivo' \
                        else pago == self.paraPagar
-        minimoCincuentaPorCiento = round(self.total/2, 2) <= self.paraPagar <= self.total
+        minimoCincuentaPorCiento = round(self.total/2, 2) <= self.paraPagar
         
-        if not pagoAceptado or not minimoCincuentaPorCiento:
+        if not pagoAceptado:
             return
+        if not minimoCincuentaPorCiento:
+            qm = QtWidgets.QMessageBox
+            ret = qm.question(self, 'Atención', 
+                              'El anticipo está por debajo del 50% del total de compra.\n'
+                              '¿Desea continuar?', qm.Yes | qm.No)
+            if ret == qm.Yes:
+                self.terminarVentaAdmin()
+        else:
+            self.terminarVenta()
+    
+    @requiere_admin
+    def terminarVentaAdmin(self, conn):
+        """ Saltar ciertas verificaciones, pero con cuenta de administrador. """
+        self.terminarVenta()
+    
+    def terminarVenta(self):
+        """ Tras verificar todas las condiciones, finalizar venta y
+            registrarla en la base de datos. """
+        esDirecta = not self.ui.boxFechaEntrega.isVisible()
+        pago = self.ui.txtPago.cantidad
         
         manejadorVentas = ManejadorVentas(self.conn)
 

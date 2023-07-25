@@ -1,9 +1,8 @@
 from PySide6 import QtWidgets
-from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtGui import QPixmap
 from PySide6.QtCore import (QDate, Qt, QPropertyAnimation,
                             QRect, QEasingCurve, Signal)
 
-from utils.myutils import configurarCabecera
 from utils.mywidgets import VentanaPrincipal
 
 
@@ -220,10 +219,9 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         self.eventReader.success.connect(self.eventReader.deleteLater)
         self.eventReader.start()
         
-        configurarCabecera(self.ui.tabla_seleccionar,
-                           lambda col: col != 1)
-        configurarCabecera(self.ui.tabla_granformato,
-                           lambda col: col != 1)
+        self.ui.tabla_seleccionar.configurarCabecera(lambda col: col != 1)
+        self.ui.tabla_granformato.configurarCabecera(lambda col: col != 1)
+        
         self.showMinimized()
     
     def showEvent(self, event):
