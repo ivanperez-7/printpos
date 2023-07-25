@@ -1,10 +1,7 @@
 """ Provee varias funciones útiles utilizadas frecuentemente. """
 from datetime import datetime
-from typing import Callable
 
 import fdb
-
-from PySide6.QtWidgets import QTableWidget, QHeaderView
 from PySide6.QtCore import QDateTime
 
 from utils.mydecorators import run_in_thread
@@ -78,29 +75,6 @@ def formatDate(date: QDateTime | datetime) -> str:
     return locale.toString(date, "d 'de' MMMM yyyy, h:mm ap")
 
 
-def configurarCabecera(tabla: QTableWidget,
-                       resize_cols: Callable[[int], bool] = None,
-                       align_flags = None):
-    """ Configurar tamaño de cabeceras de tabla. En particular, 
-        establece `ResizeToContents` en las columnas especificadas.
-        
-        También se añaden banderas de alineación, si se desea. """
-    header = tabla.horizontalHeader()
-    
-    if not resize_cols:
-        resize_cols = lambda _: True
-    if align_flags:
-        header.setDefaultAlignment(align_flags)
-
-    for col in range(tabla.columnCount()):
-        if resize_cols(col):
-            mode = QHeaderView.ResizeMode.ResizeToContents
-        else:
-            mode = QHeaderView.ResizeMode.Stretch
-
-        header.setSectionResizeMode(col, mode)
-
-
 @run_in_thread
 def exportarXlsx(rutaArchivo, titulos, datos):
     """ Exporta una lista de tuplas a un archivo MS Excel, con extensión xlsx.
@@ -152,8 +126,13 @@ def enviarAImpresora(ruta: str, prompt: int | bool):
     acrobat = config['DEFAULT']['acrobat']
     prompt_arg = '/P' if prompt else '/T'
     printer = config['IMPRESORAS']['default'] if not prompt else ''
+    
+    args = [acrobat, '/N', prompt_arg, ruta, printer]
 
-    subprocess.run([acrobat, '/N', prompt_arg, ruta, printer])
+    if not prompt:
+        subprocess.call(args, timeout=6)
+    else:
+        subprocess.call(args)
 
 
 @run_in_thread

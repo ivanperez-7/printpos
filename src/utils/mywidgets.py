@@ -1,12 +1,14 @@
 """
 Módulo con widgets personalizados varios.
 """
+from typing import Callable
+
 import fdb
 
 from PySide6.QtWidgets import (QMainWindow, QMessageBox, QWidget,
                                QLabel, QTableWidget, QLineEdit)
-from PySide6.QtGui import QFont, QIcon, QPixmap
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QFont, QIcon, QPixmap, QRegularExpressionValidator
+from PySide6.QtCore import Qt, QSize, QRegularExpression
 
 from Login import Usuario
 
@@ -57,42 +59,102 @@ def DimBackground(window: QMainWindow):
     return bg
 
 
+class TablaDatos(QTableWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        self.setStyleSheet("""
+        QHeaderView::section {
+            font: bold 10pt;
+            color: rgb(255, 255, 255);
+            background-color: rgb(52, 172, 224);
+            padding: 7px;
+        }
+
+        QTableView::item{
+            padding: 5px;
+        }
+        
+        QTableWidget {
+            alternate-background-color: rgb(240, 240, 240);
+        }
+
+        QTableView {
+            selection-background-color: rgb(85, 85, 255);
+            selection-color: rgb(255, 255, 255);
+        }
+        QTableView:active {
+            selection-background-color: rgb(85, 85, 255);
+            selection-color: rgb(255, 255, 255);
+        }""")
+        font = QFont()
+        font.setPointSize(10)
+        self.setFont(font)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.setSelectionMode(QTableWidget.SingleSelection)
+        self.setSelectionBehavior(QTableWidget.SelectRows)
+        self.setAlternatingRowColors(True)
+        self.setShowGrid(False)
+        self.setWordWrap(True)
+        self.verticalHeader().hide()
+        self.horizontalHeader().setMinimumSectionSize(50)
+    
+    def quitarBordeCabecera(self):
+        self.setStyleSheet(self.styleSheet() + '\nQHeaderView::section {border: 0px;}')
+    
+    def cambiarColorCabecera(self, color: str):
+        self.setStyleSheet(self.styleSheet() + '\nQHeaderView::section {background-color:'+color+';}')
+    
+    def configurarCabecera(self, resize_cols: Callable[[int], bool] = None,
+                                 align_flags = None):
+        """ Configurar tamaño de cabeceras de tabla. En particular, 
+            establece `ResizeToContents` en las columnas especificadas.
+            
+            También se añaden banderas de alineación, si se desea. """
+        from PySide6.QtWidgets import QHeaderView
+        
+        header = self.horizontalHeader()
+        
+        if not resize_cols:
+            resize_cols = lambda _: True
+        if align_flags:
+            header.setDefaultAlignment(align_flags)
+
+        for col in range(self.columnCount()):
+            if resize_cols(col):
+                mode = QHeaderView.ResizeMode.ResizeToContents
+            else:
+                mode = QHeaderView.ResizeMode.Stretch
+
+            header.setSectionResizeMode(col, mode)
+
+
 class NumberEdit(QLineEdit):
     """ Widget QLineEdit para manejar cantidad monetarias de forma más fácil. """
     def __init__(self, parent=None):
         super().__init__(parent)
         
-        self._cantidad = 0
-        
         font = QFont()
         font.setPointSize(14)
         self.setFont(font)
-        self.setReadOnly(True)
-        self.setText('0.00')
         self.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-    
-    def keyPressEvent(self, event):
-        key = event.key()
-        if Qt.Key_0 <= key <= Qt.Key_9:
-            digit = key - Qt.Key_0
-            self._cantidad = self._cantidad * 10 + digit
-            self.update_amount_text()
-        elif key == Qt.Key_Backspace:
-            self._cantidad = self._cantidad // 10
-            self.update_amount_text()
-
-    def update_amount_text(self):
-        amount_text = f"{self._cantidad / 100:,.2f}"
-        self.setText(amount_text)
+        
+        # validadores para datos numéricos
+        regexp_numero = QRegularExpression(r'\d*\.?\d*')
+        validador = QRegularExpressionValidator(regexp_numero)
+        self.setValidator(validador)
     
     @property
     def cantidad(self):
-        return round(self._cantidad / 100, 2)
+        try:
+            return round(float(self.text()), 2)
+        except ValueError:
+            return 0.
     
     @cantidad.setter
     def cantidad(self, val: float):
-        self._cantidad = int(val * 100)
-        self.update_amount_text()
+        self.setText(f'{val:.2f}')
 
 
 class LabelAdvertencia(QLabel):

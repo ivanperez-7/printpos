@@ -9,8 +9,7 @@ from PySide6.QtCore import Qt, QDate, QRegularExpression, Signal
 from utils.databasemanagers import ManejadorClientes
 from utils.mydecorators import con_fondo
 from utils.myinterfaces import InterfazFiltro
-from utils.myutils import (configurarCabecera, exportarXlsx, formatDate,
-                           ColorsEnum, son_similar)
+from utils.myutils import exportarXlsx, formatDate, ColorsEnum, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -60,8 +59,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         self.ui.resaltarDias.textChanged.connect(self.resaltarTrigger)
         self.ui.btExportar.clicked.connect(self.exportarExcel)
 
-        configurarCabecera(self.ui.tabla_clientes,
-                           lambda col: col in [0, 2, 5, 6])
+        self.ui.tabla_clientes.configurarCabecera(lambda col: col in [0, 2, 5, 6])
     
     def showEvent(self, event):
         self.update_display(rescan=True)

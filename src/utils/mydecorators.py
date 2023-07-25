@@ -92,8 +92,8 @@ def requiere_admin(func):
             QMessageBox.warning(parent, 'Error', 
                                 'Las credenciales no son válidas para una cuenta de administrador.')
         else:
-            dialog.success.emit(conn)
             dialog.close()
+            dialog.success.emit(conn)
             conn.close()
     
     @wraps(func)

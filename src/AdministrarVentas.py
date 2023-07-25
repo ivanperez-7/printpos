@@ -9,8 +9,8 @@ from PySide6.QtCore import (QDateTime, QModelIndex,
 from utils.databasemanagers import ManejadorCaja, ManejadorVentas
 from utils.mydecorators import con_fondo, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
-from utils.myutils import (configurarCabecera, chunkify, clamp, enviarWhatsApp, formatDate, 
-                           generarOrdenCompra, generarTicketCompra, ColorsEnum, son_similar)
+from utils.myutils import (chunkify, clamp, enviarWhatsApp, formatDate, generarOrdenCompra, 
+                           generarTicketCompra, ColorsEnum, son_similar)
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -91,10 +91,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         .paginaCambiada.connect(self.update_display)
         
         # configurar y llenar tablas
-        configurarCabecera(self.ui.tabla_ventasDirectas,
-                           lambda col: col in [0, 3, 4, 5, 6])
-        configurarCabecera(self.ui.tabla_pedidos,
-                           lambda col: col in [0, 5, 6, 7])        
+        self.ui.tabla_ventasDirectas.configurarCabecera(lambda col: col in [0, 3, 4, 5, 6])
+        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in [0, 5, 6, 7])        
     
     def showEvent(self, event):
         self.update_display(rescan=True)
@@ -303,7 +301,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         idVenta = selected[0].text()
         manejador = ManejadorVentas(self.conn)
         
-        if not (anticipo := manejador.obtenerAnticipo(idVenta)):
+        if (anticipo := manejador.obtenerAnticipo(idVenta)) == None:
             return
         
         saldo = manejador.obtenerImporteTotal(idVenta) - anticipo
@@ -463,9 +461,11 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
         # evento para botón de regresar
         self.ui.btRegresar.clicked.connect(self.close)
         
-        configurarCabecera(self.ui.tabla_productos,
-                           lambda col: col != 2,
-                           Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.ui.tabla_productos.quitarBordeCabecera()
+        self.ui.tabla_productos.configurarCabecera(
+            lambda col: col != 2,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        
         self.show()
     
     def showEvent(self, event):
@@ -539,9 +539,11 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         self.ui.btCancelar.clicked.connect(self.close)
         self.ui.txtPago.textChanged.connect(self.calcularCambio)
         
-        configurarCabecera(self.ui.tabla_productos,
-                           lambda col: col != 2,
-                           Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.ui.tabla_productos.quitarBordeCabecera()
+        self.ui.tabla_productos.configurarCabecera(
+            lambda col: col != 2,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        
         self.show()
     
     def showEvent(self, event):

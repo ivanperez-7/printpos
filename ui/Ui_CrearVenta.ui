@@ -726,64 +726,12 @@
               <number>10</number>
              </property>
              <item>
-              <widget class="QTableWidget" name="tabla_productos">
-               <property name="font">
-                <font>
-                 <family>Segoe UI</family>
-                 <pointsize>10</pointsize>
-                </font>
-               </property>
-               <property name="styleSheet">
-                <string notr="true">QHeaderView::section {
-	font: bold 10pt;
-	color: rgb(255, 255, 255);
-	background-color: rgb(0, 0, 0);
-	border: 0px;
-
-	padding-left: 4px;
-	padding-top: 7px;
-	padding-bottom: 7px;
-}
-
-QTableWidget {
-	alternate-background-color: rgb(240, 240, 240);
-}
-
-QTableView {
-    selection-background-color: rgb(85, 85, 255);
-    selection-color: rgb(255, 255, 255);
-}
-QTableView:active {
-    selection-background-color: rgb(85, 85, 255);
-    selection-color: rgb(255, 255, 255);
-}</string>
-               </property>
-               <property name="verticalScrollBarPolicy">
-                <enum>Qt::ScrollBarAlwaysOn</enum>
-               </property>
-               <property name="sizeAdjustPolicy">
-                <enum>QAbstractScrollArea::AdjustToContents</enum>
-               </property>
+              <widget class="TablaDatos" name="tabla_productos">
                <property name="editTriggers">
                 <set>QAbstractItemView::DoubleClicked</set>
                </property>
-               <property name="alternatingRowColors">
-                <bool>true</bool>
-               </property>
-               <property name="selectionBehavior">
-                <enum>QAbstractItemView::SelectRows</enum>
-               </property>
-               <property name="showGrid">
-                <bool>false</bool>
-               </property>
-               <property name="wordWrap">
-                <bool>true</bool>
-               </property>
                <attribute name="horizontalHeaderMinimumSectionSize">
                 <number>80</number>
-               </attribute>
-               <attribute name="verticalHeaderVisible">
-                <bool>false</bool>
                </attribute>
                <column>
                 <property name="text">
@@ -1732,6 +1680,13 @@ border-radius: 0px;</string>
    </layout>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>TablaDatos</class>
+   <extends>QTableWidget</extends>
+   <header>utils.mywidgets.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>txtCliente</tabstop>
   <tabstop>txtCorreo</tabstop>
