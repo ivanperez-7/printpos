@@ -148,7 +148,7 @@ class App_Home(QtWidgets.QMainWindow):
             self.crearVentana(App_CrearVenta)
         
     def crearVentana(self, modulo):
-        parent = self.parentWidget()       # QMainWindow
+        parent: VentanaPrincipal = self.parentWidget()       # QMainWindow
         new = modulo(parent)
         parent.setCentralWidget(new)
     

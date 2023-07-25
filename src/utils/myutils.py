@@ -1,5 +1,6 @@
 """ Provee varias funciones útiles utilizadas frecuentemente. """
 from datetime import datetime
+from typing import SupportsFloat
 
 import fdb
 from PySide6.QtCore import QDateTime
@@ -14,7 +15,7 @@ class ColorsEnum:
     ROJO = 0xFFB2AE
 
 
-def clamp(value, smallest, largest) -> int | float:
+def clamp(value, smallest, largest) -> SupportsFloat:
     """ Trunca un valor dentro de un rango. """
     return sorted((value, smallest, largest))[1]
 
@@ -35,7 +36,7 @@ def unidecode(input_str: str):
     return normalized.lower()
 
 
-def son_similar(str1: str, str2: str) -> bool:
+def son_similar(str1: str, str2: str):
     """ Determina si dos cadenas son similares o no. """
     import re
     
@@ -49,14 +50,15 @@ def son_similar(str1: str, str2: str) -> bool:
     return str1_clean in str2_clean
 
 
-def generarPDFTemporal() -> str:
+def generarPDFTemporal():
     """ Genera para archivo PDF temporal en directorio temporal `tmp`. """
     import os
     import uuid
     
-    os.makedirs('./tmp/', exist_ok=True)
+    base = os.environ['USERPROFILE'] + '\\Documents\\tmp'
+    os.makedirs(base, exist_ok=True)
     
-    return f'.\\tmp\\{uuid.uuid4().hex[:10]}.pdf'
+    return base + uuid.uuid4().hex[:10] + '.pdf'
 
 
 def formatDate(date: QDateTime | datetime) -> str:
@@ -116,7 +118,7 @@ def enviarWhatsApp(phone_no: str, message: str):
         print('Could not open browser: ' + str(err))
 
 
-def enviarAImpresora(ruta: str, prompt: int | bool):
+def enviarAImpresora(ruta: str, prompt: bool):
     from configparser import ConfigParser
     import subprocess
     
@@ -128,11 +130,8 @@ def enviarAImpresora(ruta: str, prompt: int | bool):
     printer = config['IMPRESORAS']['default'] if not prompt else ''
     
     args = [acrobat, '/N', prompt_arg, ruta, printer]
-
-    if not prompt:
-        subprocess.call(args, timeout=6)
-    else:
-        subprocess.call(args)
+    
+    subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 @run_in_thread
@@ -409,10 +408,6 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
 
     # Build the PDF document
     doc.build(elements)
-
-    # ????? asegurar archivo cerrado
-    with open(filename, 'rb') as f:
-        pass
 
     enviarAImpresora(filename, False)
 

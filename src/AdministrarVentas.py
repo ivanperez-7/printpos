@@ -2,9 +2,8 @@ from datetime import datetime
 from math import ceil
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import QFont, QColor, QIcon, QRegularExpressionValidator
-from PySide6.QtCore import (QDateTime, QModelIndex,
-                            QRegularExpression, Qt, Signal)
+from PySide6.QtGui import QFont, QColor, QIcon
+from PySide6.QtCore import (QDateTime, QModelIndex, Qt, Signal)
 
 from utils.databasemanagers import ManejadorCaja, ManejadorVentas
 from utils.mydecorators import con_fondo, run_in_thread
@@ -398,7 +397,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         """ Cierra la ventana y regresa al inicio. """
         from Home import App_Home
 
-        parent = self.parentWidget()       # QMainWindow
+        parent: VentanaPrincipal = self.parentWidget()       # QMainWindow
         new = App_Home(parent)
         parent.setCentralWidget(new)
 
