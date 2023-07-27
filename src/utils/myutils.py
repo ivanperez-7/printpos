@@ -1,9 +1,9 @@
 """ Provee varias funciones útiles utilizadas frecuentemente. """
+from configparser import ConfigParser
 from datetime import datetime
 from typing import SupportsFloat
 
 import fdb
-
 from PySide6.QtCore import QDateTime
 
 from utils.mydecorators import run_in_thread
@@ -14,35 +14,6 @@ class ColorsEnum:
     VERDE = 0xB2FFAE
     AMARILLO = 0xFDFDA9
     ROJO = 0xFFB2AE
-
-
-class Dinero:
-    """ Clase para manejar dinero, que mantiene registro de los pesos. """
-    def __init__(self, pesos: SupportsFloat = 0.):
-        self.pesos = pesos
-    
-    @property
-    def pesos(self):
-        return self._pesos
-    
-    @pesos.setter
-    def pesos(self, pesos: SupportsFloat):
-        self._pesos = round(pesos, 2)
-    
-    def __add__(self, other: SupportsFloat):
-        return Dinero(self.pesos + other)
-    
-    def __sub__(self, other: SupportsFloat):
-        return Dinero(self.pesos - other)
-    
-    def __mul__(self, other: SupportsFloat):
-        return Dinero(self.pesos * other)
-    
-    def __truediv__(self, other: SupportsFloat):
-        return Dinero(self.pesos / other)
-    
-    def __repr__(self):
-        return f'{self.pesos:,.2f}'
 
 
 def clamp(value, smallest, largest) -> SupportsFloat:
@@ -148,20 +119,55 @@ def enviarWhatsApp(phone_no: str, message: str):
         print('Could not open browser: ' + str(err))
 
 
+def obtenerImpresora(prompt: bool):
+    from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
+
+    if not prompt:
+        config = ConfigParser(inline_comment_prefixes=';')
+        config.read('config.ini')
+        printerName = config['IMPRESORAS']['default']
+        
+        pInfo = QPrinterInfo.printerInfo(printerName)
+        if not pInfo.printerName():
+            print(f'no hay impresora {printerName}!!!!')
+            return None
+        return QPrinter(pInfo, QPrinter.HighResolution)
+    
+    # crear diálogo para escoger y configurar impresora
+    printer = QPrinter(QPrinter.HighResolution)
+    dialog = QPrintDialog(printer)
+    
+    if dialog.exec() != QPrintDialog.Accepted:
+        return None
+    return printer
+    
+
 def enviarAImpresora(ruta: str, prompt: bool):
-    from configparser import ConfigParser
-    import subprocess
-    
-    config = ConfigParser(inline_comment_prefixes=';')
-    config.read('config.ini')
-    
-    acrobat = config['DEFAULT']['acrobat']
-    prompt_arg = '/P' if prompt else '/T'
-    printer = config['IMPRESORAS']['default'] if not prompt else ''
-    
-    args = [acrobat, '/N', prompt_arg, ruta, printer]
-    
-    subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    """ Convertir PDF a imagen y mandar a impresora. """
+    import fitz
+    from PIL import Image
+    from PIL.ImageQt import ImageQt
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QPainter
+
+    if not (printer := obtenerImpresora(prompt)):
+        return
+
+    doc = fitz.open(ruta)
+    painter = QPainter()
+    painter.begin(printer)
+
+    for i, page in enumerate(doc):
+        if i > 0:
+            printer.newPage()
+            
+        pix = page.get_pixmap(dpi=300)
+        qtImage = ImageQt(Image.frombytes("RGB", [pix.w, pix.h], pix.samples))
+        
+        rect = painter.viewport()
+        qtImageScaled = qtImage.scaled(rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        painter.drawImage(rect, qtImageScaled)
+    painter.end()
 
 
 @run_in_thread

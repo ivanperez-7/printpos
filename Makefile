@@ -32,4 +32,4 @@ pip_reinstall:
 	del requirements.txt
 	
 	py -m pip install --upgrade pip
-	pip install --upgrade fdb PySide6 pypdf2 reportlab openpyxl nuitka ordered-set
+	pip install --upgrade fdb PySide6 pypdf2 reportlab pymupdf openpyxl nuitka ordered-set
