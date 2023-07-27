@@ -142,14 +142,14 @@ class NumberEdit(QLineEdit):
         self.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         
         # validadores para datos numéricos
-        regexp_numero = QRegularExpression(r'\d*\.?\d*')
+        regexp_numero = QRegularExpression(r'\d*\.?\d{0,2}')
         validador = QRegularExpressionValidator(regexp_numero)
         self.setValidator(validador)
     
     @property
     def cantidad(self):
         try:
-            return round(float(self.text()), 2)
+            return float(self.text())
         except ValueError:
             return 0.
     
