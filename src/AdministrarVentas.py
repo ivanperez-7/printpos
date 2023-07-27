@@ -20,8 +20,6 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
     """ Backend para la ventana de administración de ventas.
         TODO:
         -   ocultamiento de folios """
-    rescaned = Signal()
-    
     def __init__(self, parent: VentanaPrincipal):
         from ui.Ui_AdministrarVentas import Ui_AdministrarVentas
         
@@ -69,15 +67,14 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.ui.btCancelar.clicked.connect(self.cancelarVenta)
         self.ui.btOrden.clicked.connect(self.imprimirOrden)
         self.ui.btRecibo.clicked.connect(self.imprimirTicket)
-        self.ui.searchBar.textChanged.connect(lambda: self.update_display())
+        self.ui.searchBar.textChanged.connect(self.update_display)
         
-        self.ui.dateDesde.dateChanged.connect(lambda: self.update_display(rescan=True))
-        self.ui.dateHasta.dateChanged.connect(lambda: self.update_display(rescan=True))
+        self.ui.dateDesde.dateChanged.connect(self.rescan_update)
+        self.ui.dateHasta.dateChanged.connect(self.rescan_update)
         
         self.ui.tabla_ventasDirectas.doubleClicked.connect(self.detallesVenta)
         self.ui.tabla_pedidos.doubleClicked.connect(self.detallesVenta)
         self.ui.tabWidget.currentChanged.connect(self.cambiar_pestana)
-        self.rescaned.connect(self.update_display)
         
         InterfazPaginas(
             self.ui.btAdelante, self.ui.btUltimo,
@@ -94,7 +91,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         self.ui.tabla_pedidos.configurarCabecera(lambda col: col in [0, 5, 6, 7])        
     
     def showEvent(self, event):
-        self.update_display(rescan=True)
+        self.rescan_update()
     
     def resizeEvent(self, event):
         if self.isVisible():
@@ -127,17 +124,11 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         
         self.tabla_actual.resizeRowsToContents()
 
-    def update_display(self, rescan: bool = False):
+    def rescan_update(self):
         """ Actualiza la tabla y el contador de clientes.
             Lee de nuevo la tabla de clientes, si se desea. """
-        if rescan:
-            self.rescan_db()
-            return
-        
-        self.llenar_tabla_ventas()
-        self.llenar_tabla_pedidos()
-        
-        self.cambiar_pestana(self.ui.tabWidget.currentIndex())
+        self.rescan_db()
+        self.update_display()
 
     def rescan_db(self):
         """ Releer base de datos y almacenar en atributos.
@@ -147,11 +138,13 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         restrict = self.user.id if not self.user.administrador else None
             
         manejador = ManejadorVentas(self.conn)
-
         self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, restrict)
         self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta, restrict)
-        
-        self.rescaned.emit()
+    
+    def update_display(self):
+        self.llenar_tabla_ventas()
+        self.llenar_tabla_pedidos()
+        self.cambiar_pestana(self.ui.tabWidget.currentIndex())
     
     def llenar_tabla_ventas(self):
         """ Actualizar tabla de ventas directas. """
@@ -307,8 +300,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         
         if saldo > 0.:
             self.new = App_TerminarVenta(self, idVenta)
-            self.new.success.connect(
-                lambda: self.update_display(rescan=True))
+            self.new.success.connect(self.rescan_update)
             return
         
         qm = QtWidgets.QMessageBox
@@ -324,7 +316,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             return
         
         qm.information(self, 'Éxito', 'Se marcó como terminada la venta seleccionada.')
-        self.update_display(rescan=True)
+        self.rescan_update()
             
     def cancelarVenta(self):
         """ Pide confirmación para marcar como cancelada una venta. """
@@ -353,7 +345,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             return
         
         qm.information(self, 'Éxito', 'Se marcó como cancelada la venta seleccionada.')
-        self.update_display(rescan=True)
+        self.rescan_update()
 
     def detallesVenta(self, idxs: QModelIndex):
         """ Abre ventana que muestra los detalles de una venta seleccionada. """
@@ -520,7 +512,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
         
-        self.paraPagar = round(total-anticipo, 2)
+        self.paraPagar = total-anticipo
 
         nombreCliente, correo, telefono, fechaCreacion, fechaEntrega, *_ \
             = manejador.obtenerDatosGeneralesVenta(idx)

@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import SupportsFloat
 
 import fdb
+
 from PySide6.QtCore import QDateTime
 
 from utils.mydecorators import run_in_thread
@@ -15,12 +16,41 @@ class ColorsEnum:
     ROJO = 0xFFB2AE
 
 
+class Dinero:
+    """ Clase para manejar dinero, que mantiene registro de los pesos. """
+    def __init__(self, pesos: SupportsFloat = 0.):
+        self.pesos = pesos
+    
+    @property
+    def pesos(self):
+        return self._pesos
+    
+    @pesos.setter
+    def pesos(self, pesos: SupportsFloat):
+        self._pesos = round(pesos, 2)
+    
+    def __add__(self, other: SupportsFloat):
+        return Dinero(self.pesos + other)
+    
+    def __sub__(self, other: SupportsFloat):
+        return Dinero(self.pesos - other)
+    
+    def __mul__(self, other: SupportsFloat):
+        return Dinero(self.pesos * other)
+    
+    def __truediv__(self, other: SupportsFloat):
+        return Dinero(self.pesos / other)
+    
+    def __repr__(self):
+        return f'{self.pesos:,.2f}'
+
+
 def clamp(value, smallest, largest) -> SupportsFloat:
     """ Trunca un valor dentro de un rango. """
     return sorted((value, smallest, largest))[1]
 
 
-def chunkify(array, size: int):
+def chunkify(array: list, size: int):
     """ Divide un arreglo en subarreglos de un tamaño dado. """
     return [array[x : x+size] for x in range(0, len(array), size)]
 
@@ -62,7 +92,7 @@ def generarPDFTemporal():
 
 
 def formatDate(date: QDateTime | datetime) -> str:
-    """ Da formato en texto a un dato QDateTime.
+    """ Da formato en texto a un dato QDateTime o datetime de Python.
         Ejemplo: 08 de febrero 2023, 4:56 p. m. """
     if not date:
         return ''

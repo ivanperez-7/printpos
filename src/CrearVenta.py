@@ -6,6 +6,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtCore import (QDate, QDateTime, QRegularExpression, Qt,
                           QPropertyAnimation, QRect, QEasingCurve)
+import fdb
 
 from utils.databasemanagers import (ManejadorCaja, ManejadorClientes,
                               ManejadorProductos, ManejadorVentas)
@@ -40,7 +41,7 @@ class ItemVenta:
         """ Regresa el total de descuentos (descuento * cantidad). """
         return self.descuento_unit * self.cantidad
     
-    def __iter__(self) -> tuple:
+    def __iter__(self):
         """ Regresa iterable para alimentar las tablas de productos.
             Cantidad | Código | Especificaciones | Precio | Descuento | Importe """
         return iter((self.cantidad,
@@ -102,6 +103,36 @@ class Venta:
         """ Compara fechas de creación y entrega para determinar si la venta será un pedido. """
         return self.fechaCreacion == self.fechaEntrega
     
+    def agregarProducto(self, item: ItemVenta):
+        self.productos.append(item)
+    
+    def quitarProducto(self, row: int):
+        self.productos.pop(row)
+    
+    def reajustarPrecios(self, conn: fdb.Connection):
+        ids = {p.id for p in self.productos}
+        manejador = ManejadorProductos(conn)
+        
+        for id in ids:
+            productos = self.obtenerProductosExistentes(id)
+            productosNormal = sum(p.cantidad for p in productos if not p.duplex)
+            productosDuplex = sum(p.cantidad for p in productos if p.duplex)
+            
+            precioNormal = manejador.obtenerPrecioSimple(
+                id, 
+                productosNormal + productosDuplex, 
+                False)
+            
+            if not precioNormal: continue
+            
+            precioDuplex = manejador.obtenerPrecioSimple(
+                id, 
+                productosDuplex,
+                True)
+            nuevoPrecio = min(precioNormal, precioDuplex or precioNormal)
+            
+            for p in productos: p.precio_unit = nuevoPrecio
+    
     def obtenerProductosExistentes(self, id: int):
         """ Obtiene todos los productos que tienen el identificador dado. """
         return [p for p in self.productos if p.id == id]
@@ -157,7 +188,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.ui.txtCorreo.textChanged.connect(ocultar_boton)
         self.ui.txtTelefono.textChanged.connect(ocultar_boton)
         
-        self.ui.tabla_productos.itemChanged.connect(self.itemChanged_handle)
+        self.ui.tabla_productos.itemChanged.connect(self.item_changed)
         self.ui.btRegistrar.clicked.connect(self.insertarCliente)
         self.ui.btSeleccionar.clicked.connect(self.seleccionarCliente)
         self.ui.btDescuento.clicked.connect(
@@ -182,7 +213,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def itemChanged_handle(self, item: QtWidgets.QTableWidgetItem):
+    def item_changed(self, item: QtWidgets.QTableWidgetItem):
         if item.column() == 2:
             self.ventaDatos.productos[item.row()].notas = item.text()
             
@@ -217,10 +248,8 @@ class App_CrearVenta(QtWidgets.QMainWindow):
                 tableItem = QtWidgets.QTableWidgetItem(cell)
                 flags = tableItem.flags()
                 
-                if col == 2:
-                    flags |= Qt.ItemFlag.ItemIsEditable
-                else:
-                    flags &= ~Qt.ItemFlag.ItemIsEditable
+                if col == 2: flags |= Qt.ItemFlag.ItemIsEditable
+                else: flags &= ~Qt.ItemFlag.ItemIsEditable
                 
                 tableItem.setFlags(flags)
                 tabla.setItem(row, col, tableItem)
@@ -315,34 +344,10 @@ class App_CrearVenta(QtWidgets.QMainWindow):
     @requiere_admin
     def _quitarProducto(self, selected: set[int], conn):
         """ En método separado para solicitar contraseña. """
-        manejador = ManejadorProductos(self.conn)
-        
         for row in sorted(selected, reverse=True):
-            idProducto = self.ventaDatos.productos[row].id
-            
-            self.ventaDatos.productos.pop(row)
-            restantes = self.ventaDatos.obtenerProductosExistentes(idProducto)
-            
-            if not restantes: continue
-            
-            productosNormal = sum(p.cantidad for p in restantes if not p.duplex)
-            productosDuplex = sum(p.cantidad for p in restantes if p.duplex)
-            
-            precioNormal = manejador.obtenerPrecioSimple(
-                idProducto, 
-                productosNormal + productosDuplex, 
-                False)
-            
-            if not precioNormal: continue
-            
-            precioDuplex = manejador.obtenerPrecioSimple(
-                idProducto, 
-                productosDuplex,
-                True)
-            nuevoPrecio = min(precioNormal, precioDuplex or precioNormal)
-            
-            for p in restantes: p.precio_unit = nuevoPrecio
+            self.ventaDatos.quitarProducto(row)
         
+        self.ventaDatos.reajustarPrecios(self.conn)
         self.colorearActualizar()
     
     @requiere_admin
@@ -427,7 +432,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
     def goHome(self, conn):
         from Home import App_Home
         
-        parent = self.parentWidget()    # QMainWindow
+        parent: VentanaPrincipal = self.parentWidget()    # QMainWindow
         new = App_Home(parent)
         parent.setCentralWidget(new)
 
@@ -559,29 +564,10 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         
         if not item:
             return
+            
+        self.first.ventaDatos.agregarProducto(item)
+        self.first.ventaDatos.reajustarPrecios(self.conn)
         
-        restantes = self.first.ventaDatos.obtenerProductosExistentes(item.id)
-        manejador = ManejadorProductos(self.conn)
-        
-        if restantes and current == 0: # sólo para productos por intervalos
-            restantes.append(item)
-            
-            productosNormal = sum(p.cantidad for p in restantes if not p.duplex)
-            productosDuplex = sum(p.cantidad for p in restantes if p.duplex)
-            
-            precioNormal = manejador.obtenerPrecioSimple(
-                item.id, 
-                productosNormal + productosDuplex, 
-                False)
-            precioDuplex = manejador.obtenerPrecioSimple(
-                item.id, 
-                productosDuplex,
-                True) 
-            nuevoPrecio = min(precioNormal, precioDuplex or precioNormal)
-            
-            for p in restantes: p.precio_unit = nuevoPrecio
-            
-        self.first.ventaDatos.productos.append(item)
         self.first.colorearActualizar()
         self.close()
     
@@ -1002,22 +988,10 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         for bt in self.ui.buttonGroupMetodo.buttons():
             bt.setChecked(
                 first.ui.btMetodoGrupo.checkedButton().text() == bt.text())
-
-        #### registrar venta en tablas ####
-        manejadorVentas = ManejadorVentas(self.conn)
-        ventas_db_parametros = self.obtenerParametrosVentas()
-        ventas_detallado_db_parametros = self.obtenerParametrosVentasDetallado()
-
-        # ejecuta internamente un fetchone, por lo que se desempaca luego
-        result = manejadorVentas.insertarVenta(ventas_db_parametros)
-        if not result:
-            return
-
-        self.id_ventas, = result
-        manejadorVentas.insertarDetallesVenta(self.id_ventas,
-                                              ventas_detallado_db_parametros)
         
         # mostrar datos del cliente, fechas, etc.
+        self.id_ventas = self.registrarVenta()
+        
         manejadorClientes = ManejadorClientes(self.conn)
         _, nombre, telefono, correo, *_ = manejadorClientes.obtenerCliente(ventaDatos.id_cliente)
 
@@ -1108,6 +1082,23 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
 
         self.ui.lbTotal.setText(f'{self.total:,.2f}')
         self.ui.txtAnticipo.cantidad = self.paraPagar
+    
+    def registrarVenta(self):
+        """ Registra datos principales de venta en DB
+            y regresa folio de venta insertada. """
+        manejadorVentas = ManejadorVentas(self.conn)
+        ventas_db_parametros = self.obtenerParametrosVentas()
+        ventas_detallado_db_parametros = self.obtenerParametrosVentasDetallado()
+
+        # ejecuta internamente un fetchone, por lo que se desempaca luego
+        result = manejadorVentas.insertarVenta(ventas_db_parametros)
+        if not result:
+            return
+
+        id_ventas, = result
+        manejadorVentas.insertarDetallesVenta(id_ventas,
+                                              ventas_detallado_db_parametros)
+        return id_ventas
         
     def obtenerParametrosVentas(self):
         """ Parámetros para tabla ventas (datos generales). """

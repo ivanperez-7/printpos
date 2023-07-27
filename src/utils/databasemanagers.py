@@ -629,7 +629,9 @@ class ManejadorVentas(DatabaseManager):
     def __init__(self, conn: fdb.Connection, error_txt: str = None):
         super().__init__(conn, error_txt)
     
-    def tablaVentas(self, inicio: QDate, final: QDate, restrict: int = None):
+    def tablaVentas(self, inicio: QDate = QDate.currentDate(),
+                          final: QDate = QDate.currentDate(),
+                          restrict: int = None):
         """ Sentencia para alimentar la tabla principal de ventas directas. 
         
             Requiere fechas de inicio y final, tipo QDate.
@@ -661,7 +663,9 @@ class ManejadorVentas(DatabaseManager):
             ORDER	BY Ventas.id_ventas DESC;
         ''', (inicio.toPython(), final.toPython()))
     
-    def tablaPedidos(self, inicio: QDate, final: QDate, restrict: int = None):
+    def tablaPedidos(self, inicio: QDate = QDate.currentDate(),
+                           final: QDate = QDate.currentDate(),
+                           restrict: int = None):
         """ Sentencia para alimentar la tabla principal de pedidos. 
         
             Requiere fechas de inicio y final, tipo QDate.
