@@ -353,10 +353,12 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
 
     def imprimirTicket(self):
         """ Imprime ticket de una venta dado el folio de esta. """
-        try:
-            idVenta = self.tabla_actual.selectedItems()[0].text()
-        except IndexError:
+        selected = self.tabla_actual.selectedItems()
+
+        if not selected or not self.ui.tabWidget.currentIndex() == 0:
             return
+
+        idVenta = selected[0].text()
 
         # abrir pregunta
         qm = QtWidgets.QMessageBox
@@ -371,7 +373,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         """ Imprime orden de compra de un pedido dado el folio de esta. """
         selected = self.tabla_actual.selectedItems()
 
-        if not len(selected) or not selected[6].text().startswith('Recibido'):
+        if not selected or not selected[6].text().startswith('Recibido'):
             return
 
         idVenta = selected[0].text()
