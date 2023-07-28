@@ -11,9 +11,9 @@ import fdb
 from utils.databasemanagers import (ManejadorCaja, ManejadorClientes,
                                     ManejadorProductos, ManejadorVentas)
 from utils.mydecorators import con_fondo, requiere_admin
-from utils.myutils import (clamp, enviarWhatsApp, formatDate, 
-                           ImpresoraTickets, ImpresoraOrdenes, son_similar)
+from utils.myutils import clamp, enviarWhatsApp, formatDate, son_similar
 from utils.mywidgets import DimBackground, LabelAdvertencia, VentanaPrincipal
+from utils.pdf import ImpresoraOrdenes, ImpresoraTickets
 
 
 ##################
@@ -1245,7 +1245,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         """ Cierra la ventana y crea otra venta. """
         from Home import App_Home
         
-        parent = self.parentWidget().parentWidget() # QMainWindow, ventana principal
+        parent: VentanaPrincipal = self.parentWidget().parentWidget()
         new = App_Home(parent)
         parent.setCentralWidget(new)
         

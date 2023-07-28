@@ -211,7 +211,7 @@ class App_Caja(QtWidgets.QMainWindow):
                           qm.Yes | qm.No)
         
         if ret == qm.Yes:
-            from utils.myutils import ImpresoraTickets
+            from utils.pdf import ImpresoraTickets
             
             impresora = ImpresoraTickets(self)
             impresora.imprimirCorteCaja(self.all_movimientos, self.user)
