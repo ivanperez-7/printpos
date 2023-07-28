@@ -4,10 +4,8 @@ from configparser import ConfigParser
 from datetime import datetime
 from typing import SupportsFloat
 
-import fdb
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import QDateTime
-from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 
 from utils.mydecorators import run_in_thread
 
@@ -114,11 +112,17 @@ def enviarWhatsApp(phone_no: str, message: str):
 #######################################
 # <CLASES PARA GENERA E IMPRIMIR PDF> #
 #######################################
+from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
+
+from Caja import Caja
+from Login import Usuario
+
+
 class ImpresoraPDF:
     def __init__(self, parent: QWidget = None):
         self.parent = parent
         self.conn = parent.conn
-        self.printer = QPrinter()
+        self.printer: QPrinter = None
     
     def escogerImpresora(self):
         """ Diálogo para escoger impresora. En hilo principal. """
@@ -336,6 +340,12 @@ class ImpresoraTickets(ImpresoraPDF):
         data = self._generarTicketPDF(0, productos, vendedor, 
                                       QDateTime.currentDateTime(), 0., None)
         self.enviarAImpresora(data)
+    
+    @run_in_thread
+    def imprimirCorteCaja(self, caja: Caja, user: Usuario):
+        """ Genera un ticket para el presupuesto de una compra. """
+        data = self._generarCortePDF(caja, user)
+        self.enviarAImpresora(data)
 
     def _generarTicketPDF(self, folio, productos, vendedor, fechaCreacion, pagado, metodo_pago):
         """ Función abstracta para generar el ticket de compra o presupuesto.
@@ -487,4 +497,96 @@ class ImpresoraTickets(ImpresoraPDF):
         # Build the PDF document
         doc.build(elements)
 
+        return buffer
+    
+    def _generarCortePDF(self, caja: Caja, user: Usuario):
+        """ Función para generar el corte de caja, comprendido entre fechas dadas.
+            Contiene:
+                - Realizado el: (fecha)
+                - Nombre del usuario activo
+                - Fecha inicial y final
+                - Fondo inicial de caja
+                - Tabla de movimientos 
+                    Fecha y hora | Descripción | Método de pago | Cantidad
+                - Tabla de resumen de movimientos
+                    Método de pago -> Ingresos | Egresos """
+        from reportlab.lib.units import mm
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.enums import TA_LEFT
+
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+        
+        buffer = io.BytesIO()
+
+        doc = SimpleDocTemplate(buffer, pagesize=(80*mm, 297*mm),
+                                topMargin=0., bottomMargin=0.,
+                                leftMargin=0., rightMargin=0.)
+
+        # estilos de párrafos
+        styles = getSampleStyleSheet()
+        styles.add(ParagraphStyle(name='Left', fontName='Helvetica',
+                                  fontSize=9, alignment=TA_LEFT))
+        styles.add(ParagraphStyle(name='Foot', fontName='Helvetica',
+                                  fontSize=11, alignment=TA_LEFT))
+        
+        # cálculos de ingresos
+        ingresos_efectivo = caja.totalIngresos('Efectivo')
+        ingresos_transferencia = caja.totalIngresos('Transferencia')
+        ingresos_credito = caja.totalIngresos('Tarjeta de crédito')
+        ingresos_debito = caja.totalIngresos('Tarjeta de débito')
+        
+        # cálculos de egresos
+        egresos_efectivo = -caja.totalEgresos('Efectivo')
+        egresos_transferencia = -caja.totalEgresos('Transferencia')
+        egresos_credito = -caja.totalEgresos('Tarjeta de crédito')
+        egresos_debito = -caja.totalEgresos('Tarjeta de débito')
+        
+        # totales (todos los métodos)
+        total_efectivo = ingresos_efectivo - egresos_efectivo
+        total_transferencia = ingresos_transferencia - egresos_transferencia
+        total_credito = ingresos_credito - egresos_credito
+        total_debito = ingresos_debito - egresos_debito
+        
+        esperado_ingresos = caja.totalIngresos()
+        esperado_egresos = -caja.totalEgresos()
+        esperado = caja.totalCorte()
+        
+        # elementos para constuir el PDF
+        elements = [
+            Paragraph('Resumen de movimientos de caja', styles['Heading1']),
+            Spacer(1, 6),
+            
+            Paragraph('Realizado por: ' + user.nombre, styles['Left']),
+            Paragraph('Fecha y hora: ' + formatDate(QDateTime.currentDateTime()), styles['Left']),
+            Spacer(1, 6),
+            
+            Paragraph('Resumen de ingresos', styles['Heading3']),
+            Paragraph(f'Efectivo: ${ingresos_efectivo:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(f'Tarjeta de crédito: ${ingresos_credito:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(f'Tarjeta de débito: ${ingresos_debito:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(f'Transferencias bancarias: ${ingresos_transferencia:,.2f}', styles['Left'], bulletText='•'),
+            Spacer(1, 6),
+            
+            Paragraph('Resumen de egresos', styles['Heading3']),
+            Paragraph(f'Efectivo: ${egresos_efectivo:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(f'Tarjeta de crédito: ${egresos_credito:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(f'Tarjeta de débito: ${egresos_debito:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(f'Transferencias bancarias: ${egresos_transferencia:,.2f}', styles['Left'], bulletText='•'),
+            Spacer(1, 6),
+            
+            Paragraph('Esperado', styles['Heading3']),
+            Paragraph(f'Efectivo: ${total_efectivo:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(f'Tarjeta de crédito: ${total_credito:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(f'Tarjeta de débito: ${total_debito:,.2f}', styles['Left'], bulletText='•'),
+            Paragraph(f'Transferencias bancarias: ${total_transferencia:,.2f}', styles['Left'], bulletText='•'),
+            Spacer(1, 20),
+            
+            Paragraph('<b>' + f'Total de ingresos: ${esperado_ingresos:,.2f}' + '</b>', styles['Foot']),
+            Paragraph('<b>' + f'Total de egresos: ${esperado_egresos:,.2f}' + '</b>', styles['Foot']),
+            Paragraph(f'<b>Esperado en caja: ${esperado:,.2f}</b>', styles['Foot']),
+        ]
+
+        # Build the PDF document
+        doc.build(elements)
+        
         return buffer

@@ -1,4 +1,3 @@
-import io
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -9,7 +8,7 @@ from PySide6.QtCore import Qt, QDateTime
 from utils.databasemanagers import ManejadorCaja
 from utils.mydecorators import run_in_thread
 from utils.myinterfaces import InterfazFechas
-from utils.myutils import ImpresoraTickets, formatDate
+from utils.myutils import formatDate
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -212,95 +211,10 @@ class App_Caja(QtWidgets.QMainWindow):
                           qm.Yes | qm.No)
         
         if ret == qm.Yes:
+            from utils.myutils import ImpresoraTickets
+            
             impresora = ImpresoraTickets(self)
-            data = self._generarCortePDF()
-            impresora.enviarAImpresora(data)
-    
-    def _generarCortePDF(self):
-        """ Función para generar el corte de caja, comprendido entre fechas dadas.
-            Contiene:
-                - Realizado el: (fecha)
-                - Nombre del usuario activo
-                - Fecha inicial y final
-                - Fondo inicial de caja
-                - Tabla de movimientos 
-                    Fecha y hora | Descripción | Método de pago | Cantidad
-                - Tabla de resumen de movimientos
-                    Método de pago -> Ingresos | Egresos """
-        from reportlab.lib.units import mm
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.enums import TA_LEFT
-
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-        
-        buffer = io.BytesIO()
-
-        doc = SimpleDocTemplate(buffer, pagesize=(80*mm, 297*mm),
-                                topMargin=0., bottomMargin=0.,
-                                leftMargin=0., rightMargin=0.)
-
-        # estilos de párrafos
-        styles = getSampleStyleSheet()
-        styles.add(ParagraphStyle(name='Left', fontName='Helvetica',
-                                  fontSize=9, alignment=TA_LEFT))
-        styles.add(ParagraphStyle(name='Foot', fontName='Helvetica',
-                                  fontSize=11, alignment=TA_LEFT))
-        
-        # cálculos extra de ingresos
-        ingresos_credito = self.all_movimientos.totalIngresos('Tarjeta de crédito')
-        ingresos_debito = self.all_movimientos.totalIngresos('Tarjeta de débito')
-        
-        # cálculos extra de egresos
-        egresos_credito = -self.all_movimientos.totalEgresos('Tarjeta de crédito')
-        egresos_debito = -self.all_movimientos.totalEgresos('Tarjeta de débito')
-        
-        # totales (todos los métodos)
-        total_efectivo = self.all_movimientos.totalCorte('Efectivo')
-        total_transferencia = self.all_movimientos.totalCorte('Transferencia')
-        total_credito = ingresos_credito - egresos_credito
-        total_debito = ingresos_debito - egresos_debito
-        
-        esperado = self.all_movimientos.totalCorte()
-        
-        # elementos para constuir el PDF
-        elements = [
-            Paragraph('Resumen de movimientos de caja', styles['Heading1']),
-            Spacer(1, 6),
-            
-            Paragraph('Realizado por: ' + self.user.nombre, styles['Left']),
-            Paragraph('Fecha y hora: ' + formatDate(QDateTime.currentDateTime()), styles['Left']),
-            Spacer(1, 6),
-            
-            Paragraph('Resumen de ingresos', styles['Heading3']),
-            Paragraph(self.ui.lbIngresosEfectivo.text(), styles['Left'], bulletText='•'),
-            Paragraph(f'Tarjeta de crédito: ${ingresos_credito:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(f'Tarjeta de débito: ${ingresos_debito:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(self.ui.lbIngresosTransferencia.text(), styles['Left'], bulletText='•'),
-            Spacer(1, 6),
-            
-            Paragraph('Resumen de egresos', styles['Heading3']),
-            Paragraph(self.ui.lbEgresosEfectivo.text(), styles['Left'], bulletText='•'),
-            Paragraph(f'Tarjeta de crédito: ${egresos_credito:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(f'Tarjeta de débito: ${egresos_debito:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(self.ui.lbEgresosTransferencia.text(), styles['Left'], bulletText='•'),
-            Spacer(1, 6),
-            
-            Paragraph('Esperado', styles['Heading3']),
-            Paragraph(f'Efectivo: ${total_efectivo:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(f'Tarjeta de crédito: ${total_credito:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(f'Tarjeta de débito: ${total_debito:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(f'Transferencias bancarias: ${total_transferencia:,.2f}', styles['Left'], bulletText='•'),
-            Spacer(1, 20),
-            
-            Paragraph('<b>' + self.ui.lbTotalIngresos.text() + '</b>', styles['Foot']),
-            Paragraph('<b>' + self.ui.lbTotalEgresos.text() + '</b>', styles['Foot']),
-            Paragraph(f'<b>Esperado en caja: ${esperado:,.2f}</b>', styles['Foot']),
-        ]
-
-        # Build the PDF document
-        doc.build(elements)
-        
-        return buffer
+            impresora.imprimirCorteCaja(self.all_movimientos, self.user)
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
