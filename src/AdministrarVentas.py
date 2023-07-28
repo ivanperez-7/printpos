@@ -8,9 +8,10 @@ from PySide6.QtCore import (QDateTime, QModelIndex, Qt, Signal)
 from utils.databasemanagers import ManejadorCaja, ManejadorVentas
 from utils.mydecorators import con_fondo, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
-from utils.myutils import (ColorsEnum, chunkify, clamp, enviarWhatsApp, formatDate,
-                           ImpresoraOrdenes, ImpresoraTickets, son_similar)
+from utils.myutils import (ColorsEnum, chunkify, clamp, 
+                           enviarWhatsApp, formatDate, son_similar)
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
+from utils.pdf import ImpresoraOrdenes, ImpresoraTickets
 
 
 #####################
