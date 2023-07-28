@@ -9,11 +9,10 @@ from PySide6.QtCore import (QDate, QDateTime, QRegularExpression, Qt,
 import fdb
 
 from utils.databasemanagers import (ManejadorCaja, ManejadorClientes,
-                              ManejadorProductos, ManejadorVentas)
+                                    ManejadorProductos, ManejadorVentas)
 from utils.mydecorators import con_fondo, requiere_admin
-from utils.myutils import (clamp, enviarWhatsApp, formatDate,
-                           generarOrdenCompra, generarTicketCompra,
-                           generarTicketPresupuesto, son_similar)
+from utils.myutils import (clamp, enviarWhatsApp, formatDate, 
+                           ImpresoraTickets, ImpresoraOrdenes, son_similar)
 from utils.mywidgets import DimBackground, LabelAdvertencia, VentanaPrincipal
 
 
@@ -945,7 +944,9 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
         
         vendedor = self.first.ui.txtVendedor.text()
         
-        generarTicketPresupuesto(productos, vendedor)
+        impresora = ImpresoraTickets(self)
+        impresora.imprimirTicketPresupuesto(productos, vendedor)
+        
         self.close()
 
 
@@ -1203,14 +1204,17 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
 
         if not esDirecta:
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
-            generarOrdenCompra(self.conn, self.id_ventas)
+            
+            impresora = ImpresoraOrdenes(self)
+            impresora.imprimirOrdenCompra(self.id_ventas)
         else:
             ret = qm.question(self, 'Éxito',
                               'Venta terminada. ¡Recuerde ofrecer el ticket de compra! '
                               '¿Desea imprimirlo?',
                               qm.Yes | qm.No)
             if ret == qm.Yes:
-                generarTicketCompra(self.conn, self.id_ventas)
+                impresora = ImpresoraTickets(self)
+                impresora.imprimirTicketCompra(self.id_ventas)
         
         self.goHome()
     

@@ -1,3 +1,4 @@
+import io
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -8,7 +9,7 @@ from PySide6.QtCore import Qt, QDateTime
 from utils.databasemanagers import ManejadorCaja
 from utils.mydecorators import run_in_thread
 from utils.myinterfaces import InterfazFechas
-from utils.myutils import enviarAImpresora, formatDate, generarPDFTemporal
+from utils.myutils import ImpresoraTickets, formatDate
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -211,10 +212,11 @@ class App_Caja(QtWidgets.QMainWindow):
                           qm.Yes | qm.No)
         
         if ret == qm.Yes:
-            self.generarCortePDF()
+            impresora = ImpresoraTickets(self)
+            data = self._generarCortePDF()
+            impresora.enviarAImpresora(data)
     
-    @run_in_thread
-    def generarCortePDF(self):
+    def _generarCortePDF(self):
         """ Función para generar el corte de caja, comprendido entre fechas dadas.
             Contiene:
                 - Realizado el: (fecha)
@@ -231,9 +233,9 @@ class App_Caja(QtWidgets.QMainWindow):
 
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
         
-        filename = generarPDFTemporal()
+        buffer = io.BytesIO()
 
-        doc = SimpleDocTemplate(filename, pagesize=(80*mm, 297*mm),
+        doc = SimpleDocTemplate(buffer, pagesize=(80*mm, 297*mm),
                                 topMargin=0., bottomMargin=0.,
                                 leftMargin=0., rightMargin=0.)
 
@@ -298,12 +300,7 @@ class App_Caja(QtWidgets.QMainWindow):
         # Build the PDF document
         doc.build(elements)
         
-        # ????? asegurar archivo cerrado
-        with open(filename, 'rb') as f:
-            pass
-        
-        # imprimir archivo temporal        
-        enviarAImpresora(filename, False)
+        return buffer
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES

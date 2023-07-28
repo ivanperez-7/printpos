@@ -8,8 +8,8 @@ from PySide6.QtCore import (QDateTime, QModelIndex, Qt, Signal)
 from utils.databasemanagers import ManejadorCaja, ManejadorVentas
 from utils.mydecorators import con_fondo, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
-from utils.myutils import (chunkify, clamp, enviarWhatsApp, formatDate, generarOrdenCompra, 
-                           generarTicketCompra, ColorsEnum, son_similar)
+from utils.myutils import (ColorsEnum, chunkify, clamp, enviarWhatsApp, formatDate,
+                           ImpresoraOrdenes, ImpresoraTickets, son_similar)
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -367,7 +367,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                           f'con folio {idVenta}. ¿Desea continuar?', qm.Yes | qm.No)
 
         if ret == qm.Yes:
-            generarTicketCompra(self.conn, idVenta)
+            impresora = ImpresoraTickets(self)
+            impresora.imprimirTicketCompra(idVenta)
 
     def imprimirOrden(self):
         """ Imprime orden de compra de un pedido dado el folio de esta. """
@@ -385,7 +386,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                           f'con folio {idVenta}. ¿Desea continuar?', qm.Yes | qm.No)
 
         if ret == qm.Yes:
-            generarOrdenCompra(self.conn, idVenta)
+            impresora = ImpresoraOrdenes(self)
+            impresora.imprimirOrdenCompra(idVenta)
 
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """

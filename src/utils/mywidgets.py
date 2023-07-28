@@ -40,11 +40,6 @@ class VentanaPrincipal(QMainWindow):
         if self.en_venta and not self.user.administrador:
             event.ignore()
         else:
-            import os
-            import shutil
-            
-            shutil.rmtree(os.environ['USERPROFILE'] + '\\Documents\\tmp', ignore_errors=True)
-            
             self.conn.close()
             self.consultarPrecios.close()
             event.accept()
