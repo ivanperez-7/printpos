@@ -28,24 +28,24 @@ def unidecode(input_str: str):
     """ Elimina (normaliza) los acentos en una cadena de texto y 
         convierte a minúsculas. Ejemplo: 'Pérez' -> 'perez'. """
     import unicodedata
-
+    
     nfkd_form = unicodedata.normalize('NFKD', input_str)
     normalized = u''.join([c for c in nfkd_form if not unicodedata.combining(c)])
-
+    
     return normalized.lower()
 
 
 def son_similar(str1: str, str2: str):
     """ Determina si dos cadenas son similares o no. """
     import re
-
+    
     # convertir, por si acaso
     str1 = str(str1)
     str2 = str(str2)
-
+    
     str1_clean = unidecode(re.sub(r'\W+', ' ', str1))
     str2_clean = unidecode(re.sub(r'\W+', ' ', str2))
-
+    
     return str1_clean in str2_clean
 
 
@@ -54,14 +54,14 @@ def formatDate(date: QDateTime | datetime) -> str:
         Ejemplo: 08 de febrero 2023, 4:56 p. m. """
     if not date:
         return ''
-
+    
     from PySide6.QtCore import QLocale
-
+    
     if isinstance(date, datetime):
         date = QDateTime(date)
-
+    
     locale = QLocale(QLocale.Spanish, QLocale.Mexico)
-
+    
     return locale.toString(date, "d 'de' MMMM yyyy, h:mm ap")
 
 
@@ -72,21 +72,21 @@ def exportarXlsx(rutaArchivo, titulos, datos):
         columnas, y una lista de tuplas con los datos principales. """
     from openpyxl import Workbook
     from openpyxl.styles import Font
-
+    
     wb = Workbook()
     ws = wb.active
-
+    
     # títulos de las columnas
     ws.append(titulos)
-
+    
     # agregar columnas con información
     for row in datos:
         ws.append(row)
-
+    
     # cambiar fuente (agregar negritas)
     for cell in ws['1']:
         cell.font = Font(bold=True)
-
+    
     wb.save(rutaArchivo)
 
 
@@ -96,10 +96,10 @@ def enviarWhatsApp(phone_no: str, message: str):
             - open("https://web.whatsapp.com/accept?code=" + receiver) """
     from urllib.parse import quote
     import webbrowser as web
-
+    
     if '+' not in phone_no:  # agregar código de país de México
         phone_no = '+52' + phone_no
-
+    
     try:
         web.open_new_tab(f'https://web.whatsapp.com/send?phone={phone_no}&text={quote(message)}')
     except Exception as err:

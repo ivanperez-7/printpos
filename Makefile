@@ -1,6 +1,6 @@
 EXEC=PrintPOS
 
-all: setup launch
+all: setup
 
 resources_rc.py: resources.qrc resources/images/*
 	pyside6-rcc -o $@ $<
