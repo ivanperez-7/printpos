@@ -8,21 +8,21 @@ from utils.mywidgets import WarningDialog
 
 def crear_conexion(usuario: str, psswd: str, rol: str = None):
     from configparser import ConfigParser
-    
+
     # leer datos de config.ini
     config = ConfigParser(inline_comment_prefixes=';')
     config.read('config.ini')
 
     red_local = config['DEFAULT']['red_local']
     nombre = config['SUCURSAL']['nombre']
-    
+
     try:
         conn = fdb.connect(
-                    dsn=red_local + f':{nombre}.fdb',
-                    user=usuario,
-                    password=psswd,
-                    charset='UTF8',
-                    role=rol)
+            dsn=red_local + f':{nombre}.fdb',
+            user=usuario,
+            password=psswd,
+            charset='UTF8',
+            role=rol)
         return conn
     except fdb.Error as err:
         print(f'Cannot open connection to database: {str(err)}')
@@ -32,9 +32,10 @@ def crear_conexion(usuario: str, psswd: str, rol: str = None):
 class DatabaseManager:
     """ Clase general de un administrador de bases de datos.
     Permite ejecutar consultas varias y manejar las excepciones."""
+
     def __init__(self, conn: fdb.Connection,
-                       error_txt: str = None,
-                       handle_exceptions: bool = True):
+                 error_txt: str = None,
+                 handle_exceptions: bool = True):
         self.conn = conn
         self.crsr: fdb.Cursor = conn.cursor()
         self.error_txt = error_txt or '¡Acceso fallido a base de datos!'
@@ -46,7 +47,7 @@ class DatabaseManager:
                 self.crsr.execute(query)
             else:
                 self.crsr.execute(query, parameters)
-            if commit: 
+            if commit:
                 self.conn.commit()
             return True
         except fdb.Error as err:
@@ -55,14 +56,14 @@ class DatabaseManager:
             self.conn.rollback()
             WarningDialog(self.error_txt, str(err))
             return False
-    
+
     def executemany(self, query, parameters=None, commit=False):
         try:
             if parameters is None:
                 self.crsr.executemany(query)
             else:
                 self.crsr.executemany(query, parameters)
-            if commit: 
+            if commit:
                 self.conn.commit()
             return True
         except fdb.Error as err:
@@ -97,7 +98,7 @@ class DatabaseManager:
                 raise err
             WarningDialog(self.error_txt, str(err))
             return None
-    
+
     def obtenerUsuario(self) -> str | None:
         """ Obtiene nombre del usuario activo de la conexión. """
         result = self.fetchone("""
@@ -108,22 +109,23 @@ class DatabaseManager:
                 FROM    RDB$DATABASE
             );
         """)
-        
+
         if result:
             nombre, = result
             return nombre
         return None
-    
+
     def obtenerVista(self, vista: str):
         """ Atajo de sentencia SELECT para obtener una vista. """
         return self.fetchall(f'SELECT * FROM {vista};')
-        
+
 
 class ManejadorCaja(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Caja. """
+
     def __init__(self, conn: fdb.Connection, error_txt: str = None):
         super().__init__(conn, error_txt)
-    
+
     def obtenerMovimientos(self, inicio: QDate, final: QDate):
         """ Obtener historial completo de movimientos de caja.
             
@@ -141,15 +143,15 @@ class ManejadorCaja(DatabaseManager):
                     AND CAST(fecha_hora AS DATE) <= ?
             ORDER   BY fecha_hora DESC;
         ''', (inicio.toPython(), final.toPython()))
-    
+
     def obtenerFechaPrimerMov(self):
-        """ Obtener fecha del movimiento más antiguo. """        
+        """ Obtener fecha del movimiento más antiguo. """
         result = self.fetchone('SELECT MIN(fecha_hora) FROM Caja;')
-        
+
         if result:
             fecha, = result
             return fecha
-    
+
     def insertarMovimiento(self, params: tuple, commit: bool = True):
         """ Registra ingreso o egreso en tabla historial de movimientos.
         
@@ -166,9 +168,10 @@ class ManejadorCaja(DatabaseManager):
 
 class ManejadorClientes(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Clientes. """
+
     def __init__(self, conn: fdb.Connection, error_txt: str = None):
         super().__init__(conn, error_txt)
-    
+
     def obtenerTablaPrincipal(self):
         """ Sentencia para alimentar la tabla principal de clientes. """
         return self.fetchall('''
@@ -185,7 +188,7 @@ class ManejadorClientes(DatabaseManager):
             GROUP   BY 1, 2, 3, 4, 5, 6
             ORDER   BY C.id_clientes;
         ''')
-    
+
     def obtenerCliente(self, id_cliente: int):
         """ Sentencia para obtener un cliente. """
         return self.fetchone('''
@@ -193,7 +196,7 @@ class ManejadorClientes(DatabaseManager):
             FROM    Clientes 
             WHERE id_clientes = ?;
         ''', (id_cliente,))
-    
+
     def verificarCliente(self, nombre: str, telefono: str):
         """ Regresa cliente dados el nombre y el teléfono. """
         return self.fetchone('''
@@ -202,7 +205,7 @@ class ManejadorClientes(DatabaseManager):
             WHERE   nombre = ?
                     AND telefono = ?;
         ''', (nombre, telefono))
-    
+
     def obtenerDescuentosCliente(self, nombre: str, telefono: str):
         """ Obtener booleano de cliente especial, y cadena de descuentos. """
         return self.fetchone('''
@@ -212,7 +215,7 @@ class ManejadorClientes(DatabaseManager):
             WHERE   nombre = ?
                     AND telefono = ?;
         ''', (nombre, telefono))
-    
+
     def insertarCliente(self, datosCliente: tuple):
         """ Sentencia para registrar cliente. Hace commit automáticamente. """
         return self.execute('''
@@ -223,7 +226,7 @@ class ManejadorClientes(DatabaseManager):
             VALUES
                 (?,?,?,?,?,?,?);
         ''', datosCliente, commit=True)
-    
+
     def actualizarCliente(self, idCliente, datosCliente: tuple):
         """ Sentencia para actualizar cliente. Hace commit automáticamente. """
         return self.execute('''
@@ -237,7 +240,7 @@ class ManejadorClientes(DatabaseManager):
                     descuentos = ?
             WHERE   id_clientes = ?;
         ''', (*datosCliente, idCliente), commit=True)
-    
+
     def eliminarCliente(self, idCliente):
         """ Sentencia para eliminar cliente. Hace commit automáticamente. """
         return self.execute('''
@@ -248,9 +251,10 @@ class ManejadorClientes(DatabaseManager):
 
 class ManejadorInventario(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Inventario. """
+
     def __init__(self, conn: fdb.Connection, error_txt: str = None):
         super().__init__(conn, error_txt)
-    
+
     def obtenerTablaPrincipal(self):
         """ Sentencia para alimentar tabla principal de elementos. """
         return self.fetchall('''
@@ -263,7 +267,7 @@ class ManejadorInventario(DatabaseManager):
                     lotes_restantes
             FROM    Inventario;
         ''')
-    
+
     def obtenerInformacionPrincipal(self, id_inventario: int):
         """ Regresa información principal de un elemento:
             nombre, tamaño de lote, precio de lote, mínimo de lotes, unidades restantes. """
@@ -276,7 +280,7 @@ class ManejadorInventario(DatabaseManager):
             FROM    Inventario 
             WHERE   id_inventario = ?;
         ''', (id_inventario,))
-    
+
     def obtenerInventarioFaltante(self):
         """ Obtener inventario faltante (lotes < mínimo de lotes):
             nombre, lotes restantes, mínimo de lotes. """
@@ -287,7 +291,7 @@ class ManejadorInventario(DatabaseManager):
             FROM    Inventario 
             WHERE   lotes_restantes < minimo_lotes;
         ''')
-    
+
     def obtenerIdInventario(self, nombre: str):
         """ Obtener id_inventario dado nombre de un elemento de inventario. """
         return self.fetchone('''
@@ -295,11 +299,11 @@ class ManejadorInventario(DatabaseManager):
             FROM    Inventario 
             WHERE   nombre = ?;
         ''', (nombre,))
-    
+
     def obtenerListaNombres(self):
         """ Obtener lista con nombres de todos los elementos de inventario. """
         return self.fetchall('SELECT nombre FROM Inventario;')
-    
+
     def obtenerProdUtilizaInv(self, id_inventario: int):
         """ Obtener relación con productos en la tabla productos_utiliza_inventario. """
         return self.fetchall('''
@@ -310,7 +314,7 @@ class ManejadorInventario(DatabaseManager):
                            ON PUI.id_productos = P.id_productos
             WHERE 	id_inventario = ?;
         ''', (id_inventario,))
-    
+
     def agregarLotes(self, id_inventario: int, num_lotes: float):
         """ Agrega lotes a existencia del elemento. Hace commit automáticamente. """
         return self.execute('''
@@ -318,7 +322,7 @@ class ManejadorInventario(DatabaseManager):
             SET     unidades_restantes = unidades_restantes + tamano_lote * ?
             WHERE   id_inventario = ?;
         ''', (num_lotes, id_inventario), commit=True)
-    
+
     def insertarElemento(self, datos_elemento: tuple):
         """ Intenta registrar un elemento en la tabla y regresar 
             tupla con el índice recién insertado. No hace commit. """
@@ -332,7 +336,7 @@ class ManejadorInventario(DatabaseManager):
             RETURNING
                 id_inventario;
         ''', datos_elemento)
-    
+
     def editarElemento(self, id_inventario: int, datos_elemento: tuple):
         """ Intenta editar datos de un elemento en la tabla y regresar
             tupla con el índice recién editado. No hace commit. """
@@ -346,14 +350,14 @@ class ManejadorInventario(DatabaseManager):
             WHERE   id_inventario = ?
             RETURNING id_inventario;
         ''', (*datos_elemento, id_inventario))
-    
+
     def eliminarElemento(self, id_inventario: int):
         """ Elimina un elemento de la tabla. Hace commit automáticamente. """
         return self.execute('''
             DELETE  FROM Inventario 
             WHERE   id_inventario = ?;
         ''', (id_inventario,), commit=True)
-    
+
     def eliminarProdUtilizaInv(self, id_inventario: int):
         """ Elimina elemento de la tabla productos_utiliza_inventario.
             No hace commit, al ser parte inicial del proceso de registro/modificación. """
@@ -361,12 +365,12 @@ class ManejadorInventario(DatabaseManager):
             DELETE  FROM productos_utiliza_inventario
             WHERE   id_inventario = ?;
         ''', (id_inventario,), commit=False)
-    
+
     def insertarProdUtilizaInv(self, id_inventario: int, params: list[tuple]):
         """ Inserta elemento en la tabla productos_utiliza_inventario.
             Hace commit, al ser parte final del proceso de registro/modificación. """
         params = [(id_inventario,) + param for param in params]
-        
+
         return self.executemany('''
             INSERT INTO productos_utiliza_inventario (
                 id_inventario, id_productos, utiliza_inventario
@@ -378,9 +382,10 @@ class ManejadorInventario(DatabaseManager):
 
 class ManejadorProductos(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Inventario. """
+
     def __init__(self, conn: fdb.Connection, error_txt: str = None):
         super().__init__(conn, error_txt)
-    
+
     def obtenerTablaPrincipal(self):
         """ Sentencia para alimentar tabla principal de productos. """
         return self.fetchall('''
@@ -418,7 +423,7 @@ class ManejadorProductos(DatabaseManager):
                            ON P.id_productos = C_Prod.id_productos
             ORDER   BY P.id_productos, desde ASC;
         ''')
-    
+
     def obtenerProducto(self, id_productos: int):
         """ Obtener todas las columnas de un producto. """
         return self.fetchone('''
@@ -426,11 +431,11 @@ class ManejadorProductos(DatabaseManager):
             FROM    Productos 
             WHERE   id_productos = ?;
         ''', (id_productos,))
-    
+
     def obtenerListaCodigos(self):
         """ Obtener lista con códigos de todos los productos. """
         return self.fetchall('SELECT codigo FROM Productos;')
-    
+
     def obtenerIdProducto(self, codigo: str):
         """ Obtener id_producto dado código de un producto. """
         result = self.fetchone('''
@@ -438,13 +443,13 @@ class ManejadorProductos(DatabaseManager):
             FROM    Productos 
             WHERE   codigo = ?;
         ''', (codigo,))
-        
+
         if result:
             id, = result
             return id
-        
+
         return None
-        
+
     def obtenerRelacionVentas(self, id_productos: int):
         """ Obtener relación con ventas en la tabla ventas_detallado. """
         return self.fetchall('''
@@ -452,7 +457,7 @@ class ManejadorProductos(DatabaseManager):
             FROM	Ventas_Detallado
             WHERE	id_productos = ?;
         ''', (id_productos,))
-    
+
     def obtenerTablaPrecios(self, id_productos: int):
         """ Obtener tabla de precios, asumiendo producto simple. """
         return self.fetchall('''
@@ -463,11 +468,11 @@ class ManejadorProductos(DatabaseManager):
             WHERE 	id_productos = ?
             ORDER   BY desde ASC, duplex ASC;
         ''', (id_productos,))
-    
+
     def obtenerPrecioSimple(self, id_productos: int, cantidad: int, duplex: bool):
         """ Obtener precio de producto categoría simple. """
         restrict = 'AND duplex' if duplex else ''
-        
+
         result = self.fetchone(f'''
             SELECT * FROM (
                 SELECT  FIRST 1 precio_con_iva
@@ -483,14 +488,14 @@ class ManejadorProductos(DatabaseManager):
                 WHERE   id_productos = ?
                         AND desde <= ?
                 ORDER   BY desde DESC)
-        ''', (id_productos, cantidad)*2)
-        
+        ''', (id_productos, cantidad) * 2)
+
         try:
             precio, = result
             return precio
         except TypeError:
             return None
-    
+
     def obtenerPrecioGranFormato(self, id_productos: int, ancho: float, alto: float):
         """ Obtener precio de producto gran formato.
 
@@ -498,12 +503,12 @@ class ManejadorProductos(DatabaseManager):
         result = self.obtenerGranFormato(id_productos)
         if not result:
             return None
-        
+
         min_m2, precio_m2 = result
         cantidad = ancho * alto
-        
+
         return cantidad * precio_m2 if cantidad >= min_m2 else precio_m2
-    
+
     def obtenerGranFormato(self, id_productos: int):
         """ Obtener mínimo de metros cuadrados y precio de metro cuadrado
             de producto categoría gran formato. """
@@ -513,7 +518,7 @@ class ManejadorProductos(DatabaseManager):
             FROM    Productos_Gran_Formato
             WHERE 	id_productos = ?;
         ''', (id_productos,))
-    
+
     def obtenerUtilizaInventario(self, id_productos: int):
         """ Obtener relación del producto con elementos del inventario. """
         return self.fetchall('''
@@ -524,7 +529,7 @@ class ManejadorProductos(DatabaseManager):
                             ON PUI.id_inventario = I.id_inventario
             WHERE 	id_productos = ?;
         ''', (id_productos,))
-    
+
     def insertarProducto(self, params: tuple):
         """ Intenta insertar un producto y regresar tupla
             con el índice recién insertado. No hace commit. """
@@ -537,7 +542,7 @@ class ManejadorProductos(DatabaseManager):
             RETURNING
                 id_productos;
         ''', params)
-    
+
     def editarProducto(self, id_productos: int, params: tuple):
         """ Intenta editar un productos y regresar tupla
             con el índice recién modificado. No hace commit. """
@@ -550,14 +555,14 @@ class ManejadorProductos(DatabaseManager):
             WHERE   id_productos = ?
             RETURNING id_productos;
         ''', (*params, id_productos))
-    
+
     def eliminarProducto(self, id_productos: int):
         """ Elimina el producto y sus relaciones con las tablas productos_intervalos,
             productos_gran_formato, productos_utiliza_inventario y productos.
             Hace commit automáticamente. """
         param = (id_productos,)
         query = lambda tabla: f'DELETE FROM {tabla} WHERE id_productos = ?;'
-        
+
         # primero borrar en tres tablas, antes de hacer commit
         if all(self.execute(query(tabla), param) for tabla in [
             'Productos_Utiliza_Inventario',
@@ -566,7 +571,7 @@ class ManejadorProductos(DatabaseManager):
             return self.execute(query('Productos'), param, commit=True)
         else:
             return False
-    
+
     def eliminarProdUtilizaInv(self, id_productos: int):
         """ Elimina producto de la tabla productos_utiliza_inventario.
             No hace commit, al ser parte inicial del proceso de registro/modificación. """
@@ -574,12 +579,12 @@ class ManejadorProductos(DatabaseManager):
             DELETE  FROM productos_utiliza_inventario
             WHERE   id_productos = ?;
         ''', (id_productos,), commit=False)
-    
+
     def insertarProdUtilizaInv(self, id_productos: int, params: list[tuple]):
         """ Inserta producto en la tabla productos_utiliza_inventario.
             No hace commit, al ser parte del proceso de registro/modificación. """
         params = [(id_productos,) + param for param in params]
-        
+
         return self.executemany('''
             INSERT INTO productos_utiliza_inventario (
                 id_productos, id_inventario, utiliza_inventario
@@ -587,23 +592,23 @@ class ManejadorProductos(DatabaseManager):
             VALUES
                 (?,?,?);
         ''', params, commit=False)
-    
+
     def eliminarPrecios(self, id_productos: int):
         """ Eliminar todos los precios del producto, en las tablas 
             productos_intervalos y productos_gran_formato. 
             No hace commit, al ser parte del proceso de registro/modificación. """
         param = (id_productos,)
         query = lambda tabla: f'DELETE FROM {tabla} WHERE id_productos = ?;'
-        
+
         return all(self.execute(query(tabla), param) for tabla in [
             'Productos_Intervalos',
             'Productos_Gran_Formato'])
-    
+
     def insertarProductosIntervalos(self, id_productos: int, params: list[tuple]):
         """ Inserta precios para el producto en la tabla productos_intervalos.
             Hace commit, al ser parte final del proceso de registro/modificación."""
         params = [(id_productos,) + param for param in params]
-        
+
         return self.executemany('''
             INSERT INTO Productos_Intervalos (
                 id_productos, desde, precio_con_iva, duplex
@@ -611,7 +616,7 @@ class ManejadorProductos(DatabaseManager):
             VALUES
                 (?,?,?,?);
         ''', params, commit=True)
-    
+
     def insertarProductoGranFormato(self, id_productos: int, params: tuple):
         """ Inserta precios para el producto en la tabla productos_gran_formato.
             Hace commit, al ser parte final del proceso de registro/modificación."""
@@ -626,19 +631,20 @@ class ManejadorProductos(DatabaseManager):
 
 class ManejadorVentas(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Ventas. """
+
     def __init__(self, conn: fdb.Connection, error_txt: str = None):
         super().__init__(conn, error_txt)
-    
+
     def tablaVentas(self, inicio: QDate = QDate.currentDate(),
-                          final: QDate = QDate.currentDate(),
-                          restrict: int = None):
+                    final: QDate = QDate.currentDate(),
+                    restrict: int = None):
         """ Sentencia para alimentar la tabla principal de ventas directas. 
         
             Requiere fechas de inicio y final, tipo QDate.
             
             Restringir a un solo usuario, si se desea. """
         restrict = f'AND Usuarios.id_usuarios = {restrict}' if restrict else ''
-        
+
         return self.fetchall(f'''
             SELECT  Ventas.id_ventas,
                     Usuarios.nombre,
@@ -662,17 +668,17 @@ class ManejadorVentas(DatabaseManager):
             GROUP   BY 1, 2, 3, 4, 6, 7, 8
             ORDER	BY Ventas.id_ventas DESC;
         ''', (inicio.toPython(), final.toPython()))
-    
+
     def tablaPedidos(self, inicio: QDate = QDate.currentDate(),
-                           final: QDate = QDate.currentDate(),
-                           restrict: int = None):
+                     final: QDate = QDate.currentDate(),
+                     restrict: int = None):
         """ Sentencia para alimentar la tabla principal de pedidos. 
         
             Requiere fechas de inicio y final, tipo QDate.
             
             Restringir a un solo usuario, si se desea. """
         restrict = f'AND Usuarios.id_usuarios = {restrict}' if restrict else ''
-        
+
         return self.fetchall(f'''
             SELECT  Ventas.id_ventas,
                     Usuarios.nombre,
@@ -698,7 +704,7 @@ class ManejadorVentas(DatabaseManager):
             GROUP   BY 1, 2, 3, 4, 5, 7, 8, 9
             ORDER	BY Ventas.id_ventas DESC;
         ''', (inicio.toPython(), final.toPython()))
-    
+
     def obtenerVenta(self, id_venta):
         """ Sentencia para obtener una venta. """
         return self.fetchone('''
@@ -706,7 +712,7 @@ class ManejadorVentas(DatabaseManager):
             FROM    Ventas 
             WHERE   id_ventas = ?;
         ''', (id_venta,))
-    
+
     def obtenerNumPendientes(self, id_usuario: int):
         """ Obtener número de pedidos pendientes del usuario. """
         return self.fetchone('''
@@ -716,7 +722,7 @@ class ManejadorVentas(DatabaseManager):
                     AND estado LIKE 'Recibido%'
                     AND id_usuarios = ?;
         ''', (id_usuario,))
-    
+
     def obtenerDatosGeneralesVenta(self, id_venta: int):
         """ Obtiene otros datos generales de una venta:
             nombre de cliente, correo, teléfono, fecha y hora de creación,
@@ -736,7 +742,7 @@ class ManejadorVentas(DatabaseManager):
                            ON Ventas.id_usuarios = Usuarios.id_usuarios
             WHERE   id_ventas = ?;
         ''', (id_venta,))
-    
+
     def obtenerTablaOrdenCompra(self, id_venta: int):
         """ Obtiene tabla de productos para las órdenes de compra:
         
@@ -752,7 +758,7 @@ class ManejadorVentas(DatabaseManager):
                            ON VD.id_productos = P.id_productos
             WHERE   id_ventas = ?;
         ''', (id_venta,))
-    
+
     def obtenerTablaTicket(self, id_venta: int):
         """ Obtiene tabla de productos para los tickets de ventas directas.
         
@@ -768,7 +774,7 @@ class ManejadorVentas(DatabaseManager):
                         ON VD.id_productos = P.id_productos
             WHERE	id_ventas = ?;
         ''', (id_venta,))
-    
+
     def obtenerTablaProductosVenta(self, id_venta: int):
         """ Obtener tabla de productos para widgets de
             detalles de venta, terminar compra, etc. 
@@ -786,7 +792,7 @@ class ManejadorVentas(DatabaseManager):
                            ON Ventas_Detallado.id_productos = Productos.id_productos
             WHERE   id_ventas = ?;
         ''', (id_venta,))
-    
+
     def obtenerClienteAsociado(self, id_venta: int):
         """ Obtener nombre y teléfono de cliente asociado a la venta. """
         return self.fetchone('''
@@ -797,7 +803,7 @@ class ManejadorVentas(DatabaseManager):
                            ON V.id_clientes = C.id_clientes
             WHERE   id_ventas = ?;
         ''', (id_venta,))
-    
+
     def obtenerUsuarioAsociado(self, id_venta: int):
         """ Obtener nombre de vendedor asociado a la venta. """
         result = self.fetchone('''
@@ -807,13 +813,13 @@ class ManejadorVentas(DatabaseManager):
                            ON V.id_usuarios = U.id_usuarios
             WHERE	V.id_ventas = ?;
         ''', (id_venta,))
-        
+
         if result:
             nombre, = result
             return nombre
-        
+
         return None
-    
+
     def obtenerImporteTotal(self, id_venta: int):
         """ Obtiene el importe total de una venta. """
         t = self.fetchone('''
@@ -821,13 +827,13 @@ class ManejadorVentas(DatabaseManager):
             FROM    Ventas_Detallado
             WHERE   id_ventas = ?;
         ''', (id_venta,))
-        
+
         try:
             importe, = t
             return round(importe, 2)
         except ValueError:
             return None
-    
+
     def obtenerAnticipo(self, id_venta: int):
         """ Obtiene el anticipo recibido de una orden pendiente.
             Si no es una orden pendiente, regresa None. """
@@ -836,18 +842,18 @@ class ManejadorVentas(DatabaseManager):
             FROM    Ventas
             WHERE   id_ventas = ?;
         ''', (id_venta,))
-        
+
         try:
             estado, = t
             return float(estado.split()[1])
         except (ValueError, IndexError):
             return None
-    
+
     def obtenerFechaPrimeraVenta(self, id_usuario: int = None):
         """ Obtener fecha de la venta más antigüa. 
             Se puede restringir a cierto usuario. """
         restrict = f'WHERE id_usuarios = {id_usuario}' if id_usuario else ''
-        
+
         result = self.fetchone(f'''
             SELECT  MIN(fecha_hora_creacion) 
             FROM    Ventas
@@ -856,7 +862,7 @@ class ManejadorVentas(DatabaseManager):
         if result:
             fecha, = result
             return fecha
-    
+
     def insertarVenta(self, params: tuple):
         """ Insertar venta nueva en la tabla ventas e intenta 
             regresar tupla con índice de venta recién insertada.
@@ -873,14 +879,14 @@ class ManejadorVentas(DatabaseManager):
             RETURNING
                 id_ventas;
         ''', params)
-    
+
     def insertarDetallesVenta(self, id_ventas: int, params: list[tuple]):
         """ Insertar detalles de venta en tabla ventas_detallado e intenta 
             regresar tupla con índice de venta recién insertada.
             
             Hace commit automáticamente. """
         params = [(id_ventas,) + param for param in params]
-        
+
         return self.executemany('''
             INSERT INTO Ventas_Detallado (
                 id_ventas, id_productos, cantidad, precio, 
@@ -889,7 +895,7 @@ class ManejadorVentas(DatabaseManager):
             VALUES 
                 (?,?,?,?,?,?,?,?);
         ''', params, commit=True)
-    
+
     def actualizarEstadoVenta(self, id_ventas: int, estado: str, commit: bool = False):
         """ Actualiza estado de venta a parámetro.
         
@@ -899,20 +905,20 @@ class ManejadorVentas(DatabaseManager):
             SET     estado = ?
             WHERE   id_ventas = ?;
         ''', (estado, id_ventas), commit=commit)
-    
+
     def agregarComision(self, id_ventas: int, importe: float, commit: bool = False):
         """ Agregar producto de comisión por pago con tarjeta a venta.
         
             No hace `commit`, a menos que se indique lo contrario. """
         if importe <= 0.:
             return True
-        
+
         manejador = ManejadorProductos(self.conn)
         id_producto = manejador.obtenerIdProducto('COMISION')
-        
+
         params = (id_ventas, id_producto, importe,
                   1., 0., 'COMISIÓN POR PAGO CON TARJETA', False)
-        
+
         return self.execute('''
             INSERT INTO Ventas_Detallado (
                 id_ventas, id_productos, cantidad, precio, 
@@ -921,7 +927,7 @@ class ManejadorVentas(DatabaseManager):
             VALUES 
                 (?,?,?,?,?,?,?);
         ''', params, commit=commit)
-    
+
     def actualizarMetodoPago(self, id_ventas: int, metodo: str, commit: bool = False):
         """ Actualiza método de pago de venta a parámetro.
         
@@ -931,7 +937,7 @@ class ManejadorVentas(DatabaseManager):
             SET     metodo_pago = ?
             WHERE   id_ventas = ?;
         ''', (metodo, id_ventas), commit=commit)
-    
+
     def actualizarRecibido(self, id_ventas: int, pago: float, commit: bool = False):
         """ Actualizar pago recibido para esta venta, en tabla ventas. 
         
@@ -945,11 +951,12 @@ class ManejadorVentas(DatabaseManager):
 
 class ManejadorUsuarios(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Usuarios. """
+
     def __init__(self, conn: fdb.Connection,
-                       error_txt: str = None,
-                       handle_exceptions: bool = True):
+                 error_txt: str = None,
+                 handle_exceptions: bool = True):
         super().__init__(conn, error_txt, handle_exceptions)
-    
+
     def obtenerTablaPrincipal(self):
         """ Obtener tabla principal para el módulo de administrar usuarios. """
         return self.fetchall('''
@@ -963,7 +970,7 @@ class ManejadorUsuarios(DatabaseManager):
             GROUP   BY 1, 2, 3
             ORDER   BY U.nombre ASC;
         ''')
-    
+
     def obtenerUsuario(self, usuario: str):
         """ Obtener tupla de usuario dado el nombre de usuario. """
         return self.fetchone('''
@@ -971,16 +978,16 @@ class ManejadorUsuarios(DatabaseManager):
             FROM    Usuarios
             WHERE   usuario = ?;
         ''', (usuario,))
-    
+
     def crearUsuarioServidor(self, usuario: str, psswd: str, esAdmin: bool):
         """ Registrar usuario en servidor Firebird. Otorgar permisos
             de administrar usuarios, si se desea.
             
             No hace commit. """
         admin_role = 'GRANT ADMIN ROLE' if esAdmin else ''
-        
+
         return self.execute(f"CREATE USER {usuario} PASSWORD '{psswd}' {admin_role};")
-    
+
     def insertarUsuario(self, params: tuple):
         """ Insertar nuevo usuario en tabla de Usuarios. No hace commit. """
         return self.execute('''
@@ -990,7 +997,7 @@ class ManejadorUsuarios(DatabaseManager):
             VALUES
                 (?,?,?);
         ''', params)
-    
+
     def actualizarUsuario(self, usuario: str, params: tuple):
         """ Actualizar usuario, nombre y permisos de usuario dado. 
         
@@ -1002,7 +1009,7 @@ class ManejadorUsuarios(DatabaseManager):
                     permisos = ?
             WHERE   usuario = ?;
         ''', (*params, usuario))
-    
+
     def eliminarUsuario(self, usuario: str):
         """ Dar de baja usuario del sistema. Se eliminan los permisos
             y se elimina del servidor Firebird. 
@@ -1014,16 +1021,16 @@ class ManejadorUsuarios(DatabaseManager):
             WHERE   usuario = ?;
         ''', (usuario,), commit=False):
             return False
-        
+
         return self.execute(f'DROP USER {usuario};', commit=True)
-    
+
     def otorgarRolVendedor(self, usuario: str):
         """ Otorgar rol de vendedor en servidor Firebird.
         
             Hace commit automáticamente, al ser última operación 
             del proceso de creación/modificación. """
         return self.execute(f'GRANT VENDEDOR TO {usuario};', commit=True)
-    
+
     def otorgarRolAdministrador(self, usuario: str):
         """ Otorgar rol de vendedor y administrador en servidor Firebird, con
             permisos para otorgar y remover roles de otros usuarios.
@@ -1032,13 +1039,13 @@ class ManejadorUsuarios(DatabaseManager):
             del proceso de creación/modificación. """
         return self.execute(f'GRANT ADMINISTRADOR, VENDEDOR TO {usuario} WITH ADMIN OPTION;',
                             commit=True)
-    
+
     def retirarRoles(self, usuario: str):
         """ Retirar roles VENDEDOR, ADMINISTRADOR del usuario. 
         
             No hace commit. """
         return self.execute(f'REVOKE ADMINISTRADOR, VENDEDOR FROM {usuario};')
-    
+
     def cambiarPsswd(self, usuario: str, psswd: str):
         """ Cambiar contraseña del usuario. No hace commit. """
         return self.execute(f"ALTER USER {usuario} PASSWORD '{psswd}';")

@@ -21,7 +21,7 @@ def clamp(value, smallest, largest) -> SupportsFloat:
 
 def chunkify(array: list, size: int):
     """ Divide un arreglo en subarreglos de un tamaño dado. """
-    return [array[x : x+size] for x in range(0, len(array), size)]
+    return [array[x: x + size] for x in range(0, len(array), size)]
 
 
 def unidecode(input_str: str):
@@ -38,14 +38,14 @@ def unidecode(input_str: str):
 def son_similar(str1: str, str2: str):
     """ Determina si dos cadenas son similares o no. """
     import re
-    
+
     # convertir, por si acaso
     str1 = str(str1)
     str2 = str(str2)
-    
+
     str1_clean = unidecode(re.sub(r'\W+', ' ', str1))
     str2_clean = unidecode(re.sub(r'\W+', ' ', str2))
-    
+
     return str1_clean in str2_clean
 
 
@@ -54,9 +54,9 @@ def formatDate(date: QDateTime | datetime) -> str:
         Ejemplo: 08 de febrero 2023, 4:56 p. m. """
     if not date:
         return ''
-    
+
     from PySide6.QtCore import QLocale
-    
+
     if isinstance(date, datetime):
         date = QDateTime(date)
 
@@ -75,7 +75,7 @@ def exportarXlsx(rutaArchivo, titulos, datos):
 
     wb = Workbook()
     ws = wb.active
-    
+
     # títulos de las columnas
     ws.append(titulos)
 
@@ -97,7 +97,7 @@ def enviarWhatsApp(phone_no: str, message: str):
     from urllib.parse import quote
     import webbrowser as web
 
-    if '+' not in phone_no:     # agregar código de país de México
+    if '+' not in phone_no:  # agregar código de país de México
         phone_no = '+52' + phone_no
 
     try:

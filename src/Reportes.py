@@ -19,7 +19,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter
 
 
-
 class MyChartView(QChartView):
     def __init__(self, chart):
         super().__init__(chart)
@@ -53,35 +52,35 @@ class MyChartView(QChartView):
             self.is_panning = False
 
 
-
 class App_Reportes(QtWidgets.QMainWindow):
     """
     Backend para la ventana de reportes varios.
     """
+
     def __init__(self, parent):
         from ui.Ui_Reportes import Ui_Reportes
-        
+
         super().__init__()
 
         self.ui = Ui_Reportes()
         self.ui.setupUi(self)
 
-        self.session = parent.session # conexión y usuario actual
+        self.session = parent.session  # conexión y usuario actual
 
         self.ui.lbRegresar.mousePressEvent = self.goHome
 
         self.test2()
-    
+
     def goHome(self, _):
         """
         Cierra la ventana y regresa al inicio.
         """
         from Home import App_Home
 
-        parent = self.parentWidget()       # QMainWindow
+        parent = self.parentWidget()  # QMainWindow
         new = App_Home(parent)
         parent.setCentralWidget(new)
-    
+
     def test(self):
         crsr = self.session['conn'].cursor()
 
@@ -101,23 +100,23 @@ class App_Reportes(QtWidgets.QMainWindow):
         GROUP	BY Ventas.id_clientes
         ORDER	BY COUNT(id_ventas) DESC;
         ''')
-        
+
         categories = []
         set0 = QBarSet('Ventas al contado')
         set1 = QBarSet('Ventas sobre pedido')
-        
+
         for nombre, numVentas, numPedidos in crsr:
             categories.append(nombre)
             set0 << numVentas
             set1 << numPedidos
- 
+
         series = QBarSeries()
         series.append(set0)
         series.append(set1)
-        
+
         font = QtGui.QFont()
         font.setPointSize(11)
- 
+
         chart = QChart()
         chart.setScale(1)
         chart.addSeries(series)
@@ -133,20 +132,20 @@ class App_Reportes(QtWidgets.QMainWindow):
         chart.axisX().setTitleFont(font)
         chart.axisY().setLabelsFont(font)
         chart.axisY().setTitleFont(font)
- 
+
         chart.legend().setVisible(True)
         chart.legend().setAlignment(Qt.AlignBottom)
         chart.legend().setFont(font)
- 
+
         chartView = QChartView(chart)
         chartView.setFont(font)
         chartView.setRenderHint(QPainter.Antialiasing)
-        
+
         self.ui.horizontalLayout_6.addWidget(chartView)
-    
+
     def test2(self):
         crsr = self.session['conn'].cursor()
-        
+
         crsr.execute('''
         SELECT	FIRST 10
                 P.codigo,
@@ -160,24 +159,24 @@ class App_Reportes(QtWidgets.QMainWindow):
         GROUP	BY 1
         ORDER	BY 2 DESC;
         '''
-        )
-        
+                     )
+
         categories = []
         set0 = QBarSet('Ventas con este producto')
         set1 = QBarSet('Ingresos de este producto')
-        
+
         for codigo, cantidad, ingresos in crsr:
             categories.append(codigo)
             set0 << cantidad
             set1 << ingresos
- 
+
         series = QBarSeries()
         series.append(set0)
         series.append(set1)
-        
+
         font = QtGui.QFont()
         font.setPointSize(11)
- 
+
         chart = QChart()
         chart.setScale(1)
         chart.addSeries(series)
@@ -193,16 +192,17 @@ class App_Reportes(QtWidgets.QMainWindow):
         chart.axisX().setTitleFont(font)
         chart.axisY().setLabelsFont(font)
         chart.axisY().setTitleFont(font)
- 
+
         chart.legend().setVisible(True)
         chart.legend().setAlignment(Qt.AlignBottom)
         chart.legend().setFont(font)
- 
+
         chartView = MyChartView(chart)
         chartView.setFont(font)
         chartView.setRenderHint(QPainter.Antialiasing)
-        
+
         self.ui.horizontalLayout_6.addWidget(chartView)
+
 
 '''
 -- ingresos brutos por cliente
