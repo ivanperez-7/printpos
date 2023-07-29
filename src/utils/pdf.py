@@ -429,6 +429,7 @@ class ImpresoraPDF:
                 
             pix = page.get_pixmap(dpi=300)
             qtImage = ImageQt(Image.frombytes("RGB", [pix.w, pix.h], pix.samples))
+            #qtImage.save(f'out{i}.jpg', 'JPEG')
             
             rect = painter.viewport()
             qtImageScaled = qtImage.scaled(rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
