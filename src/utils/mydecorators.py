@@ -10,12 +10,12 @@ from PySide6.QtCore import QThread, Signal
 ##############################################
 class Dialog_ObtenerAdmin(QDialog):
     success = Signal(object)
-
+    
     def __init__(self, parent):
         from PySide6 import QtCore, QtGui, QtWidgets
-
+        
         super().__init__(parent)
-
+        
         self.resize(370, 116)
         self.setFixedSize(QtCore.QSize(370, 116))
         self.setWindowTitle("Atención")
@@ -48,11 +48,11 @@ class Dialog_ObtenerAdmin(QDialog):
         self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
         self.buttonBox.setCenterButtons(True)
         self.formLayout.setWidget(3, QtWidgets.QFormLayout.SpanningRole, self.buttonBox)
-
+        
         self.buttonBox.accepted.connect(self.accept)  # type: ignore
         self.buttonBox.rejected.connect(self.reject)  # type: ignore
         QtCore.QMetaObject.connectSlotsByName(self)
-
+        
         self.show()
 
 
@@ -64,27 +64,27 @@ def requiere_admin(func):
         es devuelto por el decorador para extraer información que se requiera
         de la conexión de administrador, por ejemplo, nombre del administrador. """
     import fdb
-
+    
     from utils.databasemanagers import crear_conexion, ManejadorUsuarios
-
+    
     def accept_handle():
         global dialog
         global parent
-
+        
         usuario = dialog.txtUsuario.text().upper()
         psswd = dialog.txtPsswd.text()
-
+        
         if not (usuario and psswd):
             return
-
+        
         conn = crear_conexion(usuario, psswd, 'ADMINISTRADOR')
-
+        
         if not conn:
             dialog.close()
             QMessageBox.warning(parent, 'Error',
                                 'Las credenciales no son válidas para una cuenta de administrador.')
             return
-
+        
         try:
             manejador = ManejadorUsuarios(conn, handle_exceptions=False)
             manejador.obtenerUsuario(usuario)
@@ -96,24 +96,24 @@ def requiere_admin(func):
             dialog.close()
             dialog.success.emit(conn)
             conn.close()
-
+    
     @wraps(func)
     def wrapper_decorator(*args, **kwargs):
         global dialog
         global parent
-
+        
         parent = args[0]  # QMainWindow (módulo) actual
-
+        
         if parent.user.administrador:
             func(*args, **kwargs, conn=parent.conn)
             return
-
+        
         dialog = Dialog_ObtenerAdmin(parent)
         dialog.accept = accept_handle
         dialog.success.connect(lambda conn: func(*args, **kwargs, conn=conn))
-
+        
         dialog.show()
-
+    
     return wrapper_decorator
 
 
@@ -127,13 +127,13 @@ def requiere_admin(func):
 ########################################
 class Runner(QThread):
     success = Signal()
-
+    
     def __init__(self, target, *args, **kwargs):
         super().__init__()
         self._target = target
         self._args = args
         self._kwargs = kwargs
-
+    
     def run(self):
         self._target(*self._args, **self._kwargs)
         self.success.emit()
@@ -141,7 +141,7 @@ class Runner(QThread):
 
 def run_in_thread(func):
     """ Decorador para ejecutar alguna función dada en otro hilo. """
-
+    
     @wraps(func)
     def async_func(*args, **kwargs):
         runner = Runner(func, *args, **kwargs)
@@ -150,7 +150,7 @@ def run_in_thread(func):
         # Keep the runner somewhere or it will be destroyed
         func.__runner = runner
         runner.start()
-
+    
     return async_func
 
 
@@ -162,20 +162,20 @@ def run_in_thread(func):
 def con_fondo(modulo):
     """ Decorador para crear un fondo oscurecedor en la ventana principal. """
     orig_init = modulo.__init__
-
+    
     def __init__(self, *args, **kws):
         from utils.mywidgets import DimBackground
-
+        
         orig_init(self, *args, **kws)
-
+        
         parent = args[0]  # QMainWindow, parent widget
         parent.bg = DimBackground(parent)
-
+    
     def closeEvent(self, event):
         self.parentWidget().bg.close()
         event.accept()
-
+    
     modulo.__init__ = __init__
     modulo.closeEvent = closeEvent
-
+    
     return modulo

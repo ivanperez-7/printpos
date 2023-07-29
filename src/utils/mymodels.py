@@ -11,11 +11,11 @@ class GenericModel(QAbstractTableModel):
         super().__init__()
         self._data = data or [[''] * len(headers)]
         self._headers = headers
-
+    
     def data(self, index, role):
         cell = self._data[index.row()][index.column()]
         header = self._headers[index.column()]
-
+        
         if role == Qt.DisplayRole:
             if isinstance(cell, datetime):
                 return formatDate(cell)
@@ -23,15 +23,15 @@ class GenericModel(QAbstractTableModel):
                 if header == 'Descuento' and not cell:
                     return ''
                 return f'{cell:,.2f}'
-
+            
             return cell
-
+        
         if role == Qt.FontRole:
             font = QFont('Segoe UI', 10)
             if header == 'Importe':
                 font.setBold(True)
             return font
-
+        
         if role == Qt.BackgroundRole:
             if header == 'Estado':
                 if cell.startswith('Cancelada'):
@@ -40,18 +40,18 @@ class GenericModel(QAbstractTableModel):
                     return QColor(ColorsEnum.VERDE)
                 if cell.startswith('Recibido'):
                     return QColor(ColorsEnum.AMARILLO)
-
+            
             if index.row() % 2:
                 return QColor("#F0F0F0")
-
+            
             return QColor(Qt.white)
-
+    
     def rowCount(self, index):
         return len(self._data)
-
+    
     def columnCount(self, index):
         return len(self._data[0])
-
+    
     def headerData(self, section: int, orientation, role):
         if role == Qt.DisplayRole:
             if orientation == Qt.Horizontal:
@@ -61,9 +61,9 @@ class GenericModel(QAbstractTableModel):
 class GenericFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, data: list[tuple], headers: list[str]):
         super().__init__()
-
+        
         model = GenericModel(data, headers)
-
+        
         self.setSourceModel(model)
         self.setFilterKeyColumn(1)
         self.setSourceModel(model)
