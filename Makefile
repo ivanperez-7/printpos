@@ -27,9 +27,9 @@ install:
 		--remove-output
 
 pip_reinstall:
-	pip --require-virtualenv freeze > requirements.txt
-	-pip uninstall -r requirements.txt -y
-	del requirements.txt
+	pip --require-virtualenv freeze > installed.txt
+	-pip uninstall -r installed.txt -y
+	del installed.txt
 	
 	py -m pip install --upgrade pip
-	pip install --upgrade fdb PySide6 pypdf2 reportlab pymupdf openpyxl nuitka ordered-set
+	pip install -r requirements.txt
