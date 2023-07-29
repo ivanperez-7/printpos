@@ -12,7 +12,7 @@ from utils.databasemanagers import ManejadorVentas
 from utils.mydecorators import run_in_thread
 from utils.myutils import chunkify, formatDate
 
-    
+
 def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
     """ Genera un PDF con el orden de compra correspondiente a 
         la venta con índice `idx` en la base de datos.
@@ -29,11 +29,11 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
     from reportlab.pdfgen.canvas import Canvas
     from reportlab.platypus import Paragraph
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-    
+
     # leer datos de venta y de cliente
     nombre, telefono = manejadorVentas.obtenerClienteAsociado(idx)
     _, _, _, creacion, entrega, *_ = manejadorVentas.obtenerVenta(idx)
-    
+
     total = manejadorVentas.obtenerImporteTotal(idx)
     anticipo = manejadorVentas.obtenerAnticipo(idx)
     saldo = total - anticipo
@@ -75,11 +75,11 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
 
         for i, (prodCantidad, prodNombre, prodEspecificaciones,
                 prodPrecio, prodImporte) in enumerate(chunk):
-            y_sep = -32.4*i     # separador por renglón de la tabla
+            y_sep = -32.4 * i  # separador por renglón de la tabla
 
-            can.drawCentredString(49, 381+y_sep, f'{prodCantidad:,.2f}')
-            can.drawCentredString(306, 381+y_sep, f'{prodPrecio:,.2f}')
-            can.drawCentredString(353, 381+y_sep, f'{prodImporte:,.2f}')
+            can.drawCentredString(49, 381 + y_sep, f'{prodCantidad:,.2f}')
+            can.drawCentredString(306, 381 + y_sep, f'{prodPrecio:,.2f}')
+            can.drawCentredString(353, 381 + y_sep, f'{prodImporte:,.2f}')
 
             estilos['codigo'].fontSize = 10
 
@@ -91,7 +91,7 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
                 if h <= 24:
                     break
                 estilos['codigo'].fontSize -= 0.1
-            text.drawOn(can, 78.4, 398+y_sep-h)
+            text.drawOn(can, 78.4, 398 + y_sep - h)
 
             estilos['especificaciones'].fontSize = 8
 
@@ -103,7 +103,7 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
                 if h <= 24:
                     break
                 estilos['especificaciones'].fontSize -= 0.1
-            text.drawOn(can, 151.2, 396+y_sep-h)
+            text.drawOn(can, 151.2, 396 + y_sep - h)
         # </escribir datos en el canvas>
 
         # guardar cambios y mover puntero de bytes al principio
@@ -118,11 +118,11 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
         page = existing_pdf.pages[0]
         page.merge_page(new_pdf.pages[0])
         writer.add_page(page)
-    
+
     # crear archivo temporal e imprimir
     data = io.BytesIO()
     writer.write(data)
-    
+
     return data
 
 
@@ -142,29 +142,29 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
 
     from reportlab.platypus import (Table, TableStyle, SimpleDocTemplate,
                                     Paragraph, Spacer, Image)
-    
+
     # archivo y directorio temporales
     buffer = io.BytesIO()
 
     doc = SimpleDocTemplate(buffer,
-                            pagesize=(80*mm, 297*mm),
+                            pagesize=(80 * mm, 297 * mm),
                             rightMargin=0, leftMargin=0,
                             topMargin=0, bottomMargin=0)
 
     # Define styles for the document
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name='Center', fontName='Helvetica', 
-                            fontSize=8, alignment=TA_CENTER))
-    styles.add(ParagraphStyle(name='Center_2', fontName='Helvetica', 
-                            fontSize=11, alignment=TA_CENTER))
+    styles.add(ParagraphStyle(name='Center', fontName='Helvetica',
+                              fontSize=8, alignment=TA_CENTER))
+    styles.add(ParagraphStyle(name='Center_2', fontName='Helvetica',
+                              fontSize=11, alignment=TA_CENTER))
     styles.add(ParagraphStyle(name='Left', fontName='Helvetica',
-                            fontSize=8, alignment=TA_LEFT))
+                              fontSize=8, alignment=TA_LEFT))
 
     # contenido del PDF
-    logo = Image('resources/images/logo.png', width=50*mm, height=26.4*mm)
+    logo = Image('resources/images/logo.png', width=50 * mm, height=26.4 * mm)
 
     data = [['CANT.', 'PRODUCTO', 'P/U', 'DESC.', 'TOTAL']]
-    
+
     firma = False
     total_desc = 0
 
@@ -176,12 +176,12 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
             f'{descuento:,.2f}' if descuento > 0 else '',
             f'{importe:,.2f}'
         ])
-        if descuento > 0: 
+        if descuento > 0:
             firma = True
             total_desc += descuento * cantidad
 
     # productos de la compra
-    tabla_productos = Table(data, colWidths=[10*mm, 28*mm, 12*mm, 12*mm, 12*mm])
+    tabla_productos = Table(data, colWidths=[10 * mm, 28 * mm, 12 * mm, 12 * mm, 12 * mm])
 
     tabla_productos.setStyle(TableStyle([
         ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -194,18 +194,18 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
         ('LINEBELOW', (0, 0), (-1, 0), 0.4, colors.black),
         ('LINEBELOW', (0, -1), (-1, -1), 0.4, colors.black)
     ]))
-    
+
     # total a pagar       
     total = sum(importe for _, _, _, _, importe in productos)
     total = round(total, 2)
     pagado = round(pagado, 2)
-    
+
     table2 = [['IMPORTE:', f'{total:,.2f}']]
-    
+
     if pagado:
         table2.extend([['Pagado:', f'{pagado:,.2f}'],
-                    ['Cambio:', f'{pagado-total:,.2f}']])
-    
+                       ['Cambio:', f'{pagado - total:,.2f}']])
+
     table2 = Table(table2, hAlign='RIGHT')
 
     table2.setStyle(TableStyle([
@@ -215,22 +215,22 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ('TOPPADDING', (0, 0), (-1, -1), 0)
     ]))
-    
+
     # elementos dinámicos, según se requieran
     if folio:
         titulo = 'TICKET DE COMPRA'
         pie = '¡Muchas gracias por su compra!'
-        
-        folio= f'<b>Folio de venta</b>: {folio} ' \
-                + '&nbsp; '*7 + f'<b>Método de pago</b>: {metodo_pago}'
+
+        folio = f'<b>Folio de venta</b>: {folio} ' \
+                + '&nbsp; ' * 7 + f'<b>Método de pago</b>: {metodo_pago}'
     else:
         titulo = 'COTIZACIÓN DE VENTA'
         pie = '¡Muchas gracias por su visita!'
         folio = ''
-    
+
     # leer datos de sucursal de archivo de configuración
     from configparser import ConfigParser
-    
+
     config = ConfigParser(inline_comment_prefixes=';')
     config.read('config.ini', encoding='utf8')
     SUCURSAL = config['SUCURSAL']
@@ -247,9 +247,9 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
         Paragraph(SUCURSAL['p3'], styles['Center']),
         Spacer(1, 6),
 
-        Paragraph('* '*40, styles['Center']),
+        Paragraph('* ' * 40, styles['Center']),
         Paragraph(titulo, styles['Center']),
-        Paragraph('* '*40, styles['Center']),
+        Paragraph('* ' * 40, styles['Center']),
         Paragraph(folio, styles['Left']),
         Paragraph(f'<b>Fecha</b>: {formatDate(fechaCreacion)}', styles['Left']),
         Spacer(1, 10),
@@ -258,18 +258,18 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
         Spacer(1, 7),
 
         table2]
-    
+
     elements += [
         Spacer(1, 6),
-        
-        Paragraph(f'¡Hoy se ahorró ${total_desc:,.2f}!', styles['Center_2']), 
+
+        Paragraph(f'¡Hoy se ahorró ${total_desc:,.2f}!', styles['Center_2']),
         Spacer(1, 25),
-        
-        Paragraph('Autoriza descuentos: ' + '_'*24, styles['Left'])] if firma else []
-    
+
+        Paragraph('Autoriza descuentos: ' + '_' * 24, styles['Left'])] if firma else []
+
     elements += [
         Spacer(1, 15),
-        
+
         Paragraph(f'Le atendió: {vendedor}', styles['Center']),
         Paragraph(pie, styles['Center'])]
 
@@ -280,111 +280,112 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
 
 
 def _generarCortePDF(caja: Caja, user: Usuario):
-        """ Función para generar el corte de caja, comprendido entre fechas dadas.
-            Contiene:
-                - Realizado el: (fecha)
-                - Nombre del usuario activo
-                - Fecha inicial y final
-                - Fondo inicial de caja
-                - Tabla de movimientos 
-                    Fecha y hora | Descripción | Método de pago | Cantidad
-                - Tabla de resumen de movimientos
-                    Método de pago -> Ingresos | Egresos """
-        from reportlab.lib.units import mm
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.enums import TA_LEFT
+    """ Función para generar el corte de caja, comprendido entre fechas dadas.
+        Contiene:
+            - Realizado el: (fecha)
+            - Nombre del usuario activo
+            - Fecha inicial y final
+            - Fondo inicial de caja
+            - Tabla de movimientos
+                Fecha y hora | Descripción | Método de pago | Cantidad
+            - Tabla de resumen de movimientos
+                Método de pago -> Ingresos | Egresos """
+    from reportlab.lib.units import mm
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_LEFT
 
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-        
-        buffer = io.BytesIO()
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 
-        doc = SimpleDocTemplate(buffer, pagesize=(80*mm, 297*mm),
-                                topMargin=0., bottomMargin=0.,
-                                leftMargin=0., rightMargin=0.)
+    buffer = io.BytesIO()
 
-        # estilos de párrafos
-        styles = getSampleStyleSheet()
-        styles.add(ParagraphStyle(name='Left', fontName='Helvetica',
-                                  fontSize=9, alignment=TA_LEFT))
-        styles.add(ParagraphStyle(name='Foot', fontName='Helvetica',
-                                  fontSize=11, alignment=TA_LEFT))
-        
-        # cálculos de ingresos
-        ingresos_efectivo = caja.totalIngresos('Efectivo')
-        ingresos_transferencia = caja.totalIngresos('Transferencia')
-        ingresos_credito = caja.totalIngresos('Tarjeta de crédito')
-        ingresos_debito = caja.totalIngresos('Tarjeta de débito')
-        
-        # cálculos de egresos
-        egresos_efectivo = -caja.totalEgresos('Efectivo')
-        egresos_transferencia = -caja.totalEgresos('Transferencia')
-        egresos_credito = -caja.totalEgresos('Tarjeta de crédito')
-        egresos_debito = -caja.totalEgresos('Tarjeta de débito')
-        
-        # totales (todos los métodos)
-        total_efectivo = ingresos_efectivo - egresos_efectivo
-        total_transferencia = ingresos_transferencia - egresos_transferencia
-        total_credito = ingresos_credito - egresos_credito
-        total_debito = ingresos_debito - egresos_debito
-        
-        esperado_ingresos = caja.totalIngresos()
-        esperado_egresos = -caja.totalEgresos()
-        esperado = caja.totalCorte()
-        
-        # elementos para constuir el PDF
-        elements = [
-            Paragraph('Resumen de movimientos de caja', styles['Heading1']),
-            Spacer(1, 6),
-            
-            Paragraph('Realizado por: ' + user.nombre, styles['Left']),
-            Paragraph('Fecha y hora: ' + formatDate(QDateTime.currentDateTime()), styles['Left']),
-            Spacer(1, 6),
-            
-            Paragraph('Resumen de ingresos', styles['Heading3']),
-            Paragraph(f'Efectivo: ${ingresos_efectivo:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(f'Tarjeta de crédito: ${ingresos_credito:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(f'Tarjeta de débito: ${ingresos_debito:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(f'Transferencias bancarias: ${ingresos_transferencia:,.2f}', styles['Left'], bulletText='•'),
-            Spacer(1, 6),
-            
-            Paragraph('Resumen de egresos', styles['Heading3']),
-            Paragraph(f'Efectivo: ${egresos_efectivo:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(f'Tarjeta de crédito: ${egresos_credito:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(f'Tarjeta de débito: ${egresos_debito:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(f'Transferencias bancarias: ${egresos_transferencia:,.2f}', styles['Left'], bulletText='•'),
-            Spacer(1, 6),
-            
-            Paragraph('Esperado', styles['Heading3']),
-            Paragraph(f'Efectivo: ${total_efectivo:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(f'Tarjeta de crédito: ${total_credito:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(f'Tarjeta de débito: ${total_debito:,.2f}', styles['Left'], bulletText='•'),
-            Paragraph(f'Transferencias bancarias: ${total_transferencia:,.2f}', styles['Left'], bulletText='•'),
-            Spacer(1, 20),
-            
-            Paragraph('<b>' + f'Total de ingresos: ${esperado_ingresos:,.2f}' + '</b>', styles['Foot']),
-            Paragraph('<b>' + f'Total de egresos: ${esperado_egresos:,.2f}' + '</b>', styles['Foot']),
-            Paragraph(f'<b>Esperado en caja: ${esperado:,.2f}</b>', styles['Foot']),
-        ]
+    doc = SimpleDocTemplate(buffer, pagesize=(80 * mm, 297 * mm),
+                            topMargin=0., bottomMargin=0.,
+                            leftMargin=0., rightMargin=0.)
 
-        # Build the PDF document
-        doc.build(elements)
-        
-        return buffer
+    # estilos de párrafos
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name='Left', fontName='Helvetica',
+                              fontSize=9, alignment=TA_LEFT))
+    styles.add(ParagraphStyle(name='Foot', fontName='Helvetica',
+                              fontSize=11, alignment=TA_LEFT))
+
+    # cálculos de ingresos
+    ingresos_efectivo = caja.totalIngresos('Efectivo')
+    ingresos_transferencia = caja.totalIngresos('Transferencia')
+    ingresos_credito = caja.totalIngresos('Tarjeta de crédito')
+    ingresos_debito = caja.totalIngresos('Tarjeta de débito')
+
+    # cálculos de egresos
+    egresos_efectivo = -caja.totalEgresos('Efectivo')
+    egresos_transferencia = -caja.totalEgresos('Transferencia')
+    egresos_credito = -caja.totalEgresos('Tarjeta de crédito')
+    egresos_debito = -caja.totalEgresos('Tarjeta de débito')
+
+    # totales (todos los métodos)
+    total_efectivo = ingresos_efectivo - egresos_efectivo
+    total_transferencia = ingresos_transferencia - egresos_transferencia
+    total_credito = ingresos_credito - egresos_credito
+    total_debito = ingresos_debito - egresos_debito
+
+    esperado_ingresos = caja.totalIngresos()
+    esperado_egresos = -caja.totalEgresos()
+    esperado = caja.totalCorte()
+
+    # elementos para constuir el PDF
+    elements = [
+        Paragraph('Resumen de movimientos de caja', styles['Heading1']),
+        Spacer(1, 6),
+
+        Paragraph('Realizado por: ' + user.nombre, styles['Left']),
+        Paragraph('Fecha y hora: ' + formatDate(QDateTime.currentDateTime()), styles['Left']),
+        Spacer(1, 6),
+
+        Paragraph('Resumen de ingresos', styles['Heading3']),
+        Paragraph(f'Efectivo: ${ingresos_efectivo:,.2f}', styles['Left'], bulletText='•'),
+        Paragraph(f'Tarjeta de crédito: ${ingresos_credito:,.2f}', styles['Left'], bulletText='•'),
+        Paragraph(f'Tarjeta de débito: ${ingresos_debito:,.2f}', styles['Left'], bulletText='•'),
+        Paragraph(f'Transferencias bancarias: ${ingresos_transferencia:,.2f}', styles['Left'], bulletText='•'),
+        Spacer(1, 6),
+
+        Paragraph('Resumen de egresos', styles['Heading3']),
+        Paragraph(f'Efectivo: ${egresos_efectivo:,.2f}', styles['Left'], bulletText='•'),
+        Paragraph(f'Tarjeta de crédito: ${egresos_credito:,.2f}', styles['Left'], bulletText='•'),
+        Paragraph(f'Tarjeta de débito: ${egresos_debito:,.2f}', styles['Left'], bulletText='•'),
+        Paragraph(f'Transferencias bancarias: ${egresos_transferencia:,.2f}', styles['Left'], bulletText='•'),
+        Spacer(1, 6),
+
+        Paragraph('Esperado', styles['Heading3']),
+        Paragraph(f'Efectivo: ${total_efectivo:,.2f}', styles['Left'], bulletText='•'),
+        Paragraph(f'Tarjeta de crédito: ${total_credito:,.2f}', styles['Left'], bulletText='•'),
+        Paragraph(f'Tarjeta de débito: ${total_debito:,.2f}', styles['Left'], bulletText='•'),
+        Paragraph(f'Transferencias bancarias: ${total_transferencia:,.2f}', styles['Left'], bulletText='•'),
+        Spacer(1, 20),
+
+        Paragraph('<b>' + f'Total de ingresos: ${esperado_ingresos:,.2f}' + '</b>', styles['Foot']),
+        Paragraph('<b>' + f'Total de egresos: ${esperado_egresos:,.2f}' + '</b>', styles['Foot']),
+        Paragraph(f'<b>Esperado en caja: ${esperado:,.2f}</b>', styles['Foot']),
+    ]
+
+    # Build the PDF document
+    doc.build(elements)
+
+    return buffer
 
 
 class ImpresoraPDF:
     """ Clase general para manejar impresoras y enviar archivos a estas. """
+
     def __init__(self, parent: QWidget = None):
         self.parent = parent
         self.conn = parent.conn
-        
+
         self.printer: QPrinter = None
-    
+
     def escogerImpresora(self):
         """ Diálogo para escoger impresora. En hilo principal. """
         printer = QPrinter(QPrinter.HighResolution)
         dialog = QPrintDialog(printer, self.parent)
-        
+
         if dialog.exec() != QPrintDialog.Accepted:
             return None
         return printer
@@ -392,18 +393,18 @@ class ImpresoraPDF:
     def obtenerImpresoraTickets(self):
         """ Lee impresora de tickets en archivo config. En hilo principal. """
         from utils.mywidgets import WarningDialog
-        
+
         config = ConfigParser(inline_comment_prefixes=';')
         config.read('config.ini')
         printerName = config['IMPRESORAS']['default']
-        
+
         pInfo = QPrinterInfo.printerInfo(printerName)
         if not pInfo.printerName():
             WarningDialog(f'¡No se encontró la impresora {printerName}!')
             return None
-        
+
         return QPrinter(pInfo, QPrinter.HighResolution)
-    
+
     def enviarAImpresora(self, data: io.BytesIO):
         """ Convertir PDF a imagen y mandar a impresora. """
         import fitz
@@ -419,30 +420,31 @@ class ImpresoraPDF:
         for i, page in enumerate(doc):
             if i > 0:
                 self.printer.newPage()
-                
+
             pix = page.get_pixmap(dpi=300)
             qtImage = ImageQt(Image.frombytes("RGB", [pix.w, pix.h], pix.samples))
-            #qtImage.save(f'out{i}.jpg', 'JPEG')
-            
+            # qtImage.save(f'out{i}.jpg', 'JPEG')
+
             rect = painter.viewport()
             qtImageScaled = qtImage.scaled(rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
             painter.drawImage(rect, qtImageScaled)
-        painter.end()        
+        painter.end()
 
 
 class ImpresoraOrdenes(ImpresoraPDF):
     """ Impresora para órdenes de compra. 
         Siempre crea diálogo para escoger impresora. """
+
     def __init__(self, parent: QWidget = None):
         super().__init__(parent)
-        
+
         self.printer = self.escogerImpresora()
-    
+
     @run_in_thread
     def imprimirOrdenCompra(self, idx: int):
         if not self.printer:
             return
-        
+
         manejador = ManejadorVentas(self.conn)
         data = _generarOrdenCompra(manejador, idx)
         self.enviarAImpresora(data)
@@ -451,19 +453,20 @@ class ImpresoraOrdenes(ImpresoraPDF):
 class ImpresoraTickets(ImpresoraPDF):
     """ Impresora para tickets. 
         Intenta leer impresora por defecto del archivo config. """
+
     def __init__(self, parent: QWidget = None):
         super().__init__(parent)
-        
+
         self.printer = self.obtenerImpresoraTickets()
-    
+
     @run_in_thread
     def imprimirTicketCompra(self, idx):
         """ Genera el ticket de compra a partir de un identificador en la base de datos. """
         if not self.printer:
             return
-        
+
         from utils.databasemanagers import ManejadorVentas
-        
+
         # obtener datos de la compra, de la base de datos
         manejador = ManejadorVentas(self.conn)
         productos = manejador.obtenerTablaTicket(idx)
@@ -473,26 +476,29 @@ class ImpresoraTickets(ImpresoraPDF):
         datos = manejador.obtenerVenta(idx)
 
         _, _, _, fechaCreacion, _, _, metodo, _, _, pagado = datos
-        
+
         # cambiar método de pago (abreviatura)
-        if metodo == 'Efectivo': metodo = 'EFEC'
-        elif metodo == 'Transferencia bancaria': metodo = 'TRF'
-        else: metodo = 'TVP'
-        
-        data = _generarTicketPDF(idx, productos, vendedor, 
+        if metodo == 'Efectivo':
+            metodo = 'EFEC'
+        elif metodo == 'Transferencia bancaria':
+            metodo = 'TRF'
+        else:
+            metodo = 'TVP'
+
+        data = _generarTicketPDF(idx, productos, vendedor,
                                  fechaCreacion, pagado, metodo)
         self.enviarAImpresora(data)
-    
+
     @run_in_thread
     def imprimirTicketPresupuesto(self, productos, vendedor):
         """ Genera un ticket para el presupuesto de una compra. """
         if not self.printer:
             return
-        
-        data = _generarTicketPDF(0, productos, vendedor, 
+
+        data = _generarTicketPDF(0, productos, vendedor,
                                  QDateTime.currentDateTime(), 0., None)
         self.enviarAImpresora(data)
-    
+
     @run_in_thread
     def imprimirCorteCaja(self, caja: Caja, user: Usuario):
         """ Genera un ticket para el presupuesto de una compra. """

@@ -10,12 +10,12 @@ from PySide6.QtCore import QThread, Signal
 ##############################################
 class Dialog_ObtenerAdmin(QDialog):
     success = Signal(object)
-    
+
     def __init__(self, parent):
         from PySide6 import QtCore, QtGui, QtWidgets
-        
+
         super().__init__(parent)
-        
+
         self.resize(370, 116)
         self.setFixedSize(QtCore.QSize(370, 116))
         self.setWindowTitle("Atención")
@@ -45,15 +45,16 @@ class Dialog_ObtenerAdmin(QDialog):
         self.buttonBox = QtWidgets.QDialogButtonBox(self)
         self.buttonBox.setFont(font)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
         self.buttonBox.setCenterButtons(True)
         self.formLayout.setWidget(3, QtWidgets.QFormLayout.SpanningRole, self.buttonBox)
 
-        self.buttonBox.accepted.connect(self.accept) # type: ignore
-        self.buttonBox.rejected.connect(self.reject) # type: ignore
+        self.buttonBox.accepted.connect(self.accept)  # type: ignore
+        self.buttonBox.rejected.connect(self.reject)  # type: ignore
         QtCore.QMetaObject.connectSlotsByName(self)
-        
+
         self.show()
+
 
 def requiere_admin(func):
     """ Decorador para solicitar contraseña de administrador
@@ -63,57 +64,59 @@ def requiere_admin(func):
         es devuelto por el decorador para extraer información que se requiera
         de la conexión de administrador, por ejemplo, nombre del administrador. """
     import fdb
-    
+
     from utils.databasemanagers import crear_conexion, ManejadorUsuarios
-    
+
     def accept_handle():
         global dialog
         global parent
-        
+
         usuario = dialog.txtUsuario.text().upper()
         psswd = dialog.txtPsswd.text()
-        
+
         if not (usuario and psswd):
             return
-        
+
         conn = crear_conexion(usuario, psswd, 'ADMINISTRADOR')
-        
+
         if not conn:
             dialog.close()
-            QMessageBox.warning(parent, 'Error', 
+            QMessageBox.warning(parent, 'Error',
                                 'Las credenciales no son válidas para una cuenta de administrador.')
             return
-        
+
         try:
             manejador = ManejadorUsuarios(conn, handle_exceptions=False)
             manejador.obtenerUsuario(usuario)
         except fdb.Error:
             dialog.close()
-            QMessageBox.warning(parent, 'Error', 
+            QMessageBox.warning(parent, 'Error',
                                 'Las credenciales no son válidas para una cuenta de administrador.')
         else:
             dialog.close()
             dialog.success.emit(conn)
             conn.close()
-    
+
     @wraps(func)
     def wrapper_decorator(*args, **kwargs):
         global dialog
         global parent
-        
-        parent = args[0]    # QMainWindow (módulo) actual
-        
+
+        parent = args[0]  # QMainWindow (módulo) actual
+
         if parent.user.administrador:
             func(*args, **kwargs, conn=parent.conn)
             return
-        
+
         dialog = Dialog_ObtenerAdmin(parent)
         dialog.accept = accept_handle
         dialog.success.connect(lambda conn: func(*args, **kwargs, conn=conn))
-        
+
         dialog.show()
-        
+
     return wrapper_decorator
+
+
 ###############################################
 # </DECORADOR PARA SOLICITAR CUENTA DE ADMIN> #
 ###############################################
@@ -135,8 +138,10 @@ class Runner(QThread):
         self._target(*self._args, **self._kwargs)
         self.success.emit()
 
+
 def run_in_thread(func):
     """ Decorador para ejecutar alguna función dada en otro hilo. """
+
     @wraps(func)
     def async_func(*args, **kwargs):
         runner = Runner(func, *args, **kwargs)
@@ -147,6 +152,8 @@ def run_in_thread(func):
         runner.start()
 
     return async_func
+
+
 #########################################
 # </DECORADOR PARA EEJCUTAR EN QTHREAD> #
 #########################################
@@ -158,17 +165,17 @@ def con_fondo(modulo):
 
     def __init__(self, *args, **kws):
         from utils.mywidgets import DimBackground
-        
+
         orig_init(self, *args, **kws)
-        
-        parent = args[0]   # QMainWindow, parent widget
+
+        parent = args[0]  # QMainWindow, parent widget
         parent.bg = DimBackground(parent)
-    
+
     def closeEvent(self, event):
         self.parentWidget().bg.close()
         event.accept()
 
     modulo.__init__ = __init__
     modulo.closeEvent = closeEvent
-    
+
     return modulo

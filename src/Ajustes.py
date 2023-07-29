@@ -12,25 +12,26 @@ class App_Ajustes(QtWidgets.QMainWindow):
     """
     Backend para la ventana de administración de ventas.
     """
+
     def __init__(self, parent):
         from ui.Ui_Ajustes import Ui_Ajustes
-        
+
         super().__init__()
 
         self.ui = Ui_Ajustes()
         self.ui.setupUi(self)
-        
+
         self.session = parent.session  # conexión a la base de datos y usuario actual
-        
+
         # crear eventos para los botones
         self.ui.lbRegresar.mousePressEvent = self.goHome
-    
+
     def goHome(self, _):
         """
         Cierra la ventana y regresa a Home.
         """
         from Home import App_Home
 
-        parent = self.parentWidget()       # QMainWindow
+        parent = self.parentWidget()  # QMainWindow
         new = App_Home(parent)
         parent.setCentralWidget(new)
