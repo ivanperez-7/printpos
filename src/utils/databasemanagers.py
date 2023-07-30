@@ -139,6 +139,8 @@ class ManejadorCaja(DatabaseManager):
             FROM 	Caja AS C
                     LEFT JOIN Usuarios AS U
                            ON C.id_usuarios = U.id_usuarios
+                    LEFT JOIN metodos_pago AS MP
+                           ON C.id_metodo_pago = MP.id_metodo_pago
             WHERE   ? <= CAST(fecha_hora AS DATE)
                     AND CAST(fecha_hora AS DATE) <= ?
             ORDER   BY fecha_hora DESC;
@@ -158,8 +160,8 @@ class ManejadorCaja(DatabaseManager):
             Hace commit automáticamente, a menos que se indique lo contrario. """
         return self.execute('''
             INSERT INTO Caja (
-                fecha_hora, monto,
-                descripcion, metodo, id_usuarios
+                fecha_hora, monto, descripcion,
+                id_metodo_pago, id_usuarios
             )
             VALUES
                 (?,?,?,?,?);
