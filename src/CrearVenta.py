@@ -903,6 +903,7 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         
         self.first = first
+        self.conn = first.conn
         
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)

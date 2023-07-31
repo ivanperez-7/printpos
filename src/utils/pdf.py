@@ -3,7 +3,8 @@ import io
 from configparser import ConfigParser
 
 from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import QDateTime
+from PySide6.QtCore import QDateTime, Qt
+from PySide6.QtGui import QPainter, QImage
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 
 from Caja import Caja
@@ -143,7 +144,7 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
     from reportlab.platypus import (Table, TableStyle, SimpleDocTemplate,
                                     Paragraph, Spacer, Image)
     
-    # archivo y directorio temporales
+    # archivo temporal
     buffer = io.BytesIO()
     
     doc = SimpleDocTemplate(buffer,
@@ -408,26 +409,22 @@ class ImpresoraPDF:
     def enviarAImpresora(self, data: io.BytesIO):
         """ Convertir PDF a imagen y mandar a impresora. """
         import fitz
-        from PIL import Image
-        from PIL.ImageQt import ImageQt
-        from PySide6.QtCore import Qt
-        from PySide6.QtGui import QPainter
         
         doc = fitz.open('pdf', data)
         painter = QPainter()
         painter.begin(self.printer)
         
         for i, page in enumerate(doc):
-            if i > 0:
-                self.printer.newPage()
-            
-            pix = page.get_pixmap(dpi=300)
-            qtImage = ImageQt(Image.frombytes("RGB", [pix.w, pix.h], pix.samples))
-            # qtImage.save(f'out{i}.jpg', 'JPEG')
+            pix: fitz.Pixmap = page.get_pixmap(dpi=300, alpha=False)
+            image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
+            # image.save(f'out{i}.jpg')
             
             rect = painter.viewport()
-            qtImageScaled = qtImage.scaled(rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            qtImageScaled = image.scaled(rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
             painter.drawImage(rect, qtImageScaled)
+            
+            if i > 0:
+                self.printer.newPage()
         painter.end()
 
 
@@ -465,8 +462,6 @@ class ImpresoraTickets(ImpresoraPDF):
         if not self.printer:
             return
         
-        from utils.databasemanagers import ManejadorVentas
-        
         # obtener datos de la compra, de la base de datos
         manejador = ManejadorVentas(self.conn)
         productos = manejador.obtenerTablaTicket(idx)
@@ -478,15 +473,13 @@ class ImpresoraTickets(ImpresoraPDF):
         _, _, _, fechaCreacion, _, _, metodo, _, _, pagado = datos
         
         # cambiar método de pago (abreviatura)
-        if metodo == 'Efectivo':
-            metodo = 'EFEC'
-        elif metodo == 'Transferencia bancaria':
-            metodo = 'TRF'
-        else:
-            metodo = 'TVP'
+        abrev = {'Efectivo': 'EFEC',
+                 'Transferencia bancaria': 'TRF',
+                 'Tarjeta de crédito': 'TVP',
+                 'Tarjeta de débito': 'TVP'}
         
         data = _generarTicketPDF(idx, productos, vendedor,
-                                 fechaCreacion, pagado, metodo)
+                                 fechaCreacion, pagado, abrev[metodo])
         self.enviarAImpresora(data)
     
     @run_in_thread
