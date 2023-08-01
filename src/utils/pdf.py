@@ -127,7 +127,8 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
     return data
 
 
-def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_pago):
+def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, float]],
+                      vendedor: str, fechaCreacion: QDateTime, pagado: float, metodo_pago: str):
     """ Función abstracta para generar el ticket de compra o presupuesto.
         Contiene:
             - Logo
@@ -230,8 +231,6 @@ def _generarTicketPDF(folio, productos, vendedor, fechaCreacion, pagado, metodo_
         folio = ''
     
     # leer datos de sucursal de archivo de configuración
-    from configparser import ConfigParser
-    
     config = ConfigParser(inline_comment_prefixes=';')
     config.read('config.ini', encoding='utf8')
     SUCURSAL = config['SUCURSAL']
@@ -378,8 +377,6 @@ class ImpresoraPDF:
     
     def __init__(self, parent: QWidget = None):
         self.parent = parent
-        self.conn = parent.conn
-        
         self.printer: QPrinter = None
     
     def escogerImpresora(self):
@@ -410,12 +407,12 @@ class ImpresoraPDF:
         """ Convertir PDF a imagen y mandar a impresora. """
         import fitz
         
-        doc = fitz.open('pdf', data)
+        doc = fitz.open(stream=data)
         painter = QPainter()
         painter.begin(self.printer)
         
         for i, page in enumerate(doc):
-            pix: fitz.Pixmap = page.get_pixmap(dpi=300, alpha=False)
+            pix = page.get_pixmap(dpi=300, alpha=False)
             image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
             # image.save(f'out{i}.jpg')
             
@@ -426,6 +423,11 @@ class ImpresoraPDF:
             if i > 0:
                 self.printer.newPage()
         painter.end()
+    
+    def __repr__(self):
+        if self.printer is None:
+            return 'Manejador de PDF sin impresora inicializada.'
+        return f'Manejador de PDF con impresora {self.printer.printerName()}.'
 
 
 class ImpresoraOrdenes(ImpresoraPDF):
@@ -435,6 +437,7 @@ class ImpresoraOrdenes(ImpresoraPDF):
     def __init__(self, parent: QWidget = None):
         super().__init__(parent)
         
+        self.conn = parent.conn
         self.printer = self.escogerImpresora()
     
     @run_in_thread
@@ -454,6 +457,7 @@ class ImpresoraTickets(ImpresoraPDF):
     def __init__(self, parent: QWidget = None):
         super().__init__(parent)
         
+        self.conn = parent.conn
         self.printer = self.obtenerImpresoraTickets()
     
     @run_in_thread
@@ -483,7 +487,7 @@ class ImpresoraTickets(ImpresoraPDF):
         self.enviarAImpresora(data)
     
     @run_in_thread
-    def imprimirTicketPresupuesto(self, productos, vendedor):
+    def imprimirTicketPresupuesto(self, productos: list[tuple], vendedor: str):
         """ Genera un ticket para el presupuesto de una compra. """
         if not self.printer:
             return

@@ -2,7 +2,7 @@
 from functools import wraps
 
 from PySide6.QtWidgets import QMessageBox, QDialog
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
 
 ##############################################
@@ -125,31 +125,22 @@ def requiere_admin(func):
 ########################################
 # <DECORADOR PARA EEJCUTAR EN QTHREAD> #
 ########################################
-class Runner(QThread):
-    success = Signal()
-    
-    def __init__(self, target, *args, **kwargs):
+class Runner(QRunnable):
+    def __init__(self, func, *args, **kwargs):
         super().__init__()
-        self._target = target
+        self._func = func
         self._args = args
         self._kwargs = kwargs
     
     def run(self):
-        self._target(*self._args, **self._kwargs)
-        self.success.emit()
-
-
+        self._func(*self._args, **self._kwargs)
+    
 def run_in_thread(func):
     """ Decorador para ejecutar alguna función dada en otro hilo. """
-    
     @wraps(func)
     def async_func(*args, **kwargs):
-        runner = Runner(func, *args, **kwargs)
-        runner.success.connect(runner.quit)
-        runner.success.connect(runner.deleteLater)
-        # Keep the runner somewhere or it will be destroyed
-        func.__runner = runner
-        runner.start()
+        task = Runner(func, *args, **kwargs)
+        QThreadPool.globalInstance().start(task)
     
     return async_func
 

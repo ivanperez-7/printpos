@@ -1,7 +1,5 @@
 """ ARCHIVO PRINCIPAL.
     Inicia una QApplication y abre la ventana de iniciar sesión. """
-import os
-
 from PySide6.QtWidgets import QApplication
 
 from Login import App_Login
