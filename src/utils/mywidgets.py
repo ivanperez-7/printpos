@@ -1,6 +1,4 @@
-"""
-Módulo con widgets personalizados varios.
-"""
+""" Módulo con widgets personalizados varios. """
 from typing import Callable
 
 import fdb

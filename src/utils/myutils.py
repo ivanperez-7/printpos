@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import SupportsFloat
 
-from PySide6.QtCore import QDateTime
+from PySide6.QtCore import QDateTime, QThread
 
 from utils.mydecorators import run_in_thread
 
@@ -12,6 +12,24 @@ class ColorsEnum:
     VERDE = 0xB2FFAE
     AMARILLO = 0xFDFDA9
     ROJO = 0xFFB2AE
+
+
+class Runner(QThread):
+    """ Clase derivada de QThread para manejar manualmente cuándo un hilo comienza y termina.
+        Para manejo automático, usar decorador run_in_thread. """
+    
+    def __init__(self, target, *args, **kwargs):
+        super().__init__()
+        self._target = target
+        self._args = args
+        self._kwargs = kwargs
+    
+    def run(self):
+        self._target(*self._args, **self._kwargs)
+    
+    def stop(self):
+        self.terminate()
+        self.wait()
 
 
 def clamp(value, smallest, largest) -> SupportsFloat:

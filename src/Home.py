@@ -163,8 +163,7 @@ class App_Home(QtWidgets.QMainWindow):
 ##################################
 # VENTANA PARA CONSULTAR PRECIOS #
 ##################################
-from utils.mydecorators import Runner
-from utils.myutils import son_similar
+from utils.myutils import son_similar, Runner
 from utils.mywidgets import LabelAdvertencia
 
 
@@ -211,18 +210,15 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         self.dataChanged.connect(
             lambda: self.update_display(True))
         
-        # evento de Firebird para escuchar cambios en productos
-        self.events = principal.conn.event_conduit(['cambio_productos'])
-        self.events.begin()
-        
-        # crear QThread manualmente, para poder destruirlo al cerrar ventana
-        self.eventReader = Runner(self.listenEvents)
-        self.eventReader.success.connect(self.eventReader.quit)
-        self.eventReader.success.connect(self.eventReader.deleteLater)
-        self.eventReader.start()
-        
         self.ui.tabla_seleccionar.configurarCabecera(lambda col: col != 1)
         self.ui.tabla_granformato.configurarCabecera(lambda col: col != 1)
+        
+        # eventos de Firebird para escuchar cambios en tabla productos
+        self.events = principal.conn.event_conduit(['cambio_productos'])
+        self.events.begin()
+        # crear QThread manualmente, para poder destruirlo al cerrar ventana
+        self.eventReader = Runner(self.listenEvents)
+        self.eventReader.start()
         
         self.showMinimized()
     
@@ -235,8 +231,7 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
         else:
             # no recomendado generalmente para terminar hilos, sin embargo
             # esta vez se puede hacer así al no ser una función crítica.
-            self.eventReader.terminate()
-            self.eventReader.wait()
+            self.eventReader.stop()
             self.events.close()
             event.accept()
     
