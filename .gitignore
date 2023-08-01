@@ -6,8 +6,9 @@ Lib/
 Scripts/
 # configuración del entorno
 pyvenv.cfg
-# carpeta de configuración idea
+# carpetas de configuración IDE
 .idea/
+.vscode/
 
 # archivo de recursos compilados
 resources_rc.py
