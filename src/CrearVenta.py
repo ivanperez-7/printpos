@@ -324,8 +324,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             celular=self.ui.txtTelefono.text(),
             correo=self.ui.txtCorreo.text()
         )
-        self.new.success.connect(
-            lambda nombre, tel, correo: self.establecerCliente(nombre, tel, correo))
+        self.new.success.connect(self.establecerCliente)
     
     def agregarProducto(self):
         """ Abre ventana para agregar un producto a la orden. """
@@ -406,8 +405,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
                 from AdministrarClientes import App_EditarCliente
                 
                 self.new = App_EditarCliente(self, cliente[id])
-                self.new.success.connect(
-                    lambda nombre, tel, correo: self.establecerCliente(nombre, tel, correo))
+                self.new.success.connect(self.establecerCliente)
                 
                 qm.warning(self, '¡Atención!',
                            'El cliente no tiene completos sus datos para la factura.\n'
