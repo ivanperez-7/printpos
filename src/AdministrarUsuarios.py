@@ -141,8 +141,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           'Los usuarios seleccionados se darán '
-                          'de baja del sistema. ¿Desea continuar?',
-                          qm.Yes | qm.No)
+                          'de baja del sistema. ¿Desea continuar?')
         
         if ret != qm.Yes:
             return

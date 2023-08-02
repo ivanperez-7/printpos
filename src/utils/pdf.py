@@ -17,15 +17,18 @@ from utils.myutils import chunkify, formatDate
 class ImpresoraPDF:
     """ Clase general para manejar impresoras y enviar archivos a estas. """
     
-    def __init__(self, parent: QWidget = None):
-        self.parent = parent
+    def __init__(self):
         self.printer: QPrinter = None
     
     @staticmethod
     def escogerImpresora(parent=None):
         """ Diálogo para escoger impresora. En hilo principal. """
         printer = QPrinter(QPrinter.HighResolution)
+        
         dialog = QPrintDialog(printer, parent)
+        opts = QPrintDialog.PrintDialogOption
+        dialog.setOption(opts.PrintToFile, False)
+        dialog.setOption(opts.PrintPageRange, False)
         
         if dialog.exec() != QPrintDialog.Accepted:
             return None
@@ -79,7 +82,7 @@ class ImpresoraOrdenes(ImpresoraPDF):
         Siempre crea diálogo para escoger impresora. """
     
     def __init__(self, parent: QWidget = None):
-        super().__init__(parent)
+        super().__init__()
         
         self.conn = parent.conn
         self.printer = self.escogerImpresora(parent)
@@ -99,7 +102,7 @@ class ImpresoraTickets(ImpresoraPDF):
         Intenta leer impresora por defecto del archivo config. """
     
     def __init__(self, parent: QWidget = None):
-        super().__init__(parent)
+        super().__init__()
         
         self.conn = parent.conn
         self.printer = self.obtenerImpresoraTickets()

@@ -190,8 +190,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           'Los clientes seleccionados se eliminarán de la base de datos. '
-                          '¿Desea continuar?',
-                          qm.Yes | qm.No)
+                          '¿Desea continuar?')
         
         if ret != qm.Yes:
             return
