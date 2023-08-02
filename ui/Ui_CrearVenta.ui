@@ -730,6 +730,9 @@
                <property name="editTriggers">
                 <set>QAbstractItemView::DoubleClicked</set>
                </property>
+                  <property name="selectionMode">
+                      <enum>QAbstractItemView::MultiSelection</enum>
+                  </property>
                <attribute name="horizontalHeaderMinimumSectionSize">
                 <number>80</number>
                </attribute>

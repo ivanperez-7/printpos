@@ -38,6 +38,13 @@ class ItemVenta:
         """ Regresa el total de descuentos (descuento * cantidad). """
         return self.descuento_unit * self.cantidad
     
+    @classmethod
+    def generarItemComision(cls, importe: float, porcentaje: float):
+        """ Generar item de comisión por pago con tarjeta """
+        return cls(0, 'COMISION', 1., 0.,
+                   importe * porcentaje / 100,
+                   'COMISIÓN POR PAGO CON TARJETA', False)
+    
     def __iter__(self):
         """ Regresa iterable para alimentar las tablas de productos.
             Cantidad | Código | Especificaciones | Precio | Descuento | Importe """
@@ -47,29 +54,22 @@ class ItemVenta:
                      self.precio_unit,
                      self.descuento_unit,
                      self.importe))
-    
-    @classmethod
-    def generarItemComision(cls, importe: float, porcentaje: float):
-        """ Generar item de comisión por pago con tarjeta """
-        return cls(0, 'COMISION', 1., 0.,
-                   importe * porcentaje / 100,
-                   'COMISIÓN POR PAGO CON TARJETA', False)
 
 
 @dataclass
 class ItemGranFormato(ItemVenta):
     """ Clase para un producto de tipo gran formato.
         Reimplementa el método `importe` y `total_descuentos`. """
-    min_m2: float
+    _min_m2: float
     
     @property
     def importe(self) -> float:
-        cantidad = max(self.min_m2, self.cantidad)
+        cantidad = max(self._min_m2, self.cantidad)
         return (self.precio_unit - self.descuento_unit) * cantidad
     
     @property
     def total_descuentos(self) -> float:
-        cantidad = max(self.min_m2, self.cantidad)
+        cantidad = max(self._min_m2, self.cantidad)
         return self.descuento_unit * cantidad
 
 
@@ -215,6 +215,12 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         if item.column() == 2:
             self.ventaDatos.productos[item.row()].notas = item.text()
     
+    def establecerCliente(self, nombre: str, telefono: str, correo: str):
+        """ Atajo para modificar datos del cliente seleccionado. """
+        self.ui.txtCliente.setText(nombre)
+        self.ui.txtTelefono.setText(telefono)
+        self.ui.txtCorreo.setText(correo)
+    
     def actualizarLabelFecha(self):
         """ Actualizar widget de fecha de entrega:
             label y botón de deshacer. """
@@ -319,10 +325,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             correo=self.ui.txtCorreo.text()
         )
         self.new.success.connect(
-            lambda nombre, tel, correo:
-            self.ui.txtCliente.setText(nombre)
-            or self.ui.txtTelefono.setText(tel)
-            or self.ui.txtCorreo.setText(correo))
+            lambda nombre, tel, correo: self.establecerCliente(nombre, tel, correo))
     
     def agregarProducto(self):
         """ Abre ventana para agregar un producto a la orden. """
@@ -337,8 +340,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
-                          '¿Desea descartar de la venta los productos seleccionados?',
-                          qm.Yes | qm.No)
+                          '¿Desea descartar de la venta los productos seleccionados?')
         
         if ret == qm.Yes:
             self._quitarProducto(selected)
@@ -405,10 +407,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
                 
                 self.new = App_EditarCliente(self, cliente[id])
                 self.new.success.connect(
-                    lambda nombre, tel, correo:
-                    self.ui.txtCliente.setText(nombre)
-                    or self.ui.txtTelefono.setText(tel)
-                    or self.ui.txtCorreo.setText(correo))
+                    lambda nombre, tel, correo: self.establecerCliente(nombre, tel, correo))
                 
                 qm.warning(self, '¡Atención!',
                            'El cliente no tiene completos sus datos para la factura.\n'
@@ -419,8 +418,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         # ahora se checa el monto total de la venta
         ret = qm.question(self, 'Concluir venta',
                           'Verifique todos los datos ingresados.\n'
-                          '¿Desea concluir la venta?',
-                          qm.Yes | qm.No)
+                          '¿Desea concluir la venta?')
         
         if ret == qm.Yes:
             self.ventaDatos.id_cliente = cliente[id]
@@ -734,9 +732,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
         telefono = selected[1].text()
         correo = selected[2].text()
         
-        self.first.ui.txtCliente.setText(nombre)
-        self.first.ui.txtTelefono.setText(telefono)
-        self.first.ui.txtCorreo.setText(correo)
+        self.first.establecerCliente(nombre, telefono, correo)
         
         # checar si el cliente es especial
         manejador = ManejadorClientes(self.conn)
@@ -1163,7 +1159,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             qm = QtWidgets.QMessageBox
             ret = qm.question(self, 'Atención',
                               'El anticipo está por debajo del 50% del total de compra.\n'
-                              '¿Desea continuar?', qm.Yes | qm.No)
+                              '¿Desea continuar?')
             if ret == qm.Yes:
                 self.terminarVentaAdmin()
         else:
@@ -1221,8 +1217,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         else:
             ret = qm.question(self, 'Éxito',
                               'Venta terminada. ¡Recuerde ofrecer el ticket de compra! '
-                              '¿Desea imprimirlo?',
-                              qm.Yes | qm.No)
+                              '¿Desea imprimirlo?')
             if ret == qm.Yes:
                 impresora = ImpresoraTickets(self)
                 impresora.imprimirTicketCompra(self.id_ventas)
@@ -1234,8 +1229,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         qm = QtWidgets.QMessageBox
         
         ret = qm.question(self, 'Atención',
-                          '¿Desea cancelar la venta? Esta acción no puede deshacerse.',
-                          qm.Yes | qm.No)
+                          '¿Desea cancelar la venta? Esta acción no puede deshacerse.')
         if ret == qm.Yes:
             self._abortar()
     

@@ -259,16 +259,15 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                 # resaltar pedidos con fechas de entrega ya pasadas
                 if QDateTime.currentDateTime() > compra[4]:
                     tabla.item(row, 4).setBackground(QColor(ColorsEnum.ROJO))
-                    
-                    # ====================================
     
+    # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def enviarRecordatorio(self):
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           '¿Desea enviarle un recordatorio al cliente sobre '
-                          'este pedido?', qm.Yes | qm.No)
+                          'este pedido?')
         
         if ret != qm.Yes:
             return
@@ -283,7 +282,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         mensaje = ' '.join([
             f'*Apreciable {nombre}*:\nLe informamos que ya puede pasar a Printcopy',
             f'a recoger su pedido con folio {idVenta}. ¡Recuerde traer su orden de compra',
-            f'para concretar el pedido!\n\n¡Esperamos verle pronto! 😊'
+            'para concretar el pedido!\n\n¡Esperamos verle pronto! 😊'
         ])
         
         enviarWhatsApp(celular, mensaje)
@@ -309,7 +308,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           'Este pedido no tiene saldo restante. '
-                          '¿Desea marcar la venta como terminada?', qm.Yes | qm.No)
+                          '¿Desea marcar la venta como terminada?')
         
         if ret != qm.Yes:
             return
@@ -336,7 +335,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           'La venta seleccionada se marcará como cancelada.\n'
-                          'Esta operación no se puede deshacer. ¿Desea continuar?', qm.Yes | qm.No)
+                          'Esta operación no se puede deshacer. ¿Desea continuar?')
         
         if ret != qm.Yes:
             return
@@ -367,7 +366,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           'Se imprimirá el ticket de compra de la venta '
-                          f'con folio {idVenta}. ¿Desea continuar?', qm.Yes | qm.No)
+                          f'con folio {idVenta}. ¿Desea continuar?')
         
         if ret == qm.Yes:
             impresora = ImpresoraTickets(self)
@@ -386,7 +385,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           'Se imprimirá la orden de compra de la venta '
-                          f'con folio {idVenta}. ¿Desea continuar?', qm.Yes | qm.No)
+                          f'con folio {idVenta}. ¿Desea continuar?')
         
         if ret == qm.Yes:
             impresora = ImpresoraOrdenes(self)

@@ -143,7 +143,7 @@ class App_Home(QtWidgets.QMainWindow):
         
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Iniciar venta',
-                          '¿Desea iniciar una nueva venta?', qm.Yes | qm.No)
+                          '¿Desea iniciar una nueva venta?')
         
         if ret == qm.Yes:
             self.crearVentana(App_CrearVenta)

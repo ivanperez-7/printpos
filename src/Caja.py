@@ -17,7 +17,7 @@ from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 @dataclass
 class Movimiento:
     """ Clase para mantener registro de un movimiento en la caja. """
-    fecha_hora: datetime  # tipo de dato recibido por la DB
+    fecha_hora: datetime
     monto: float
     descripcion: str
     metodo: str
@@ -207,8 +207,7 @@ class App_Caja(QtWidgets.QMainWindow):
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           'Se procederá a imprimir el corte de caja entre '
-                          'las fechas proporcionadas. \n¿Desea continuar?',
-                          qm.Yes | qm.No)
+                          'las fechas proporcionadas. \n¿Desea continuar?')
         
         if ret == qm.Yes:
             from utils.pdf import ImpresoraTickets
