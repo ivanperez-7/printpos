@@ -5,7 +5,7 @@ from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QDateTime
 from PySide6.QtGui import QFont
 
-from utils.databasemanagers import ManejadorCaja
+from utils.sql import ManejadorCaja
 from utils.myinterfaces import InterfazFechas
 from utils.myutils import formatDate
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -228,11 +228,8 @@ class App_Caja(QtWidgets.QMainWindow):
     
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
-        from Home import App_Home
-        
-        parent = self.parentWidget()  # QMainWindow
-        new = App_Home(parent)
-        parent.setCentralWidget(new)
+        parent: VentanaPrincipal = self.parentWidget()
+        parent.goHome()
 
 
 #################################
@@ -258,6 +255,8 @@ class Dialog_Registrar(QtWidgets.QDialog):
         
         self.setFixedSize(525, 160)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        self.setModal(True)
+        self.setWindowModality(Qt.ApplicationModal)
         formLayout = QtWidgets.QFormLayout(self)
         formLayout.setHorizontalSpacing(25)
         formLayout.setVerticalSpacing(9)

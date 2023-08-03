@@ -62,7 +62,7 @@ class App_Login(QtWidgets.QMainWindow):
     @run_in_thread
     def verificar_info(self):
         """ Verifica datos ingresados consultando la tabla Usuarios. """
-        from utils.databasemanagers import crear_conexion, ManejadorUsuarios
+        from utils.sql import crear_conexion, ManejadorUsuarios
         
         self.lock = True
         

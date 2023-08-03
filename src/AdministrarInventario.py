@@ -4,7 +4,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QPixmap, QIcon, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QRegularExpression, Signal
 
-from utils.databasemanagers import ManejadorInventario, ManejadorProductos
+from utils.sql import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import con_fondo
 from utils.myutils import ColorsEnum, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -105,26 +105,10 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def surtirExistencias(self):
-        Dialog = ExistenciasWidget(self)
+        idx = self.ui.tabla_inventario.selectedItems()[0].text()
         
-        def accept_handle():
-            selected = self.ui.tabla_inventario.selectedItems()
-            
-            try:
-                idx = int(selected[0].text())
-                num_lotes = float(Dialog.cantidadLotes)
-            except ValueError:
-                return
-            
-            manejador = ManejadorInventario(self.conn)
-            if not manejador.agregarLotes(idx, num_lotes):
-                return
-            
-            self.update_display(rescan=True)
-            Dialog.close()
-        
-        Dialog.accept = accept_handle
-        Dialog.show()
+        self.Dialog = ExistenciasWidget(self, idx)
+        self.Dialog.success.connect(lambda: self.update_display(rescan=True))
     
     def agregarInventario(self):
         self.new = App_RegistrarInventario(self)
@@ -175,11 +159,8 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
     
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
-        from Home import App_Home
-        
-        parent = self.parentWidget()  # QMainWindow
-        new = App_Home(parent)
-        parent.setCentralWidget(new)
+        parent: VentanaPrincipal = self.parentWidget()
+        parent.goHome()
 
 
 #################################
@@ -454,14 +435,20 @@ class WidgetProducto(QtWidgets.QWidget):
 
 
 class ExistenciasWidget(QtWidgets.QDialog):
-    def __init__(self, first: App_AdministrarInventario):
+    success = Signal()
+    
+    def __init__(self, first: App_AdministrarInventario, idx):
         from PySide6 import QtCore
         
         super().__init__(parent=first)
+        self.conn = first.conn
+        self.idx = idx
         
         self.resize(354, 84)
         self.setWindowTitle("Surtir existencias")
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        self.setModal(True)
+        self.setWindowModality(Qt.ApplicationModal)
         gridLayout = QtWidgets.QGridLayout(self)
         gridLayout.setContentsMargins(-1, -1, -1, 9)
         label = QtWidgets.QLabel(self)
@@ -488,10 +475,25 @@ class ExistenciasWidget(QtWidgets.QDialog):
         buttonBox.accepted.connect(self.accept)  # type: ignore
         buttonBox.rejected.connect(self.reject)  # type: ignore
         QtCore.QMetaObject.connectSlotsByName(self)
+        self.show()
         
         # guardar widgets importantes como atributos
         self.txtCantidad = txtCantidad
     
     @property
     def cantidadLotes(self):
-        return self.txtCantidad.text()
+        try:
+            return float(self.txtCantidad.text())
+        except ValueError:
+            return 0.
+    
+    def accept(self):
+        if not (num_lotes := self.cantidadLotes):
+            return
+        
+        manejador = ManejadorInventario(self.conn)
+        if not manejador.agregarLotes(self.idx, num_lotes):
+            return
+        
+        self.success.emit()
+        self.close()

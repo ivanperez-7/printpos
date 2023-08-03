@@ -6,8 +6,8 @@ from PySide6 import QtWidgets
 from PySide6.QtCore import QDate, QDateTime, QRegularExpression, QPropertyAnimation, QRect, QEasingCurve
 from PySide6.QtGui import QRegularExpressionValidator
 
-from utils.databasemanagers import (ManejadorCaja, ManejadorClientes,
-                                    ManejadorProductos, ManejadorVentas)
+from utils.sql import (ManejadorCaja, ManejadorClientes,
+                       ManejadorProductos, ManejadorVentas)
 from utils.mydecorators import con_fondo, requiere_admin
 from utils.myutils import clamp, enviarWhatsApp, formatDate, son_similar
 from utils.mywidgets import DimBackground, LabelAdvertencia, VentanaPrincipal
@@ -428,11 +428,9 @@ class App_CrearVenta(QtWidgets.QMainWindow):
     
     @requiere_admin
     def goHome(self, conn):
-        from Home import App_Home
-        
-        parent: VentanaPrincipal = self.parentWidget()  # QMainWindow
-        new = App_Home(parent)
-        parent.setCentralWidget(new)
+        """ Cierra la ventana y regresa al inicio. """
+        parent: VentanaPrincipal = self.parentWidget()
+        parent.goHome()
 
 
 #################################
@@ -1233,7 +1231,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
     
     @requiere_admin
     def _abortar(self, conn):
-        from utils.databasemanagers import DatabaseManager
+        from utils.sql import DatabaseManager
         
         manejadorVentas = ManejadorVentas(self.conn)
         manejadorAdmin = DatabaseManager(conn)
@@ -1246,12 +1244,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
     
     def goHome(self):
         """ Cierra la ventana y crea otra venta. """
-        from Home import App_Home
-        
         parent: VentanaPrincipal = self.parentWidget().parentWidget()
-        new = App_Home(parent)
-        parent.setCentralWidget(new)
-        
+        parent.goHome()
         self.close()
 
 

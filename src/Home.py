@@ -112,7 +112,7 @@ class App_Home(QtWidgets.QMainWindow):
     
     def agregarNotificaciones(self):
         """ Llena la caja de notificaciones. """
-        from utils.databasemanagers import ManejadorInventario, ManejadorVentas
+        from utils.sql import ManejadorInventario, ManejadorVentas
         
         items = []
         manejador = ManejadorVentas(self.conn)
@@ -173,7 +173,7 @@ class App_ConsultarPrecios(QtWidgets.QMainWindow):
     dataChanged = Signal()  # señal para actualizar tabla en hilo principal
     
     def __init__(self, principal: VentanaPrincipal):
-        from utils.databasemanagers import ManejadorProductos
+        from utils.sql import ManejadorProductos
         from ui.Ui_ConsultarPrecios import Ui_ConsultarPrecios
         
         super().__init__()

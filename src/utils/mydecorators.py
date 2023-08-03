@@ -65,7 +65,7 @@ def requiere_admin(func):
         de la conexión de administrador, por ejemplo, nombre del administrador. """
     import fdb
     
-    from utils.databasemanagers import crear_conexion, ManejadorUsuarios
+    from utils.sql import crear_conexion, ManejadorUsuarios
     
     def accept_handle():
         global dialog

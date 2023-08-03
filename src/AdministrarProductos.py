@@ -4,7 +4,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QPixmap, QIcon, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QRegularExpression, Signal
 
-from utils.databasemanagers import ManejadorInventario, ManejadorProductos
+from utils.sql import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import con_fondo
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import ColorsEnum, son_similar
@@ -156,11 +156,8 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
     
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
-        from Home import App_Home
-        
-        parent = self.parentWidget()  # QMainWindow
-        new = App_Home(parent)
-        parent.setCentralWidget(new)
+        parent: VentanaPrincipal = self.parentWidget()
+        parent.goHome()
 
 
 #################################
