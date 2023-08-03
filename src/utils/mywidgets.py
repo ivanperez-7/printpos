@@ -26,12 +26,17 @@ class VentanaPrincipal(QMainWindow):
         icon.addPixmap(QPixmap(':/img/icon.ico'), QIcon.Mode.Normal, QIcon.State.Off)
         self.setWindowIcon(icon)
         
-        from Home import App_ConsultarPrecios, App_Home
-        
-        central_widget = App_Home(self)
-        self.setCentralWidget(central_widget)
+        from Home import App_ConsultarPrecios
         self.consultarPrecios = App_ConsultarPrecios(self)
+        self.goHome()
         self.show()
+    
+    def goHome(self):
+        """ Regresar al menú principal.
+            Crea módulo Home y establece como widget principal. """
+        from Home import App_Home
+        new = App_Home(self)
+        self.setCentralWidget(new)
     
     def closeEvent(self, event):
         """ En eventos específicos, restringimos el cerrado del sistema. """

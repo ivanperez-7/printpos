@@ -9,7 +9,7 @@ from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 
 from Caja import Caja
 from Login import Usuario
-from utils.databasemanagers import ManejadorVentas
+from utils.sql import ManejadorVentas
 from utils.mydecorators import run_in_thread
 from utils.myutils import chunkify, formatDate
 

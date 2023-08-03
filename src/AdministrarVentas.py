@@ -5,7 +5,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
 from PySide6.QtCore import (QDateTime, QModelIndex, Qt, Signal)
 
-from utils.databasemanagers import ManejadorCaja, ManejadorVentas
+from utils.sql import ManejadorCaja, ManejadorVentas
 from utils.mydecorators import con_fondo, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import (ColorsEnum, chunkify, clamp,
@@ -393,11 +393,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
     
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
-        from Home import App_Home
-        
-        parent: VentanaPrincipal = self.parentWidget()  # QMainWindow
-        new = App_Home(parent)
-        parent.setCentralWidget(new)
+        parent: VentanaPrincipal = self.parentWidget()
+        parent.goHome()
 
 
 #################################
