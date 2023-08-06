@@ -8,6 +8,9 @@ from Login import App_Login
 
 
 class PrintPOS(QApplication):
+    """ Subclase de QApplication que configura paleta y traductor como corresponde.
+        Invocar método iniciar() para crear ventana de iniciar sesión. """
+
     def __init__(self):
         super().__init__()
         
@@ -15,10 +18,12 @@ class PrintPOS(QApplication):
         self.instalarTraductor()
     
     def iniciar(self):
+        """ Crea ventana de iniciar sesión e invoca método exec(). """
         login = App_Login()
         return self.exec()
     
     def configurarEstilo(self):
+        """ Configura paleta y estilo de la aplicación. """
         BLANCO = QColor(255, 255, 255)
         NEGRO = QColor(0, 0, 0)
         GRIS = QColor(128, 128, 128)
@@ -39,6 +44,7 @@ class PrintPOS(QApplication):
         self.setStyle(QStyleFactory.create('Fusion'))
     
     def instalarTraductor(self):
+        """ Instala traductor para idioma español. """
         self._translator = QTranslator()
         self._translator.load('qtbase_es.qm', directory='resources/translations')
         return self.installTranslator(self._translator)
