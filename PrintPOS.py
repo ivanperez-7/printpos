@@ -1,9 +1,7 @@
 """ ARCHIVO PRINCIPAL.
     Inicia una QApplication y abre la ventana de iniciar sesión. """
-import os
-
 from PySide6.QtWidgets import QApplication, QStyleFactory
-from PySide6.QtCore import QTranslator, QLocale, QLibraryInfo
+from PySide6.QtCore import QTranslator
 from PySide6.QtGui import QPalette, QColor
 
 from Login import App_Login
@@ -15,9 +13,10 @@ class PrintPOS(QApplication):
         
         self.configurarEstilo()
         self.instalarTraductor()
-        
+    
+    def iniciar(self):
         login = App_Login()
-        self.exec()
+        return self.exec()
     
     def configurarEstilo(self):
         BLANCO = QColor(255, 255, 255)
@@ -47,3 +46,5 @@ class PrintPOS(QApplication):
 
 if __name__ == '__main__':
     app = PrintPOS()
+    app.iniciar()
+
