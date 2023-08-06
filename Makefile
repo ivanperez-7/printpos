@@ -16,7 +16,6 @@ launch:
 install:
 	nuitka $(EXEC).py \
 		--standalone \
-		--disable-console \
 		--enable-plugin=pyside6 \
 		--include-package-data=resources.pdf,resources.images,resources.translations \
 		--include-data-files=config.ini=config.ini \

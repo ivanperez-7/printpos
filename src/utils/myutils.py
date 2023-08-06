@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import SupportsFloat
 
-from PySide6.QtCore import QDateTime, QThread
+from PySide6.QtCore import QDateTime, QThread, QLocale
 
 from utils.mydecorators import run_in_thread
 
@@ -28,6 +28,7 @@ class Runner(QThread):
         self._target(*self._args, **self._kwargs)
     
     def stop(self):
+        """ Llama a métodos `terminate` y luego `wait`. """
         self.terminate()
         self.wait()
 
@@ -73,13 +74,7 @@ def formatDate(date: QDateTime | datetime) -> str:
     if not date:
         return ''
     
-    from PySide6.QtCore import QLocale
-    
-    if isinstance(date, datetime):
-        date = QDateTime(date)
-    
     locale = QLocale(QLocale.Spanish, QLocale.Mexico)
-    
     return locale.toString(date, "d 'de' MMMM yyyy, h:mm ap")
 
 

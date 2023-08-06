@@ -1,155 +1,13 @@
-""" Provee clases para generar y enviar documentos PDF a impresoras. """
+""" Provee métodos para generar diversos PDF en bytes. """
 import io
 from configparser import ConfigParser
 
-from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import QDateTime, Qt
-from PySide6.QtGui import QPainter, QImage
-from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
+from PySide6.QtCore import QDateTime
 
 from Caja import Caja
 from Login import Usuario
 from utils.sql import ManejadorVentas
-from utils.mydecorators import run_in_thread
 from utils.myutils import chunkify, formatDate
-
-
-class ImpresoraPDF:
-    """ Clase general para manejar impresoras y enviar archivos a estas. """
-    
-    def __init__(self):
-        self.printer: QPrinter = None
-    
-    @staticmethod
-    def escogerImpresora(parent=None):
-        """ Diálogo para escoger impresora. En hilo principal. """
-        printer = QPrinter(QPrinter.HighResolution)
-        
-        dialog = QPrintDialog(printer, parent)
-        opts = QPrintDialog.PrintDialogOption
-        dialog.setOption(opts.PrintToFile, False)
-        dialog.setOption(opts.PrintPageRange, False)
-        
-        if dialog.exec() != QPrintDialog.Accepted:
-            return None
-        return printer
-    
-    @staticmethod
-    def obtenerImpresoraTickets():
-        """ Lee impresora de tickets en archivo config. En hilo principal. """
-        from utils.mywidgets import WarningDialog
-        
-        config = ConfigParser(inline_comment_prefixes=';')
-        config.read('config.ini')
-        printerName = config['IMPRESORAS']['default']
-        
-        pInfo = QPrinterInfo.printerInfo(printerName)
-        if not pInfo.printerName():
-            WarningDialog(f'¡No se encontró la impresora {printerName}!')
-            return None
-        
-        return QPrinter(pInfo, QPrinter.HighResolution)
-    
-    def enviarAImpresora(self, data: io.BytesIO):
-        """ Convertir PDF a imagen y mandar a impresora. """
-        import fitz
-        
-        doc = fitz.open(stream=data)
-        painter = QPainter()
-        painter.begin(self.printer)
-        
-        for i, page in enumerate(doc):
-            pix = page.get_pixmap(dpi=300, alpha=False)
-            image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
-            # image.save(f'out{i}.jpg')
-            
-            rect = painter.viewport()
-            qtImageScaled = image.scaled(rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            painter.drawImage(rect, qtImageScaled)
-            
-            if i > 0:
-                self.printer.newPage()
-        painter.end()
-    
-    def __repr__(self):
-        if self.printer is None:
-            return 'Manejador de PDF sin impresora inicializada.'
-        return f'Manejador de PDF con impresora {self.printer.printerName()}.'
-
-
-class ImpresoraOrdenes(ImpresoraPDF):
-    """ Impresora para órdenes de compra. 
-        Siempre crea diálogo para escoger impresora. """
-    
-    def __init__(self, parent: QWidget = None):
-        super().__init__()
-        
-        self.conn = parent.conn
-        self.printer = self.escogerImpresora(parent)
-    
-    @run_in_thread
-    def imprimirOrdenCompra(self, idx: int):
-        if not self.printer:
-            return
-        
-        manejador = ManejadorVentas(self.conn)
-        data = _generarOrdenCompra(manejador, idx)
-        self.enviarAImpresora(data)
-
-
-class ImpresoraTickets(ImpresoraPDF):
-    """ Impresora para tickets. 
-        Intenta leer impresora por defecto del archivo config. """
-    
-    def __init__(self, parent: QWidget = None):
-        super().__init__()
-        
-        self.conn = parent.conn
-        self.printer = self.obtenerImpresoraTickets()
-    
-    @run_in_thread
-    def imprimirTicketCompra(self, idx):
-        """ Genera el ticket de compra a partir de un identificador en la base de datos. """
-        if not self.printer:
-            return
-        
-        # obtener datos de la compra, de la base de datos
-        manejador = ManejadorVentas(self.conn)
-        productos = manejador.obtenerTablaTicket(idx)
-        
-        # más datos para el ticket
-        vendedor = manejador.obtenerUsuarioAsociado(idx)
-        datos = manejador.obtenerVenta(idx)
-        
-        _, _, _, fechaCreacion, _, _, metodo, _, _, pagado = datos
-        
-        # cambiar método de pago (abreviatura)
-        abrev = {'Efectivo': 'EFEC',
-                 'Transferencia bancaria': 'TRF',
-                 'Tarjeta de crédito': 'TVP',
-                 'Tarjeta de débito': 'TVP'}
-        
-        data = _generarTicketPDF(idx, productos, vendedor,
-                                 fechaCreacion, pagado, abrev[metodo])
-        self.enviarAImpresora(data)
-    
-    @run_in_thread
-    def imprimirTicketPresupuesto(self, productos: list[tuple], vendedor: str):
-        """ Genera un ticket para el presupuesto de una compra. """
-        if not self.printer:
-            return
-        
-        data = _generarTicketPDF(0, productos, vendedor,
-                                 QDateTime.currentDateTime(), 0., None)
-        self.enviarAImpresora(data)
-    
-    @run_in_thread
-    def imprimirCorteCaja(self, caja: Caja, user: Usuario):
-        """ Genera un ticket para el presupuesto de una compra. """
-        if not self.printer:
-            return
-        data = _generarCortePDF(caja, user)
-        self.enviarAImpresora(data)
 
 
 def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
@@ -259,15 +117,15 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
         writer.add_page(page)
     
     # crear archivo temporal e imprimir
-    data = io.BytesIO()
-    writer.write(data)
+    buffer = io.BytesIO()
+    writer.write(buffer)
     
-    return data
+    return buffer
 
 
 def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, float]],
                       vendedor: str, fechaCreacion: QDateTime, pagado: float, metodo_pago: str):
-    """ Función abstracta para generar el ticket de compra o presupuesto.
+    """ Función general para generar el ticket de compra o presupuesto.
         Contiene:
             - Logo
             - Tabla de productos [Cantidad | Producto | Precio | Descuento | Importe]
