@@ -1,6 +1,5 @@
 """ Provee clases para enviar documentos PDF, en bytes, a impresoras. """
 import io
-from configparser import ConfigParser
 from functools import wraps
 
 from PySide6.QtWidgets import QWidget
@@ -11,6 +10,7 @@ from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 from Caja import Caja
 from Login import Usuario
 from utils.mydecorators import run_in_thread
+from utils.myutils import leerConfig
 from utils.pdf.generadores import _generarCortePDF, _generarOrdenCompra, _generarTicketPDF
 from utils.sql import ManejadorVentas
 
@@ -50,8 +50,7 @@ class ImpresoraPDF:
         """ Lee impresora de tickets en archivo config. En hilo principal. """
         from utils.mywidgets import WarningDialog
         
-        config = ConfigParser(inline_comment_prefixes=';')
-        config.read('config.ini')
+        config = leerConfig()
         printerName = config['IMPRESORAS']['default']
         
         pInfo = QPrinterInfo.printerInfo(printerName)
@@ -67,7 +66,8 @@ class ImpresoraPDF:
         
         doc = fitz.open(stream=data)
         painter = QPainter()
-        painter.begin(self.printer)
+        if not painter.begin(self.printer):
+            return
         
         for i, page in enumerate(doc):
             pix = page.get_pixmap(dpi=300, alpha=False)

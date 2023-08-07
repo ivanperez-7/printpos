@@ -1,4 +1,5 @@
 """ Provee varias funciones útiles utilizadas frecuentemente. """
+from configparser import ConfigParser
 from datetime import datetime
 from typing import SupportsFloat
 
@@ -76,6 +77,13 @@ def formatDate(date: QDateTime | datetime) -> str:
     
     locale = QLocale(QLocale.Spanish, QLocale.Mexico)
     return locale.toString(date, "d 'de' MMMM yyyy, h:mm ap")
+
+
+def leerConfig():
+    """ Lee config.ini y regresa objeto ConfigParser. """
+    config = ConfigParser(inline_comment_prefixes=';')
+    config.read('config.ini')
+    return config
 
 
 @run_in_thread

@@ -4,15 +4,11 @@ import fdb
 from PySide6.QtCore import QDate
 
 from utils.mywidgets import WarningDialog
+from utils.myutils import leerConfig
 
 
 def crear_conexion(usuario: str, psswd: str, rol: str = None):
-    from configparser import ConfigParser
-    
-    # leer datos de config.ini
-    config = ConfigParser(inline_comment_prefixes=';')
-    config.read('config.ini')
-    
+    config = leerConfig()
     red_local = config['DEFAULT']['red_local']
     nombre = config['SUCURSAL']['nombre']
     

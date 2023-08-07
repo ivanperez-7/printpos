@@ -1,13 +1,12 @@
 """ Provee métodos para generar diversos PDF en bytes. """
 import io
-from configparser import ConfigParser
 
 from PySide6.QtCore import QDateTime
 
 from Caja import Caja
 from Login import Usuario
+from utils.myutils import chunkify, formatDate, leerConfig
 from utils.sql import ManejadorVentas
-from utils.myutils import chunkify, formatDate
 
 
 def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
@@ -227,8 +226,7 @@ def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, 
         folio = ''
     
     # leer datos de sucursal de archivo de configuración
-    config = ConfigParser(inline_comment_prefixes=';')
-    config.read('config.ini', encoding='utf8')
+    config = leerConfig()
     SUCURSAL = config['SUCURSAL']
     
     # elementos para constuir el PDF
