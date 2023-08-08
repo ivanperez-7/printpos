@@ -1,12 +1,12 @@
 import fdb
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import QFont, QColor, QPixmap, QIcon, QRegularExpressionValidator
-from PySide6.QtCore import Qt, QRegularExpression, Signal
+from PySide6.QtGui import QFont, QColor, QPixmap, QIcon
+from PySide6.QtCore import Qt, Signal
 
 from utils.sql import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import con_fondo
-from utils.myutils import ColorsEnum, son_similar
+from utils.myutils import ColorsEnum, FabricaValidadores, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -189,8 +189,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         self.user = first.user
         
         # validadores para datos numéricos
-        regexp_numero = QRegularExpression(r'\d*\.?\d*')
-        validador = QRegularExpressionValidator(regexp_numero)
+        validador = FabricaValidadores.validadorNumeroDecimal()
         
         self.ui.txtPrecioCompra.setValidator(validador)
         self.ui.txtExistencia.setValidator(validador)
@@ -217,8 +216,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
                     or nuevo.setParent(None))
         
         # validador para datos numéricos
-        regexp_numero = QRegularExpression(r'\d*\.?\d*')
-        validador = QRegularExpressionValidator(regexp_numero)
+        validador = FabricaValidadores.validadorNumeroDecimal()
         nuevo.txtProductoUtiliza.setValidator(validador)
         
         # llenar caja de opciones con productos
@@ -460,6 +458,7 @@ class ExistenciasWidget(QtWidgets.QDialog):
         gridLayout.addWidget(label, 0, 0, 1, 1)
         txtCantidad = QtWidgets.QLineEdit(self)
         txtCantidad.setFont(font)
+        txtCantidad.setValidator(FabricaValidadores.validadorNumeroDecimal())
         gridLayout.addWidget(txtCantidad, 0, 1, 1, 1)
         label_2 = QtWidgets.QLabel(self)
         label_2.setFont(font)

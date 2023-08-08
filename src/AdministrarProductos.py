@@ -1,13 +1,13 @@
 import fdb
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import QFont, QColor, QPixmap, QIcon, QRegularExpressionValidator
-from PySide6.QtCore import Qt, QRegularExpression, Signal
+from PySide6.QtGui import QFont, QColor, QPixmap, QIcon
+from PySide6.QtCore import Qt, Signal
 
 from utils.sql import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import con_fondo
 from utils.myinterfaces import InterfazFiltro
-from utils.myutils import ColorsEnum, son_similar
+from utils.myutils import ColorsEnum, FabricaValidadores, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -244,9 +244,8 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
                     or nuevo.setParent(None))
         
         # validador para datos numéricos
-        regexp_numero = QRegularExpression(r'\d*\.?\d*')
-        validador = QRegularExpressionValidator(regexp_numero)
-        nuevo.txtProductoUtiliza.setValidator(validador)
+        nuevo.txtProductoUtiliza.setValidator(
+            FabricaValidadores.validadorNumeroDecimal())
         
         # llenar caja de opciones con elementos del inventario
         manejador = ManejadorInventario(self.conn)

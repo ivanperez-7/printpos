@@ -6,7 +6,7 @@ import fdb
 from PySide6.QtWidgets import (QMainWindow, QMessageBox, QWidget,
                                QLabel, QTableWidget, QLineEdit)
 from PySide6.QtGui import QFont, QIcon, QPixmap, QRegularExpressionValidator
-from PySide6.QtCore import Qt, QSize, QRegularExpression
+from PySide6.QtCore import Qt, QSize
 
 from Login import Usuario
 
@@ -141,9 +141,8 @@ class NumberEdit(QLineEdit):
         self.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         
         # validadores para datos numéricos
-        regexp_numero = QRegularExpression(r'\d*\.?\d{0,2}')
-        validador = QRegularExpressionValidator(regexp_numero)
-        self.setValidator(validador)
+        self.setValidator(
+            QRegularExpressionValidator(r'\d*\.?\d{0,2}'))
     
     @property
     def cantidad(self):

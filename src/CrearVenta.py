@@ -3,13 +3,12 @@ from dataclasses import dataclass, field
 
 import fdb
 from PySide6 import QtWidgets
-from PySide6.QtCore import QDate, QDateTime, QRegularExpression, QPropertyAnimation, QRect, QEasingCurve
-from PySide6.QtGui import QRegularExpressionValidator
+from PySide6.QtCore import QDate, QDateTime, QPropertyAnimation, QRect, QEasingCurve
 
 from utils.sql import (ManejadorCaja, ManejadorClientes,
                        ManejadorProductos, ManejadorVentas)
 from utils.mydecorators import con_fondo, requiere_admin
-from utils.myutils import clamp, enviarWhatsApp, formatDate, son_similar
+from utils.myutils import clamp, enviarWhatsApp, FabricaValidadores, formatDate, son_similar
 from utils.mywidgets import DimBackground, LabelAdvertencia, VentanaPrincipal
 from utils.pdf import ImpresoraOrdenes, ImpresoraTickets
 
@@ -479,9 +478,8 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
             lambda: self.update_display(self.ui.searchBar.text()))
         
         # validadores para datos numéricos
-        regexp_numero = QRegularExpression(r'\d*\.?\d*')
-        validador = QRegularExpressionValidator(regexp_numero)
-        self.ui.txtCantidad.setValidator(validador)
+        self.ui.txtCantidad.setValidator(
+            FabricaValidadores.validadorNumeroDecimal())
         
         self.ui.tabla_seleccionar.configurarCabecera(lambda col: col != 1)
         self.ui.tabla_granformato.configurarCabecera(lambda col: col != 1)
@@ -814,9 +812,8 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
         self.ui.btListo.clicked.connect(self.done)
         
         # validadores numéricos
-        regexp_numero = QRegularExpression(r'\d*\.?\d*')
-        validador = QRegularExpressionValidator(regexp_numero)
-        self.ui.txtPrecio.setValidator(validador)
+        self.ui.txtPrecio.setValidator(
+            FabricaValidadores.validadorNumeroDecimal())
         
         self.ui.tabla_productos.quitarBordeCabecera()
         self.ui.tabla_productos.cambiarColorCabecera('#000')

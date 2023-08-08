@@ -1,13 +1,13 @@
 from datetime import datetime
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import QFont, QPixmap, QRegularExpressionValidator
-from PySide6.QtCore import Qt, QRegularExpression, Signal
+from PySide6.QtGui import QFont, QPixmap
+from PySide6.QtCore import Qt, Signal
 
 from utils.sql import ManejadorUsuarios
 from utils.mydecorators import con_fondo
 from utils.myinterfaces import InterfazFiltro
-from utils.myutils import formatDate, son_similar
+from utils.myutils import FabricaValidadores, formatDate, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -188,9 +188,7 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
         self.user = first.user
         
         # validador para nombre de usuario
-        regexp = QRegularExpression(r'[a-zA-Z0-9_$]+')
-        validador = QRegularExpressionValidator(regexp)
-        self.ui.txtUsuario.setValidator(validador)
+        self.ui.txtUsuario.setValidator(FabricaValidadores.validadorIdFirebird())
         
         # deshabilita eventos del mouse para los textos en los botones
         items = vars(self.ui)
