@@ -13,13 +13,12 @@ def crear_conexion(usuario: str, psswd: str, rol: str = None):
     nombre = config['SUCURSAL']['nombre']
     
     try:
-        conn = fdb.connect(
+        return fdb.connect(
             dsn=red_local + f':{nombre}.fdb',
             user=usuario,
             password=psswd,
             charset='UTF8',
             role=rol)
-        return conn
     except fdb.Error as err:
         print(f'Cannot open connection to database: {str(err)}')
         return None

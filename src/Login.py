@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import QRegularExpressionValidator
-from PySide6.QtCore import Qt, QRegularExpression, Signal
+from PySide6.QtCore import Qt, Signal
 
 from utils.mydecorators import run_in_thread
+from utils.myutils import FabricaValidadores
 
 
 ##################
@@ -45,9 +45,7 @@ class App_Login(QtWidgets.QMainWindow):
         self.lock = False
         
         # validador para nombre de usuario
-        regexp = QRegularExpression(r'[a-zA-Z0-9_$]+')
-        validador = QRegularExpressionValidator(regexp)
-        self.ui.inputUsuario.setValidator(validador)
+        self.ui.inputUsuario.setValidator(FabricaValidadores.validadorIdFirebird())
         
         self.ui.btIngresar.clicked.connect(
             lambda: self.verificar_info() if not self.lock else None)
@@ -58,14 +56,16 @@ class App_Login(QtWidgets.QMainWindow):
     def keyPressEvent(self, qKeyEvent):
         if qKeyEvent.key() in {Qt.Key_Return, Qt.Key_Enter} and not self.lock:
             self.verificar_info()
-    
+
+    # ==================
+    #  FUNCIONES ÚTILES
+    # ==================
     @run_in_thread
     def verificar_info(self):
         """ Verifica datos ingresados consultando la tabla Usuarios. """
         from utils.sql import crear_conexion, ManejadorUsuarios
         
         self.lock = True
-        
         usuario = self.ui.inputUsuario.text().upper()
         psswd = self.ui.inputContrasenia.text()
         
@@ -79,10 +79,6 @@ class App_Login(QtWidgets.QMainWindow):
         
         rol = self.ui.groupRol.checkedButton().text()
         conn = crear_conexion(usuario, psswd, rol)
-        
-        if not conn:
-            self.errorLogin()
-            return
         
         try:
             manejador = ManejadorUsuarios(conn, handle_exceptions=False)

@@ -4,7 +4,7 @@ import fdb
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon, QPixmap, QRegularExpressionValidator
-from PySide6.QtCore import Qt, QDate, QRegularExpression, Signal
+from PySide6.QtCore import Qt, QDate, Signal
 
 from utils.sql import ManejadorClientes
 from utils.mydecorators import con_fondo
@@ -235,9 +235,8 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
         self.user = first.user
         
         # validador clave de país
-        regexp = QRegularExpression(r'[0-9]{1,}')
-        validador = QRegularExpressionValidator(regexp)
-        self.ui.txtLada.setValidator(validador)
+        self.ui.txtLada.setValidator(
+            QRegularExpressionValidator(r'[0-9]{1,}'))
         
         # crear eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)

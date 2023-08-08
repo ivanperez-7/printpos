@@ -7,7 +7,7 @@ from PySide6.QtGui import QFont
 
 from utils.sql import ManejadorCaja
 from utils.myinterfaces import InterfazFechas
-from utils.myutils import formatDate
+from utils.myutils import FabricaValidadores, formatDate
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -330,9 +330,8 @@ class Dialog_Registrar(QtWidgets.QDialog):
         self.txtMotivo = txtMotivo
         
         # validadores para datos numéricos
-        regexp_numero = QtCore.QRegularExpression(r'\d*\.?\d*')
-        validador = QtGui.QRegularExpressionValidator(regexp_numero)
-        txtCantidad.setValidator(validador)
+        txtCantidad.setValidator(
+            FabricaValidadores.validadorNumeroDecimal())
         
         self.show()
     

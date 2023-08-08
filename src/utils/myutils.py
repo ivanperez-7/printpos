@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import SupportsFloat
 
 from PySide6.QtCore import QDateTime, QThread, QLocale
+from PySide6.QtGui import QRegularExpressionValidator
 
 from utils.mydecorators import run_in_thread
 
@@ -13,6 +14,21 @@ class ColorsEnum:
     VERDE = 0xB2FFAE
     AMARILLO = 0xFDFDA9
     ROJO = 0xFFB2AE
+
+
+class FabricaValidadores:
+    """ Clase para generar validadores de 
+        expresiones regulares para widgets. """
+    ID_FIREBIRD = r'[a-zA-Z0-9_$]+'
+    NUMERO_DECIMAL = r'\d*\.?\d*'
+    
+    @classmethod
+    def validadorIdFirebird(cls):
+        return QRegularExpressionValidator(cls.ID_FIREBIRD)
+    
+    @classmethod
+    def validadorNumeroDecimal(cls):
+        return QRegularExpressionValidator(cls.NUMERO_DECIMAL)
 
 
 class Runner(QThread):
