@@ -188,7 +188,7 @@ class Base_EditarUsuario(QtWidgets.QMainWindow):
         self.user = first.user
         
         # validador para nombre de usuario
-        self.ui.txtUsuario.setValidator(FabricaValidadores.validadorIdFirebird())
+        self.ui.txtUsuario.setValidator(FabricaValidadores.IdFirebird)
         
         # deshabilita eventos del mouse para los textos en los botones
         items = vars(self.ui)

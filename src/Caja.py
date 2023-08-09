@@ -331,7 +331,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         
         # validadores para datos numéricos
         txtCantidad.setValidator(
-            FabricaValidadores.validadorNumeroDecimal())
+            FabricaValidadores.NumeroDecimal)
         
         self.show()
     

@@ -479,7 +479,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
         
         # validadores para datos numéricos
         self.ui.txtCantidad.setValidator(
-            FabricaValidadores.validadorNumeroDecimal())
+            FabricaValidadores.NumeroDecimal)
         
         self.ui.tabla_seleccionar.configurarCabecera(lambda col: col != 1)
         self.ui.tabla_granformato.configurarCabecera(lambda col: col != 1)
@@ -813,7 +813,7 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
         
         # validadores numéricos
         self.ui.txtPrecio.setValidator(
-            FabricaValidadores.validadorNumeroDecimal())
+            FabricaValidadores.NumeroDecimal)
         
         self.ui.tabla_productos.quitarBordeCabecera()
         self.ui.tabla_productos.cambiarColorCabecera('#000')

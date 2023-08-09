@@ -45,7 +45,7 @@ class App_Login(QtWidgets.QMainWindow):
         self.lock = False
         
         # validador para nombre de usuario
-        self.ui.inputUsuario.setValidator(FabricaValidadores.validadorIdFirebird())
+        self.ui.inputUsuario.setValidator(FabricaValidadores.IdFirebird)
         
         self.ui.btIngresar.clicked.connect(
             lambda: self.verificar_info() if not self.lock else None)
