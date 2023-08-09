@@ -189,7 +189,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         self.user = first.user
         
         # validadores para datos numéricos
-        validador = FabricaValidadores.validadorNumeroDecimal()
+        validador = FabricaValidadores.NumeroDecimal
         
         self.ui.txtPrecioCompra.setValidator(validador)
         self.ui.txtExistencia.setValidator(validador)
@@ -216,7 +216,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
                     or nuevo.setParent(None))
         
         # validador para datos numéricos
-        validador = FabricaValidadores.validadorNumeroDecimal()
+        validador = FabricaValidadores.NumeroDecimal
         nuevo.txtProductoUtiliza.setValidator(validador)
         
         # llenar caja de opciones con productos
@@ -458,7 +458,7 @@ class ExistenciasWidget(QtWidgets.QDialog):
         gridLayout.addWidget(label, 0, 0, 1, 1)
         txtCantidad = QtWidgets.QLineEdit(self)
         txtCantidad.setFont(font)
-        txtCantidad.setValidator(FabricaValidadores.validadorNumeroDecimal())
+        txtCantidad.setValidator(FabricaValidadores.NumeroDecimal)
         gridLayout.addWidget(txtCantidad, 0, 1, 1, 1)
         label_2 = QtWidgets.QLabel(self)
         label_2.setFont(font)

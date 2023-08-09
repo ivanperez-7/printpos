@@ -245,7 +245,7 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
         
         # validador para datos numéricos
         nuevo.txtProductoUtiliza.setValidator(
-            FabricaValidadores.validadorNumeroDecimal())
+            FabricaValidadores.NumeroDecimal)
         
         # llenar caja de opciones con elementos del inventario
         manejador = ManejadorInventario(self.conn)

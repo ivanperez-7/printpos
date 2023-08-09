@@ -23,11 +23,13 @@ class FabricaValidadores:
     NUMERO_DECIMAL = r'\d*\.?\d*'
     
     @classmethod
-    def validadorIdFirebird(cls):
+    @property
+    def IdFirebird(cls):
         return QRegularExpressionValidator(cls.ID_FIREBIRD)
     
     @classmethod
-    def validadorNumeroDecimal(cls):
+    @property
+    def NumeroDecimal(cls):
         return QRegularExpressionValidator(cls.NUMERO_DECIMAL)
 
 
