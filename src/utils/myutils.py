@@ -17,25 +17,22 @@ class ColorsEnum:
 
 
 class FabricaValidadores:
-    """ Clase para generar validadores de 
-        expresiones regulares para widgets. """
-    ID_FIREBIRD = r'[a-zA-Z0-9_$]+'
-    NUMERO_DECIMAL = r'\d*\.?\d*'
-    
+    """ Clase para generar validadores de expresiones regulares
+        (`QRegularExpressionValidator`) para widgets. """
     @classmethod
     @property
     def IdFirebird(cls):
-        return QRegularExpressionValidator(cls.ID_FIREBIRD)
+        return QRegularExpressionValidator(r'[a-zA-Z0-9_$]+')
     
     @classmethod
     @property
     def NumeroDecimal(cls):
-        return QRegularExpressionValidator(cls.NUMERO_DECIMAL)
+        return QRegularExpressionValidator(r'\d*\.?\d*')
 
 
 class Runner(QThread):
     """ Clase derivada de QThread para manejar manualmente cuándo un hilo comienza y termina.
-        Para manejo automático, usar decorador run_in_thread. """
+        Para manejo automático, usar decorador `run_in_thread`. """
     
     def __init__(self, target, *args, **kwargs):
         super().__init__()

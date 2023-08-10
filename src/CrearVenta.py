@@ -3,15 +3,13 @@ from dataclasses import dataclass, field
 
 import fdb
 from PySide6 import QtWidgets
-from PySide6.QtCore import QDate, QDateTime, QPropertyAnimation, QRect, QEasingCurve
+from PySide6.QtCore import QDate, QDateTime, Qt
 
-from utils.sql import (ManejadorCaja, ManejadorClientes,
-                       ManejadorProductos, ManejadorVentas)
 from utils.mydecorators import con_fondo, requiere_admin
 from utils.myutils import clamp, enviarWhatsApp, FabricaValidadores, formatDate, son_similar
-from utils.mywidgets import DimBackground, LabelAdvertencia, VentanaPrincipal
+from utils.mywidgets import DimBackground, LabelAdvertencia, SpeechBubble, VentanaPrincipal
 from utils.pdf import ImpresoraOrdenes, ImpresoraTickets
-
+from utils.sql import ManejadorCaja, ManejadorClientes, ManejadorProductos, ManejadorVentas
 
 ##################
 # CLASE AUXILIAR #
@@ -164,7 +162,6 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         
         # cuadro de texto para los descuentos del cliente
         self.dialogoDescuentos = SpeechBubble(self)
-        self.dialogoDescuentos.setGeometry(610, 28, 0, 165)
         self.dialogoDescuentos.setVisible(False)
         
         # datos por defecto
@@ -190,7 +187,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         self.ui.btSeleccionar.clicked.connect(self.seleccionarCliente)
         self.ui.btDescuento.clicked.connect(
             lambda: self.agregarDescuento() if self.ui.tabla_productos.rowCount() else None)
-        self.ui.btDescuentosCliente.clicked.connect(self.alternarDescuentos)
+        self.ui.btDescuentosCliente.clicked.connect(self.dialogoDescuentos.alternarDescuentos)
         self.ui.btDeshacer.clicked.connect(self.deshacerFechaEntrega)
         self.ui.btCotizacion.clicked.connect(self.generarCotizacion)
         self.ui.btListo.clicked.connect(self.confirmarVenta)
@@ -276,31 +273,6 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         # </calcular precios y mostrar>
         
         tabla.resizeRowsToContents()
-    
-    def alternarDescuentos(self):
-        """ Se llama a esta función al hacer click en la foto de perfil
-        del usuario. Anima el tamaño de la caja de notificaciones. """
-        hiddenGeom = QRect(610, 28, 0, 165)
-        shownGeom = QRect(610, 28, 345, 165)
-        
-        if not self.dialogoDescuentos.isVisible():
-            # Create an animation to gradually change the height of the widget
-            self.dialogoDescuentos.setVisible(True)
-            self.show_animation = QPropertyAnimation(self.dialogoDescuentos, b'geometry')
-            self.show_animation.setDuration(200)
-            self.show_animation.setStartValue(hiddenGeom)
-            self.show_animation.setEndValue(shownGeom)
-            self.show_animation.setEasingCurve(QEasingCurve.OutSine)
-            self.show_animation.start()
-        else:
-            # Hide the widget
-            self.hide_animation = QPropertyAnimation(self.dialogoDescuentos, b'geometry')
-            self.hide_animation.setDuration(200)
-            self.hide_animation.setStartValue(shownGeom)
-            self.hide_animation.setEndValue(hiddenGeom)
-            self.hide_animation.setEasingCurve(QEasingCurve.InSine)
-            self.hide_animation.finished.connect(lambda: self.dialogoDescuentos.setVisible(False))
-            self.hide_animation.start()
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
@@ -419,7 +391,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         
         if ret == qm.Yes:
             self.ventaDatos.id_cliente = cliente[id]
-            self.ventaDatos.requiereFactura = self.ui.boxFactura.isChecked()
+            self.ventaDatos.requiereFactura = self.ui.tickFacturaSi.isChecked()
             self.ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
             
             bg = DimBackground(self)
@@ -1244,91 +1216,3 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         parent: VentanaPrincipal = self.parentWidget().parentWidget()
         parent.goHome()
         self.close()
-
-
-###########################################
-# WIDGETS PERSONALIZADOS PARA ESTE MÓDULO #
-###########################################
-from PySide6.QtWidgets import QVBoxLayout, QTextBrowser, QWidget
-from PySide6.QtGui import (QPainter, QColor, QPolygon,
-                           QFont, QPainterPath)
-from PySide6.QtCore import Qt, QRectF, QPoint
-
-
-class SpeechBubble(QWidget):
-    def __init__(self, parent, text=''):
-        super().__init__(parent)
-        
-        # Create the layout and QTextBrowser
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(17, 17, 17, 17)
-        
-        self.text_browser = QTextBrowser()
-        self.text_browser.setStyleSheet('''
-            QTextBrowser { border: none; background-color: transparent; }
-            QScrollBar:vertical {
-                border: 0px solid;
-                background: #c0c0c0;
-                width:10px;    
-                margin: 0px 0px 0px 0px;
-            }
-            QScrollBar::handle:vertical {         
-        
-                min-height: 0px;
-                border: 0px solid red;
-                border-radius: 4px;
-                background-color: #1e3085;
-            }
-            QScrollBar::add-line:vertical {       
-                height: 0px;
-                subcontrol-position: bottom;
-                subcontrol-origin: margin;
-            }
-            QScrollBar::sub-line:vertical {
-                height: 0 px;
-                subcontrol-position: top;
-                subcontrol-origin: margin;
-            }
-
-            QScrollBar::add-page:vertical {
-            background: none;
-            }
-        ''')
-        self.text_browser.setPlainText(text)
-        font = QFont()
-        font.setPointSize(11)
-        self.text_browser.setFont(font)
-        self.text_browser.setLineWrapMode(QTextBrowser.LineWrapMode.FixedPixelWidth)
-        self.text_browser.setLineWrapColumnOrWidth(295)
-        self.text_browser.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        
-        layout.addWidget(self.text_browser)
-    
-    def setText(self, txt):
-        self.text_browser.setPlainText(txt)
-    
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        
-        # Draw the speech bubble background
-        bubble_rect = self.rect().adjusted(10, 10, -10, -10)  # Add padding to the bubble
-        
-        # Draw the bubble shape
-        bubble_path = QPainterPath()
-        bubble_path.addRoundedRect(QRectF(bubble_rect), 10, 10)
-        
-        # Draw the triangle at the top middle
-        triangle_path = QPolygon()
-        triangle_center = bubble_rect.center().y()
-        triangle_path << QPoint(bubble_rect.left(), triangle_center - 10)
-        triangle_path << QPoint(bubble_rect.left(), triangle_center + 10)
-        triangle_path << QPoint(bubble_rect.left() - 10, triangle_center)
-        
-        # Set the painter properties
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(255, 255, 255, 255))
-        
-        # Draw the bubble and triangle
-        painter.drawPath(bubble_path.simplified())
-        painter.drawPolygon(triangle_path)
