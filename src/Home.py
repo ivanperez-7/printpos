@@ -3,7 +3,8 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtCore import (QDate, Qt, QPropertyAnimation,
                             QRect, QEasingCurve, Signal)
 
-from utils.mywidgets import VentanaPrincipal
+from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
+from utils.myutils import son_similar, Runner
 
 
 class App_Home(QtWidgets.QMainWindow):
@@ -163,10 +164,6 @@ class App_Home(QtWidgets.QMainWindow):
 ##################################
 # VENTANA PARA CONSULTAR PRECIOS #
 ##################################
-from utils.myutils import son_similar, Runner
-from utils.mywidgets import LabelAdvertencia
-
-
 class App_ConsultarPrecios(QtWidgets.QMainWindow):
     """ Backend para el módulo de consultar precios.
         No se puede cerrar hasta cerrar por completo el sistema. """

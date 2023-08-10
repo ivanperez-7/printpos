@@ -2,16 +2,15 @@
 from typing import Callable
 
 import fdb
-
-from PySide6.QtWidgets import (QMainWindow, QMessageBox, QWidget,
-                               QLabel, QTableWidget, QLineEdit)
-from PySide6.QtGui import QFont, QIcon, QPixmap, QRegularExpressionValidator
-from PySide6.QtCore import Qt, QSize
+from PySide6 import QtWidgets
+from PySide6.QtGui import (QFont, QIcon, QPixmap, QRegularExpressionValidator, 
+                           QPainter, QColor, QPolygon, QPainterPath)
+from PySide6.QtCore import Qt, QSize, QRectF, QPoint, QPropertyAnimation, QRect, QEasingCurve
 
 from Login import Usuario
 
 
-class VentanaPrincipal(QMainWindow):
+class VentanaPrincipal(QtWidgets.QMainWindow):
     def __init__(self, conn: fdb.Connection, user: Usuario):
         super().__init__()
         
@@ -29,6 +28,7 @@ class VentanaPrincipal(QMainWindow):
         from Home import App_ConsultarPrecios
         self.consultarPrecios = App_ConsultarPrecios(self)
         self.goHome()
+        
         self.show()
     
     def goHome(self):
@@ -48,9 +48,9 @@ class VentanaPrincipal(QMainWindow):
             event.accept()
 
 
-def DimBackground(window: QMainWindow):
+def DimBackground(window: QtWidgets.QMainWindow):
     """ Crea un widget que ocupa la ventana entera, para poner énfasis en las ventanas nuevas. """
-    bg = QWidget(parent=window)
+    bg = QtWidgets.QWidget(parent=window)
     bg.setFixedSize(window.size())
     bg.setStyleSheet('background: rgba(64, 64, 64, 64);')
     bg.show()
@@ -58,7 +58,7 @@ def DimBackground(window: QMainWindow):
     return bg
 
 
-class TablaDatos(QTableWidget):
+class TablaDatos(QtWidgets.QTableWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         
@@ -90,9 +90,9 @@ class TablaDatos(QTableWidget):
         font.setPointSize(10)
         self.setFont(font)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.setSelectionMode(QTableWidget.SingleSelection)
-        self.setSelectionBehavior(QTableWidget.SelectRows)
+        self.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        self.setSelectionMode(QtWidgets.QTableWidget.SingleSelection)
+        self.setSelectionBehavior(QtWidgets.QTableWidget.SelectRows)
         self.setAlternatingRowColors(True)
         self.setShowGrid(False)
         self.setWordWrap(True)
@@ -111,8 +111,6 @@ class TablaDatos(QTableWidget):
             establece `ResizeToContents` en las columnas especificadas.
             
             También se añaden banderas de alineación, si se desea. """
-        from PySide6.QtWidgets import QHeaderView
-        
         header = self.horizontalHeader()
         
         if not resize_cols:
@@ -122,14 +120,14 @@ class TablaDatos(QTableWidget):
         
         for col in range(self.columnCount()):
             if resize_cols(col):
-                mode = QHeaderView.ResizeMode.ResizeToContents
+                mode = QtWidgets.QHeaderView.ResizeMode.ResizeToContents
             else:
-                mode = QHeaderView.ResizeMode.Stretch
+                mode = QtWidgets.QHeaderView.ResizeMode.Stretch
             
             header.setSectionResizeMode(col, mode)
 
 
-class NumberEdit(QLineEdit):
+class NumberEdit(QtWidgets.QLineEdit):
     """ Widget QLineEdit para manejar cantidad monetarias de forma más fácil. """
     
     def __init__(self, parent=None):
@@ -156,14 +154,14 @@ class NumberEdit(QLineEdit):
         self.setText(f'{val:.2f}')
 
 
-class LabelAdvertencia(QLabel):
+class LabelAdvertencia(QtWidgets.QLabel):
     """ Crea un label de advertencia para las tablas, ya que en Qt Designer no se puede.
     
         Añade método `resizeEvent` al padre para posicionar el label en el centro.
         
         Añade método al padre para actualizar el texto, que verifica si hay items o no en la tabla. """
     
-    def __init__(self, parent: QTableWidget, msj: str):
+    def __init__(self, parent: QtWidgets.QTableWidget, msj: str):
         super().__init__(parent)
         
         self._parent = parent
@@ -189,13 +187,13 @@ class LabelAdvertencia(QLabel):
         pm_y = (h_t - self.height()) // 2
         
         self.move(pm_x, pm_y)
-        QTableWidget.resizeEvent(self._parent, event)
+        QtWidgets.QTableWidget.resizeEvent(self._parent, event)
     
     def actualizarLabel(self):
         self.setText(self.msj if not self._parent.rowCount() else '')
 
 
-class WarningDialog(QMessageBox):
+class WarningDialog(QtWidgets.QMessageBox):
     """ Crea un widget simple con un ícono de advertencia. """
     
     def __init__(self, body: str, error: str = None):
@@ -206,8 +204,113 @@ class WarningDialog(QMessageBox):
         self.setWindowIcon(icon)
         
         self.setWindowTitle('Atención')
-        self.setIcon(QMessageBox.Icon.Warning)
-        self.setStandardButtons(QMessageBox.StandardButton.Ok)
+        self.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+        self.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
         self.setText(body)
         if error: self.setDetailedText(error)
         self.exec()
+
+
+class SpeechBubble(QtWidgets.QWidget):
+    def __init__(self, parent, text=''):
+        super().__init__(parent)
+        
+        # Create the layout and QTextBrowser
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(17, 17, 17, 17)
+        
+        self.text_browser = QtWidgets.QTextBrowser()
+        self.text_browser.setStyleSheet('''
+            QTextBrowser { border: none; background-color: transparent; }
+            QScrollBar:vertical {
+                border: 0px solid;
+                background: #c0c0c0;
+                width:10px;    
+                margin: 0px 0px 0px 0px;
+            }
+            QScrollBar::handle:vertical {         
+        
+                min-height: 0px;
+                border: 0px solid red;
+                border-radius: 4px;
+                background-color: #1e3085;
+            }
+            QScrollBar::add-line:vertical {       
+                height: 0px;
+                subcontrol-position: bottom;
+                subcontrol-origin: margin;
+            }
+            QScrollBar::sub-line:vertical {
+                height: 0 px;
+                subcontrol-position: top;
+                subcontrol-origin: margin;
+            }
+
+            QScrollBar::add-page:vertical {
+            background: none;
+            }
+        ''')
+        self.text_browser.setPlainText(text)
+        font = QFont()
+        font.setPointSize(11)
+        self.text_browser.setFont(font)
+        self.text_browser.setLineWrapMode(QtWidgets.QTextBrowser.LineWrapMode.FixedPixelWidth)
+        self.text_browser.setLineWrapColumnOrWidth(295)
+        self.text_browser.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        
+        self.hiddenGeom = QRect(610, 28, 0, 165)
+        self.shownGeom = QRect(610, 28, 345, 165)
+        self.setGeometry(self.shownGeom)
+        
+        layout.addWidget(self.text_browser)
+    
+    def setText(self, txt):
+        self.text_browser.setPlainText(txt)
+    
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        # Draw the speech bubble background
+        bubble_rect = self.rect().adjusted(10, 10, -10, -10)  # Add padding to the bubble
+        
+        # Draw the bubble shape
+        bubble_path = QPainterPath()
+        bubble_path.addRoundedRect(QRectF(bubble_rect), 10, 10)
+        
+        # Draw the triangle at the top middle
+        triangle_path = QPolygon()
+        triangle_center = bubble_rect.center().y()
+        triangle_path << QPoint(bubble_rect.left(), triangle_center - 10)
+        triangle_path << QPoint(bubble_rect.left(), triangle_center + 10)
+        triangle_path << QPoint(bubble_rect.left() - 10, triangle_center)
+        
+        # Set the painter properties
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(255, 255, 255, 255))
+        
+        # Draw the bubble and triangle
+        painter.drawPath(bubble_path.simplified())
+        painter.drawPolygon(triangle_path)
+    
+    def alternarDescuentos(self):
+        """ Se llama a esta función al hacer click en la foto de perfil
+        del usuario. Anima el tamaño de la caja de notificaciones. """
+        if not self.isVisible():
+            # Create an animation to gradually change the height of the widget
+            self.setVisible(True)
+            self.show_animation = QPropertyAnimation(self, b'geometry')
+            self.show_animation.setDuration(200)
+            self.show_animation.setStartValue(self.hiddenGeom)
+            self.show_animation.setEndValue(self.shownGeom)
+            self.show_animation.setEasingCurve(QEasingCurve.OutSine)
+            self.show_animation.start()
+        else:
+            # Hide the widget
+            self.hide_animation = QPropertyAnimation(self, b'geometry')
+            self.hide_animation.setDuration(200)
+            self.hide_animation.setStartValue(self.shownGeom)
+            self.hide_animation.setEndValue(self.hiddenGeom)
+            self.hide_animation.setEasingCurve(QEasingCurve.InSine)
+            self.hide_animation.finished.connect(lambda: self.setVisible(False))
+            self.hide_animation.start()
