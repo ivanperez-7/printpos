@@ -68,7 +68,7 @@ class DatabaseManager:
             WarningDialog(self.error_txt, str(err))
             return False
     
-    def fetchall(self, query, parameters=None) -> list | None:
+    def fetchall(self, query, parameters=None) -> list[tuple] | None:
         try:
             if parameters is None:
                 self.crsr.execute(query)

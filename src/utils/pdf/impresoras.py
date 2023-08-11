@@ -32,7 +32,7 @@ class ImpresoraPDF:
         self.printer: QPrinter = None
     
     @staticmethod
-    def escogerImpresora(parent=None):
+    def escogerImpresora(parent: QWidget = None):
         """ Diálogo para escoger impresora. En hilo principal. """
         printer = QPrinter(QPrinter.HighResolution)
         

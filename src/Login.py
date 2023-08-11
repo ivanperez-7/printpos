@@ -16,9 +16,9 @@ class Usuario:
     id: int
     usuario: str
     nombre: str
-    permisos: str
-    foto_perfil: bytes
-    rol: str
+    permisos: str = 'Vendedor'
+    foto_perfil: bytes = None
+    rol: str = 'Vendedor'
     
     @property
     def administrador(self) -> bool:
