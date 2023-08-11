@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import overload
 
 from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QDateTime
@@ -35,10 +36,28 @@ class Movimiento:
                      self.metodo, self.usuario))
 
 
-@dataclass
 class Caja:
     """ Clase para manejar todos los movimientos en caja. """
     movimientos: list[Movimiento]
+    
+    @overload
+    def __init__(self, movimientos: list[tuple]): ...
+    @overload
+    def __init__(self, movimientos: list[Movimiento]): ...
+    
+    def __init__(self, movimientos: list[tuple] | list[Movimiento]):
+        try:
+            mov = movimientos[0]
+        except IndexError:
+            self.movimientos = []
+            return
+        
+        if isinstance(mov, Movimiento):
+            self.movimientos = movimientos
+        elif isinstance(mov, tuple):
+            self.movimientos = [Movimiento(*m) for m in movimientos]
+        else:
+            raise TypeError('Lista debe ser de tuplas o Movimiento.')
     
     def todoIngresos(self):
         """ Regresa lista de movimientos que son ingresos. """
@@ -124,7 +143,7 @@ class App_Caja(QtWidgets.QMainWindow):
         manejador = ManejadorCaja(self.conn)
         
         movimientos = manejador.obtenerMovimientos(fechaDesde, fechaHasta)
-        self.all_movimientos = Caja([Movimiento(*m) for m in movimientos])
+        self.all_movimientos = Caja(movimientos)
         
         self.llenar_ingresos()
         self.llenar_egresos()
