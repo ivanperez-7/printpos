@@ -94,7 +94,7 @@ def formatDate(date: QDateTime | datetime) -> str:
     return locale.toString(date, "d 'de' MMMM yyyy, h:mm ap")
 
 
-def leerConfig():
+def leer_config():
     """ Lee config.ini y regresa objeto ConfigParser. """
     config = ConfigParser(inline_comment_prefixes=';')
     config.read('config.ini')

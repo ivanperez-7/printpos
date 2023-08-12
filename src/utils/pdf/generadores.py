@@ -5,7 +5,7 @@ from PySide6.QtCore import QDateTime
 
 from Caja import Caja
 from Login import Usuario
-from utils.myutils import chunkify, formatDate, leerConfig
+from utils.myutils import chunkify, formatDate, leer_config
 from utils.sql import ManejadorVentas
 
 
@@ -226,7 +226,7 @@ def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, 
         folio = ''
     
     # leer datos de sucursal de archivo de configuración
-    config = leerConfig()
+    config = leer_config()
     SUCURSAL = config['SUCURSAL']
     
     # elementos para constuir el PDF

@@ -10,7 +10,7 @@ from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 from Caja import Caja
 from Login import Usuario
 from utils.mydecorators import run_in_thread
-from utils.myutils import leerConfig
+from utils.myutils import leer_config
 from utils.pdf.generadores import _generarCortePDF, _generarOrdenCompra, _generarTicketPDF
 from utils.sql import ManejadorVentas
 
@@ -50,7 +50,7 @@ class ImpresoraPDF:
         """ Lee impresora de tickets en archivo config. En hilo principal. """
         from utils.mywidgets import WarningDialog
         
-        config = leerConfig()
+        config = leer_config()
         printerName = config['IMPRESORAS']['default']
         
         pInfo = QPrinterInfo.printerInfo(printerName)
