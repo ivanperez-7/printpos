@@ -4,11 +4,11 @@ import fdb
 from PySide6.QtCore import QDate
 
 from utils.mywidgets import WarningDialog
-from utils.myutils import leerConfig
+from utils.myutils import leer_config
 
 
 def crear_conexion(usuario: str, psswd: str, rol: str = None):
-    config = leerConfig()
+    config = leer_config()
     red_local = config['DEFAULT']['red_local']
     nombre = config['SUCURSAL']['nombre']
     
