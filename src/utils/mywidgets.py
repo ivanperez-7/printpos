@@ -1,17 +1,17 @@
 """ Módulo con widgets personalizados varios. """
 from typing import Callable
 
-import fdb
 from PySide6 import QtWidgets
 from PySide6.QtGui import (QFont, QIcon, QPixmap, QRegularExpressionValidator, 
                            QPainter, QColor, QPolygon, QPainterPath)
 from PySide6.QtCore import Qt, QSize, QRectF, QPoint, QPropertyAnimation, QRect, QEasingCurve
 
 from Login import Usuario
+from utils.sql import Connection
 
 
 class VentanaPrincipal(QtWidgets.QMainWindow):
-    def __init__(self, conn: fdb.Connection, user: Usuario):
+    def __init__(self, conn: Connection, user: Usuario):
         super().__init__()
         
         self.resize(1540, 800)

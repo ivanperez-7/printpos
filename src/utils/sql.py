@@ -3,8 +3,12 @@ import fdb
 
 from PySide6.QtCore import QDate
 
-from utils.mywidgets import WarningDialog
 from utils.myutils import leer_config
+
+
+Connection = fdb.Connection
+Cursor = fdb.Cursor
+Error = fdb.Error
 
 
 def crear_conexion(usuario: str, psswd: str, rol: str = None):
@@ -19,7 +23,7 @@ def crear_conexion(usuario: str, psswd: str, rol: str = None):
             password=psswd,
             charset='UTF8',
             role=rol)
-    except fdb.Error as err:
+    except Error as err:
         print(f'Cannot open connection to database: {str(err)}')
         return None
 
@@ -27,16 +31,16 @@ def crear_conexion(usuario: str, psswd: str, rol: str = None):
 class DatabaseManager:
     """ Clase general de un administrador de bases de datos.
     Permite ejecutar consultas varias y manejar las excepciones."""
-    
-    def __init__(self, conn: fdb.Connection,
-                 error_txt: str = None,
-                 handle_exceptions: bool = True):
+    def __init__(self, conn: Connection,
+                       error_txt: str = None,
+                       handle_exceptions: bool = True):
         self.conn = conn
-        self.crsr: fdb.Cursor = conn.cursor()
+        self.crsr: Cursor = conn.cursor()
         self.error_txt = error_txt or '¡Acceso fallido a base de datos!'
         self.handle_exceptions = handle_exceptions
     
     def execute(self, query, parameters=None, commit=False):
+        from utils.mywidgets import WarningDialog
         try:
             if parameters is None:
                 self.crsr.execute(query)
@@ -45,7 +49,7 @@ class DatabaseManager:
             if commit:
                 self.conn.commit()
             return True
-        except fdb.Error as err:
+        except Error as err:
             if not self.handle_exceptions:
                 raise err
             self.conn.rollback()
@@ -53,6 +57,7 @@ class DatabaseManager:
             return False
     
     def executemany(self, query, parameters=None, commit=False):
+        from utils.mywidgets import WarningDialog
         try:
             if parameters is None:
                 self.crsr.executemany(query)
@@ -61,7 +66,7 @@ class DatabaseManager:
             if commit:
                 self.conn.commit()
             return True
-        except fdb.Error as err:
+        except Error as err:
             if not self.handle_exceptions:
                 raise err
             self.conn.rollback()
@@ -69,26 +74,28 @@ class DatabaseManager:
             return False
     
     def fetchall(self, query, parameters=None) -> list[tuple] | None:
+        from utils.mywidgets import WarningDialog
         try:
             if parameters is None:
                 self.crsr.execute(query)
             else:
                 self.crsr.execute(query, parameters)
             return self.crsr.fetchall()
-        except fdb.Error as err:
+        except Error as err:
             if not self.handle_exceptions:
                 raise err
             WarningDialog(self.error_txt, str(err))
             return None
     
     def fetchone(self, query, parameters=None) -> tuple | None:
+        from utils.mywidgets import WarningDialog
         try:
             if parameters is None:
                 self.crsr.execute(query)
             else:
                 self.crsr.execute(query, parameters)
             return self.crsr.fetchone()
-        except fdb.Error as err:
+        except Error as err:
             if not self.handle_exceptions:
                 raise err
             WarningDialog(self.error_txt, str(err))
@@ -118,7 +125,7 @@ class DatabaseManager:
 class ManejadorCaja(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Caja. """
     
-    def __init__(self, conn: fdb.Connection, error_txt: str = None):
+    def __init__(self, conn: Connection, error_txt: str = None):
         super().__init__(conn, error_txt)
     
     def obtenerMovimientos(self, inicio: QDate, final: QDate):
@@ -164,7 +171,7 @@ class ManejadorCaja(DatabaseManager):
 class ManejadorClientes(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Clientes. """
     
-    def __init__(self, conn: fdb.Connection, error_txt: str = None):
+    def __init__(self, conn: Connection, error_txt: str = None):
         super().__init__(conn, error_txt)
     
     def obtenerTablaPrincipal(self):
@@ -247,7 +254,7 @@ class ManejadorClientes(DatabaseManager):
 class ManejadorInventario(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Inventario. """
     
-    def __init__(self, conn: fdb.Connection, error_txt: str = None):
+    def __init__(self, conn: Connection, error_txt: str = None):
         super().__init__(conn, error_txt)
     
     def obtenerTablaPrincipal(self):
@@ -378,7 +385,7 @@ class ManejadorInventario(DatabaseManager):
 class ManejadorProductos(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Inventario. """
     
-    def __init__(self, conn: fdb.Connection, error_txt: str = None):
+    def __init__(self, conn: Connection, error_txt: str = None):
         super().__init__(conn, error_txt)
     
     def obtenerTablaPrincipal(self):
@@ -627,7 +634,7 @@ class ManejadorProductos(DatabaseManager):
 class ManejadorVentas(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Ventas. """
     
-    def __init__(self, conn: fdb.Connection, error_txt: str = None):
+    def __init__(self, conn: Connection, error_txt: str = None):
         super().__init__(conn, error_txt)
     
     def tablaVentas(self, inicio: QDate = QDate.currentDate(),
@@ -947,9 +954,9 @@ class ManejadorVentas(DatabaseManager):
 class ManejadorUsuarios(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Usuarios. """
     
-    def __init__(self, conn: fdb.Connection,
-                 error_txt: str = None,
-                 handle_exceptions: bool = True):
+    def __init__(self, conn: Connection,
+                       error_txt: str = None,
+                       handle_exceptions: bool = True):
         super().__init__(conn, error_txt, handle_exceptions)
     
     def obtenerTablaPrincipal(self):

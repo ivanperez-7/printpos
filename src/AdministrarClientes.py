@@ -1,16 +1,14 @@
 from datetime import datetime
 
-import fdb
-
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon, QPixmap, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QDate, Signal
 
-from utils.sql import ManejadorClientes
 from utils.mydecorators import con_fondo
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import exportarXlsx, formatDate, ColorsEnum, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
+from utils.sql import Connection, ManejadorClientes
 
 
 #####################
@@ -291,7 +289,7 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
                           self.ui.txtCorreo.text())
         self.close()
     
-    def ejecutarOperacion(self, conn: fdb.Connection, params: tuple):
+    def ejecutarOperacion(self, conn: Connection, params: tuple):
         """ Función a sobreescribir donde se realiza consulta SQL. """
         pass
 

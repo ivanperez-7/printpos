@@ -1,14 +1,12 @@
-import fdb
-
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QPixmap, QIcon
 from PySide6.QtCore import Qt, Signal
 
-from utils.sql import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import con_fondo
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import ColorsEnum, FabricaValidadores, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
+from utils.sql import Connection, ManejadorInventario, ManejadorProductos
 
 
 #####################
@@ -375,7 +373,7 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
         self.success.emit()
         self.close()
     
-    def ejecutarOperacion(self, conn: fdb.Connection, params: tuple) -> tuple:
+    def ejecutarOperacion(self, conn: Connection, params: tuple) -> tuple:
         """ Devuelve tupla con índice del producto registrado o editado. """
         pass
 

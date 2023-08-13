@@ -1,8 +1,6 @@
 from PySide6 import QtWidgets, QtGui
 from PySide6.QtCore import QDate, QDateTime, QModelIndex, QRegularExpression, Qt
 
-import fdb
-
 
 #####################
 # VENTANA PRINCIPAL #

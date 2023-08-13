@@ -1,7 +1,7 @@
 """ Módulo para implementar decoradores útiles varios. """
 from functools import wraps
 
-from PySide6.QtWidgets import QMessageBox, QDialog
+from PySide6.QtWidgets import QMessageBox, QDialog, QMainWindow
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
 
@@ -63,14 +63,12 @@ def requiere_admin(func):
         Añadir parámetro nombrado `conn` al final de la función, ya que
         es devuelto por el decorador para extraer información que se requiera
         de la conexión de administrador, por ejemplo, nombre del administrador. """
-    import fdb
+    from utils.sql import Error, crear_conexion, ManejadorUsuarios
     
-    from utils.sql import crear_conexion, ManejadorUsuarios
+    dialog: Dialog_ObtenerAdmin = ...
+    parent: QMainWindow = ...
     
     def accept_handle():
-        global dialog
-        global parent
-        
         usuario = dialog.txtUsuario.text().upper()
         psswd = dialog.txtPsswd.text()
         
@@ -88,7 +86,7 @@ def requiere_admin(func):
         try:
             manejador = ManejadorUsuarios(conn, handle_exceptions=False)
             manejador.obtenerUsuario(usuario)
-        except fdb.Error:
+        except Error:
             dialog.close()
             QMessageBox.warning(parent, 'Error',
                                 'Las credenciales no son válidas para una cuenta de administrador.')
@@ -99,9 +97,6 @@ def requiere_admin(func):
     
     @wraps(func)
     def wrapper_decorator(*args, **kwargs):
-        global dialog
-        global parent
-        
         parent = args[0]  # QMainWindow (módulo) actual
         
         if parent.user.administrador:
