@@ -1,1 +1,2 @@
-from utils.pdf.impresoras import ImpresoraTickets, ImpresoraOrdenes
+""" Paquete que ofrece generadores de PDF y manejadores para imprimir estos. """
+from .impresoras import ImpresoraTickets, ImpresoraOrdenes
