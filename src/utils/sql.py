@@ -6,9 +6,9 @@ from PySide6.QtCore import QDate
 from utils.myutils import leer_config
 
 
-Connection = fdb.Connection
-Cursor = fdb.Cursor
-Error = fdb.Error
+class Connection(fdb.Connection): ...
+class Cursor(fdb.Cursor): ...
+class Error(fdb.Error): ...
 
 
 def crear_conexion(usuario: str, psswd: str, rol: str = None):
