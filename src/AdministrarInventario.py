@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt, Signal
 from utils.mydecorators import con_fondo
 from utils.myutils import ColorsEnum, FabricaValidadores, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
-from utils.sql import Connection, ManejadorInventario, ManejadorProductos
+from utils.sql import ManejadorInventario, ManejadorProductos
 
 
 #####################
@@ -283,7 +283,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
             return
         
         # ejecuta internamente un fetchone, por lo que se desempaca luego
-        result = self.ejecutarOperacion(self.conn, inventario_db_parametros)
+        result = self.ejecutarOperacion(inventario_db_parametros)
         if not result:
             return
         
@@ -300,7 +300,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         self.success.emit()
         self.close()
     
-    def ejecutarOperacion(self, conn: Connection, params: tuple) -> tuple:
+    def ejecutarOperacion(self, params: tuple) -> tuple:
         """ Devuelve tupla con índice del elemento registrado o editado. """
         pass
 
@@ -320,8 +320,8 @@ class App_RegistrarInventario(Base_EditarInventario):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def ejecutarOperacion(self, conn, params):
-        manejador = ManejadorInventario(conn, self.MENSAJE_ERROR)
+    def ejecutarOperacion(self, params):
+        manejador = ManejadorInventario(self.conn, self.MENSAJE_ERROR)
         return manejador.insertarElemento(params)
 
 
@@ -356,8 +356,8 @@ class App_EditarInventario(Base_EditarInventario):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def ejecutarOperacion(self, conn, params):
-        manejador = ManejadorInventario(conn, self.MENSAJE_ERROR)
+    def ejecutarOperacion(self, params):
+        manejador = ManejadorInventario(self.conn, self.MENSAJE_ERROR)
         return manejador.editarElemento(self.idx, params)
 
 

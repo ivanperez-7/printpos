@@ -6,7 +6,7 @@ from utils.mydecorators import con_fondo
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import ColorsEnum, FabricaValidadores, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
-from utils.sql import Connection, ManejadorInventario, ManejadorProductos
+from utils.sql import ManejadorInventario, ManejadorProductos
 
 
 #####################
@@ -346,7 +346,7 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
             return
         
         # ejecuta internamente un fetchone, por lo que se desempaca luego
-        result = self.ejecutarOperacion(self.conn, productos_db_parametros)
+        result = self.ejecutarOperacion(productos_db_parametros)
         if not result:
             return
         
@@ -373,7 +373,7 @@ class Base_EditarProducto(QtWidgets.QMainWindow):
         self.success.emit()
         self.close()
     
-    def ejecutarOperacion(self, conn: Connection, params: tuple) -> tuple:
+    def ejecutarOperacion(self, params: tuple) -> tuple:
         """ Devuelve tupla con índice del producto registrado o editado. """
         pass
 
@@ -390,8 +390,8 @@ class App_RegistrarProducto(Base_EditarProducto):
         self.ui.btAceptar.setText(' Registrar producto')
         self.ui.btAceptar.setIcon(QIcon(QPixmap(':/img/resources/images/plus.png')))
     
-    def ejecutarOperacion(self, conn, params):
-        manejador = ManejadorProductos(conn, self.MENSAJE_ERROR)
+    def ejecutarOperacion(self, params):
+        manejador = ManejadorProductos(self.conn, self.MENSAJE_ERROR)
         return manejador.insertarProducto(params)
 
 
@@ -436,8 +436,8 @@ class App_EditarProducto(Base_EditarProducto):
         
         self.idx = idx  # id del elemento a editar
     
-    def ejecutarOperacion(self, conn, params):
-        manejador = ManejadorProductos(conn, self.MENSAJE_ERROR)
+    def ejecutarOperacion(self, params):
+        manejador = ManejadorProductos(self.conn, self.MENSAJE_ERROR)
         return manejador.editarProducto(self.idx, params)
 
 
