@@ -84,7 +84,7 @@ class App_Login(QtWidgets.QMainWindow):
             manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
             result = manejador.obtenerUsuario(usuario)
         except sql.Error as err:
-            print(str(err))
+            print(err.args[0])
             self.errorLogin()
             return
         

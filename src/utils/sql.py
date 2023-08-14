@@ -25,7 +25,7 @@ def crear_conexion(usuario: str, psswd: str, rol: str = None) -> Connection | No
             charset='UTF8',
             role=rol)
     except Error as err:
-        print(f'Cannot open connection to database: {str(err)}')
+        print(err.args[0])
         return None
 
 
@@ -57,7 +57,7 @@ class DatabaseManager:
             if not self.handle_exceptions:
                 raise err
             self.conn.rollback()
-            WarningDialog(self.error_txt, str(err))
+            WarningDialog(self.error_txt, err.args[0])
             return False
     
     def executemany(self, query, parameters=None, commit=False):
@@ -74,7 +74,7 @@ class DatabaseManager:
             if not self.handle_exceptions:
                 raise err
             self.conn.rollback()
-            WarningDialog(self.error_txt, str(err))
+            WarningDialog(self.error_txt, err.args[0])
             return False
     
     def fetchall(self, query, parameters=None) -> list[tuple] | None:
@@ -88,7 +88,7 @@ class DatabaseManager:
         except Error as err:
             if not self.handle_exceptions:
                 raise err
-            WarningDialog(self.error_txt, str(err))
+            WarningDialog(self.error_txt, err.args[0])
             return None
     
     def fetchone(self, query, parameters=None) -> tuple | None:
@@ -102,7 +102,7 @@ class DatabaseManager:
         except Error as err:
             if not self.handle_exceptions:
                 raise err
-            WarningDialog(self.error_txt, str(err))
+            WarningDialog(self.error_txt, err.args[0])
             return None
     
     def obtenerUsuario(self) -> str | None:
