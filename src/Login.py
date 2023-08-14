@@ -63,7 +63,7 @@ class App_Login(QtWidgets.QMainWindow):
     @run_in_thread
     def verificar_info(self):
         """ Verifica datos ingresados consultando la tabla Usuarios. """
-        from utils.sql import crear_conexion, ManejadorUsuarios
+        from utils import sql
         
         self.lock = True
         usuario = self.ui.inputUsuario.text().upper()
@@ -78,12 +78,12 @@ class App_Login(QtWidgets.QMainWindow):
         self.ui.lbEstado.setText('Conectando a la base de datos...')
         
         rol = self.ui.groupRol.checkedButton().text()
-        conn = crear_conexion(usuario, psswd, rol)
+        conn = sql.crear_conexion(usuario, psswd, rol)
         
         try:
-            manejador = ManejadorUsuarios(conn, handle_exceptions=False)
+            manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
             result = manejador.obtenerUsuario(usuario)
-        except Exception as err:
+        except sql.Error as err:
             print(str(err))
             self.errorLogin()
             return
