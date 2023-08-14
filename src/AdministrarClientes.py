@@ -8,7 +8,7 @@ from utils.mydecorators import con_fondo
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import exportarXlsx, formatDate, ColorsEnum, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
-from utils.sql import Connection, ManejadorClientes
+from utils.sql import ManejadorClientes
 
 
 #####################
@@ -278,7 +278,7 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
                                            self.ui.txtDescuentos.toPlainText()
                                        ))
         
-        if not self.ejecutarOperacion(self.conn, clientes_db_parametros):
+        if not self.ejecutarOperacion(clientes_db_parametros):
             return
         
         QtWidgets.QMessageBox.information(
@@ -289,7 +289,7 @@ class Base_EditarCliente(QtWidgets.QMainWindow):
                           self.ui.txtCorreo.text())
         self.close()
     
-    def ejecutarOperacion(self, conn: Connection, params: tuple):
+    def ejecutarOperacion(self, params: tuple):
         """ Función a sobreescribir donde se realiza consulta SQL. """
         pass
 
@@ -312,9 +312,9 @@ class App_RegistrarCliente(Base_EditarCliente):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def ejecutarOperacion(self, conn, params):
+    def ejecutarOperacion(self, params):
         """ Insertar nuevo cliente a la base de datos. """
-        manejador = ManejadorClientes(conn, self.MENSAJE_ERROR)
+        manejador = ManejadorClientes(self.conn, self.MENSAJE_ERROR)
         return manejador.insertarCliente(params)
 
 
@@ -349,7 +349,7 @@ class App_EditarCliente(Base_EditarCliente):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def ejecutarOperacion(self, conn, params):
+    def ejecutarOperacion(self, params):
         """ Actualizar datos del cliente en la base de datos. """
-        manejador = ManejadorClientes(conn, self.MENSAJE_ERROR)
+        manejador = ManejadorClientes(self.conn, self.MENSAJE_ERROR)
         return manejador.actualizarCliente(self.idx, params)
