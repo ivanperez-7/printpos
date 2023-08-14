@@ -11,7 +11,7 @@ class Cursor(fdb.Cursor): ...
 class Error(fdb.Error): ...
 
 
-def crear_conexion(usuario: str, psswd: str, rol: str = None):
+def crear_conexion(usuario: str, psswd: str, rol: str = None) -> Connection | None:
     config = leer_config()
     red_local = config['DEFAULT']['red_local']
     nombre = config['SUCURSAL']['nombre']
