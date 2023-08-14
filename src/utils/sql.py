@@ -35,6 +35,9 @@ class DatabaseManager:
     def __init__(self, conn: Connection,
                        error_txt: str = None,
                        handle_exceptions: bool = True):
+        if not isinstance(conn, Connection):
+            raise Error("Tipo de conexión a DB no válido.")
+        
         self.conn = conn
         self.crsr: Cursor = conn.cursor()
         self.error_txt = error_txt or '¡Acceso fallido a base de datos!'
