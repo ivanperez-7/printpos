@@ -1,14 +1,15 @@
 """ Módulo con manejadores para tablas en la base de datos. """
-import fdb
+from typing import TypeAlias
 
+import fdb
 from PySide6.QtCore import QDate
 
 from utils.myutils import leer_config
 
 
-class Connection(fdb.Connection): ...
-class Cursor(fdb.Cursor): ...
-class Error(fdb.Error): ...
+Connection: TypeAlias = fdb.Connection
+Cursor: TypeAlias = fdb.Cursor
+Error: TypeAlias = fdb.Error
 
 
 def crear_conexion(usuario: str, psswd: str, rol: str = None) -> Connection | None:
