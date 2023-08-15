@@ -6,10 +6,10 @@ from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QDateTime
 from PySide6.QtGui import QFont
 
-from utils.sql import ManejadorCaja
 from utils.myinterfaces import InterfazFechas
 from utils.myutils import FabricaValidadores, formatDate
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
+from utils.sql import ManejadorCaja, ManejadorMetodosPago
 
 
 ##################
@@ -358,16 +358,16 @@ class Dialog_Registrar(QtWidgets.QDialog):
         if self.monto == 0. or not self.motivo:
             return
         
+        id_metodo = ManejadorMetodosPago(self.conn).obtenerIdMetodo(self.metodo)
         caja_db_parametros = (
             QDateTime.currentDateTime().toPython(),
             self.monto,
             self.motivo,
-            self.metodo,
+            id_metodo,
             self.user.id
         )
-        manejador = ManejadorCaja(self.conn,
-                                  '¡No se pudo registrar el movimiento!')
         
+        manejador = ManejadorCaja(self.conn, '¡No se pudo registrar el movimiento!')
         if not manejador.insertarMovimiento(caja_db_parametros):
             return
         
