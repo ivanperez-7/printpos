@@ -137,23 +137,15 @@ class ManejadorCaja(DatabaseManager):
             
             Requiere fechas de inicio y final, de tipo QDate. """
         return self.fetchall('''
-            SELECT 	fecha_hora,
-                    monto,
-                    descripcion,
-                    metodo,
-                    U.nombre
-            FROM 	Caja AS C
-                    LEFT JOIN Usuarios AS U
-                           ON C.id_usuarios = U.id_usuarios
+            SELECT  * 
+            FROM    movimientos_caja
             WHERE   ? <= CAST(fecha_hora AS DATE)
-                    AND CAST(fecha_hora AS DATE) <= ?
-            ORDER   BY fecha_hora DESC;
+                    AND CAST(fecha_hora AS DATE) <= ?;
         ''', (inicio.toPython(), final.toPython()))
     
     def obtenerFechaPrimerMov(self):
         """ Obtener fecha del movimiento más antiguo. """
-        result = self.fetchone('SELECT MIN(fecha_hora) FROM Caja;')
-        
+        result = self.fetchone('SELECT MIN(fecha_hora) FROM movimientos_caja;')
         if result:
             fecha, = result
             return fecha
@@ -164,8 +156,8 @@ class ManejadorCaja(DatabaseManager):
             Hace commit automáticamente, a menos que se indique lo contrario. """
         return self.execute('''
             INSERT INTO Caja (
-                fecha_hora, monto,
-                descripcion, metodo, id_usuarios
+                fecha_hora, monto, descripcion,
+                id_metodo_pago, id_usuarios
             )
             VALUES
                 (?,?,?,?,?);
@@ -384,6 +376,19 @@ class ManejadorInventario(DatabaseManager):
             VALUES
                 (?,?,?);
         ''', params, commit=True)
+
+
+class ManejadorMetodosPago(DatabaseManager):
+    """ Clase para manejar sentencias hacia/desde la tabla metodos_pago. """
+    def __init__(self, conn: Connection):
+        super().__init__(conn)
+    
+    def obtenerIdMetodo(self, metodo: str):
+        """ Obtener ID del método de pago dado su nombre. """
+        result = self.fetchone('SELECT id_metodo_pago FROM metodos_pago WHERE metodo = ?;', (metodo,))
+        if result:
+            metodo, = result
+            return metodo
 
 
 class ManejadorProductos(DatabaseManager):
