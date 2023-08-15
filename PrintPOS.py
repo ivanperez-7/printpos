@@ -14,7 +14,6 @@ class PrintPOS(QApplication):
     def __init__(self):
         super().__init__()
         
-        self.setStyleSheet('* {font-family: Segoe UI;}')
         self.setStyle(QStyleFactory.create('Fusion'))
         
         self.configurarPaleta()
