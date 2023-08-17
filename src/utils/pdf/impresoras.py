@@ -1,6 +1,7 @@
 """ Provee clases para enviar documentos PDF, en bytes, a impresoras. """
 import io
 from functools import wraps
+from typing import overload
 
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt
@@ -12,7 +13,7 @@ from Login import Usuario
 from utils.mydecorators import run_in_thread
 from utils.myutils import leer_config
 from utils.pdf.generadores import _generarCortePDF, _generarOrdenCompra, _generarTicketPDF
-from utils.sql import ManejadorVentas
+from utils import sql
 
 
 def verificar_impresora(func):
@@ -92,16 +93,27 @@ class ImpresoraOrdenes(ImpresoraPDF):
     """ Impresora para órdenes de compra. 
         Siempre crea diálogo para escoger impresora. """
     
-    def __init__(self, parent: QWidget = None):
+    @overload
+    def __init__(self, conn: sql.Connection) -> None: ...
+    @overload
+    def __init__(self, parent: QWidget) -> None: ...
+    
+    def __init__(self, arg):
         super().__init__()
-        
-        self.conn = parent.conn
-        self.printer = self.escogerImpresora(parent)
+        if isinstance(arg, sql.Connection):
+            self.conn = arg
+            self.parent = None
+        elif isinstance(arg, QWidget):
+            self.conn = arg.conn
+            self.parent = arg
+        else:
+            raise ValueError('Argumentos inválidos: ninguna implementación.')
+        self.printer = self.escogerImpresora(self.parent)
     
     @verificar_impresora
     @run_in_thread
     def imprimirOrdenCompra(self, idx: int):
-        manejador = ManejadorVentas(self.conn)
+        manejador = sql.ManejadorVentas(self.conn)
         data = _generarOrdenCompra(manejador, idx)
         self.enviarAImpresora(data)
 
@@ -110,10 +122,19 @@ class ImpresoraTickets(ImpresoraPDF):
     """ Impresora para tickets. 
         Intenta leer impresora por defecto del archivo config. """
     
-    def __init__(self, parent: QWidget = None):
+    @overload
+    def __init__(self, conn: sql.Connection) -> None: ...
+    @overload
+    def __init__(self, parent: QWidget) -> None: ...
+    
+    def __init__(self, arg):
         super().__init__()
-        
-        self.conn = parent.conn
+        if isinstance(arg, sql.Connection):
+            self.conn = arg
+        elif isinstance(arg, QWidget):
+            self.conn = arg.conn
+        else:
+            raise ValueError('Argumentos inválidos: ninguna implementación.')
         self.printer = self.obtenerImpresoraTickets()
     
     @verificar_impresora
@@ -121,7 +142,7 @@ class ImpresoraTickets(ImpresoraPDF):
     def imprimirTicketCompra(self, idx):
         """ Genera el ticket de compra a partir de un identificador en la base de datos. """
         # obtener datos de la compra, de la base de datos
-        manejador = ManejadorVentas(self.conn)
+        manejador = sql.ManejadorVentas(self.conn)
         productos = manejador.obtenerTablaTicket(idx)
         
         # más datos para el ticket
