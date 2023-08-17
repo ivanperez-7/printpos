@@ -55,7 +55,7 @@ class ItemVenta:
 @dataclass
 class ItemGranFormato(ItemVenta):
     """ Clase para un producto de tipo gran formato.
-        Reimplementa el método `importe` y `total_descuentos`. """
+        Reimplementa métodos `importe` y `total_descuentos`. """
     _min_m2: float
     
     @property
@@ -263,12 +263,10 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         preciosSinIVA = preciosConIVA / 1.16
         impuestos = preciosConIVA - preciosSinIVA
         
-        descuentos = self.ventaDatos.total_descuentos
-        
         self.ui.lbTotal.setText(f'{preciosConIVA:,.2f}')
         self.ui.lbSubtotal.setText(f'{preciosSinIVA:,.2f}')
         self.ui.lbImpuestos.setText(f'{impuestos:,.2f}')
-        self.ui.lbDescuento.setText(f'{descuentos:,.2f}')
+        self.ui.lbDescuento.setText(f'{self.ventaDatos.total_descuentos:,.2f}')
         # </calcular precios y mostrar>
         
         tabla.resizeRowsToContents()
@@ -278,27 +276,27 @@ class App_CrearVenta(QtWidgets.QMainWindow):
     # ====================================
     def cambiarFecha(self):
         """ Abre ventana para cambiar la fecha de entrega. """
-        self.new = App_FechaEntrega(self)
+        modulo = App_FechaEntrega(self)
     
     def seleccionarCliente(self):
         """ Abre ventana para seleccionar un cliente de la base de datos. """
-        self.new = App_SeleccionarCliente(self)
+        modulo = App_SeleccionarCliente(self)
     
     def insertarCliente(self):
         """ Abre ventana para registrar un cliente. """
         from AdministrarClientes import App_RegistrarCliente
         
-        self.new = App_RegistrarCliente(
+        modulo = App_RegistrarCliente(
             self,
             nombre=self.ui.txtCliente.text(),
             celular=self.ui.txtTelefono.text(),
             correo=self.ui.txtCorreo.text()
         )
-        self.new.success.connect(self.establecerCliente)
+        modulo.success.connect(self.establecerCliente)
     
     def agregarProducto(self):
         """ Abre ventana para agregar un producto a la orden. """
-        self.new = App_AgregarProducto(self)
+        modulo = App_AgregarProducto(self)
     
     def quitarProducto(self):
         """ Pide confirmación para eliminar un producto de la tabla. """
@@ -310,7 +308,6 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           '¿Desea descartar de la venta los productos seleccionados?')
-        
         if ret == qm.Yes:
             self._quitarProducto(selected)
     
@@ -326,12 +323,12 @@ class App_CrearVenta(QtWidgets.QMainWindow):
     @requiere_admin
     def agregarDescuento(self, conn):
         """ Abre ventana para agregar un descuento a la orden si el cliente es especial. """
-        self.new = App_AgregarDescuento(self)
+        modulo = App_AgregarDescuento(self)
     
     def generarCotizacion(self):
         """ Genera PDF con cotización de la orden actual. """
         if self.ui.tabla_productos.rowCount():
-            self.new = App_EnviarCotizacion(self)
+            modulo = App_EnviarCotizacion(self)
     
     def confirmarVenta(self):
         """ Abre ventana para confirmar y terminar la venta. """
@@ -346,7 +343,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         nombre = self.ui.txtCliente.text().strip()
         telefono = self.ui.txtTelefono.text().strip()
         
-        cliente = manejador.verificarCliente(nombre, telefono)
+        cliente = manejador.obtenerCliente(nombre, telefono)
         
         if not cliente:
             qm.warning(self, '¡Atención!',
@@ -374,8 +371,8 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             if not (cliente[correo] and cliente[direccion] and cliente[rfc]):
                 from AdministrarClientes import App_EditarCliente
                 
-                self.new = App_EditarCliente(self, cliente[id])
-                self.new.success.connect(self.establecerCliente)
+                modulo = App_EditarCliente(self, cliente[id])
+                modulo.success.connect(self.establecerCliente)
                 
                 qm.warning(self, '¡Atención!',
                            'El cliente no tiene completos sus datos para la factura.\n'
@@ -394,7 +391,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
             self.ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
             
             bg = DimBackground(self)
-            self.new = App_ConfirmarVenta(self, self.ventaDatos)
+            modulo = App_ConfirmarVenta(self, self.ventaDatos)
     
     @requiere_admin
     def goHome(self, conn):
@@ -989,7 +986,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.show()
         
         # brincar el proceso si el pago es de cero
-        if self.paraPagar <= 0:
+        if self.para_pagar <= 0:
             self.verificar()
     
     def showEvent(self, event):
@@ -1049,11 +1046,11 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
     def recalcularImportes(self, venta: Venta):
         """ Calcular total de la compra y precio a pagarse ahora mismo. """
         self.total = venta.total
-        self.paraPagar = venta.total if venta.esVentaDirecta \
+        self.para_pagar = venta.total if venta.esVentaDirecta \
             else round(venta.total / 2, 2)
         
         self.ui.lbTotal.setText(f'{self.total:,.2f}')
-        self.ui.txtAnticipo.cantidad = self.paraPagar
+        self.ui.txtAnticipo.cantidad = self.para_pagar
     
     def registrarVenta(self):
         """ Registra datos principales de venta en DB
@@ -1097,25 +1094,25 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         """ Recalcular cambio a entregar. """
         pago = self.ui.txtPago.cantidad
         
-        cambio = max(0., pago - self.paraPagar)
+        cambio = max(0., pago - self.para_pagar)
         self.ui.lbCambio.setText(f'{cambio:,.2f}')
     
     def cambiarAnticipo(self, txt=None):
         """ Cambiar el anticipo pagado por el cliente. """
-        self.paraPagar = self.ui.txtAnticipo.cantidad
+        self.para_pagar = self.ui.txtAnticipo.cantidad
         self.calcularCambio()
     
     def verificar(self):
         """ Intenta finalizar la compra o pedido, actualizando el estado
             e insertando los correspondientes movimientos en la tabla Caja. """
-        if not 0. <= self.paraPagar <= self.total:
+        if not 0. <= self.para_pagar <= self.total:
             return
         
         pago = self.ui.txtPago.cantidad
         
-        pagoAceptado = pago >= self.paraPagar if self.metodoSeleccionado == 'Efectivo' \
-            else pago == self.paraPagar
-        minimoCincuentaPorCiento = round(self.total / 2, 2) <= self.paraPagar
+        pagoAceptado = pago >= self.para_pagar if self.metodoSeleccionado == 'Efectivo' \
+            else pago == self.para_pagar
+        minimoCincuentaPorCiento = round(self.total / 2, 2) <= self.para_pagar
         
         if not pagoAceptado:
             return
@@ -1142,37 +1139,19 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         
         manejadorVentas = sql.ManejadorVentas(self.conn)
         
-        if pago > 0.:
-            manejadorCaja = sql.ManejadorCaja(self.conn)
-            hoy = QDateTime.currentDateTime().toPython()
-            
-            # registrar ingreso (sin cambio) en caja
-            ingreso_db_parametros = (
-                hoy,
-                self.paraPagar,
-                f'Pago de venta con folio {self.id_ventas}',
-                self.metodoSeleccionado,
-                self.user.id
-            )
-            
-            if not manejadorCaja.insertarMovimiento(ingreso_db_parametros, commit=False):
-                return
+        # registrar pagos en tabla ventas_pagos
+        if not manejadorVentas.insertarPago(self.id_ventas, self.metodoSeleccionado, 
+                                            self.para_pagar, pago):
+            return
         
         # cambiar el estado de la venta a 'Terminada' o 'Recibido xx.xx'
         # y también cambiar método de pago
-        estado = 'Terminada' if esDirecta else f'Recibido {self.paraPagar:.2f}'
-        
-        if not manejadorVentas.actualizarRecibido(self.id_ventas, pago):
-            return
-        if not manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado):
-            return
-        if not manejadorVentas.actualizarMetodoPago(self.id_ventas, self.metodoSeleccionado,
-                                                    commit=True):
+        estado = 'Terminada' if esDirecta else f'Recibido {self.para_pagar:.2f}'
+        if not manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True):
             return
         
         # abrir pregunta
         qm = QtWidgets.QMessageBox
-        
         if not esDirecta:
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
             
@@ -1185,7 +1164,6 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
             if ret == qm.Yes:
                 impresora = ImpresoraTickets(self)
                 impresora.imprimirTicketCompra(self.id_ventas)
-        
         self.goHome()
     
     def abortar(self):
@@ -1199,15 +1177,11 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
     
     @requiere_admin
     def _abortar(self, conn):
-        from utils.sql import DatabaseManager
-        
-        manejadorVentas = sql.ManejadorVentas(self.conn)
-        manejadorAdmin = DatabaseManager(conn)
+        manejadorAdmin = sql.ManejadorVentas(conn)
         
         estado = 'Cancelada por ' + manejadorAdmin.obtenerUsuario()
-        
-        if manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado,
-                                                 commit=True):
+        if manejadorAdmin.actualizarEstadoVenta(self.id_ventas, estado,
+                                                commit=True):
             self.goHome()
     
     def goHome(self):

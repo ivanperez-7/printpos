@@ -117,8 +117,8 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
     # ====================================
     def registrarUsuario(self):
         """ Abre ventana para registrar un usuario."""
-        self.new = App_RegistrarUsuario(self)
-        self.new.success.connect(
+        widget = App_RegistrarUsuario(self)
+        widget.success.connect(
             lambda: self.update_display(rescan=True))
     
     def editarUsuario(self):
@@ -126,8 +126,8 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
         selected = self.ui.tabla_usuarios.selectedItems()
         
         if selected:
-            self.new = App_EditarUsuario(self, selected[0].text())
-            self.new.success.connect(
+            widget = App_EditarUsuario(self, selected[0].text())
+            widget.success.connect(
                 lambda: self.update_display(rescan=True))
     
     def quitarUsuario(self):

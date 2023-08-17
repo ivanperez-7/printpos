@@ -3,7 +3,7 @@ import io
 from functools import wraps
 
 from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import QDateTime, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QImage
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 
@@ -126,9 +126,7 @@ class ImpresoraTickets(ImpresoraPDF):
         
         # más datos para el ticket
         vendedor = manejador.obtenerUsuarioAsociado(idx)
-        datos = manejador.obtenerVenta(idx)
-        
-        _, _, _, fechaCreacion, _, _, metodo, _, _, pagado = datos
+        fechaCreacion, _ = manejador.obtenerFechas(idx)
         
         # cambiar método de pago (abreviatura)
         abrev = {'Efectivo': 'EFEC',
@@ -136,16 +134,16 @@ class ImpresoraTickets(ImpresoraPDF):
                  'Tarjeta de crédito': 'TVP',
                  'Tarjeta de débito': 'TVP'}
         
-        data = _generarTicketPDF(idx, productos, vendedor,
-                                 fechaCreacion, pagado, abrev[metodo])
-        self.enviarAImpresora(data)
+        for metodo, monto, pagado in manejador.obtenerPagosVenta(idx):
+            data = _generarTicketPDF(idx, productos, vendedor, fechaCreacion, 
+                                     pagado, monto, abrev[metodo])
+            self.enviarAImpresora(data)
     
     @verificar_impresora
     @run_in_thread
     def imprimirTicketPresupuesto(self, productos: list[tuple], vendedor: str):
         """ Genera un ticket para el presupuesto de una compra. """
-        data = _generarTicketPDF(0, productos, vendedor,
-                                 QDateTime.currentDateTime(), 0., None)
+        data = _generarTicketPDF(0, productos, vendedor)
         self.enviarAImpresora(data)
     
     @verificar_impresora

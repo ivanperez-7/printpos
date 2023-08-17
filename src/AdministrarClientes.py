@@ -162,8 +162,8 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
     # ====================================
     def insertarCliente(self):
         """ Abre ventana para registrar un cliente. """
-        self.new = App_RegistrarCliente(self)
-        self.new.success.connect(
+        widget = App_RegistrarCliente(self)
+        widget.success.connect(
             lambda: self.update_display(rescan=True))
     
     def editarCliente(self):
@@ -173,8 +173,8 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
         if not selected or selected[0].text() == '1':
             return
         
-        self.new = App_EditarCliente(self, int(selected[0].text()))
-        self.new.success.connect(
+        widget = App_EditarCliente(self, int(selected[0].text()))
+        widget.success.connect(
             lambda: self.update_display(rescan=True))
     
     def quitarCliente(self):

@@ -28,7 +28,7 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
     
     # leer datos de venta y de cliente
     nombre, telefono = manejadorVentas.obtenerClienteAsociado(idx)
-    _, _, _, creacion, entrega, *_ = manejadorVentas.obtenerVenta(idx)
+    creacion, entrega = manejadorVentas.obtenerFechas(idx)
     
     total = manejadorVentas.obtenerImporteTotal(idx)
     anticipo = manejadorVentas.obtenerAnticipo(idx)
@@ -123,7 +123,8 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
 
 
 def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, float]],
-                      vendedor: str, fechaCreacion: QDateTime, pagado: float, metodo_pago: str):
+                      vendedor: str, fechaCreacion: QDateTime = QDateTime.currentDateTime(), 
+                      pagado: float = 0., total: float = None, metodo_pago: str = None):
     """ Función general para generar el ticket de compra o presupuesto.
         Contiene:
             - Logo
@@ -159,7 +160,6 @@ def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, 
     
     # contenido del PDF
     logo = Image('resources/images/logo.png', width=50 * mm, height=26.4 * mm)
-    
     data = [['CANT.', 'PRODUCTO', 'P/U', 'DESC.', 'TOTAL']]
     
     firma = False
@@ -192,8 +192,8 @@ def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, 
         ('LINEBELOW', (0, -1), (-1, -1), 0.4, colors.black)
     ]))
     
-    # total a pagar       
-    total = sum(importe for _, _, _, _, importe in productos)
+    # total a pagar
+    if total is None: total = sum(p[4] for p in productos)
     total = round(total, 2)
     pagado = round(pagado, 2)
     

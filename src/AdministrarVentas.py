@@ -301,8 +301,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
         saldo = manejador.obtenerImporteTotal(idVenta) - anticipo
         
         if saldo > 0.:
-            self.new = App_TerminarVenta(self, idVenta)
-            self.new.success.connect(self.rescan_update)
+            widget = App_TerminarVenta(self, idVenta)
+            widget.success.connect(self.rescan_update)
             return
         
         qm = QtWidgets.QMessageBox
@@ -351,7 +351,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
     
     def detallesVenta(self, idxs: QModelIndex):
         """ Abre ventana que muestra los detalles de una venta seleccionada. """
-        self.new = App_DetallesVenta(self, idxs.siblingAtColumn(0).data())
+        widget = App_DetallesVenta(self, idxs.siblingAtColumn(0).data())
     
     def imprimirTicket(self):
         """ Imprime ticket de una venta dado el folio de esta. """
@@ -518,7 +518,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
         
-        self.paraPagar = total - anticipo
+        self.para_pagar = total - anticipo
         
         nombreCliente, correo, telefono, fechaCreacion, fechaEntrega, *_ \
             = manejador.obtenerDatosGeneralesVenta(idx)
@@ -529,7 +529,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         self.ui.txtCreacion.setText(formatDate(fechaCreacion))
         self.ui.txtEntrega.setText(formatDate(fechaEntrega))
         self.ui.lbFolio.setText(f'{idx}')
-        self.ui.lbSaldo.setText(f'{self.paraPagar:,.2f}')
+        self.ui.lbSaldo.setText(f'{self.para_pagar:,.2f}')
         
         # eventos para widgets
         self.ui.btListo.clicked.connect(self.done)
@@ -578,7 +578,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         """ Recalcular cambio a entregar. """
         pago = self.ui.txtPago.cantidad
         
-        cambio = max(0., pago - self.paraPagar)
+        cambio = max(0., pago - self.para_pagar)
         self.ui.lbCambio.setText(f'{cambio:,.2f}')
     
     def done(self):
@@ -586,8 +586,8 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         pago = self.ui.txtPago.cantidad
         
         metodo_pago = self.ui.groupMetodo.checkedButton().text()
-        pagoAceptado = pago >= self.paraPagar if metodo_pago == 'Efectivo' \
-            else pago == self.paraPagar
+        pagoAceptado = pago >= self.para_pagar if metodo_pago == 'Efectivo' \
+            else pago == self.para_pagar
         
         if not pagoAceptado:
             return
@@ -598,7 +598,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         # registrar ingreso (sin cambio) en caja
         ingreso_db_parametros = (
             hoy,
-            self.paraPagar,
+            self.para_pagar,
             f'Pago de venta con folio {self.id_ventas}',
             metodo_pago,
             self.user.id
