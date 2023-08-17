@@ -112,17 +112,15 @@ class DatabaseManager:
         result = self.fetchone('''
             SELECT  nombre
             FROM    usuarios
-            WHERE   usuario = (
-                SELECT  USER 
-                FROM    RDB$DATABASE);
-        ''')
+            WHERE   usuario = ?;
+        ''', (self.identificadorUsuarioActivo,))
         if result:
             return result[0]
     
     @property
     def identificadorUsuarioActivo(self) -> str:
         """ Obtiene identificador de usuario de la conexión activa. """
-        result = self.fetchone('SELECT CURRENT_USER FROM RDB$DATABASE;')
+        result = self.fetchone('SELECT USER FROM RDB$DATABASE;')
         if result:
             return result[0]
     
