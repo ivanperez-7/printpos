@@ -109,16 +109,16 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
         self.Dialog.success.connect(lambda: self.update_display(rescan=True))
     
     def agregarInventario(self):
-        self.new = App_RegistrarInventario(self)
-        self.new.success.connect(
+        widget = App_RegistrarInventario(self)
+        widget.success.connect(
             lambda: self.update_display(rescan=True))
     
     def editarInventario(self):
         selected = self.ui.tabla_inventario.selectedItems()
         
         if selected:
-            self.new = App_EditarInventario(self, selected[0].text())
-            self.new.success.connect(
+            widget = App_EditarInventario(self, selected[0].text())
+            widget.success.connect(
                 lambda: self.update_display(rescan=True))
     
     def quitarInventario(self):
@@ -279,7 +279,7 @@ class Base_EditarInventario(QtWidgets.QMainWindow):
         inventario_db_parametros = self.obtenerParametrosInventario()
         PUI_db_parametros = self.obtenerParametrosProdUtilizaInv()
         
-        if inventario_db_parametros == None or PUI_db_parametros == None:
+        if inventario_db_parametros is None or PUI_db_parametros is None:
             return
         
         # ejecuta internamente un fetchone, por lo que se desempaca luego

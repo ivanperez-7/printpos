@@ -107,16 +107,16 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def agregarProducto(self):
-        self.new = App_RegistrarProducto(self)
-        self.new.success.connect(
+        widget = App_RegistrarProducto(self)
+        widget.success.connect(
             lambda: self.update_display(rescan=True))
     
     def editarProducto(self):
         selected = self.ui.tabla_productos.selectedItems()
         
         if selected:
-            self.new = App_EditarProducto(self, selected[0].text())
-            self.new.success.connect(
+            widget = App_EditarProducto(self, selected[0].text())
+            widget.success.connect(
                 lambda: self.update_display(rescan=True))
     
     def quitarProducto(self):

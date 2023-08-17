@@ -47,15 +47,15 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
             self.consultarPrecios.close()
             event.accept()
 
-
-def DimBackground(window: QtWidgets.QMainWindow):
-    """ Crea un widget que ocupa la ventana entera, para poner énfasis en las ventanas nuevas. """
-    bg = QtWidgets.QWidget(parent=window)
-    bg.setFixedSize(window.size())
-    bg.setStyleSheet('background: rgba(64, 64, 64, 64);')
-    bg.show()
+class DimBackground(QtWidgets.QFrame):
+    """ Crea un QFrame que ocupa la ventana entera, para poner énfasis en las ventanas nuevas. """
     
-    return bg
+    def __init__(self, window: QtWidgets.QMainWindow):
+        super().__init__(window)
+        
+        self.setFixedSize(window.size())
+        self.setStyleSheet('background: rgba(64, 64, 64, 64);')
+        self.show()
 
 
 class TablaDatos(QtWidgets.QTableWidget):

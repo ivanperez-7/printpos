@@ -1,5 +1,5 @@
 """ Módulo con manejadores para tablas en la base de datos. """
-from typing import TypeAlias
+from typing import overload, TypeAlias
 
 import fdb
 from PySide6.QtCore import QDate
@@ -39,9 +39,10 @@ class DatabaseManager:
             raise Error("Tipo de conexión a DB no válido.")
         
         self.conn = conn
-        self.crsr: Cursor = conn.cursor()
         self.error_txt = error_txt or '¡Acceso fallido a base de datos!'
         self.handle_exceptions = handle_exceptions
+        
+        self.crsr: Cursor = conn.cursor()
     
     def execute(self, query, parameters=None, commit=False):
         from utils.mywidgets import WarningDialog
@@ -107,19 +108,16 @@ class DatabaseManager:
     
     def obtenerUsuario(self) -> str | None:
         """ Obtiene nombre del usuario activo de la conexión. """
-        result = self.fetchone("""
+        result = self.fetchone('''
             SELECT  nombre
             FROM    usuarios
             WHERE   usuario = (
                 SELECT  USER 
-                FROM    RDB$DATABASE
-            );
-        """)
-        
+                FROM    RDB$DATABASE);
+        ''')
         if result:
             nombre, = result
             return nombre
-        return None
     
     def obtenerVista(self, vista: str):
         """ Atajo de sentencia SELECT para obtener una vista. """
@@ -187,32 +185,47 @@ class ManejadorClientes(DatabaseManager):
             ORDER   BY C.id_clientes;
         ''')
     
-    def obtenerCliente(self, id_cliente: int):
-        """ Sentencia para obtener un cliente. """
-        return self.fetchone('''
-            SELECT  * 
-            FROM    Clientes 
-            WHERE id_clientes = ?;
-        ''', (id_cliente,))
+    @overload
+    def obtenerCliente(self, id_cliente: int) -> tuple | None: ...
+    @overload
+    def obtenerCliente(self, nombre: str, telefono: str) -> tuple | None: ...
     
-    def verificarCliente(self, nombre: str, telefono: str):
-        """ Regresa cliente dados el nombre y el teléfono. """
-        return self.fetchone('''
-            SELECT  *
-            FROM    Clientes
-            WHERE   nombre = ?
-                    AND telefono = ?;
-        ''', (nombre, telefono))
+    def obtenerCliente(self, *args, **kwargs):
+        """ Obtener todos los datos de un cliente. """
+        if len(args) == 2 and all(isinstance(arg, str) for arg in args):
+            query = ''' SELECT  * 
+                        FROM    Clientes 
+                        WHERE   nombre = ? 
+                                AND telefono = ?; '''
+        elif len(args) == 1 and isinstance(args[0], int):
+            query = ''' SELECT  * 
+                        FROM    Clientes 
+                        WHERE   id_clientes = ?; '''
+        else:
+            raise ValueError('Argumentos inválidos: ninguna implementación.')
+        return self.fetchone(query, args)
     
-    def obtenerDescuentosCliente(self, nombre: str, telefono: str):
-        """ Obtener booleano de cliente especial, y cadena de descuentos. """
-        return self.fetchone('''
-            SELECT  cliente_especial,
-                    descuentos
-            FROM    Clientes
-            WHERE   nombre = ?
-                    AND telefono = ?;
-        ''', (nombre, telefono))
+    @overload
+    def obtenerDescuentosCliente(self, id_cliente: int) -> tuple | None: ...
+    @overload
+    def obtenerDescuentosCliente(self, nombre: str, telefono: str) -> tuple | None: ...
+    
+    def obtenerDescuentosCliente(self, *args, **kwargs):
+        """ Obtener booleano de cliente especial y cadena de descuentos. """
+        if len(args) == 2 and all(isinstance(arg, str) for arg in args):
+            query = ''' SELECT  cliente_especial,
+                                descuentos
+                        FROM    Clientes
+                        WHERE   nombre = ?
+                                AND telefono = ?; '''
+        elif len(args) == 1 and isinstance(args[0], int):
+            query = ''' SELECT  cliente_especial,
+                                descuentos
+                        FROM    Clientes
+                        WHERE   id_clientes = ?; '''
+        else:
+            raise ValueError('Argumentos inválidos: ninguna implementación.')
+        return self.fetchone(query, args)
     
     def insertarCliente(self, datosCliente: tuple):
         """ Sentencia para registrar cliente. Hace commit automáticamente. """
@@ -385,7 +398,9 @@ class ManejadorMetodosPago(DatabaseManager):
     
     def obtenerIdMetodo(self, metodo: str):
         """ Obtener ID del método de pago dado su nombre. """
-        result = self.fetchone('SELECT id_metodo_pago FROM metodos_pago WHERE metodo = ?;', (metodo,))
+        result = self.fetchone(''' SELECT  id_metodo_pago 
+                                   FROM    metodos_pago 
+                                   WHERE   metodo = ?; ''', (metodo,))
         if result:
             metodo, = result
             return metodo
@@ -458,8 +473,6 @@ class ManejadorProductos(DatabaseManager):
         if result:
             id, = result
             return id
-        
-        return None
     
     def obtenerRelacionVentas(self, id_productos: int):
         """ Obtener relación con ventas en la tabla ventas_detallado. """
@@ -661,22 +674,25 @@ class ManejadorVentas(DatabaseManager):
                     Usuarios.nombre,
                     Clientes.nombre,
                     fecha_hora_creacion,
-                    SUM(importe) AS total,
+                    COALESCE(VP.monto, SUM(importe)) AS total,
                     estado,
-                    metodo_pago,
+                    metodo,
                     comentarios
             FROM    Ventas
+                    LEFT JOIN ventas_pagos VP
+                           ON VP.id_ventas = Ventas.id_ventas
+                    LEFT JOIN metodos_pago MP
+                           ON VP.id_metodo_pago = MP.id_metodo_pago
                     LEFT JOIN Usuarios
                            ON Ventas.id_usuarios = Usuarios.id_usuarios
                     LEFT JOIN Clientes
                            ON Ventas.id_clientes = Clientes.id_clientes
                     LEFT JOIN Ventas_Detallado
                            ON Ventas.id_ventas = Ventas_Detallado.id_ventas
-			WHERE   fecha_hora_creacion = fecha_hora_entrega
+            WHERE   fecha_hora_creacion = fecha_hora_entrega
                     AND ? <= CAST(fecha_hora_creacion AS DATE)
                     AND CAST(fecha_hora_creacion AS DATE) <= ?
-                    {restrict}
-            GROUP   BY 1, 2, 3, 4, 6, 7, 8
+            GROUP   BY 1, 2, 3, 4, 6, 7, 8, VP.monto
             ORDER	BY Ventas.id_ventas DESC;
         ''', (inicio.toPython(), final.toPython()))
     
@@ -696,11 +712,15 @@ class ManejadorVentas(DatabaseManager):
                     Clientes.nombre,
                     fecha_hora_creacion,
                     fecha_hora_entrega,
-                    SUM(importe) AS total,
+                    COALESCE(VP.monto, SUM(importe)) AS total,
                     estado,
-                    metodo_pago,
+                    metodo,
                     comentarios
             FROM    Ventas
+                    LEFT JOIN ventas_pagos VP
+                           ON VP.id_ventas = Ventas.id_ventas
+                    LEFT JOIN metodos_pago MP
+                           ON VP.id_metodo_pago = MP.id_metodo_pago
                     LEFT JOIN Usuarios
                            ON Ventas.id_usuarios = Usuarios.id_usuarios
                     LEFT JOIN Clientes
@@ -712,15 +732,16 @@ class ManejadorVentas(DatabaseManager):
                          AND CAST(fecha_hora_creacion AS DATE) <= ?
                          OR estado LIKE 'Recibido%')
                     {restrict}
-            GROUP   BY 1, 2, 3, 4, 5, 7, 8, 9
+            GROUP   BY 1, 2, 3, 4, 5, 7, 8, 9, VP.monto
             ORDER	BY Ventas.id_ventas DESC;
         ''', (inicio.toPython(), final.toPython()))
     
-    def obtenerVenta(self, id_venta):
-        """ Sentencia para obtener una venta. """
+    def obtenerFechas(self, id_venta: int):
+        """ Obtener fechas de creación y entrega de la venta dada. """
         return self.fetchone('''
-            SELECT  * 
-            FROM    Ventas 
+            SELECT  fecha_hora_creacion,
+                    fecha_hora_entrega
+            FROM    ventas
             WHERE   id_ventas = ?;
         ''', (id_venta,))
     
@@ -874,6 +895,18 @@ class ManejadorVentas(DatabaseManager):
             fecha, = result
             return fecha
     
+    def obtenerPagosVenta(self, id_venta: int):
+        """ Obtener listado de pagos realizados en esta venta. """
+        return self.fetchall('''
+            SELECT  metodo,
+                    monto,
+                    recibido
+            FROM    ventas_pagos VP
+                    LEFT JOIN metodos_pago MP
+                           ON VP.id_metodo_pago = MP.id_metodo_pago
+            WHERE   id_ventas = ?;
+        ''', (id_venta,))
+    
     def insertarVenta(self, params: tuple):
         """ Insertar venta nueva en la tabla ventas e intenta 
             regresar tupla con índice de venta recién insertada.
@@ -903,9 +936,23 @@ class ManejadorVentas(DatabaseManager):
                 id_ventas, id_productos, cantidad, precio, 
                 descuento, especificaciones, duplex, importe
             ) 
-            VALUES 
-                (?,?,?,?,?,?,?,?);
+            VALUES (?,?,?,?,?,?,?,?);
         ''', params, commit=True)
+    
+    def insertarPago(self, id_ventas: int, metodo: str,
+                           monto: float, recibido: float,
+                           commit: bool = False):
+        """ Inserta pago de venta a tabla ventas_pagos.
+        
+            No hace `commit`, a menos que se indique lo contrario. """
+        id_metodo = ManejadorMetodosPago(self.conn).obtenerIdMetodo(metodo)
+        
+        return self.execute('''
+            INSERT INTO ventas_pagos (
+                id_ventas, id_metodo_pago, monto, recibido
+            )
+            VALUES (?,?,?,?);
+        ''', (id_ventas, id_metodo, monto, recibido), commit=commit)
     
     def actualizarEstadoVenta(self, id_ventas: int, estado: str, commit: bool = False):
         """ Actualiza estado de venta a parámetro.
@@ -938,26 +985,6 @@ class ManejadorVentas(DatabaseManager):
             VALUES 
                 (?,?,?,?,?,?,?);
         ''', params, commit=commit)
-    
-    def actualizarMetodoPago(self, id_ventas: int, metodo: str, commit: bool = False):
-        """ Actualiza método de pago de venta a parámetro.
-        
-            No hace `commit`, a menos que se indique lo contrario. """
-        return self.execute('''
-            UPDATE  Ventas
-            SET     metodo_pago = ?
-            WHERE   id_ventas = ?;
-        ''', (metodo, id_ventas), commit=commit)
-    
-    def actualizarRecibido(self, id_ventas: int, pago: float, commit: bool = False):
-        """ Actualizar pago recibido para esta venta, en tabla ventas. 
-        
-            No hace `commit`, a menos que se indique lo contrario."""
-        return self.execute('''
-            UPDATE  Ventas
-            SET     recibido = ?
-            WHERE   id_ventas = ?;
-        ''', (pago, id_ventas), commit=commit)
 
 
 class ManejadorUsuarios(DatabaseManager):
