@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt, Signal
 
 from utils.mydecorators import run_in_thread
 from utils.myutils import FabricaValidadores
+from utils import sql
 
 
 ##################
@@ -23,7 +24,16 @@ class Usuario:
     @property
     def administrador(self) -> bool:
         """ Regresa un booleano que dice si el usuario es administrador. """
-        return self.permisos == 'Administrador'
+        return self.permisos.upper() == 'ADMINISTRADOR'
+    
+    @classmethod
+    def generarUsuarioActivo(cls, conn: sql.Connection):
+        """ Genera clase Usuario dada una conexión válida a la DB. """
+        manejador = sql.ManejadorUsuarios(conn)
+        usuario = manejador.identificadorUsuarioActivo
+        result = manejador.obtenerUsuario(usuario)
+        
+        return cls(*result, manejador.rolActivo)
 
 
 #####################
@@ -31,7 +41,7 @@ class Usuario:
 #####################
 class App_Login(QtWidgets.QMainWindow):
     """ Backend para la pantalla de inicio de sesión. """
-    validated = Signal(object, object)
+    validated = Signal(sql.Connection)
     
     def __init__(self):
         from ui.Ui_Login import Ui_Login
@@ -63,8 +73,6 @@ class App_Login(QtWidgets.QMainWindow):
     @run_in_thread
     def verificar_info(self):
         """ Verifica datos ingresados consultando la tabla Usuarios. """
-        from utils import sql
-        
         self.lock = True
         usuario = self.ui.inputUsuario.text().upper()
         psswd = self.ui.inputContrasenia.text()
@@ -82,14 +90,13 @@ class App_Login(QtWidgets.QMainWindow):
         
         try:
             manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
-            result = manejador.obtenerUsuario(usuario)
+            manejador.obtenerUsuario(usuario)
         except sql.Error as err:
             print(err.args[0])
             self.errorLogin()
             return
         
-        user = Usuario(*result, rol)
-        self.validated.emit(conn, user)
+        self.validated.emit(conn)
     
     def errorLogin(self):
         """ Error al iniciar sesión. """
@@ -97,9 +104,9 @@ class App_Login(QtWidgets.QMainWindow):
         self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
         self.lock = False
     
-    def crearVentanaPrincipal(self, conn, user):
+    def crearVentanaPrincipal(self, conn):
         """ En método separado para regresar al hilo principal."""
         from utils.mywidgets import VentanaPrincipal
         
         self.close()
-        self.mainWindow = VentanaPrincipal(conn, user)
+        self.mainWindow = VentanaPrincipal(conn)

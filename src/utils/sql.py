@@ -106,8 +106,9 @@ class DatabaseManager:
             WarningDialog(self.error_txt, err.args[0])
             return None
     
-    def obtenerUsuario(self) -> str | None:
-        """ Obtiene nombre del usuario activo de la conexión. """
+    @property
+    def usuarioActivo(self) -> str | None:
+        """ Obtiene nombre del usuario de la conexión activa. """
         result = self.fetchone('''
             SELECT  nombre
             FROM    usuarios
@@ -116,8 +117,21 @@ class DatabaseManager:
                 FROM    RDB$DATABASE);
         ''')
         if result:
-            nombre, = result
-            return nombre
+            return result[0]
+    
+    @property
+    def identificadorUsuarioActivo(self) -> str:
+        """ Obtiene identificador de usuario de la conexión activa. """
+        result = self.fetchone('SELECT CURRENT_USER FROM RDB$DATABASE;')
+        if result:
+            return result[0]
+    
+    @property
+    def rolActivo(self) -> str:
+        """ Obtiene rol de la conexión activa. """
+        result = self.fetchone('SELECT CURRENT_ROLE FROM RDB$DATABASE;')
+        if result:
+            return result[0]
     
     def obtenerVista(self, vista: str):
         """ Atajo de sentencia SELECT para obtener una vista. """
@@ -1010,7 +1024,7 @@ class ManejadorUsuarios(DatabaseManager):
         ''')
     
     def obtenerUsuario(self, usuario: str):
-        """ Obtener tupla de usuario dado el nombre de usuario. """
+        """ Obtener tupla de usuario dado el identificador de usuario. """
         return self.fetchone('''
             SELECT  *
             FROM    Usuarios
