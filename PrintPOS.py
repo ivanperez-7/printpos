@@ -1,6 +1,6 @@
 """ ARCHIVO PRINCIPAL.
     Inicia una QApplication y abre la ventana de iniciar sesión. """
-from PySide6.QtWidgets import QApplication, QStyleFactory
+from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTranslator
 from PySide6.QtGui import QPalette, QColor
 
@@ -14,7 +14,7 @@ class PrintPOS(QApplication):
     def __init__(self):
         super().__init__()
         
-        self.setStyle(QStyleFactory.create('Fusion'))
+        self.setStyle('Fusion')
         
         self.configurarPaleta()
         self.instalarTraductor()
