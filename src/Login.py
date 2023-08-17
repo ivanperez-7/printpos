@@ -93,16 +93,12 @@ class App_Login(QtWidgets.QMainWindow):
             manejador.obtenerUsuario(usuario)
         except sql.Error as err:
             print(err.args[0])
-            self.errorLogin()
+            self.ui.lbEstado.setStyleSheet('color: rgb(255, 0, 0);')
+            self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
+            self.lock = False
             return
         
         self.validated.emit(conn)
-    
-    def errorLogin(self):
-        """ Error al iniciar sesión. """
-        self.ui.lbEstado.setStyleSheet('color: rgb(255, 0, 0);')
-        self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
-        self.lock = False
     
     def crearVentanaPrincipal(self, conn):
         """ En método separado para regresar al hilo principal."""
