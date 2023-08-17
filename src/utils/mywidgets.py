@@ -11,14 +11,14 @@ from utils import sql
 
 
 class VentanaPrincipal(QtWidgets.QMainWindow):
-    def __init__(self, conn: sql.Connection, user: Usuario):
+    def __init__(self, conn: sql.Connection):
         super().__init__()
         
         self.resize(1540, 800)
         self.setWindowTitle('PrintPOS')
         
         self.conn = conn
-        self.user = user
+        self.user = Usuario.generarUsuarioActivo(conn)
         self.en_venta = False  # bandera levantada al entrar en CrearVenta
         
         icon = QIcon()

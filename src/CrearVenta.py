@@ -1179,7 +1179,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
     def _abortar(self, conn):
         manejadorAdmin = sql.ManejadorVentas(conn)
         
-        estado = 'Cancelada por ' + manejadorAdmin.obtenerUsuario()
+        estado = 'Cancelada por ' + manejadorAdmin.usuarioActivo
         if manejadorAdmin.actualizarEstadoVenta(self.id_ventas, estado,
                                                 commit=True):
             self.goHome()

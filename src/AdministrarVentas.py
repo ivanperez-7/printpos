@@ -341,7 +341,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             return
         
         manejador = ManejadorVentas(self.conn)
-        estado = 'Cancelada por ' + manejador.obtenerUsuario()
+        estado = 'Cancelada por ' + manejador.usuarioActivo
         
         if not manejador.actualizarEstadoVenta(idVenta, estado, commit=True):
             return
