@@ -125,8 +125,8 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
 
 
 def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, float]],
-                      vendedor: str, fechaCreacion: QDateTime = QDateTime.currentDateTime(), 
-                      pagado: float = 0., total: float = None, metodo_pago: str = None):
+                      vendedor: str, total: float = None, pagado: float = 0., metodo_pago: str = None, 
+                      fechaCreacion: QDateTime = QDateTime.currentDateTime()):
     """ Función general para generar el ticket de compra o presupuesto.
         Contiene:
             - Logo
@@ -164,8 +164,7 @@ def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, 
     logo = Image('resources/images/logo.png', width=50 * mm, height=26.4 * mm)
     data = [['CANT.', 'PRODUCTO', 'P/U', 'DESC.', 'TOTAL']]
     
-    firma = False
-    total_desc = 0
+    total_desc = Dinero()
     
     for cantidad, nombre, precio, descuento, importe in productos:
         data.append([
@@ -175,9 +174,7 @@ def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, 
             f'{descuento:,.2f}' if descuento > 0 else '',
             f'{importe:,.2f}'
         ])
-        if descuento > 0:
-            firma = True
-            total_desc += descuento * cantidad
+        total_desc += descuento * cantidad
     
     # productos de la compra
     tabla_productos = Table(data, colWidths=[10 * mm, 28 * mm, 12 * mm, 12 * mm, 12 * mm])
@@ -247,7 +244,7 @@ def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, 
         Paragraph(titulo, styles['Center']),
         Paragraph('* ' * 40, styles['Center']),
         Paragraph(folio, styles['Left']),
-        Paragraph(f'<b>Fecha</b>: {formatDate(fechaCreacion)}', styles['Left']),
+        Paragraph(f'<b>Fecha</b>: ' + formatDate(fechaCreacion), styles['Left']),
         Spacer(1, 10),
         
         tabla_productos,
@@ -256,12 +253,12 @@ def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, 
         table2]
     
     elements += [
-        Spacer(1, 6),
+        Spacer(1, 12),
         
-        Paragraph(f'¡Hoy se ahorró ${total_desc:,.2f}!', styles['Center_2']),
+        Paragraph(f'¡Hoy se ahorró ${total_desc}!', styles['Center_2']),
         Spacer(1, 25),
         
-        Paragraph('Autoriza descuentos: ' + '_' * 24, styles['Left'])] if firma else []
+        Paragraph('Autoriza descuentos: ' + '_' * 24, styles['Left'])] if total_desc else []
     
     elements += [
         Spacer(1, 15),
