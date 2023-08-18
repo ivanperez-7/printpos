@@ -6,6 +6,7 @@ from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QDateTime
 from PySide6.QtGui import QFont
 
+from utils.dinero import Dinero
 from utils.myinterfaces import InterfazFechas
 from utils.myutils import FabricaValidadores, formatDate
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -67,11 +68,12 @@ class Caja:
         """ Regresa lista de movimientos que son egresos. """
         return [m for m in self.movimientos if not m.esIngreso]
     
-    def _total(self, iter: list[Movimiento], metodo: str = None) -> float:
+    def _total(self, iter: list[Movimiento], metodo: str = None) -> Dinero:
         if metodo:
-            return sum(m.monto for m in iter if m.metodo.startswith(metodo))
+            out = sum(m.monto for m in iter if m.metodo.startswith(metodo))
         else:
-            return sum(m.monto for m in iter)
+            out = sum(m.monto for m in iter)
+        return Dinero(out)
     
     def totalIngresos(self, metodo: str = None):
         return self._total(self.todoIngresos(), metodo)
@@ -150,8 +152,7 @@ class App_Caja(QtWidgets.QMainWindow):
         
         total = self.all_movimientos.totalCorte()
         
-        self.ui.lbTotal.setText(
-            f'Total del corte: ${total:,.2f}')
+        self.ui.lbTotal.setText(f'Total del corte: ${total}')
     
     def llenar_ingresos(self):
         bold = QFont()
@@ -163,13 +164,13 @@ class App_Caja(QtWidgets.QMainWindow):
         movimientos = self.all_movimientos
         
         self.ui.lbTotalIngresos.setText(
-            'Total de ingresos: ${:,.2f}'.format(movimientos.totalIngresos()))
+            'Total de ingresos: ${}'.format(movimientos.totalIngresos()))
         self.ui.lbIngresosEfectivo.setText(
-            'Efectivo: ${:,.2f}'.format(movimientos.totalIngresos('Efectivo')))
+            'Efectivo: ${}'.format(movimientos.totalIngresos('Efectivo')))
         self.ui.lbIngresosTarjeta.setText(
-            'Tarjeta de crédito/débito: ${:,.2f}'.format(movimientos.totalIngresos('Tarjeta')))
+            'Tarjeta de crédito/débito: ${}'.format(movimientos.totalIngresos('Tarjeta')))
         self.ui.lbIngresosTransferencia.setText(
-            'Transferencias bancarias: ${:,.2f}'.format(movimientos.totalIngresos('Transferencia')))
+            'Transferencias bancarias: ${}'.format(movimientos.totalIngresos('Transferencia')))
         
         for row, movimiento in enumerate(movimientos.todoIngresos()):
             tabla.insertRow(row)
@@ -197,13 +198,13 @@ class App_Caja(QtWidgets.QMainWindow):
         movimientos = self.all_movimientos
         
         self.ui.lbTotalEgresos.setText(
-            'Total de egresos: ${:,.2f}'.format(-movimientos.totalEgresos()))
+            'Total de egresos: ${}'.format(-movimientos.totalEgresos()))
         self.ui.lbEgresosEfectivo.setText(
-            'Efectivo: ${:,.2f}'.format(-movimientos.totalEgresos('Efectivo')))
+            'Efectivo: ${}'.format(-movimientos.totalEgresos('Efectivo')))
         self.ui.lbEgresosTarjeta.setText(
-            'Tarjeta de crédito/débito: ${:,.2f}'.format(-movimientos.totalEgresos('Tarjeta')))
+            'Tarjeta de crédito/débito: ${}'.format(-movimientos.totalEgresos('Tarjeta')))
         self.ui.lbEgresosTransferencia.setText(
-            'Transferencias bancarias: ${:,.2f}'.format(-movimientos.totalEgresos('Transferencia')))
+            'Transferencias bancarias: ${}'.format(-movimientos.totalEgresos('Transferencia')))
         
         for row, movimiento in enumerate(movimientos.todoEgresos()):
             tabla.insertRow(row)
@@ -361,7 +362,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         id_metodo = ManejadorMetodosPago(self.conn).obtenerIdMetodo(self.metodo)
         caja_db_parametros = (
             QDateTime.currentDateTime().toPython(),
-            self.monto,
+            Dinero(self.monto),
             self.motivo,
             id_metodo,
             self.user.id
