@@ -11,8 +11,10 @@ class Dinero:
             self.valor = 0.0
         elif isinstance(inicial, Dinero):
             self.valor = inicial.valor
-        elif isinstance(inicial, (int, float, str)):
+        elif isinstance(inicial, (int, float)):
             self.valor = float(inicial)
+        elif isinstance(inicial, str):
+            self.valor = float(inicial.replace(',', ''))
     
     @property
     def safe_float(self):
