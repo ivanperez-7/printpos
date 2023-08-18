@@ -1,7 +1,9 @@
 """ Módulo con clase `Dinero` para manejar cantidades monetarias. """
+import re
 from typing import Union
 
 PRECISION = 2
+
 
 class Dinero:
     """ Clase para manejar cantidades monetarias
@@ -14,7 +16,7 @@ class Dinero:
         elif isinstance(inicial, (int, float)):
             self.valor = float(inicial)
         elif isinstance(inicial, str):
-            self.valor = float(inicial.replace(',', ''))
+            self.valor = float(re.sub(r'[$, ]', '', inicial))
     
     @property
     def safe_float(self):
