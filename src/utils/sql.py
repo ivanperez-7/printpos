@@ -4,6 +4,7 @@ from typing import overload, TypeAlias
 import fdb
 from PySide6.QtCore import QDate
 
+from utils.dinero import Dinero
 from utils.myutils import leer_config
 
 
@@ -866,15 +867,15 @@ class ManejadorVentas(DatabaseManager):
     
     def obtenerImporteTotal(self, id_venta: int):
         """ Obtiene el importe total de una venta. """
-        t = self.fetchone('''
+        result = self.fetchone('''
             SELECT  SUM(importe)
             FROM    Ventas_Detallado
             WHERE   id_ventas = ?;
         ''', (id_venta,))
         
         try:
-            importe, = t
-            return round(importe, 2)
+            importe, = result
+            return Dinero(importe)
         except ValueError:
             return None
     
@@ -889,7 +890,7 @@ class ManejadorVentas(DatabaseManager):
         
         try:
             estado, = t
-            return float(estado.split()[1])
+            return Dinero(estado.split()[1])
         except (ValueError, IndexError):
             return None
     

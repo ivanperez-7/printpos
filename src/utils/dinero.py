@@ -1,11 +1,20 @@
 """ Módulo con clase `Dinero` para manejar cantidades monetarias. """
+from typing import Union
+
 PRECISION = 2
 
 class Dinero:
     """ Clase para manejar cantidades monetarias
         con un máximo de dos números decimales. """
-    def __init__(self, inicial: float = None):
-        self.valor = inicial or 0.0
+    def __init__(self, inicial: Union[float, str, 'Dinero'] = None):
+        if inicial is None:
+            self.valor = 0.0
+        elif isinstance(inicial, Dinero):
+            self.valor = inicial.valor
+        elif isinstance(inicial, float):
+            self.valor = inicial
+        elif isinstance(inicial, str):
+            self.valor = float(inicial)
     
     @property
     def safe_float(self):
@@ -17,7 +26,13 @@ class Dinero:
         """ Forma explícita de generar valor cero. """
         return cls(0.)
     
-    def __add__(self, op):
+    def __bool__(self):
+        return self.safe_float > 0.0
+    
+    def __float__(self):
+        return self.safe_float
+    
+    def __add__(self, op) -> 'Dinero':
         if isinstance(op, Dinero):
             return Dinero(self.valor + op.valor)
         elif isinstance(op, (float, int)):
@@ -25,7 +40,7 @@ class Dinero:
         else:
             raise TypeError('Segundo operando debe ser Dinero o numérico (int o float).')
     
-    def __sub__(self, op):
+    def __sub__(self, op) -> 'Dinero':
         if isinstance(op, Dinero):
             return Dinero(self.valor - op.valor)
         elif isinstance(op, (float, int)):
@@ -33,7 +48,7 @@ class Dinero:
         else:
             raise TypeError('Segundo operando debe ser Dinero o numérico (int o float).')
     
-    def __rsub__(self, op):
+    def __rsub__(self, op) -> 'Dinero':
         if isinstance(op, Dinero):
             return Dinero(op.valor - self.valor)
         elif isinstance(op, (float, int)):
@@ -41,7 +56,7 @@ class Dinero:
         else:
             raise TypeError('Segundo operando debe ser Dinero o numérico (int o float).')
     
-    def __mul__(self, op):
+    def __mul__(self, op) -> 'Dinero':
         if isinstance(op, Dinero):
             return Dinero(self.valor * op.valor)
         elif isinstance(op, (float, int)):
@@ -49,7 +64,7 @@ class Dinero:
         else:
             raise TypeError('Segundo operando debe ser Dinero o numérico (int o float).')
     
-    def __truediv__(self, op):
+    def __truediv__(self, op) -> 'Dinero':
         if isinstance(op, Dinero):
             return Dinero(self.valor / op.valor)
         elif isinstance(op, (float, int)):
