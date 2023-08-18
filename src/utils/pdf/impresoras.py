@@ -156,8 +156,8 @@ class ImpresoraTickets(ImpresoraPDF):
                  'Tarjeta de débito': 'TVP'}
         
         for metodo, monto, pagado in manejador.obtenerPagosVenta(idx):
-            data = _generarTicketPDF(idx, productos, vendedor, fechaCreacion, 
-                                     pagado, monto, abrev[metodo])
+            data = _generarTicketPDF(idx, productos, vendedor, monto,
+                                     pagado, abrev[metodo], fechaCreacion)
             self.enviarAImpresora(data)
     
     @verificar_impresora
