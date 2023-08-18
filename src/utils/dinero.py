@@ -121,4 +121,7 @@ class Dinero:
             raise TypeError('Segundo operando debe ser Dinero o numérico (int o float).')
     
     def __repr__(self):
+        return f'Dinero: {self.safe_float:,.2f} MXN'
+    
+    def __str__(self):
         return f'{self.safe_float:,.2f}'
