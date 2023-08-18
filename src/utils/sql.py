@@ -1,4 +1,5 @@
 """ Módulo con manejadores para tablas en la base de datos. """
+from datetime import datetime
 from typing import overload, TypeAlias
 
 import fdb
@@ -953,7 +954,7 @@ class ManejadorVentas(DatabaseManager):
         ''', params, commit=True)
     
     def insertarPago(self, id_ventas: int, metodo: str,
-                           monto: float, recibido: float,
+                           monto: Dinero, recibido: Dinero,
                            commit: bool = False):
         """ Inserta pago de venta a tabla ventas_pagos.
         
@@ -962,10 +963,10 @@ class ManejadorVentas(DatabaseManager):
         
         return self.execute('''
             INSERT INTO ventas_pagos (
-                id_ventas, id_metodo_pago, monto, recibido
+                id_ventas, id_metodo_pago, fecha_hora, monto, recibido
             )
-            VALUES (?,?,?,?);
-        ''', (id_ventas, id_metodo, monto, recibido), commit=commit)
+            VALUES (?,?,?,?,?);
+        ''', (id_ventas, id_metodo, datetime.now(), monto, recibido), commit=commit)
     
     def actualizarEstadoVenta(self, id_ventas: int, estado: str, commit: bool = False):
         """ Actualiza estado de venta a parámetro.
