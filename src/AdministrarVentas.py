@@ -5,7 +5,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
 from PySide6.QtCore import (QDateTime, QModelIndex, Qt, Signal)
 
-from utils.sql import ManejadorCaja, ManejadorVentas
+from utils.sql import ManejadorVentas
 from utils.mydecorators import con_fondo, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import (ColorsEnum, chunkify, clamp,
@@ -518,7 +518,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
         
-        self.para_pagar = total - anticipo
+        self.para_pagar = round(total - anticipo, 2)
         
         nombreCliente, correo, telefono, fechaCreacion, fechaEntrega, *_ \
             = manejador.obtenerDatosGeneralesVenta(idx)
@@ -592,25 +592,12 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         if not pagoAceptado:
             return
         
-        manejadorCaja = ManejadorCaja(self.conn)
-        hoy = QDateTime.currentDateTime().toPython()
-        
-        # registrar ingreso (sin cambio) en caja
-        ingreso_db_parametros = (
-            hoy,
-            self.para_pagar,
-            f'Pago de venta con folio {self.id_ventas}',
-            metodo_pago,
-            self.user.id
-        )
-        
-        if not manejadorCaja.insertarMovimiento(ingreso_db_parametros,
-                                                commit=False):
-            return
-        
-        # marcar venta como terminada
         manejadorVentas = ManejadorVentas(self.conn)
-        
+        # registrar pagos en tabla ventas_pagos
+        if not manejadorVentas.insertarPago(self.id_ventas, metodo_pago, 
+                                            self.para_pagar, pago):
+            return
+        # marcar venta como terminada
         if not manejadorVentas.actualizarEstadoVenta(self.id_ventas, 'Terminada',
                                                      commit=True):
             return
