@@ -5,13 +5,14 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
 from PySide6.QtCore import (QDateTime, QModelIndex, Qt, Signal)
 
-from utils.sql import ManejadorVentas
+from utils.dinero import Dinero
 from utils.mydecorators import con_fondo, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import (ColorsEnum, chunkify, clamp,
                            enviarWhatsApp, formatDate, son_similar)
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 from utils.pdf import ImpresoraOrdenes, ImpresoraTickets
+from utils.sql import ManejadorVentas
 
 
 #####################
@@ -424,8 +425,8 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
         
         # intenta calcular el saldo restante
         if anticipo:
-            self.ui.lbAnticipo.setText(f'{anticipo:,.2f}')
-            self.ui.lbSaldo.setText(f'{total - anticipo:,.2f}')
+            self.ui.lbAnticipo.setText(f'{anticipo}')
+            self.ui.lbSaldo.setText(f'{total - anticipo}')
         else:
             for w in [self.ui.lbAnticipo,
                       self.ui.lbSaldo,
@@ -451,7 +452,7 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
         self.ui.txtComentarios.setPlainText(comentarios)
         self.ui.txtVendedor.setText(nombreUsuario)
         self.ui.lbFolio.setText(f'{idx}')
-        self.ui.lbTotal.setText(f'{total:,.2f}')
+        self.ui.lbTotal.setText(f'{total}')
         
         # evento para botón de regresar
         self.ui.btRegresar.clicked.connect(self.close)
@@ -518,7 +519,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
         
-        self.para_pagar = round(total - anticipo, 2)
+        self.para_pagar: Dinero = total - anticipo
         
         nombreCliente, correo, telefono, fechaCreacion, fechaEntrega, *_ \
             = manejador.obtenerDatosGeneralesVenta(idx)
@@ -529,7 +530,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         self.ui.txtCreacion.setText(formatDate(fechaCreacion))
         self.ui.txtEntrega.setText(formatDate(fechaEntrega))
         self.ui.lbFolio.setText(f'{idx}')
-        self.ui.lbSaldo.setText(f'{self.para_pagar:,.2f}')
+        self.ui.lbSaldo.setText(f'{self.para_pagar}')
         
         # eventos para widgets
         self.ui.btListo.clicked.connect(self.done)
@@ -578,8 +579,8 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         """ Recalcular cambio a entregar. """
         pago = self.ui.txtPago.cantidad
         
-        cambio = max(0., pago - self.para_pagar)
-        self.ui.lbCambio.setText(f'{cambio:,.2f}')
+        cambio = max(Dinero.cero, pago - self.para_pagar)
+        self.ui.lbCambio.setText(f'{cambio}')
     
     def done(self):
         """ Verifica restricciones y termina venta. """

@@ -5,6 +5,8 @@ from PySide6.QtCore import QDateTime
 
 from Caja import Caja
 from Login import Usuario
+
+from utils.dinero import Dinero
 from utils.myutils import chunkify, formatDate, leer_config
 from utils.sql import ManejadorVentas
 
@@ -62,11 +64,11 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
         can.drawString(75, 493, nombre)
         can.drawString(75, 470, telefono)
         can.drawString(150, 448, formatDate(entrega))
-        can.drawCentredString(353, 148, f'{saldo:,.2f}')
-        can.drawCentredString(353, 170, f'{anticipo:,.2f}')
+        can.drawCentredString(353, 148, f'{saldo}')
+        can.drawCentredString(353, 170, f'{anticipo}')
         
         can.setFont('Helvetica-Bold', 10)
-        can.drawCentredString(353, 192, f'{total:,.2f}')
+        can.drawCentredString(353, 192, f'{total}')
         can.setFont('Helvetica', 10)
         
         for i, (prodCantidad, prodNombre, prodEspecificaciones,
@@ -194,14 +196,14 @@ def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, 
     
     # total a pagar
     if total is None: total = sum(p[4] for p in productos)
-    total = round(total, 2)
-    pagado = round(pagado, 2)
+    total = Dinero(total)
+    pagado = Dinero(pagado)
     
-    table2 = [['IMPORTE:', f'{total:,.2f}']]
+    table2 = [['IMPORTE:', f'{total}']]
     
     if pagado:
-        table2.extend([['Pagado:', f'{pagado:,.2f}'],
-                       ['Cambio:', f'{pagado - total:,.2f}']])
+        table2.extend([['Pagado:', f'{pagado}'],
+                       ['Cambio:', f'{pagado - total}']])
     
     table2 = Table(table2, hAlign='RIGHT')
     

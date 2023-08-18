@@ -7,6 +7,7 @@ from PySide6.QtGui import (QFont, QIcon, QPixmap, QRegularExpressionValidator,
 from PySide6.QtCore import Qt, QSize, QRectF, QPoint, QPropertyAnimation, QRect, QEasingCurve
 
 from Login import Usuario
+from utils.dinero import Dinero
 from utils import sql
 
 
@@ -145,13 +146,13 @@ class NumberEdit(QtWidgets.QLineEdit):
     @property
     def cantidad(self):
         try:
-            return float(self.text())
+            return Dinero(self.text())
         except ValueError:
-            return 0.
+            return Dinero()
     
     @cantidad.setter
     def cantidad(self, val: float):
-        self.setText(f'{val:.2f}')
+        self.setText(f'{Dinero(val)}')
 
 
 class LabelAdvertencia(QtWidgets.QLabel):

@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from PySide6 import QtWidgets
 from PySide6.QtCore import QDate, QDateTime, Qt
 
+from utils.dinero import Dinero
 from utils.mydecorators import con_fondo, requiere_admin
 from utils.myutils import clamp, enviarWhatsApp, FabricaValidadores, formatDate, son_similar
 from utils.mywidgets import DimBackground, LabelAdvertencia, SpeechBubble, VentanaPrincipal
@@ -80,16 +81,12 @@ class Venta:
     id_cliente: int = 1
     
     @property
-    def total(self) -> float:
-        if self.productos:
-            temp = sum(prod.importe for prod in self.productos)
-            return round(temp, 2)
-        else:
-            return 0.0
+    def total(self) -> Dinero:
+        return Dinero(sum(prod.importe for prod in self.productos))
     
     @property
-    def total_descuentos(self) -> float:
-        return sum(prod.total_descuentos for prod in self.productos)
+    def total_descuentos(self) -> Dinero:
+        return Dinero(sum(prod.total_descuentos for prod in self.productos))
     
     @property
     def esVentaDirecta(self) -> bool:
@@ -263,10 +260,10 @@ class App_CrearVenta(QtWidgets.QMainWindow):
         preciosSinIVA = preciosConIVA / 1.16
         impuestos = preciosConIVA - preciosSinIVA
         
-        self.ui.lbTotal.setText(f'{preciosConIVA:,.2f}')
-        self.ui.lbSubtotal.setText(f'{preciosSinIVA:,.2f}')
-        self.ui.lbImpuestos.setText(f'{impuestos:,.2f}')
-        self.ui.lbDescuento.setText(f'{self.ventaDatos.total_descuentos:,.2f}')
+        self.ui.lbTotal.setText(f'{preciosConIVA}')
+        self.ui.lbSubtotal.setText(f'{preciosSinIVA}')
+        self.ui.lbImpuestos.setText(f'{impuestos}')
+        self.ui.lbDescuento.setText(f'{self.ventaDatos.total_descuentos}')
         # </calcular precios y mostrar>
         
         tabla.resizeRowsToContents()
@@ -969,7 +966,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ui.txtEntrega.setText(formatDate(ventaDatos.fechaEntrega))
         self.ui.lbFolio.setText(f'{self.id_ventas}')
         
-        self.ui.lbCincuenta.setText(f'(${round(ventaDatos.total / 2, 2):,.2f})')
+        self.ui.lbCincuenta.setText(f'(${ventaDatos.total / 2})')
         
         # añade eventos para los botones
         self.ui.btListo.clicked.connect(self.verificar)
@@ -1047,9 +1044,9 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         """ Calcular total de la compra y precio a pagarse ahora mismo. """
         self.total = venta.total
         self.para_pagar = venta.total if venta.esVentaDirecta \
-            else round(venta.total / 2, 2)
+            else venta.total / 2
         
-        self.ui.lbTotal.setText(f'{self.total:,.2f}')
+        self.ui.lbTotal.setText(f'{self.total}')
         self.ui.txtAnticipo.cantidad = self.para_pagar
     
     def registrarVenta(self):
@@ -1094,8 +1091,8 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         """ Recalcular cambio a entregar. """
         pago = self.ui.txtPago.cantidad
         
-        cambio = max(0., pago - self.para_pagar)
-        self.ui.lbCambio.setText(f'{cambio:,.2f}')
+        cambio = max(Dinero.cero, pago - self.para_pagar)
+        self.ui.lbCambio.setText(f'{cambio}')
     
     def cambiarAnticipo(self, txt=None):
         """ Cambiar el anticipo pagado por el cliente. """
@@ -1112,7 +1109,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         
         pagoAceptado = pago >= self.para_pagar if self.metodoSeleccionado == 'Efectivo' \
             else pago == self.para_pagar
-        minimoCincuentaPorCiento = round(self.total / 2, 2) <= self.para_pagar
+        minimoCincuentaPorCiento = self.total / 2 <= self.para_pagar
         
         if not pagoAceptado:
             return
@@ -1146,7 +1143,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         
         # cambiar el estado de la venta a 'Terminada' o 'Recibido xx.xx'
         # y también cambiar método de pago
-        estado = 'Terminada' if esDirecta else f'Recibido {self.para_pagar:.2f}'
+        estado = 'Terminada' if esDirecta else f'Recibido {self.para_pagar}'
         if not manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True):
             return
         
