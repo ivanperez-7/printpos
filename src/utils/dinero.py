@@ -6,19 +6,17 @@ PRECISION = 2
 class Dinero:
     """ Clase para manejar cantidades monetarias
         con un máximo de dos números decimales. """
-    def __init__(self, inicial: Union[float, str, 'Dinero'] = None):
+    def __init__(self, inicial: Union[int, float, str, 'Dinero'] = None):
         if inicial is None:
             self.valor = 0.0
         elif isinstance(inicial, Dinero):
             self.valor = inicial.valor
-        elif isinstance(inicial, float):
-            self.valor = inicial
-        elif isinstance(inicial, str):
+        elif isinstance(inicial, (int, float, str)):
             self.valor = float(inicial)
     
     @property
     def safe_float(self):
-        return round(self.valor, PRECISION)
+        return round(self.valor, PRECISION) + 0.0
     
     @classmethod
     @property
@@ -55,6 +53,9 @@ class Dinero:
             return Dinero(op - self.valor)
         else:
             raise TypeError('Segundo operando debe ser Dinero o numérico (int o float).')
+    
+    def __neg__(self) -> 'Dinero':
+        return Dinero(-self.valor)
     
     def __mul__(self, op) -> 'Dinero':
         if isinstance(op, Dinero):
