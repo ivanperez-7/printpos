@@ -14,7 +14,9 @@ Cursor: TypeAlias = fdb.Cursor
 Error: TypeAlias = fdb.Error
 
 
-def crear_conexion(usuario: str, psswd: str, rol: str = None) -> Connection | None:
+def crear_conexion(usuario: str, psswd: str, rol: str = None) -> Connection:
+    """ Crea conexión a base de datos y regresa objeto Connection.
+        Regresa `None` al ocurrir un error. """
     config = leer_config()
     red_local = config['DEFAULT']['red_local']
     nombre = config['SUCURSAL']['nombre']
@@ -33,7 +35,11 @@ def crear_conexion(usuario: str, psswd: str, rol: str = None) -> Connection | No
 
 class DatabaseManager:
     """ Clase general de un administrador de bases de datos.
-    Permite ejecutar consultas varias y manejar las excepciones."""
+        Permite ejecutar consultas varias y manejar las excepciones.
+    
+        Todas las operaciones realizadas en esta clase y en clases derivadas
+        pueden regresar `False` o `None` al ocurrir un error, por lo que siempre se 
+        debe verificar el resultado obtenido para asegurar una correcta funcionalidad. """
     def __init__(self, conn: Connection,
                        error_txt: str = None,
                        handle_exceptions: bool = True):
@@ -80,7 +86,7 @@ class DatabaseManager:
             WarningDialog(self.error_txt, err.args[0])
             return False
     
-    def fetchall(self, query, parameters=None) -> list[tuple] | None:
+    def fetchall(self, query, parameters=None) -> list[tuple]:
         from utils.mywidgets import WarningDialog
         try:
             if parameters is None:
@@ -94,7 +100,7 @@ class DatabaseManager:
             WarningDialog(self.error_txt, err.args[0])
             return None
     
-    def fetchone(self, query, parameters=None) -> tuple | None:
+    def fetchone(self, query, parameters=None) -> tuple:
         from utils.mywidgets import WarningDialog
         try:
             if parameters is None:
@@ -109,7 +115,7 @@ class DatabaseManager:
             return None
     
     @property
-    def usuarioActivo(self) -> str | None:
+    def usuarioActivo(self) -> str:
         """ Obtiene nombre del usuario de la conexión activa. """
         result = self.fetchone('''
             SELECT  nombre
@@ -159,8 +165,7 @@ class ManejadorCaja(DatabaseManager):
         """ Obtener fecha del movimiento más antiguo. """
         result = self.fetchone('SELECT MIN(fecha_hora) FROM movimientos_caja;')
         if result:
-            fecha, = result
-            return fecha
+            return result[0]
     
     def insertarMovimiento(self, params: tuple, commit: bool = True):
         """ Registra ingreso o egreso en tabla historial de movimientos.
@@ -200,9 +205,9 @@ class ManejadorClientes(DatabaseManager):
         ''')
     
     @overload
-    def obtenerCliente(self, id_cliente: int) -> tuple | None: ...
+    def obtenerCliente(self, id_cliente: int) -> tuple: ...
     @overload
-    def obtenerCliente(self, nombre: str, telefono: str) -> tuple | None: ...
+    def obtenerCliente(self, nombre: str, telefono: str) -> tuple: ...
     
     def obtenerCliente(self, *args, **kwargs):
         """ Obtener todos los datos de un cliente. """
@@ -220,9 +225,9 @@ class ManejadorClientes(DatabaseManager):
         return self.fetchone(query, args)
     
     @overload
-    def obtenerDescuentosCliente(self, id_cliente: int) -> tuple | None: ...
+    def obtenerDescuentosCliente(self, id_cliente: int) -> tuple: ...
     @overload
-    def obtenerDescuentosCliente(self, nombre: str, telefono: str) -> tuple | None: ...
+    def obtenerDescuentosCliente(self, nombre: str, telefono: str) -> tuple: ...
     
     def obtenerDescuentosCliente(self, *args, **kwargs):
         """ Obtener booleano de cliente especial y cadena de descuentos. """
@@ -416,8 +421,7 @@ class ManejadorMetodosPago(DatabaseManager):
                                    FROM    metodos_pago 
                                    WHERE   metodo = ?; ''', (metodo,))
         if result:
-            metodo, = result
-            return metodo
+            return result[0]
 
 
 class ManejadorProductos(DatabaseManager):
@@ -483,10 +487,8 @@ class ManejadorProductos(DatabaseManager):
             FROM    Productos 
             WHERE   codigo = ?;
         ''', (codigo,))
-        
         if result:
-            id, = result
-            return id
+            return result[0]
     
     def obtenerRelacionVentas(self, id_productos: int):
         """ Obtener relación con ventas en la tabla ventas_detallado. """
@@ -529,8 +531,7 @@ class ManejadorProductos(DatabaseManager):
         ''', (id_productos, cantidad) * 2)
         
         try:
-            precio, = result
-            return precio
+            return result[0]
         except TypeError:
             return None
     
@@ -665,6 +666,13 @@ class ManejadorProductos(DatabaseManager):
             VALUES
                 (?,?,?);
         ''', (id_productos,) + params, commit=True)
+
+
+class ManejadorReportes(DatabaseManager):
+    """ Clase con diversas consultas específicas para el módulo de reportes. """
+    
+    def __init__(self, conn: Connection, error_txt: str = None):
+        super().__init__(conn, error_txt)
 
 
 class ManejadorVentas(DatabaseManager):
@@ -859,12 +867,8 @@ class ManejadorVentas(DatabaseManager):
                            ON V.id_usuarios = U.id_usuarios
             WHERE	V.id_ventas = ?;
         ''', (id_venta,))
-        
         if result:
-            nombre, = result
-            return nombre
-        
-        return None
+            return result[0]
     
     def obtenerImporteTotal(self, id_venta: int):
         """ Obtiene el importe total de una venta. """
@@ -875,22 +879,21 @@ class ManejadorVentas(DatabaseManager):
         ''', (id_venta,))
         
         try:
-            importe, = result
-            return Dinero(importe)
+            return Dinero(result[0])
         except ValueError:
             return None
     
     def obtenerAnticipo(self, id_venta: int):
         """ Obtiene el anticipo recibido de una orden pendiente.
             Si no es una orden pendiente, regresa None. """
-        t: str = self.fetchone('''
+        result = self.fetchone('''
             SELECT  estado
             FROM    Ventas
             WHERE   id_ventas = ?;
         ''', (id_venta,))
         
         try:
-            estado, = t
+            estado: str = result[0]
             return Dinero(estado.split()[1])
         except (ValueError, IndexError):
             return None
@@ -906,8 +909,7 @@ class ManejadorVentas(DatabaseManager):
             {restrict};
         ''')
         if result:
-            fecha, = result
-            return fecha
+            return result[0]
     
     def obtenerPagosVenta(self, id_venta: int):
         """ Obtener listado de pagos realizados en esta venta. """
