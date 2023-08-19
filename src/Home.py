@@ -58,7 +58,7 @@ class App_Home(QtWidgets.QMainWindow):
         from AdministrarUsuarios import App_AdministrarUsuarios
         # from Ajustes import App_Ajustes
         from Caja import App_Caja
-        # from Reportes import App_Reportes
+        from Reportes import App_Reportes
         
         self.ui.btCrearVenta.clicked.connect(self.iniciarVenta)
         self.ui.btProductos.clicked.connect(lambda: self.crearVentana(App_AdministrarProductos))
@@ -67,7 +67,7 @@ class App_Home(QtWidgets.QMainWindow):
         self.ui.btCaja.clicked.connect(lambda: self.crearVentana(App_Caja))
         self.ui.btClientes.clicked.connect(lambda: self.crearVentana(App_AdministrarClientes))
         self.ui.btUsuarios.clicked.connect(lambda: self.crearVentana(App_AdministrarUsuarios))
-        # self.ui.btReportes.clicked.connect(lambda: self.crearVentana(App_Reportes))
+        self.ui.btReportes.clicked.connect(lambda: self.crearVentana(App_Reportes))
         # self.ui.btAjustes.clicked.connect(lambda: self.crearVentana(App_Ajustes))
         self.ui.btSalir.clicked.connect(self.exitApp)
         

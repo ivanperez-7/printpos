@@ -54,6 +54,7 @@ class PrintPOS(QApplication):
         return 'QApplication afitriona de PrintPOS.'
 
 
+app = PrintPOS()
+
 if __name__ == '__main__':
-    app = PrintPOS()
     app.iniciar()
