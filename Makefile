@@ -20,6 +20,7 @@ install:
 		--enable-plugin=pyside6 \
 		--include-package-data=resources \
 		--include-data-files=config.ini=config.ini \
+		--include-data-files=icon.ico=icon.ico \
 		--nofollow-import-to=unittest \
 		--nofollow-import-to=tkinter \
 		--windows-icon-from-ico=icon.ico \
