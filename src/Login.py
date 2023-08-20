@@ -86,7 +86,7 @@ class App_Login(QtWidgets.QMainWindow):
         self.ui.lbEstado.setText('Conectando a la base de datos...')
         
         rol = self.ui.groupRol.checkedButton().text()
-        conn = sql.crear_conexion(usuario, psswd, rol)
+        conn = sql.conectar_db(usuario, psswd, rol)
         
         try:
             manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)

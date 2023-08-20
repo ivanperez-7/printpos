@@ -14,7 +14,7 @@ Cursor: TypeAlias = fdb.Cursor
 Error: TypeAlias = fdb.Error
 
 
-def crear_conexion(usuario: str, psswd: str, rol: str = None) -> Connection:
+def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
     """ Crea conexión a base de datos y regresa objeto Connection.
         Regresa `None` al ocurrir un error. """
     config = leer_config()

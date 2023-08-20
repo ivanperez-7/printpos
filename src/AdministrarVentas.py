@@ -185,7 +185,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                 if isinstance(dato, datetime):
                     cell = formatDate(dato)
                 elif isinstance(dato, float):
-                    cell = f'{dato:,.2f}'
+                    cell = f'${dato:,.2f}'
                 else:
                     cell = str(dato or '')
                 tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
@@ -235,7 +235,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
                 if isinstance(dato, datetime):
                     cell = formatDate(dato)
                 elif isinstance(dato, float):
-                    cell = f'{dato:,.2f}'
+                    cell = f'${dato:,.2f}'
                 else:
                     cell = str(dato or '')
                 tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))

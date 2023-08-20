@@ -75,7 +75,7 @@ def requiere_admin(func):
         if not (usuario and psswd):
             return
         
-        conn = sql.crear_conexion(usuario, psswd, 'ADMINISTRADOR')
+        conn = sql.conectar_db(usuario, psswd, 'ADMINISTRADOR')
         try:
             manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
             manejador.obtenerUsuario(usuario)
