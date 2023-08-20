@@ -870,7 +870,7 @@ class ManejadorVentas(DatabaseManager):
         if result:
             return result[0]
     
-    def obtenerImporteTotal(self, id_venta: int):
+    def obtenerImporteTotal(self, id_venta: int) -> Dinero:
         """ Obtiene el importe total de una venta. """
         result = self.fetchone('''
             SELECT  SUM(importe)
@@ -883,7 +883,7 @@ class ManejadorVentas(DatabaseManager):
         except ValueError:
             return None
     
-    def obtenerAnticipo(self, id_venta: int):
+    def obtenerAnticipo(self, id_venta: int) -> Dinero:
         """ Obtiene el anticipo recibido de una orden pendiente.
             Si no es una orden pendiente, regresa None. """
         result = self.fetchone('''

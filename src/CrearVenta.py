@@ -1143,7 +1143,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         
         # cambiar el estado de la venta a 'Terminada' o 'Recibido xx.xx'
         # y también cambiar método de pago
-        estado = 'Terminada' if esDirecta else f'Recibido {self.para_pagar}'
+        estado = 'Terminada' if esDirecta else f'Recibido ${self.para_pagar}'
         if not manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True):
             return
         

@@ -519,7 +519,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
         
-        self.para_pagar: Dinero = total - anticipo
+        self.para_pagar = total - anticipo
         
         nombreCliente, correo, telefono, fechaCreacion, fechaEntrega, *_ \
             = manejador.obtenerDatosGeneralesVenta(idx)
