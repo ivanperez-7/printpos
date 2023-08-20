@@ -87,7 +87,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
             
             for col, dato in enumerate(item):
                 if isinstance(dato, float):
-                    cell = f'{dato:,.2f}'
+                    cell = f'${dato:,.2f}'
                 else:
                     cell = str(dato or '')
                 
