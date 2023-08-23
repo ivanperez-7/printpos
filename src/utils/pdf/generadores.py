@@ -1,11 +1,18 @@
 """ Provee métodos para generar diversos PDF en bytes. """
 import io
 
+from reportlab.platypus import (Table, TableStyle, SimpleDocTemplate,
+                                Paragraph, Spacer, Image)
+from reportlab.pdfgen.canvas import Canvas
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from PyPDF2 import PdfReader, PdfWriter
 from PySide6.QtCore import QDateTime
 
 from Caja import Caja
 from Login import Usuario
-
 from utils.dinero import Dinero
 from utils.myutils import chunkify, formatDate, leer_config
 from utils.sql import ManejadorVentas
@@ -22,12 +29,7 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
                 Máx. 6 por página
             - Total a pagar, anticipo recibido y saldo restante
             - Fecha de creación
-            - Fecha de entrega """
-    from PyPDF2 import PdfReader, PdfWriter
-    from reportlab.pdfgen.canvas import Canvas
-    from reportlab.platypus import Paragraph
-    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-    
+            - Fecha de entrega """    
     # leer datos de venta y de cliente
     nombre, telefono = manejadorVentas.obtenerClienteAsociado(idx)
     creacion, entrega = manejadorVentas.obtenerFechas(idx)
@@ -134,15 +136,7 @@ def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, 
             - Precio total
             - Nombre del vendedor
             - Folio de venta
-            - Fecha y hora de creación """
-    from reportlab.lib.units import mm
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT
-    
-    from reportlab.platypus import (Table, TableStyle, SimpleDocTemplate,
-                                    Paragraph, Spacer, Image)
-    
+            - Fecha y hora de creación """    
     # archivo temporal
     buffer = io.BytesIO()
     
@@ -174,7 +168,7 @@ def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, 
             f'{descuento:,.2f}' if descuento > 0 else '',
             f'{importe:,.2f}'
         ])
-        total_desc += descuento * cantidad
+        total_desc += descuento * cantidad  # TODO: no funciona para productos g.f.
     
     # productos de la compra
     tabla_productos = Table(data, colWidths=[10 * mm, 28 * mm, 12 * mm, 12 * mm, 12 * mm])
@@ -192,7 +186,8 @@ def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, 
     ]))
     
     # total a pagar
-    if total is None: total = sum(p[4] for p in productos)
+    if total is None:
+        total = sum(p[4] for p in productos)
     total = Dinero(total)
     pagado = Dinero(pagado)
     
@@ -282,13 +277,7 @@ def _generarCortePDF(caja: Caja, user: Usuario):
             - Tabla de movimientos
                 Fecha y hora | Descripción | Método de pago | Cantidad
             - Tabla de resumen de movimientos
-                Método de pago -> Ingresos | Egresos """
-    from reportlab.lib.units import mm
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.enums import TA_LEFT
-    
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-    
+                Método de pago -> Ingresos | Egresos """    
     buffer = io.BytesIO()
     
     doc = SimpleDocTemplate(buffer, pagesize=(80 * mm, 297 * mm),

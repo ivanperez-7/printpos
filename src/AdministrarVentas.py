@@ -90,8 +90,8 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
             .paginaCambiada.connect(self.update_display)
         
         # configurar y llenar tablas
-        self.ui.tabla_ventasDirectas.configurarCabecera(lambda col: col in [0, 3, 4, 5, 6])
-        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in [0, 5, 6, 7])
+        self.ui.tabla_ventasDirectas.configurarCabecera(lambda col: col in [0, 3, 4, 5, 6, 7])
+        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in [0, 5, 6, 7, 8])
     
     def showEvent(self, event):
         self.rescan_update()
@@ -506,6 +506,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         self.ui = Ui_TerminarVenta()
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
+        self.setFixedSize(833, 759)
         
         self.id_ventas = idx
         

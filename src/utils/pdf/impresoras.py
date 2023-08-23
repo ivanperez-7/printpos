@@ -1,5 +1,6 @@
 """ Provee clases para enviar documentos PDF, en bytes, a impresoras. """
 import io
+import uuid
 from functools import wraps
 from typing import overload
 
@@ -73,7 +74,7 @@ class ImpresoraPDF:
         for i, page in enumerate(doc):
             pix = page.get_pixmap(dpi=300, alpha=False)
             image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
-            # image.save(f'out{i}.jpg')
+            # image.save(uuid.uuid4().hex + '.jpg')
             
             rect = painter.viewport()
             qtImageScaled = image.scaled(rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -155,11 +156,9 @@ class ImpresoraTickets(ImpresoraPDF):
                  'Tarjeta de crédito': 'TVP',
                  'Tarjeta de débito': 'TVP'}
         
-        blobs = [_generarTicketPDF(idx, productos, vendedor, monto,
-                                   pagado, abrev[metodo], fechaCreacion)
-                 for metodo, monto, pagado in manejador.obtenerPagosVenta(idx)]
-        
-        for data in blobs:
+        for metodo, monto, pagado in manejador.obtenerPagosVenta(idx):
+            data = _generarTicketPDF(idx, productos, vendedor, monto,
+                                     pagado, abrev[metodo], fechaCreacion)
             self.enviarAImpresora(data)
     
     @verificar_impresora

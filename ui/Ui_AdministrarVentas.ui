@@ -591,7 +591,7 @@ background-color: rgb(255, 255, 255);</string>
              </column>
              <column>
               <property name="text">
-               <string>Fecha de creación</string>
+               <string>Fecha</string>
               </property>
              </column>
              <column>
@@ -602,6 +602,11 @@ background-color: rgb(255, 255, 255);</string>
              <column>
               <property name="text">
                <string>Estado</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Pago</string>
               </property>
              </column>
              <column>
@@ -660,7 +665,7 @@ background-color: rgb(255, 255, 255);</string>
              </column>
              <column>
               <property name="text">
-               <string>Fecha de creación</string>
+               <string>Fecha</string>
               </property>
              </column>
              <column>
@@ -676,6 +681,11 @@ background-color: rgb(255, 255, 255);</string>
              <column>
               <property name="text">
                <string>Estado</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Pago</string>
               </property>
              </column>
              <column>
