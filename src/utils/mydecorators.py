@@ -1,7 +1,7 @@
 """ Módulo para implementar decoradores útiles varios. """
 from functools import wraps
 
-from PySide6.QtWidgets import QMessageBox, QDialog, QMainWindow
+from PySide6.QtWidgets import QMessageBox, QDialog
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
 

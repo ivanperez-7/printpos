@@ -2,12 +2,13 @@
 from typing import Callable
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import (QFont, QIcon, QPixmap, QRegularExpressionValidator, 
+from PySide6.QtGui import (QFont, QIcon, QRegularExpressionValidator, 
                            QPainter, QColor, QPolygon, QPainterPath)
 from PySide6.QtCore import Qt, QSize, QRectF, QPoint, QPropertyAnimation, QRect, QEasingCurve
 
 from Login import Usuario
 from utils.dinero import Dinero
+from utils.myutils import contiene_duplicados
 from utils import sql
 
 
@@ -57,6 +58,83 @@ class DimBackground(QtWidgets.QFrame):
         self.setFixedSize(window.size())
         self.setStyleSheet('background: rgba(64, 64, 64, 64);')
         self.show()
+
+
+class WidgetPago(QtWidgets.QFrame):
+    def __init__(self, parent=None):
+        from ui.Ui_WidgetPago import Ui_WidgetPago
+        
+        super().__init__(parent)
+        
+        self.ui = Ui_WidgetPago()
+        self.ui.setupUi(self)
+        
+    def calcularCambio(self, para_pagar):
+        """ Recalcular cambio a entregar. Notar que sólo se ejecuta
+            cuando el método de pago actual es efectivo. """
+        if self.metodoSeleccionado != 'Efectivo':
+            return
+        
+        pago = self.ui.txtPago.cantidad
+        cambio = max(Dinero.cero, pago - para_pagar)
+        self.ui.lbCambio.setText(f'{cambio}')
+    
+    @property
+    def montoPagado(self):
+        return self.ui.txtPago.cantidad
+    
+    @property
+    def metodoSeleccionado(self):
+        return self.ui.buttonGroup.checkedButton().text()
+    
+    @property
+    def grupoBotones(self):
+        return self.ui.buttonGroup
+
+
+class StackPagos(QtWidgets.QStackedWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        self.setMaximumHeight(139)
+        self.total = Dinero()
+    
+    def retroceder(self):
+        self.setCurrentIndex(self.currentIndex() - 1)
+    
+    def avanzar(self):
+        self.setCurrentIndex(self.currentIndex() + 1)
+    
+    def agregarPago(self):
+        """ Agrega widget de pago a la lista y regresa el widget. """
+        wdg = WidgetPago()
+        wdg.ui.txtPago.textChanged.connect(lambda: wdg.calcularCambio(self.totalEnEfectivo))
+        self.currentChanged.connect(lambda: wdg.calcularCambio(self.totalEnEfectivo))
+        self.addWidget(wdg)
+        self.setCurrentWidget(wdg)
+        return wdg
+    
+    def quitarPago(self):
+        """ Quitar el widget de pago actual. """
+        if self.count() > 1:
+            self.removeWidget(self.currentWidget())
+    
+    @property
+    def widgetsPago(self) -> list[WidgetPago]:
+        return [self.widget(i) for i in range(self.count())]
+    
+    @property
+    def totalEnEfectivo(self):
+        """ Residuo del total menos lo ya pagado con dinero electrónico. """
+        return self.total - sum(wdg.montoPagado for wdg in self.widgetsPago
+                                if wdg.metodoSeleccionado != 'Efectivo')
+    
+    @property
+    def pagosValidos(self):
+        return len([wdg for wdg in self.widgetsPago
+                    if wdg.metodoSeleccionado == 'Efectivo']) <= 1 \
+            and all(wdg.montoPagado > 0 for wdg in self.widgetsPago) \
+            and sum(wdg.montoPagado for wdg in self.widgetsPago) >= self.total
 
 
 class TablaDatos(QtWidgets.QTableWidget):
@@ -143,6 +221,13 @@ class NumberEdit(QtWidgets.QLineEdit):
         self.setValidator(
             QRegularExpressionValidator(r'\d*\.?\d{0,2}'))
     
+    def bloquear(self, monto):
+        self.cantidad = monto
+        self.setReadOnly(True)
+    
+    def desbloquear(self):
+        self.setReadOnly(False)
+    
     @property
     def cantidad(self):
         try:
@@ -151,7 +236,7 @@ class NumberEdit(QtWidgets.QLineEdit):
             return Dinero()
     
     @cantidad.setter
-    def cantidad(self, val: float):
+    def cantidad(self, val):
         self.setText(f'{Dinero(val)}')
 
 

@@ -36,7 +36,7 @@ class ItemVenta:
         return self.descuento_unit * self.cantidad
     
     @classmethod
-    def generarItemComision(cls, importe: float, porcentaje: float):
+    def generarItemComision(cls, importe: Dinero, porcentaje: float):
         """ Generar item de comisión por pago con tarjeta """
         return cls(0, 'COMISION', 1., 0.,
                    importe * porcentaje / 100,
@@ -926,6 +926,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         self.ui = Ui_ConfirmarVenta()
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
+        self.setFixedWidth(833)
         
         # guardar conexión y usuarios como atributos
         self.conn = first.conn
@@ -945,11 +946,16 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                       self.ui.txtAnticipo,
                       self.ui.lbCincuenta]:
                 w.hide()
+            
+            self.setFixedHeight(759)
         else:
             ventaDatos.fechaCreacion = QDateTime.currentDateTime()
+            self.setFixedHeight(795)
         
-        # seleccionar botón de método de pago
-        for bt in self.ui.buttonGroupMetodo.buttons():
+        # agregar pago y seleccionar botón de método
+        wdg = self.ui.stackedWidget.agregarPago()
+        
+        for bt in wdg.grupoBotones.buttons():
             bt.setChecked(
                 first.ui.btMetodoGrupo.checkedButton().text() == bt.text())
         
@@ -971,24 +977,31 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         # añade eventos para los botones
         self.ui.btListo.clicked.connect(self.verificar)
         self.ui.btCancelar.clicked.connect(self.abortar)
-        self.ui.txtPago.textChanged.connect(self.calcularCambio)
         self.ui.txtAnticipo.textChanged.connect(self.cambiarAnticipo)
-        # self.ui.buttonGroupMetodo.buttonClicked.connect(self.handleComision)
         
+        self.ui.btAgregar.clicked.connect(self.ui.stackedWidget.agregarPago)
+        self.ui.btAgregar.clicked.connect(self.modificar_contador)
+        self.ui.btQuitar.clicked.connect(self.ui.stackedWidget.quitarPago)
+        self.ui.btQuitar.clicked.connect(self.modificar_contador)
+        self.ui.btAnterior.clicked.connect(self.ui.stackedWidget.retroceder)
+        self.ui.btAnterior.clicked.connect(self.modificar_contador)
+        self.ui.btSiguiente.clicked.connect(self.ui.stackedWidget.avanzar)
+        self.ui.btSiguiente.clicked.connect(self.modificar_contador)
+        
+        # configurar tabla de productos
         self.ui.tabla_productos.quitarBordeCabecera()
         self.ui.tabla_productos.configurarCabecera(
             lambda col: col != 2,
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         
+        self.recalcularImportes(self.ventaDatos)
+        self.update_display(self.ventaDatos)
+        
         self.show()
         
         # brincar el proceso si el pago es de cero
         if self.para_pagar <= 0:
-            self.verificar()
-    
-    def showEvent(self, event):
-        self.recalcularImportes(self.ventaDatos)
-        self.update_display(self.ventaDatos)
+            self.terminarVenta()
     
     def closeEvent(self, event):
         event.ignore()
@@ -996,27 +1009,43 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
     # ================
     # FUNCIONES ÚTILES
     # ================
-    @property
-    def metodoSeleccionado(self):
-        """ Texto de botón de método de pago seleccionado. """
-        return self.ui.buttonGroupMetodo.checkedButton().text()
+    def modificar_contador(self):
+        self.ui.lbContador.setText('Pago {}/{}'.format(self.ui.stackedWidget.currentIndex()+1,
+                                                       self.ui.stackedWidget.count()))
+        
+    def registrarVenta(self) -> int:
+        """ Registra datos principales de venta en DB
+            y regresa folio de venta insertada. """
+        manejadorVentas = sql.ManejadorVentas(self.conn)
+        ventas_db_parametros = self.obtenerParametrosVentas()
+        ventas_detallado_db_parametros = self.obtenerParametrosVentasDetallado()
+        
+        # ejecuta internamente un fetchone, por lo que se desempaca luego
+        result = manejadorVentas.insertarVenta(ventas_db_parametros)
+        if not result:
+            return
+        
+        id_ventas, = result
+        manejadorVentas.insertarDetallesVenta(id_ventas,
+                                              ventas_detallado_db_parametros)
+        return id_ventas
     
     def handleComision(self, bt: QtWidgets.QRadioButton):
         """ Mostrar u ocultar comisión según método de pago. """
         venta = copy.deepcopy(self.ventaDatos)
-        total = venta.total
+        metodo = bt.text()
         
-        if bt.text().endswith('crédito'):
-            item = ItemVenta.generarItemComision(total, self.COMISION_CREDITO)
-            venta.productos.append(item)
-        elif bt.text().endswith('débito'):
-            item = ItemVenta.generarItemComision(total, self.COMISION_DEBITO)
-            venta.productos.append(item)
+        if metodo.endswith('crédito'):
+            item = ItemVenta.generarItemComision(venta.total, self.COMISION_CREDITO)
+            venta.agregarProducto(item)
+        elif metodo.endswith('débito'):
+            item = ItemVenta.generarItemComision(venta.total, self.COMISION_DEBITO)
+            venta.agregarProducto(item)
         else:
             venta = self.ventaDatos
         
-        self.update_display(venta)
         self.recalcularImportes(venta)
+        self.update_display(venta)
     
     def update_display(self, venta: Venta):
         """ Llenar tabla de productos. """
@@ -1048,23 +1077,7 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         
         self.ui.lbTotal.setText(f'{self.total}')
         self.ui.txtAnticipo.cantidad = self.para_pagar
-    
-    def registrarVenta(self):
-        """ Registra datos principales de venta en DB
-            y regresa folio de venta insertada. """
-        manejadorVentas = sql.ManejadorVentas(self.conn)
-        ventas_db_parametros = self.obtenerParametrosVentas()
-        ventas_detallado_db_parametros = self.obtenerParametrosVentasDetallado()
-        
-        # ejecuta internamente un fetchone, por lo que se desempaca luego
-        result = manejadorVentas.insertarVenta(ventas_db_parametros)
-        if not result:
-            return
-        
-        id_ventas, = result
-        manejadorVentas.insertarDetallesVenta(id_ventas,
-                                              ventas_detallado_db_parametros)
-        return id_ventas
+        self.ui.stackedWidget.total = self.para_pagar
     
     def obtenerParametrosVentas(self):
         """ Parámetros para tabla ventas (datos generales). """
@@ -1087,17 +1100,10 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
                  prod.importe)
                 for prod in self.ventaDatos.productos]
     
-    def calcularCambio(self, txt=None):
-        """ Recalcular cambio a entregar. """
-        pago = self.ui.txtPago.cantidad
-        
-        cambio = max(Dinero.cero, pago - self.para_pagar)
-        self.ui.lbCambio.setText(f'{cambio}')
-    
-    def cambiarAnticipo(self, txt=None):
+    def cambiarAnticipo(self):
         """ Cambiar el anticipo pagado por el cliente. """
         self.para_pagar = self.ui.txtAnticipo.cantidad
-        self.calcularCambio()
+        self.ui.stackedWidget.total = self.para_pagar
     
     def verificar(self):
         """ Intenta finalizar la compra o pedido, actualizando el estado
@@ -1105,15 +1111,9 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
         if not 0. <= self.para_pagar <= self.total:
             return
         
-        pago = self.ui.txtPago.cantidad
-        
-        pagoAceptado = pago >= self.para_pagar if self.metodoSeleccionado == 'Efectivo' \
-            else pago == self.para_pagar
-        minimoCincuentaPorCiento = self.total / 2 <= self.para_pagar
-        
-        if not pagoAceptado:
+        if not self.ui.stackedWidget.pagosValidos:
             return
-        if not minimoCincuentaPorCiento:
+        if not self.total / 2 <= self.para_pagar:
             qm = QtWidgets.QMessageBox
             ret = qm.question(self, 'Atención',
                               'El anticipo está por debajo del 50% del total de compra.\n'
@@ -1131,24 +1131,29 @@ class App_ConfirmarVenta(QtWidgets.QMainWindow):
     def terminarVenta(self):
         """ Tras verificar todas las condiciones, finalizar venta y
             registrarla en la base de datos. """
-        esDirecta = not self.ui.boxFechaEntrega.isVisible()
-        pago = self.ui.txtPago.cantidad
-        
         manejadorVentas = sql.ManejadorVentas(self.conn)
         
         # registrar pagos en tabla ventas_pagos
-        if not manejadorVentas.insertarPago(self.id_ventas, self.metodoSeleccionado, 
-                                            self.para_pagar, pago):
-            return
+        for wdg in self.ui.stackedWidget.widgetsPago:
+            montoAPagar = wdg.montoPagado if wdg.metodoSeleccionado != 'Efectivo' \
+                else self.ui.stackedWidget.totalEnEfectivo
+                
+            if not manejadorVentas.insertarPago(self.id_ventas, wdg.metodoSeleccionado,
+                                                montoAPagar, wdg.montoPagado):
+                return
         
         # cambiar el estado de la venta a 'Terminada' o 'Recibido xx.xx'
         # y también cambiar método de pago
+        esDirecta = not self.ui.boxFechaEntrega.isVisible()
         estado = 'Terminada' if esDirecta else f'Recibido ${self.para_pagar}'
-        if not manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True):
-            return
         
-        # abrir pregunta
+        if manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True):
+            self.dialogoExito()
+    
+    def dialogoExito(self):
+        esDirecta = not self.ui.boxFechaEntrega.isVisible()
         qm = QtWidgets.QMessageBox
+        
         if not esDirecta:
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
             
