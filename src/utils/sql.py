@@ -734,7 +734,7 @@ class ManejadorVentas(DatabaseManager):
                     Clientes.nombre,
                     fecha_hora_creacion,
                     fecha_hora_entrega,
-                    SUM(importe) AS total,
+                    COALESCE(VP.monto, SUM(importe)) AS total,
                     estado,
                     metodo,
                     comentarios
@@ -754,7 +754,7 @@ class ManejadorVentas(DatabaseManager):
                          AND CAST(fecha_hora_creacion AS DATE) <= ?
                          OR estado LIKE 'Recibido%')
                     {restrict}
-            GROUP   BY 1, 2, 3, 4, 5, 7, 8, 9
+            GROUP   BY 1, 2, 3, 4, 5, 7, 8, 9, VP.monto
             ORDER	BY Ventas.id_ventas DESC;
         ''', (inicio.toPython(), final.toPython()))
     

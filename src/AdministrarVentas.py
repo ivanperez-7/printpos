@@ -520,6 +520,7 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         anticipo = manejador.obtenerAnticipo(idx)
         
         self.para_pagar = total - anticipo
+        self.ui.stackedWidget.total = self.para_pagar
         
         nombreCliente, correo, telefono, fechaCreacion, fechaEntrega, *_ \
             = manejador.obtenerDatosGeneralesVenta(idx)
@@ -532,11 +533,22 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         self.ui.lbFolio.setText(f'{idx}')
         self.ui.lbSaldo.setText(f'{self.para_pagar}')
         
+        self.ui.stackedWidget.agregarPago()
+        
         # eventos para widgets
         self.ui.btListo.clicked.connect(self.done)
         self.ui.btCancelar.clicked.connect(self.close)
-        self.ui.txtPago.textChanged.connect(self.calcularCambio)
         
+        self.ui.btAgregar.clicked.connect(self.ui.stackedWidget.agregarPago)
+        self.ui.btAgregar.clicked.connect(self.modificar_contador)
+        self.ui.btQuitar.clicked.connect(self.ui.stackedWidget.quitarPago)
+        self.ui.btQuitar.clicked.connect(self.modificar_contador)
+        self.ui.btAnterior.clicked.connect(self.ui.stackedWidget.retroceder)
+        self.ui.btAnterior.clicked.connect(self.modificar_contador)
+        self.ui.btSiguiente.clicked.connect(self.ui.stackedWidget.avanzar)
+        self.ui.btSiguiente.clicked.connect(self.modificar_contador)
+        
+        # configurar tabla de productos
         self.ui.tabla_productos.quitarBordeCabecera()
         self.ui.tabla_productos.configurarCabecera(
             lambda col: col != 2,
@@ -550,6 +562,10 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
     ####################
     # FUNCIONES ÚTILES #
     ####################
+    def modificar_contador(self):
+        self.ui.lbContador.setText('Pago {}/{}'.format(self.ui.stackedWidget.currentIndex()+1,
+                                                       self.ui.stackedWidget.count()))
+    
     def update_display(self):
         """ Llenar de productos la tabla. """
         manejador = ManejadorVentas(self.conn)
@@ -575,29 +591,22 @@ class App_TerminarVenta(QtWidgets.QMainWindow):
         
         tabla.resizeRowsToContents()
     
-    def calcularCambio(self):
-        """ Recalcular cambio a entregar. """
-        pago = self.ui.txtPago.cantidad
-        
-        cambio = max(Dinero.cero, pago - self.para_pagar)
-        self.ui.lbCambio.setText(f'{cambio}')
-    
     def done(self):
-        """ Verifica restricciones y termina venta. """
-        pago = self.ui.txtPago.cantidad
-        
-        metodo_pago = self.ui.groupMetodo.checkedButton().text()
-        pagoAceptado = pago >= self.para_pagar if metodo_pago == 'Efectivo' \
-            else pago == self.para_pagar
-        
-        if not pagoAceptado:
+        """ Verifica restricciones y termina venta. """        
+        if not self.ui.stackedWidget.pagosValidos:
             return
         
-        manejadorVentas = ManejadorVentas(self.conn)
         # registrar pagos en tabla ventas_pagos
-        if not manejadorVentas.insertarPago(self.id_ventas, metodo_pago, 
-                                            self.para_pagar, pago):
-            return
+        manejadorVentas = ManejadorVentas(self.conn)
+        
+        for wdg in self.ui.stackedWidget.widgetsPago:
+            montoAPagar = wdg.montoPagado if wdg.metodoSeleccionado != 'Efectivo' \
+                else self.ui.stackedWidget.totalEnEfectivo
+                
+            if not manejadorVentas.insertarPago(self.id_ventas, wdg.metodoSeleccionado,
+                                                montoAPagar, wdg.montoPagado):
+                return
+        
         # marcar venta como terminada
         if not manejadorVentas.actualizarEstadoVenta(self.id_ventas, 'Terminada',
                                                      commit=True):
