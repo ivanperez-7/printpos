@@ -696,8 +696,9 @@ class ManejadorVentas(DatabaseManager):
                     Usuarios.nombre,
                     Clientes.nombre,
                     fecha_hora_creacion,
-                    COALESCE(VP.monto, SUM(importe)) AS total,
+                    SUM(importe) AS total,
                     estado,
+                    VP.monto,
                     metodo,
                     comentarios
             FROM    Ventas
@@ -714,7 +715,7 @@ class ManejadorVentas(DatabaseManager):
             WHERE   fecha_hora_creacion = fecha_hora_entrega
                     AND ? <= CAST(fecha_hora_creacion AS DATE)
                     AND CAST(fecha_hora_creacion AS DATE) <= ?
-            GROUP   BY 1, 2, 3, 4, 6, 7, 8, VP.monto
+            GROUP   BY 1, 2, 3, 4, 6, 7, 8, 9
             ORDER	BY Ventas.id_ventas DESC;
         ''', (inicio.toPython(), final.toPython()))
     
@@ -734,8 +735,9 @@ class ManejadorVentas(DatabaseManager):
                     Clientes.nombre,
                     fecha_hora_creacion,
                     fecha_hora_entrega,
-                    COALESCE(VP.monto, SUM(importe)) AS total,
+                    SUM(importe) AS total,
                     estado,
+                    VP.monto,
                     metodo,
                     comentarios
             FROM    Ventas
@@ -754,7 +756,7 @@ class ManejadorVentas(DatabaseManager):
                          AND CAST(fecha_hora_creacion AS DATE) <= ?
                          OR estado LIKE 'Recibido%')
                     {restrict}
-            GROUP   BY 1, 2, 3, 4, 5, 7, 8, 9, VP.monto
+            GROUP   BY 1, 2, 3, 4, 5, 7, 8, 9, 10
             ORDER	BY Ventas.id_ventas DESC;
         ''', (inicio.toPython(), final.toPython()))
     

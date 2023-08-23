@@ -73,6 +73,7 @@ class WidgetPago(QtWidgets.QFrame):
         """ Recalcular cambio a entregar. Notar que sólo se ejecuta
             cuando el método de pago actual es efectivo. """
         if self.metodoSeleccionado != 'Efectivo':
+            self.ui.lbCambio.setText(f'{Dinero.cero}')
             return
         
         pago = self.ui.txtPago.cantidad
@@ -109,6 +110,8 @@ class StackPagos(QtWidgets.QStackedWidget):
         """ Agrega widget de pago a la lista y regresa el widget. """
         wdg = WidgetPago()
         wdg.ui.txtPago.textChanged.connect(lambda: wdg.calcularCambio(self.totalEnEfectivo))
+        wdg.grupoBotones.buttonClicked.connect(lambda: wdg.calcularCambio(self.totalEnEfectivo))
+        
         self.currentChanged.connect(lambda: wdg.calcularCambio(self.totalEnEfectivo))
         self.addWidget(wdg)
         self.setCurrentWidget(wdg)
