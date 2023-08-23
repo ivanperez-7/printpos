@@ -38,7 +38,7 @@ class Dinero:
     def __float__(self):
         return self.safe_float
     
-    def __neg__(self) -> 'Dinero':
+    def __neg__(self):
         return Dinero(-self.valor)
     
     def __repr__(self):
@@ -50,7 +50,7 @@ class Dinero:
     # =========================
     #  Operaciones aritméticas 
     # =========================
-    def __add__(self, op) -> 'Dinero':
+    def __add__(self, op):
         if isinstance(op, Dinero):
             return Dinero(self.valor + op.valor)
         elif isinstance(op, (float, int)):
@@ -58,7 +58,7 @@ class Dinero:
         else:
             raise OP_ERROR(op)
     
-    def __radd__(self, op) -> 'Dinero':
+    def __radd__(self, op):
         if isinstance(op, Dinero):
             return Dinero(op.valor + self.valor)
         elif isinstance(op, (float, int)):
@@ -66,7 +66,7 @@ class Dinero:
         else:
             raise OP_ERROR(op)
     
-    def __sub__(self, op) -> 'Dinero':
+    def __sub__(self, op):
         if isinstance(op, Dinero):
             return Dinero(self.valor - op.valor)
         elif isinstance(op, (float, int)):
@@ -74,7 +74,7 @@ class Dinero:
         else:
             raise OP_ERROR(op)
     
-    def __rsub__(self, op) -> 'Dinero':
+    def __rsub__(self, op):
         if isinstance(op, Dinero):
             return Dinero(op.valor - self.valor)
         elif isinstance(op, (float, int)):
@@ -82,7 +82,7 @@ class Dinero:
         else:
             raise OP_ERROR(op)
     
-    def __mul__(self, op) -> 'Dinero':
+    def __mul__(self, op):
         if isinstance(op, Dinero):
             return Dinero(self.valor * op.valor)
         elif isinstance(op, (float, int)):
@@ -90,7 +90,7 @@ class Dinero:
         else:
             raise OP_ERROR(op)
     
-    def __rmul__(self, op) -> 'Dinero':
+    def __rmul__(self, op):
         if isinstance(op, Dinero):
             return Dinero(op.valor * self.valor)
         elif isinstance(op, (float, int)):
@@ -98,7 +98,7 @@ class Dinero:
         else:
             raise OP_ERROR(op)
     
-    def __truediv__(self, op) -> 'Dinero':
+    def __truediv__(self, op):
         if isinstance(op, Dinero):
             return Dinero(self.valor / op.valor)
         elif isinstance(op, (float, int)):
@@ -106,7 +106,7 @@ class Dinero:
         else:
             raise OP_ERROR(op)
     
-    def __rtruediv__(self, op) -> 'Dinero':
+    def __rtruediv__(self, op):
         if isinstance(op, Dinero):
             return Dinero(op.valor / self.valor)
         elif isinstance(op, (float, int)):

@@ -155,9 +155,11 @@ class ImpresoraTickets(ImpresoraPDF):
                  'Tarjeta de crédito': 'TVP',
                  'Tarjeta de débito': 'TVP'}
         
-        for metodo, monto, pagado in manejador.obtenerPagosVenta(idx):
-            data = _generarTicketPDF(idx, productos, vendedor, monto,
-                                     pagado, abrev[metodo], fechaCreacion)
+        blobs = [_generarTicketPDF(idx, productos, vendedor, monto,
+                                   pagado, abrev[metodo], fechaCreacion)
+                 for metodo, monto, pagado in manejador.obtenerPagosVenta(idx)]
+        
+        for data in blobs:
             self.enviarAImpresora(data)
     
     @verificar_impresora

@@ -84,6 +84,11 @@ def son_similar(str1: str, str2: str):
     return str1_clean in str2_clean
 
 
+def contiene_duplicados(lista: list):
+    """ Regresa `True` si la lista dada contiene elementos duplicados. """
+    return len(lista) != len(set(lista))
+
+
 def formatDate(date: QDateTime | datetime) -> str:
     """ Da formato en texto a un dato QDateTime o datetime de Python.
         Ejemplo: 08 de febrero 2023, 4:56 p. m. """
