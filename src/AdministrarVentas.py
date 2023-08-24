@@ -5,7 +5,6 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
 from PySide6.QtCore import (QDateTime, QModelIndex, Qt, Signal)
 
-from utils.dinero import Dinero
 from utils.mydecorators import con_fondo, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import (ColorsEnum, chunkify, clamp,
