@@ -155,7 +155,11 @@ class ManejadorCaja(DatabaseManager):
             
             Requiere fechas de inicio y final, de tipo QDate. """
         return self.fetchall('''
-            SELECT  * 
+            SELECT  fecha_hora,
+                    monto, 
+                    REPLACE(descripcion, '  ', ''), 
+                    metodo, 
+                    nombre
             FROM    movimientos_caja
             WHERE   ? <= CAST(fecha_hora AS DATE)
                     AND CAST(fecha_hora AS DATE) <= ?;
