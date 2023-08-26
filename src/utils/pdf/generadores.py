@@ -77,7 +77,9 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
                 prodPrecio, prodImporte) in enumerate(chunk):
             y_sep = -32.4 * i  # separador por renglón de la tabla
             
-            can.drawCentredString(49, 381 + y_sep, f'{prodCantidad:,.2f}')
+            prodCantidad_str = f'{int(prodCantidad)}' if prodCantidad.is_integer() \
+                else f'{prodCantidad:,.2f}'
+            can.drawCentredString(49, 381 + y_sep, prodCantidad_str)
             can.drawCentredString(306, 381 + y_sep, f'{prodPrecio:,.2f}')
             can.drawCentredString(353, 381 + y_sep, f'{prodImporte:,.2f}')
             
@@ -126,7 +128,7 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
     return buffer
 
 
-def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, float]],
+def _generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float, float]],
                       vendedor: str, total: float = None, pagado: float = 0., metodo_pago: str = None, 
                       fechaCreacion: QDateTime = QDateTime.currentDateTime()):
     """ Función general para generar el ticket de compra o presupuesto.
@@ -162,7 +164,7 @@ def _generarTicketPDF(folio: int, productos: list[tuple[int, str, float, float, 
     
     for cantidad, nombre, precio, descuento, importe in productos:
         data.append([
-            f'{cantidad:,.2f}',
+            f'{int(cantidad)}' if cantidad.is_integer() else f'{cantidad:,.2f}',
             Paragraph(nombre, styles['Center']),
             f'{precio:,.2f}',
             f'{descuento:,.2f}' if descuento > 0 else '',
@@ -319,7 +321,7 @@ def _generarCortePDF(caja: Caja, user: Usuario):
         Spacer(1, 6),
         
         Paragraph('Realizado por: ' + user.nombre, styles['Left']),
-        Paragraph('Fecha y hora: ' + formatDate(QDateTime.currentDateTime()), styles['Left']),
+        Paragraph('Fecha y hora: ' + formatDate(), styles['Left']),
         Spacer(1, 6),
         
         Paragraph('Resumen de ingresos', styles['Heading3']),

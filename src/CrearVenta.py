@@ -81,15 +81,15 @@ class Venta:
     id_cliente: int = 1
     
     @property
-    def total(self) -> Dinero:
+    def total(self):
         return Dinero(sum(prod.importe for prod in self.productos))
     
     @property
-    def total_descuentos(self) -> Dinero:
+    def total_descuentos(self):
         return Dinero(sum(prod.total_descuentos for prod in self.productos))
     
     @property
-    def esVentaDirecta(self) -> bool:
+    def esVentaDirecta(self):
         """ Compara fechas de creación y entrega para determinar si la venta será un pedido. """
         return self.fechaCreacion == self.fechaEntrega
     
@@ -881,14 +881,14 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
             '*COTIZACIÓN DE VENTA*',
             f'Cliente: *{self.first.ui.txtCliente.text()}*',
             '-------------------------------------------',
-            f'Fecha: *{formatDate(QDateTime.currentDateTime())}*',
+            f'Fecha: *{formatDate()}*',
             '-------------------------------------------'
         ]
         
         for prod in self.first.ventaDatos.productos:
             mensaje.extend([
                 f'{prod.codigo} ({prod.cantidad:,.2f} unidades)',
-                f'Importe: {prod.importe: ,.2f}',
+                f'Importe: {prod.importe:,.2f}',
                 ''
             ])
         

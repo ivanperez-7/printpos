@@ -2,6 +2,8 @@
 from configparser import ConfigParser
 from datetime import datetime
 from typing import SupportsFloat
+import re
+import unicodedata
 
 from PySide6.QtCore import QDateTime, QThread, QLocale
 from PySide6.QtGui import QRegularExpressionValidator
@@ -62,18 +64,13 @@ def chunkify(array: list, size: int):
 def unidecode(input_str: str):
     """ Elimina (normaliza) los acentos en una cadena de texto y 
         convierte a minúsculas. Ejemplo: 'Pérez' -> 'perez'. """
-    import unicodedata
-    
     nfkd_form = unicodedata.normalize('NFKD', input_str)
     normalized = u''.join([c for c in nfkd_form if not unicodedata.combining(c)])
-    
     return normalized.lower()
 
 
 def son_similar(str1: str, str2: str):
     """ Determina si dos cadenas son similares o no. """
-    import re
-    
     # convertir, por si acaso
     str1 = str(str1)
     str2 = str(str2)
@@ -89,11 +86,11 @@ def contiene_duplicados(lista: list):
     return len(lista) != len(set(lista))
 
 
-def formatDate(date: QDateTime | datetime) -> str:
+def formatDate(date: QDateTime | datetime = None) -> str:
     """ Da formato en texto a un dato QDateTime o datetime de Python.
         Ejemplo: 08 de febrero 2023, 4:56 p. m. """
     if not date:
-        return ''
+        date = QDateTime.currentDateTime()
     
     locale = QLocale(QLocale.Spanish, QLocale.Mexico)
     return locale.toString(date, "d 'de' MMMM yyyy, h:mm ap")
