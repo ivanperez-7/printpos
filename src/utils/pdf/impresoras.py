@@ -13,7 +13,7 @@ from Caja import Caja
 from Login import Usuario
 from utils.mydecorators import run_in_thread
 from utils.myutils import leer_config
-from utils.pdf.generadores import _generarCortePDF, _generarOrdenCompra, _generarTicketPDF
+from utils.pdf.generadores import generarCortePDF, generarOrdenCompra, generarTicketPDF
 from utils import sql
 
 
@@ -115,7 +115,7 @@ class ImpresoraOrdenes(ImpresoraPDF):
     @run_in_thread
     def imprimirOrdenCompra(self, idx: int):
         manejador = sql.ManejadorVentas(self.conn)
-        data = _generarOrdenCompra(manejador, idx)
+        data = generarOrdenCompra(manejador, idx)
         self.enviarAImpresora(data)
 
 
@@ -157,20 +157,20 @@ class ImpresoraTickets(ImpresoraPDF):
                  'Tarjeta de débito': 'TVP'}
         
         for metodo, monto, pagado in manejador.obtenerPagosVenta(idx):
-            data = _generarTicketPDF(idx, productos, vendedor, monto,
-                                     pagado, abrev[metodo], fechaCreacion)
+            data = generarTicketPDF(idx, productos, vendedor, monto,
+                                    pagado, abrev[metodo], fechaCreacion)
             self.enviarAImpresora(data)
     
     @verificar_impresora
     @run_in_thread
     def imprimirTicketPresupuesto(self, productos: list[tuple], vendedor: str):
         """ Genera un ticket para el presupuesto de una compra. """
-        data = _generarTicketPDF(0, productos, vendedor)
+        data = generarTicketPDF(0, productos, vendedor)
         self.enviarAImpresora(data)
     
     @verificar_impresora
     @run_in_thread
     def imprimirCorteCaja(self, caja: Caja, user: Usuario):
         """ Genera un ticket para el presupuesto de una compra. """
-        data = _generarCortePDF(caja, user)
+        data = generarCortePDF(caja, user)
         self.enviarAImpresora(data)

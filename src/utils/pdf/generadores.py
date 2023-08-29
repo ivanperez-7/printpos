@@ -18,7 +18,7 @@ from utils.myutils import chunkify, formatDate, leer_config
 from utils.sql import ManejadorVentas
 
 
-def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
+def generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
     """ Genera un PDF con el orden de compra correspondiente a 
         la venta con índice `idx` en la base de datos.
 
@@ -128,7 +128,7 @@ def _generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
     return buffer
 
 
-def _generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float, float]],
+def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float, float]],
                       vendedor: str, total: float = None, pagado: float = 0., metodo_pago: str = None, 
                       fechaCreacion: QDateTime = QDateTime.currentDateTime()):
     """ Función general para generar el ticket de compra o presupuesto.
@@ -269,7 +269,7 @@ def _generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float
     return buffer
 
 
-def _generarCortePDF(caja: Caja, user: Usuario):
+def generarCortePDF(caja: Caja, user: Usuario):
     """ Función para generar el corte de caja, comprendido entre fechas dadas.
         Contiene:
             - Realizado el: (fecha)
