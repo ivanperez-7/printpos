@@ -82,11 +82,11 @@ class Venta:
     
     @property
     def total(self):
-        return Dinero(sum(prod.importe for prod in self.productos))
+        return Dinero.sum(prod.importe for prod in self.productos)
     
     @property
     def total_descuentos(self):
-        return Dinero(sum(prod.total_descuentos for prod in self.productos))
+        return Dinero.sum(prod.total_descuentos for prod in self.productos)
     
     @property
     def esVentaDirecta(self):

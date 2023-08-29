@@ -1,9 +1,27 @@
 """ Módulo con clase `Dinero` para manejar cantidades monetarias. """
+import operator
 import re
 from typing import Union
 
+
 PRECISION = 2
 OP_ERROR = lambda arg: TypeError(f'Segundo operando debe ser Dinero o numérico, no {type(arg)}.')
+
+def _preparar_op_aritm(op):
+    if isinstance(op, Dinero):
+        return op.valor
+    elif isinstance(op, (float, int)):
+        return op
+    else:
+        raise OP_ERROR(op)
+
+def _preparar_op_logico(op):
+    if isinstance(op, Dinero):
+        return op.safe_float
+    elif isinstance(op, (float, int)):
+        return round(op, PRECISION)
+    else:
+        raise OP_ERROR(op)
 
 
 class Dinero:
@@ -29,6 +47,11 @@ class Dinero:
         """ Forma explícita de generar valor cero. """
         return cls(0.)
     
+    @staticmethod
+    def sum(_iter) -> 'Dinero':
+        """ Invoca función nativa `sum` con parámetro `start=Dinero.cero`. """
+        return sum(_iter, start=Dinero.cero)
+    
     # =====================
     #  Operaciones unarias 
     # =====================
@@ -50,117 +73,59 @@ class Dinero:
     # =========================
     #  Operaciones aritméticas 
     # =========================
-    def __add__(self, op):
-        if isinstance(op, Dinero):
-            return Dinero(self.valor + op.valor)
-        elif isinstance(op, (float, int)):
-            return Dinero(self.valor + op)
+    def __realizar_op_aritm(self, op, operator, reverse = False):
+        op_value = _preparar_op_aritm(op)
+        if not reverse:
+            result_value = operator(self.valor, op_value) 
         else:
-            raise OP_ERROR(op)
+            result_value = operator(op_value, self.valor)
+        return Dinero(result_value)
+    
+    def __add__(self, op):
+        return self.__realizar_op_aritm(op, operator.add)
     
     def __radd__(self, op):
-        if isinstance(op, Dinero):
-            return Dinero(op.valor + self.valor)
-        elif isinstance(op, (float, int)):
-            return Dinero(op + self.valor)
-        else:
-            raise OP_ERROR(op)
+        return self.__realizar_op_aritm(op, operator.add, reverse=True)
     
     def __sub__(self, op):
-        if isinstance(op, Dinero):
-            return Dinero(self.valor - op.valor)
-        elif isinstance(op, (float, int)):
-            return Dinero(self.valor - op)
-        else:
-            raise OP_ERROR(op)
+        return self.__realizar_op_aritm(op, operator.sub)
     
     def __rsub__(self, op):
-        if isinstance(op, Dinero):
-            return Dinero(op.valor - self.valor)
-        elif isinstance(op, (float, int)):
-            return Dinero(op - self.valor)
-        else:
-            raise OP_ERROR(op)
+        return self.__realizar_op_aritm(op, operator.sub, reverse=True)
     
     def __mul__(self, op):
-        if isinstance(op, Dinero):
-            return Dinero(self.valor * op.valor)
-        elif isinstance(op, (float, int)):
-            return Dinero(self.valor * op)
-        else:
-            raise OP_ERROR(op)
+        return self.__realizar_op_aritm(op, operator.mul)
     
     def __rmul__(self, op):
-        if isinstance(op, Dinero):
-            return Dinero(op.valor * self.valor)
-        elif isinstance(op, (float, int)):
-            return Dinero(op * self.valor)
-        else:
-            raise OP_ERROR(op)
+        return self.__realizar_op_aritm(op, operator.mul, reverse=True)
     
     def __truediv__(self, op):
-        if isinstance(op, Dinero):
-            return Dinero(self.valor / op.valor)
-        elif isinstance(op, (float, int)):
-            return Dinero(self.valor / op)
-        else:
-            raise OP_ERROR(op)
+        return self.__realizar_op_aritm(op, operator.truediv)
     
     def __rtruediv__(self, op):
-        if isinstance(op, Dinero):
-            return Dinero(op.valor / self.valor)
-        elif isinstance(op, (float, int)):
-            return Dinero(op / self.valor)
-        else:
-            raise OP_ERROR(op)
+        return self.__realizar_op_aritm(op, operator.truediv, reverse=True)
     
     # =====================
     #  Operaciones lógicas 
     # =====================
+    def __comparar(self, op, operator):
+        op_value = _preparar_op_logico(op)
+        return operator(self.safe_float, op_value)
+    
     def __eq__(self, op):
-        if isinstance(op, Dinero):
-            return self.safe_float == op.safe_float
-        elif isinstance(op, (float, int)):
-            return self.safe_float == round(op, PRECISION)
-        else:
-            raise OP_ERROR(op)
+        return self.__comparar(op, operator.eq)
     
     def __ne__(self, op):
-        if isinstance(op, Dinero):
-            return self.safe_float != op.safe_float
-        elif isinstance(op, (float, int)):
-            return self.safe_float != round(op, PRECISION)
-        else:
-            raise OP_ERROR(op)
+        return self.__comparar(op, operator.ne)
     
     def __lt__(self, op):
-        if isinstance(op, Dinero):
-            return self.safe_float < op.safe_float
-        elif isinstance(op, (float, int)):
-            return self.safe_float < round(op, PRECISION)
-        else:
-            raise OP_ERROR(op)
+        return self.__comparar(op, operator.lt)
     
     def __le__(self, op):
-        if isinstance(op, Dinero):
-            return self.safe_float <= op.safe_float
-        elif isinstance(op, (float, int)):
-            return self.safe_float <= round(op, PRECISION)
-        else:
-            raise OP_ERROR(op)
+        return self.__comparar(op, operator.le)
     
     def __gt__(self, op):
-        if isinstance(op, Dinero):
-            return self.safe_float > op.safe_float
-        elif isinstance(op, (float, int)):
-            return self.safe_float > round(op, PRECISION)
-        else:
-            raise OP_ERROR(op)
+        return self.__comparar(op, operator.gt)
     
     def __ge__(self, op):
-        if isinstance(op, Dinero):
-            return self.safe_float >= op.safe_float
-        elif isinstance(op, (float, int)):
-            return self.safe_float >= round(op, PRECISION)
-        else:
-            raise OP_ERROR(op)
+        return self.__comparar(op, operator.ge)

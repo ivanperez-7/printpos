@@ -62,18 +62,16 @@ class Caja:
     
     def todoIngresos(self):
         """ Regresa lista de movimientos que son ingresos. """
-        return [m for m in self.movimientos if m.esIngreso]
+        return filter(lambda m: m.esIngreso, self.movimientos)
     
     def todoEgresos(self):
         """ Regresa lista de movimientos que son egresos. """
-        return [m for m in self.movimientos if not m.esIngreso]
+        return filter(lambda m: not m.esIngreso, self.movimientos)
     
-    def _total(self, iter: list[Movimiento], metodo: str = None) -> Dinero:
+    def _total(self, _iter: list[Movimiento], metodo: str = None):
         if metodo:
-            out = sum(m.monto for m in iter if m.metodo.startswith(metodo))
-        else:
-            out = sum(m.monto for m in iter)
-        return Dinero(out)
+            _iter = filter(lambda m: m.metodo.startswith(metodo), _iter)
+        return Dinero.sum(m.monto for m in _iter)
     
     def totalIngresos(self, metodo: str = None):
         return self._total(self.todoIngresos(), metodo)
