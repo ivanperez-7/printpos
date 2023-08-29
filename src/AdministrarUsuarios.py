@@ -15,7 +15,7 @@ from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 # VENTANA PRINCIPAL #
 #####################
 
-class App_AdministrarUsuarios(QtWidgets.QMainWindow):
+class App_AdministrarUsuarios(QtWidgets.QWidget):
     """ Backend para la ventana de administración de usuarios.
         TODO:
             - mecanismo de reseteo de contraseña (sin permisos de admin)
@@ -166,7 +166,7 @@ class App_AdministrarUsuarios(QtWidgets.QMainWindow):
 # VENTANAS PARA EDITAR USUARIOS #
 #################################
 @con_fondo
-class Base_EditarUsuario(QtWidgets.QMainWindow):
+class Base_EditarUsuario(QtWidgets.QWidget):
     """ Clase base para la ventana de registrar o editar usuario. """
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str

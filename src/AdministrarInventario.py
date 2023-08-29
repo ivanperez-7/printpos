@@ -11,7 +11,7 @@ from utils.sql import ManejadorInventario, ManejadorProductos
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_AdministrarInventario(QtWidgets.QMainWindow):
+class App_AdministrarInventario(QtWidgets.QWidget):
     """ Backend para la ventana de administración de inventario. """
     
     def __init__(self, parent: VentanaPrincipal):
@@ -165,7 +165,7 @@ class App_AdministrarInventario(QtWidgets.QMainWindow):
 # VENTANAS USADAS POR EL MÓDULO #
 #################################
 @con_fondo
-class Base_EditarInventario(QtWidgets.QMainWindow):
+class Base_EditarInventario(QtWidgets.QWidget):
     """ Clase base para módulo de registrar o modificar elemento. """
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str

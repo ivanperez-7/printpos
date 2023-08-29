@@ -8,7 +8,6 @@ from PySide6.QtCore import Qt, QSize, QRectF, QPoint, QPropertyAnimation, QRect,
 
 from Login import Usuario
 from utils.dinero import Dinero
-from utils.myutils import contiene_duplicados
 from utils import sql
 
 
@@ -52,7 +51,7 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
 class DimBackground(QtWidgets.QFrame):
     """ Crea un QFrame que ocupa la ventana entera, para poner énfasis en las ventanas nuevas. """
     
-    def __init__(self, window: QtWidgets.QMainWindow):
+    def __init__(self, window: QtWidgets.QWidget):
         super().__init__(window)
         
         self.setFixedSize(window.size())
@@ -134,10 +133,16 @@ class StackPagos(QtWidgets.QStackedWidget):
     
     @property
     def pagosValidos(self):
-        return len([wdg for wdg in self.widgetsPago
-                    if wdg.metodoSeleccionado == 'Efectivo']) <= 1 \
-            and all(wdg.montoPagado > 0 for wdg in self.widgetsPago) \
-            and sum(wdg.montoPagado for wdg in self.widgetsPago) >= self.total
+        montoPagado = sum(wdg.montoPagado for wdg in self.widgetsPago)
+        n_efec = [wdg.metodoSeleccionado for wdg in self.widgetsPago].count('Efectivo')
+        
+        if n_efec == 0:
+            sumaCorrecta = montoPagado == self.total
+        elif n_efec == 1:
+            sumaCorrecta = montoPagado >= self.total
+        else:
+            return False
+        return all(wdg.montoPagado > 0 for wdg in self.widgetsPago) and sumaCorrecta
 
 
 class TablaDatos(QtWidgets.QTableWidget):
@@ -245,7 +250,7 @@ class NumberEdit(QtWidgets.QLineEdit):
 
 class LabelAdvertencia(QtWidgets.QLabel):
     """ Crea un label de advertencia para las tablas, ya que en Qt Designer no se puede.
-    
+
         Añade método `resizeEvent` al padre para posicionar el label en el centro.
         
         Añade método al padre para actualizar el texto, que verifica si hay items o no en la tabla. """

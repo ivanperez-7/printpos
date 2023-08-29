@@ -7,7 +7,7 @@ from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 from utils.myutils import son_similar, Runner
 
 
-class App_Home(QtWidgets.QMainWindow):
+class App_Home(QtWidgets.QWidget):
     """ Backend para la pantalla principal. """
     
     def __init__(self, parent: VentanaPrincipal):
@@ -164,7 +164,7 @@ class App_Home(QtWidgets.QMainWindow):
 ##################################
 # VENTANA PARA CONSULTAR PRECIOS #
 ##################################
-class App_ConsultarPrecios(QtWidgets.QMainWindow):
+class App_ConsultarPrecios(QtWidgets.QWidget):
     """ Backend para el módulo de consultar precios.
         No se puede cerrar hasta cerrar por completo el sistema. """
     dataChanged = Signal()  # señal para actualizar tabla en hilo principal

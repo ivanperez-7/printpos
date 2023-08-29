@@ -14,7 +14,7 @@ from utils.sql import ManejadorClientes
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_AdministrarClientes(QtWidgets.QMainWindow):
+class App_AdministrarClientes(QtWidgets.QWidget):
     """ Backend para la ventana de administración de clientes. """
     
     def __init__(self, parent: VentanaPrincipal):
@@ -211,7 +211,7 @@ class App_AdministrarClientes(QtWidgets.QMainWindow):
 # VENTANAS PARA EDITAR CLIENTES #
 #################################
 @con_fondo
-class Base_EditarCliente(QtWidgets.QMainWindow):
+class Base_EditarCliente(QtWidgets.QWidget):
     """ Clase base para registrar o editar cliente. """
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str

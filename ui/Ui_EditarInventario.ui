@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>EditarInventario</class>
- <widget class="QMainWindow" name="EditarInventario">
+ <widget class="QWidget" name="EditarInventario">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,74 +11,73 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Form</string>
   </property>
-  <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_3">
-    <property name="leftMargin">
-     <number>0</number>
-    </property>
-    <property name="topMargin">
-     <number>0</number>
-    </property>
-    <property name="rightMargin">
-     <number>0</number>
-    </property>
-    <item alignment="Qt::AlignTop">
-     <widget class="QFrame" name="frame_4">
-      <property name="font">
-       <font>
-        <family>Segoe UI</family>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QFrame { background-color: rgb(52, 172, 224); border: none}</string>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item alignment="Qt::AlignLeft">
-        <widget class="QFrame" name="frame_5">
-         <property name="minimumSize">
-          <size>
-           <width>294</width>
-           <height>63</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>294</width>
-           <height>63</height>
-          </size>
-         </property>
-         <property name="font">
-          <font>
-           <family>Segoe UI</family>
-          </font>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">QFrame {border: none}</string>
-         </property>
-         <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
-         </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
-           <widget class="QPushButton" name="btRegresar">
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-             </font>
-            </property>
-            <property name="cursor">
-             <cursorShape>PointingHandCursor</cursorShape>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">QPushButton {
+  <layout class="QVBoxLayout" name="verticalLayout_3">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QFrame" name="frame_4">
+     <property name="font">
+      <font>
+       <family>Segoe UI</family>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QFrame { background-color: rgb(52, 172, 224); border: none}</string>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item alignment="Qt::AlignLeft">
+       <widget class="QFrame" name="frame_5">
+        <property name="minimumSize">
+         <size>
+          <width>294</width>
+          <height>63</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>294</width>
+          <height>63</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>Segoe UI</family>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QFrame {border: none}</string>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+          <widget class="QPushButton" name="btRegresar">
+           <property name="font">
+            <font>
+             <family>Segoe UI</family>
+            </font>
+           </property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QPushButton {
         background-color: transparent;
         border: none;
         padding: 0px;
@@ -89,124 +88,161 @@
     QPushButton:pressed {
         background-color: rgba(255, 255, 255, 0);
     }</string>
-            </property>
-            <property name="icon">
-             <iconset resource="../resources.qrc">
-              <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
-            </property>
-            <property name="iconSize">
-             <size>
-              <width>40</width>
-              <height>40</height>
-             </size>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
-           <widget class="QLabel" name="lbTitulo">
-            <property name="minimumSize">
-             <size>
-              <width>211</width>
-              <height>41</height>
-             </size>
-            </property>
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-              <pointsize>18</pointsize>
-             </font>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">color: rgb(255, 255, 255);</string>
-            </property>
-            <property name="text">
-             <string>Editar elemento</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item>
-     <widget class="QFrame" name="frame">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
+           </property>
+           <property name="icon">
+            <iconset resource="../resources.qrc">
+             <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>40</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+          <widget class="QLabel" name="lbTitulo">
+           <property name="minimumSize">
+            <size>
+             <width>211</width>
+             <height>41</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Segoe UI</family>
+             <pointsize>18</pointsize>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color: rgb(255, 255, 255);</string>
+           </property>
+           <property name="text">
+            <string>Editar elemento</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="frame">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="font">
+      <font>
+       <family>Segoe UI</family>
+      </font>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <property name="bottomMargin">
+       <number>0</number>
       </property>
-      <property name="font">
-       <font>
-        <family>Segoe UI</family>
-       </font>
-      </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-       <item>
-        <widget class="QFrame" name="frame_2">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>451</width>
-           <height>469</height>
-          </size>
+      <item>
+       <widget class="QFrame" name="frame_2">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>451</width>
+          <height>469</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>Segoe UI</family>
+         </font>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::Box</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
+        <property name="lineWidth">
+         <number>1</number>
+        </property>
+        <widget class="QLabel" name="label_3">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>12</y>
+           <width>431</width>
+           <height>30</height>
+          </rect>
          </property>
          <property name="font">
           <font>
            <family>Segoe UI</family>
+           <pointsize>14</pointsize>
           </font>
          </property>
-         <property name="frameShape">
-          <enum>QFrame::Box</enum>
+         <property name="text">
+          <string>Datos generales</string>
          </property>
-         <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
-         <property name="lineWidth">
-          <number>1</number>
+        </widget>
+        <widget class="QGroupBox" name="groupBox_3">
+         <property name="geometry">
+          <rect>
+           <x>250</x>
+           <y>330</y>
+           <width>161</width>
+           <height>61</height>
+          </rect>
          </property>
-         <widget class="QLabel" name="label_3">
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="title">
+          <string>Mínimo</string>
+         </property>
+         <widget class="QLineEdit" name="txtMinimo">
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>12</y>
-            <width>431</width>
-            <height>30</height>
+            <y>30</y>
+            <width>101</width>
+            <height>20</height>
            </rect>
           </property>
           <property name="font">
            <font>
             <family>Segoe UI</family>
-            <pointsize>14</pointsize>
+            <pointsize>11</pointsize>
            </font>
           </property>
           <property name="text">
-           <string>Datos generales</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
+           <string/>
           </property>
          </widget>
-         <widget class="QGroupBox" name="groupBox_3">
+         <widget class="QLabel" name="label_4">
           <property name="geometry">
            <rect>
-            <x>250</x>
-            <y>330</y>
-            <width>161</width>
-            <height>61</height>
+            <x>120</x>
+            <y>30</y>
+            <width>71</width>
+            <height>16</height>
            </rect>
           </property>
           <property name="font">
@@ -215,55 +251,36 @@
             <pointsize>11</pointsize>
            </font>
           </property>
-          <property name="title">
-           <string>Mínimo</string>
+          <property name="text">
+           <string>lotes</string>
           </property>
-          <widget class="QLineEdit" name="txtMinimo">
-           <property name="geometry">
-            <rect>
-             <x>10</x>
-             <y>30</y>
-             <width>101</width>
-             <height>20</height>
-            </rect>
-           </property>
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>11</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-          <widget class="QLabel" name="label_4">
-           <property name="geometry">
-            <rect>
-             <x>120</x>
-             <y>30</y>
-             <width>71</width>
-             <height>16</height>
-            </rect>
-           </property>
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>11</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>lotes</string>
-           </property>
-          </widget>
          </widget>
-         <widget class="QGroupBox" name="groupBox_2">
+        </widget>
+        <widget class="QGroupBox" name="groupBox_2">
+         <property name="geometry">
+          <rect>
+           <x>40</x>
+           <y>330</y>
+           <width>191</width>
+           <height>61</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="title">
+          <string>Precio de compra de lote</string>
+         </property>
+         <widget class="QLineEdit" name="txtPrecioCompra">
           <property name="geometry">
            <rect>
-            <x>40</x>
-            <y>330</y>
-            <width>191</width>
-            <height>61</height>
+            <x>25</x>
+            <y>30</y>
+            <width>101</width>
+            <height>20</height>
            </rect>
           </property>
           <property name="font">
@@ -272,55 +289,17 @@
             <pointsize>11</pointsize>
            </font>
           </property>
-          <property name="title">
-           <string>Precio de compra de lote</string>
+          <property name="text">
+           <string/>
           </property>
-          <widget class="QLineEdit" name="txtPrecioCompra">
-           <property name="geometry">
-            <rect>
-             <x>25</x>
-             <y>30</y>
-             <width>101</width>
-             <height>20</height>
-            </rect>
-           </property>
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>11</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-          <widget class="QLabel" name="label">
-           <property name="geometry">
-            <rect>
-             <x>10</x>
-             <y>32</y>
-             <width>21</width>
-             <height>16</height>
-            </rect>
-           </property>
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>11</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>$</string>
-           </property>
-          </widget>
          </widget>
-         <widget class="QGroupBox" name="groupBox">
+         <widget class="QLabel" name="label">
           <property name="geometry">
            <rect>
-            <x>30</x>
-            <y>110</y>
-            <width>391</width>
-            <height>61</height>
+            <x>10</x>
+            <y>32</y>
+            <width>21</width>
+            <height>16</height>
            </rect>
           </property>
           <property name="font">
@@ -329,36 +308,75 @@
             <pointsize>11</pointsize>
            </font>
           </property>
-          <property name="title">
-           <string>Nombre</string>
+          <property name="text">
+           <string>$</string>
           </property>
-          <widget class="QLineEdit" name="txtNombre">
-           <property name="geometry">
-            <rect>
-             <x>10</x>
-             <y>30</y>
-             <width>351</width>
-             <height>20</height>
-            </rect>
-           </property>
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>11</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
          </widget>
-         <widget class="QGroupBox" name="groupBox_4">
+        </widget>
+        <widget class="QGroupBox" name="groupBox">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>110</y>
+           <width>391</width>
+           <height>61</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="title">
+          <string>Nombre</string>
+         </property>
+         <widget class="QLineEdit" name="txtNombre">
           <property name="geometry">
            <rect>
-            <x>230</x>
-            <y>220</y>
-            <width>181</width>
-            <height>61</height>
+            <x>10</x>
+            <y>30</y>
+            <width>351</width>
+            <height>20</height>
+           </rect>
+          </property>
+          <property name="font">
+           <font>
+            <family>Segoe UI</family>
+            <pointsize>11</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </widget>
+        <widget class="QGroupBox" name="groupBox_4">
+         <property name="geometry">
+          <rect>
+           <x>230</x>
+           <y>220</y>
+           <width>181</width>
+           <height>61</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+           <pointsize>11</pointsize>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="title">
+          <string>En existencia</string>
+         </property>
+         <widget class="QLineEdit" name="txtExistencia">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>30</y>
+            <width>91</width>
+            <height>20</height>
            </rect>
           </property>
           <property name="font">
@@ -368,60 +386,59 @@
             <bold>false</bold>
            </font>
           </property>
-          <property name="title">
-           <string>En existencia</string>
+          <property name="inputMethodHints">
+           <set>Qt::ImhFormattedNumbersOnly</set>
           </property>
-          <widget class="QLineEdit" name="txtExistencia">
-           <property name="geometry">
-            <rect>
-             <x>10</x>
-             <y>30</y>
-             <width>91</width>
-             <height>20</height>
-            </rect>
-           </property>
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>11</pointsize>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="inputMethodHints">
-            <set>Qt::ImhFormattedNumbersOnly</set>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-          <widget class="QLabel" name="label_5">
-           <property name="geometry">
-            <rect>
-             <x>110</x>
-             <y>30</y>
-             <width>71</width>
-             <height>16</height>
-            </rect>
-           </property>
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>11</pointsize>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>unidades</string>
-           </property>
-          </widget>
+          <property name="text">
+           <string/>
+          </property>
          </widget>
-         <widget class="QGroupBox" name="groupBox_5">
+         <widget class="QLabel" name="label_5">
           <property name="geometry">
            <rect>
-            <x>40</x>
-            <y>220</y>
-            <width>171</width>
-            <height>61</height>
+            <x>110</x>
+            <y>30</y>
+            <width>71</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="font">
+           <font>
+            <family>Segoe UI</family>
+            <pointsize>11</pointsize>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>unidades</string>
+          </property>
+         </widget>
+        </widget>
+        <widget class="QGroupBox" name="groupBox_5">
+         <property name="geometry">
+          <rect>
+           <x>40</x>
+           <y>220</y>
+           <width>171</width>
+           <height>61</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="title">
+          <string>Tamaño del lote</string>
+         </property>
+         <widget class="QLineEdit" name="txtTamano">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>30</y>
+            <width>81</width>
+            <height>20</height>
            </rect>
           </property>
           <property name="font">
@@ -430,195 +447,166 @@
             <pointsize>11</pointsize>
            </font>
           </property>
-          <property name="title">
-           <string>Tamaño del lote</string>
+          <property name="text">
+           <string/>
           </property>
-          <widget class="QLineEdit" name="txtTamano">
-           <property name="geometry">
-            <rect>
-             <x>10</x>
-             <y>30</y>
-             <width>81</width>
-             <height>20</height>
-            </rect>
-           </property>
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>11</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-          <widget class="QLabel" name="label_7">
-           <property name="geometry">
-            <rect>
-             <x>100</x>
-             <y>30</y>
-             <width>71</width>
-             <height>16</height>
-            </rect>
-           </property>
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>11</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>unidades</string>
-           </property>
-          </widget>
+         </widget>
+         <widget class="QLabel" name="label_7">
+          <property name="geometry">
+           <rect>
+            <x>100</x>
+            <y>30</y>
+            <width>71</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="font">
+           <font>
+            <family>Segoe UI</family>
+            <pointsize>11</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>unidades</string>
+          </property>
          </widget>
         </widget>
-       </item>
-       <item>
-        <widget class="QFrame" name="frame_6">
-         <property name="font">
-          <font>
-           <family>Segoe UI</family>
-          </font>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="frame_6">
+        <property name="font">
+         <font>
+          <family>Segoe UI</family>
+         </font>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::Box</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
+        <property name="lineWidth">
+         <number>1</number>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <property name="topMargin">
+          <number>15</number>
          </property>
-         <property name="frameShape">
-          <enum>QFrame::Box</enum>
+         <property name="bottomMargin">
+          <number>15</number>
          </property>
-         <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
-         </property>
-         <property name="lineWidth">
-          <number>1</number>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_2">
-          <property name="topMargin">
-           <number>15</number>
-          </property>
-          <property name="bottomMargin">
-           <number>15</number>
-          </property>
-          <item>
-           <widget class="QLabel" name="label_2">
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-              <pointsize>14</pointsize>
-             </font>
+         <item>
+          <widget class="QLabel" name="label_2">
+           <property name="font">
+            <font>
+             <family>Segoe UI</family>
+             <pointsize>14</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Se utiliza en los productos...</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QScrollArea" name="scrollArea">
+           <property name="font">
+            <font>
+             <family>Segoe UI</family>
+            </font>
+           </property>
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <widget class="QWidget" name="scrollAreaLista">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>451</width>
+              <height>413</height>
+             </rect>
             </property>
-            <property name="text">
-             <string>Se utiliza en los productos...</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QScrollArea" name="scrollArea">
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-             </font>
-            </property>
-            <property name="frameShape">
-             <enum>QFrame::NoFrame</enum>
-            </property>
-            <property name="widgetResizable">
-             <bool>true</bool>
-            </property>
-            <widget class="QWidget" name="scrollAreaLista">
-             <property name="geometry">
-              <rect>
-               <x>0</x>
-               <y>0</y>
-               <width>451</width>
-               <height>413</height>
-              </rect>
+            <layout class="QVBoxLayout" name="layoutScroll">
+             <property name="rightMargin">
+              <number>0</number>
              </property>
-             <layout class="QVBoxLayout" name="layoutScroll">
-              <property name="rightMargin">
-               <number>0</number>
-              </property>
-             </layout>
-            </widget>
+            </layout>
            </widget>
-          </item>
-          <item alignment="Qt::AlignHCenter">
-           <widget class="QPushButton" name="btAgregar">
-            <property name="minimumSize">
-             <size>
-              <width>160</width>
-              <height>31</height>
-             </size>
-            </property>
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-              <pointsize>10</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string>Agregar elemento</string>
-            </property>
-            <property name="icon">
-             <iconset resource="../resources.qrc">
-              <normaloff>:/img/resources/images/add.png</normaloff>:/img/resources/images/add.png</iconset>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item alignment="Qt::AlignBottom">
-     <widget class="QFrame" name="frame_3">
-      <property name="font">
-       <font>
-        <family>Segoe UI</family>
-       </font>
-      </property>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item alignment="Qt::AlignHCenter">
-        <widget class="QPushButton" name="btAceptar">
-         <property name="minimumSize">
-          <size>
-           <width>170</width>
-           <height>41</height>
-          </size>
-         </property>
-         <property name="font">
-          <font>
-           <family>Segoe UI</family>
-           <pointsize>11</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string notr="true"> Aceptar cambios</string>
-         </property>
-         <property name="icon">
-          <iconset resource="../resources.qrc">
-           <normaloff>:/img/resources/images/edit.png</normaloff>:/img/resources/images/edit.png</iconset>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-   </layout>
-  </widget>
+          </widget>
+         </item>
+         <item alignment="Qt::AlignHCenter">
+          <widget class="QPushButton" name="btAgregar">
+           <property name="minimumSize">
+            <size>
+             <width>160</width>
+             <height>31</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Segoe UI</family>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Agregar elemento</string>
+           </property>
+           <property name="icon">
+            <iconset resource="../resources.qrc">
+             <normaloff>:/img/resources/images/add.png</normaloff>:/img/resources/images/add.png</iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="frame_3">
+     <property name="font">
+      <font>
+       <family>Segoe UI</family>
+      </font>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item alignment="Qt::AlignHCenter">
+       <widget class="QPushButton" name="btAceptar">
+        <property name="minimumSize">
+         <size>
+          <width>170</width>
+          <height>41</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>Segoe UI</family>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string notr="true"> Aceptar cambios</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../resources.qrc">
+          <normaloff>:/img/resources/images/edit.png</normaloff>:/img/resources/images/edit.png</iconset>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
  </widget>
- <tabstops>
-  <tabstop>txtNombre</tabstop>
-  <tabstop>txtTamano</tabstop>
-  <tabstop>txtExistencia</tabstop>
-  <tabstop>txtPrecioCompra</tabstop>
-  <tabstop>txtMinimo</tabstop>
-  <tabstop>btAceptar</tabstop>
-  <tabstop>btAgregar</tabstop>
-  <tabstop>scrollArea</tabstop>
- </tabstops>
  <resources>
   <include location="../resources.qrc"/>
  </resources>

@@ -134,7 +134,7 @@ class Venta:
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_CrearVenta(QtWidgets.QMainWindow):
+class App_CrearVenta(QtWidgets.QWidget):
     """ Backend para la función de crear ventas.
         TODO:
             - mandar ticket por whatsapp o imprimir, sí o sí """
@@ -401,7 +401,7 @@ class App_CrearVenta(QtWidgets.QMainWindow):
 # VENTANAS PARA EDITAR LA VENTA #
 #################################
 @con_fondo
-class App_AgregarProducto(QtWidgets.QMainWindow):
+class App_AgregarProducto(QtWidgets.QWidget):
     """ Backend para la función de agregar un producto a la venta. """
     
     def __init__(self, first: App_CrearVenta):
@@ -612,7 +612,7 @@ class App_AgregarProducto(QtWidgets.QMainWindow):
 
 
 @con_fondo
-class App_SeleccionarCliente(QtWidgets.QMainWindow):
+class App_SeleccionarCliente(QtWidgets.QWidget):
     """ Backend para la función de seleccionar un cliente de la base de datos. """
     
     def __init__(self, first: App_CrearVenta):
@@ -709,7 +709,7 @@ class App_SeleccionarCliente(QtWidgets.QMainWindow):
 
 
 @con_fondo
-class App_FechaEntrega(QtWidgets.QMainWindow):
+class App_FechaEntrega(QtWidgets.QWidget):
     """ Backend para la función de cambiar fecha de entrega. """
     
     def __init__(self, first: App_CrearVenta):
@@ -757,7 +757,7 @@ class App_FechaEntrega(QtWidgets.QMainWindow):
 
 
 @con_fondo
-class App_AgregarDescuento(QtWidgets.QMainWindow):
+class App_AgregarDescuento(QtWidgets.QWidget):
     """ Backend para agregar descuento a la orden. """
     
     def __init__(self, first: App_CrearVenta):
@@ -843,7 +843,7 @@ class App_AgregarDescuento(QtWidgets.QMainWindow):
 
 
 @con_fondo
-class App_EnviarCotizacion(QtWidgets.QMainWindow):
+class App_EnviarCotizacion(QtWidgets.QWidget):
     """ Backend para agregar descuento a la orden. """
     
     def __init__(self, first: App_CrearVenta):
@@ -913,7 +913,7 @@ class App_EnviarCotizacion(QtWidgets.QMainWindow):
         self.close()
 
 
-class App_ConfirmarVenta(QtWidgets.QMainWindow):
+class App_ConfirmarVenta(QtWidgets.QWidget):
     """ Backend para la ventana de finalización de venta. """
     COMISION_DEBITO = 1.98
     COMISION_CREDITO = 3.16
