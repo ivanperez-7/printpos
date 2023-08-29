@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QMainWindow
+from PySide6 import QtWidgets
 from PySide6.QtGui import QFont
 from PySide6.QtCharts import QChart, QChartView, QBarSeries, QBarSet, QBarCategoryAxis
 from PySide6.QtCore import Qt
@@ -7,7 +7,7 @@ from PySide6.QtGui import QPainter
 from utils.mywidgets import VentanaPrincipal
 
 
-class App_Reportes(QMainWindow):
+class App_Reportes(QtWidgets.QWidget):
     """ Backend para la ventana de reportes varios. """
     
     def __init__(self, parent: VentanaPrincipal):

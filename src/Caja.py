@@ -88,7 +88,7 @@ class Caja:
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_Caja(QtWidgets.QMainWindow):
+class App_Caja(QtWidgets.QWidget):
     """ Backend para la ventana de movimientos de la caja. """
     
     def __init__(self, parent: VentanaPrincipal):

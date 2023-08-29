@@ -6,7 +6,7 @@ from PySide6.QtCore import QDate, QDateTime, QModelIndex, QRegularExpression, Qt
 # VENTANA PRINCIPAL #
 #####################
 
-class App_Ajustes(QtWidgets.QMainWindow):
+class App_Ajustes(QtWidgets.QWidget):
     """
     Backend para la ventana de administración de ventas.
     """

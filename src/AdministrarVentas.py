@@ -3,12 +3,11 @@ from math import ceil
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
-from PySide6.QtCore import (QDateTime, QModelIndex, Qt, Signal)
+from PySide6.QtCore import QDateTime, QModelIndex, Qt, Signal
 
-from utils.mydecorators import con_fondo, run_in_thread
+from utils.mydecorators import con_fondo
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
-from utils.myutils import (ColorsEnum, chunkify, clamp,
-                           enviarWhatsApp, formatDate, son_similar)
+from utils.myutils import ColorsEnum, chunkify, clamp, enviarWhatsApp, formatDate, son_similar
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 from utils.pdf import ImpresoraOrdenes, ImpresoraTickets
 from utils.sql import ManejadorVentas
@@ -17,7 +16,7 @@ from utils.sql import ManejadorVentas
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_AdministrarVentas(QtWidgets.QMainWindow):
+class App_AdministrarVentas(QtWidgets.QWidget):
     """ Backend para la ventana de administración de ventas.
         TODO:
         -   ocultamiento de folios """
@@ -401,7 +400,7 @@ class App_AdministrarVentas(QtWidgets.QMainWindow):
 # VENTANAS USADAS POR EL MÓDULO #
 #################################
 @con_fondo
-class App_DetallesVenta(QtWidgets.QMainWindow):
+class App_DetallesVenta(QtWidgets.QWidget):
     """ Backend para la ventana que muestra los detalles de una venta. """
     
     def __init__(self, first: App_AdministrarVentas, idx):
@@ -493,7 +492,7 @@ class App_DetallesVenta(QtWidgets.QMainWindow):
 
 
 @con_fondo
-class App_TerminarVenta(QtWidgets.QMainWindow):
+class App_TerminarVenta(QtWidgets.QWidget):
     """ Backend para la ventana para terminar una venta sobre pedido. """
     success = Signal()
     

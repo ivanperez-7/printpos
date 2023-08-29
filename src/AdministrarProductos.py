@@ -12,7 +12,7 @@ from utils.sql import ManejadorInventario, ManejadorProductos
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_AdministrarProductos(QtWidgets.QMainWindow):
+class App_AdministrarProductos(QtWidgets.QWidget):
     """ Backend para la ventana de administración de productos. """
     
     def __init__(self, parent: VentanaPrincipal):
@@ -162,7 +162,7 @@ class App_AdministrarProductos(QtWidgets.QMainWindow):
 # VENTANAS USADAS POR EL MÓDULO #
 #################################
 @con_fondo
-class Base_EditarProducto(QtWidgets.QMainWindow):
+class Base_EditarProducto(QtWidgets.QWidget):
     """ Backend para la ventana para editar un producto de la base de datos. """
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str

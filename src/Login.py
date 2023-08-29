@@ -39,7 +39,7 @@ class Usuario:
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_Login(QtWidgets.QMainWindow):
+class App_Login(QtWidgets.QWidget):
     """ Backend para la pantalla de inicio de sesión. """
     validated = Signal(sql.Connection)
     
