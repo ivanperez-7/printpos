@@ -7,7 +7,7 @@ from PySide6.QtGui import (QFont, QIcon, QRegularExpressionValidator,
 from PySide6.QtCore import Qt, QSize, QRectF, QPoint, QPropertyAnimation, QRect, QEasingCurve
 
 from Login import Usuario
-from utils.dinero import Dinero
+from utils.moneda import Moneda
 from utils import sql
 
 
@@ -72,11 +72,11 @@ class WidgetPago(QtWidgets.QFrame):
         """ Recalcular cambio a entregar. Notar que sólo se ejecuta
             cuando el método de pago actual es efectivo. """
         if self.metodoSeleccionado != 'Efectivo':
-            self.ui.lbCambio.setText(f'{Dinero.cero}')
+            self.ui.lbCambio.setText(f'{Moneda.cero}')
             return
         
         pago = self.ui.txtPago.cantidad
-        cambio = max(Dinero.cero, pago - para_pagar)
+        cambio = max(Moneda.cero, pago - para_pagar)
         self.ui.lbCambio.setText(f'{cambio}')
     
     @property
@@ -97,7 +97,7 @@ class StackPagos(QtWidgets.QStackedWidget):
         super().__init__(parent)
         
         self.setMaximumHeight(139)
-        self.total = Dinero()
+        self.total = Moneda()
     
     def retroceder(self):
         self.setCurrentIndex(self.currentIndex() - 1)
@@ -127,7 +127,7 @@ class StackPagos(QtWidgets.QStackedWidget):
     
     @property
     def totalEnEfectivo(self):
-        """ Residuo del total menos lo ya pagado con dinero electrónico. """
+        """ Residuo del total menos lo ya pagado con moneda electrónico. """
         return self.total - sum(wdg.montoPagado for wdg in self.widgetsPago
                                 if wdg.metodoSeleccionado != 'Efectivo')
     
@@ -239,13 +239,13 @@ class NumberEdit(QtWidgets.QLineEdit):
     @property
     def cantidad(self):
         try:
-            return Dinero(self.text())
+            return Moneda(self.text())
         except ValueError:
-            return Dinero()
+            return Moneda()
     
     @cantidad.setter
     def cantidad(self, val):
-        self.setText(f'{Dinero(val)}')
+        self.setText(f'{Moneda(val)}')
 
 
 class LabelAdvertencia(QtWidgets.QLabel):

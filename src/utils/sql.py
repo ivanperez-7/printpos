@@ -5,7 +5,7 @@ from typing import overload, TypeAlias
 import fdb
 from PySide6.QtCore import QDate
 
-from utils.dinero import Dinero
+from utils.moneda import Moneda
 from utils.myutils import leer_config
 
 
@@ -876,7 +876,7 @@ class ManejadorVentas(DatabaseManager):
         if result:
             return result[0]
     
-    def obtenerImporteTotal(self, id_venta: int) -> Dinero:
+    def obtenerImporteTotal(self, id_venta: int) -> Moneda:
         """ Obtiene el importe total de una venta. """
         result = self.fetchone('''
             SELECT  SUM(importe)
@@ -885,11 +885,11 @@ class ManejadorVentas(DatabaseManager):
         ''', (id_venta,))
         
         try:
-            return Dinero(result[0])
+            return Moneda(result[0])
         except ValueError:
             return None
     
-    def obtenerAnticipo(self, id_venta: int) -> Dinero:
+    def obtenerAnticipo(self, id_venta: int) -> Moneda:
         """ Obtiene el anticipo recibido de una orden pendiente.
             Si no es una orden pendiente, regresa None. """
         result = self.fetchone('''
@@ -900,7 +900,7 @@ class ManejadorVentas(DatabaseManager):
         
         try:
             estado: str = result[0]
-            return Dinero(estado.split()[1])
+            return Moneda(estado.split()[1])
         except (ValueError, IndexError):
             return None
     
@@ -962,7 +962,7 @@ class ManejadorVentas(DatabaseManager):
         ''', params, commit=True)
     
     def insertarPago(self, id_ventas: int, metodo: str,
-                           monto: Dinero, recibido: Dinero,
+                           monto: Moneda, recibido: Moneda,
                            commit: bool = False):
         """ Inserta pago de venta a tabla ventas_pagos.
         

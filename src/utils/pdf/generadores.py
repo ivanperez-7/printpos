@@ -13,7 +13,7 @@ from PySide6.QtCore import QDateTime
 
 from Caja import Caja
 from Login import Usuario
-from utils.dinero import Dinero
+from utils.moneda import Moneda
 from utils.myutils import chunkify, formatDate, leer_config
 from utils.sql import ManejadorVentas
 
@@ -160,7 +160,7 @@ def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float,
     logo = Image('resources/images/logo.png', width=50 * mm, height=26.4 * mm)
     data = [['CANT.', 'PRODUCTO', 'P/U', 'DESC.', 'TOTAL']]
     
-    total_desc = Dinero()
+    total_desc = Moneda()
     
     for cantidad, nombre, precio, descuento, importe in productos:
         data.append([
@@ -190,8 +190,8 @@ def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float,
     # total a pagar
     if total is None:
         total = sum(p[4] for p in productos)
-    total = Dinero(total)
-    pagado = Dinero(pagado)
+    total = Moneda(total)
+    pagado = Moneda(pagado)
     
     table2 = [['IMPORTE:', f'{total}']]
     

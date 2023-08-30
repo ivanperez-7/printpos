@@ -6,7 +6,7 @@ from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QDateTime
 from PySide6.QtGui import QFont
 
-from utils.dinero import Dinero
+from utils.moneda import Moneda
 from utils.myinterfaces import InterfazFechas
 from utils.myutils import FabricaValidadores, formatDate
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -71,7 +71,7 @@ class Caja:
     def __total(self, _iter: list[Movimiento], metodo: str = None):
         if metodo:
             _iter = filter(lambda m: m.metodo.startswith(metodo), _iter)
-        return Dinero.sum(m.monto for m in _iter)
+        return Moneda.sum(m.monto for m in _iter)
     
     def totalIngresos(self, metodo: str = None):
         return self.__total(self.todoIngresos(), metodo)
@@ -360,7 +360,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         id_metodo = ManejadorMetodosPago(self.conn).obtenerIdMetodo(self.metodo)
         caja_db_parametros = (
             QDateTime.currentDateTime().toPython(),
-            Dinero(self.monto),
+            Moneda(self.monto),
             self.motivo,
             id_metodo,
             self.user.id
