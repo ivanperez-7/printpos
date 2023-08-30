@@ -299,7 +299,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         saldo = manejador.obtenerImporteTotal(idVenta) - anticipo
         
-        if saldo > 0.:
+        if saldo:
             widget = App_TerminarVenta(self, idVenta)
             widget.success.connect(self.rescan_update)
             return
