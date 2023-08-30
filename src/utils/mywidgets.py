@@ -142,7 +142,7 @@ class StackPagos(QtWidgets.QStackedWidget):
             sumaCorrecta = montoPagado >= self.total
         else:
             return False
-        return all(wdg.montoPagado > 0 for wdg in self.widgetsPago) and sumaCorrecta
+        return all(wdg.montoPagado for wdg in self.widgetsPago) and sumaCorrecta
 
 
 class TablaDatos(QtWidgets.QTableWidget):
