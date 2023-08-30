@@ -119,9 +119,9 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         num_pagina = self.tabla_actual.property('paginaActual')
         
         self.ui.lbContador.setText(
-            f'{num_compras} {label} en la base de datos.')
+            '{} {} en la base de datos.'.format(num_compras, label))
         self.ui.lbPagina.setText(
-            f'{num_pagina + 1} de {ceil(num_compras / self.chunk_size) or 1}')
+            '{} de {}'.format(num_pagina + 1, ceil(num_compras / self.chunk_size) or 1))
         
         self.tabla_actual.resizeRowsToContents()
     
