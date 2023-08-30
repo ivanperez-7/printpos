@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from PySide6 import QtWidgets
 from PySide6.QtCore import QDate, QDateTime, Qt
 
-from utils.dinero import Dinero
+from utils.moneda import Moneda
 from utils.mydecorators import con_fondo, requiere_admin
 from utils.myutils import clamp, enviarWhatsApp, FabricaValidadores, formatDate, son_similar
 from utils.mywidgets import DimBackground, LabelAdvertencia, SpeechBubble, VentanaPrincipal
@@ -36,7 +36,7 @@ class ItemVenta:
         return self.descuento_unit * self.cantidad
     
     @classmethod
-    def generarItemComision(cls, importe: Dinero, porcentaje: float):
+    def generarItemComision(cls, importe: Moneda, porcentaje: float):
         """ Generar item de comisión por pago con tarjeta """
         return cls(0, 'COMISION', 1., 0.,
                    importe * porcentaje / 100,
@@ -82,11 +82,11 @@ class Venta:
     
     @property
     def total(self):
-        return Dinero.sum(prod.importe for prod in self.productos)
+        return Moneda.sum(prod.importe for prod in self.productos)
     
     @property
     def total_descuentos(self):
-        return Dinero.sum(prod.total_descuentos for prod in self.productos)
+        return Moneda.sum(prod.total_descuentos for prod in self.productos)
     
     @property
     def esVentaDirecta(self):
