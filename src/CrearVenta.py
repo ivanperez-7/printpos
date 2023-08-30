@@ -39,7 +39,7 @@ class ItemVenta:
     def generarItemComision(cls, importe: Moneda, porcentaje: float):
         """ Generar item de comisión por pago con tarjeta """
         return cls(0, 'COMISION', 1., 0.,
-                   importe * porcentaje / 100,
+                   float(importe * porcentaje / 100),
                    'COMISIÓN POR PAGO CON TARJETA', False)
     
     def __iter__(self):
@@ -100,25 +100,21 @@ class Venta:
         self.productos.pop(row)
     
     def reajustarPrecios(self, conn: sql.Connection):
-        ids = {p.id for p in self.productos}
+        ids = set(p.id for p in self.productos)
         manejador = sql.ManejadorProductos(conn)
         
-        for id in ids:
-            productos = self.obtenerProductosExistentes(id)
+        for id_prod in ids:
+            productos = self.obtenerProductosExistentes(id_prod)
             productosNormal = sum(p.cantidad for p in productos if not p.duplex)
             productosDuplex = sum(p.cantidad for p in productos if p.duplex)
             
             precioNormal = manejador.obtenerPrecioSimple(
-                id,
-                productosNormal + productosDuplex,
-                False)
+                id_prod, productosNormal + productosDuplex, False)
             
             if not precioNormal: continue
             
             precioDuplex = manejador.obtenerPrecioSimple(
-                id,
-                productosDuplex,
-                True)
+                id_prod, productosDuplex, True)
             nuevoPrecio = min(precioNormal, precioDuplex or precioNormal)
             
             for p in productos: p.precio_unit = nuevoPrecio
@@ -879,9 +875,9 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
     def enviarWhatsApp(self):
         mensaje = [
             '*COTIZACIÓN DE VENTA*',
-            f'Cliente: *{self.first.ui.txtCliente.text()}*',
+            'Cliente: *' + self.first.ui.txtCliente.text() + '*',
             '-------------------------------------------',
-            f'Fecha: *{formatDate()}*',
+            'Fecha: *' + formatDate() + '*',
             '-------------------------------------------'
         ]
         
@@ -892,7 +888,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
                 ''
             ])
         
-        mensaje.append(f'*Total a pagar: {self.first.ui.lbTotal.text()}*')
+        mensaje.append('*Total a pagar: ' + self.first.ui.lbTotal.text() + '*')
         
         mensaje = '\n'.join(mensaje)
         celular = self.first.ui.txtTelefono.text()
@@ -1000,7 +996,7 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
         self.show()
         
         # brincar el proceso si el pago es de cero
-        if self.para_pagar <= 0:
+        if not self.para_pagar:
             self.terminarVenta()
     
     def closeEvent(self, event):

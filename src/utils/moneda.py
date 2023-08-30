@@ -65,10 +65,10 @@ class Moneda:
         return Moneda(-self.valor)
     
     def __repr__(self):
-        return f'Moneda: {self.safe_float:,.{PRECISION}f} MXN'
+        return f'Moneda: {self.valor:,.{PRECISION}f} MXN'
     
     def __str__(self):
-        return f'{self.safe_float:,.{PRECISION}f}'
+        return f'{self.valor:,.{PRECISION}f}'
     
     # =========================
     #  Operaciones aritméticas 
