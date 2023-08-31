@@ -7,7 +7,7 @@ from PySide6.QtCore import Qt, Signal
 from utils.sql import ManejadorUsuarios
 from utils.mydecorators import con_fondo
 from utils.myinterfaces import InterfazFiltro
-from utils.myutils import FabricaValidadores, formatDate, son_similar
+from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 
 
@@ -142,7 +142,6 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
         ret = qm.question(self, 'Atención',
                           'Los usuarios seleccionados se darán '
                           'de baja del sistema. ¿Desea continuar?')
-        
         if ret != qm.Yes:
             return
         

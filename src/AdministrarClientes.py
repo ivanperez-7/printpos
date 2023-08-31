@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QDate, Signal
 
 from utils.mydecorators import con_fondo
 from utils.myinterfaces import InterfazFiltro
-from utils.myutils import exportarXlsx, formatDate, ColorsEnum, son_similar
+from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 from utils.sql import ManejadorClientes
 
@@ -189,7 +189,6 @@ class App_AdministrarClientes(QtWidgets.QWidget):
         ret = qm.question(self, 'Atención',
                           'Los clientes seleccionados se eliminarán de la base de datos. '
                           '¿Desea continuar?')
-        
         if ret != qm.Yes:
             return
         

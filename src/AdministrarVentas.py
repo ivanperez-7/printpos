@@ -7,7 +7,7 @@ from PySide6.QtCore import QDateTime, QModelIndex, Qt, Signal
 
 from utils.mydecorators import con_fondo
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
-from utils.myutils import ColorsEnum, chunkify, clamp, enviarWhatsApp, formatDate, son_similar
+from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 from utils.pdf import ImpresoraOrdenes, ImpresoraTickets
 from utils.sql import ManejadorVentas
@@ -267,7 +267,6 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         ret = qm.question(self, 'Atención',
                           '¿Desea enviarle un recordatorio al cliente sobre '
                           'este pedido?')
-        
         if ret != qm.Yes:
             return
         
@@ -308,7 +307,6 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         ret = qm.question(self, 'Atención',
                           'Este pedido no tiene saldo restante. '
                           '¿Desea marcar la venta como terminada?')
-        
         if ret != qm.Yes:
             return
         
@@ -335,7 +333,6 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         ret = qm.question(self, 'Atención',
                           'La venta seleccionada se marcará como cancelada.\n'
                           'Esta operación no se puede deshacer. ¿Desea continuar?')
-        
         if ret != qm.Yes:
             return
         

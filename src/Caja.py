@@ -8,7 +8,7 @@ from PySide6.QtGui import QFont
 
 from utils.moneda import Moneda
 from utils.myinterfaces import InterfazFechas
-from utils.myutils import FabricaValidadores, formatDate
+from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 from utils.sql import ManejadorCaja, ManejadorMetodosPago
 
@@ -33,8 +33,8 @@ class Movimiento:
         """ Alimenta las tablas principales:
         
             Fecha y hora | Monto | Descripción | Método | Usuario. """
-        return iter((self.fecha_hora, self.monto, self.descripcion,
-                     self.metodo, self.usuario))
+        yield from (self.fecha_hora, self.monto, self.descripcion,
+                    self.metodo, self.usuario)
 
 
 class Caja:

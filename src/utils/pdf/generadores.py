@@ -1,8 +1,7 @@
 """ Provee métodos para generar diversos PDF en bytes. """
 import io
 
-from reportlab.platypus import (Table, TableStyle, SimpleDocTemplate,
-                                Paragraph, Spacer, Image)
+from reportlab.platypus import *
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
@@ -14,7 +13,7 @@ from PySide6.QtCore import QDateTime
 from Caja import Caja
 from Login import Usuario
 from utils.moneda import Moneda
-from utils.myutils import chunkify, formatDate, leer_config
+from utils.myutils import *
 from utils.sql import ManejadorVentas
 
 

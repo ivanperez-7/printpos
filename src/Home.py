@@ -1,10 +1,9 @@
 from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap
-from PySide6.QtCore import (QDate, Qt, QPropertyAnimation,
-                            QRect, QEasingCurve, Signal)
+from PySide6.QtCore import QDate, Qt, Signal
 
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
-from utils.myutils import son_similar, Runner
+from utils.myutils import *
 
 
 class App_Home(QtWidgets.QWidget):
@@ -35,8 +34,8 @@ class App_Home(QtWidgets.QWidget):
         
         # ocultar lista y proporcionar eventos
         self.ui.listaNotificaciones.setVisible(False)
-        self.ui.btFotoPerfil.clicked.connect(self.alternarNotificaciones)
-        self.agregarNotificaciones()
+        self.ui.btFotoPerfil.clicked.connect(self.ui.listaNotificaciones.alternarNotificaciones)
+        self.ui.listaNotificaciones.agregarNotificaciones(self.conn, self.user)
         
         # configurar texto dinámico
         self.ui.fechaHoy.setDate(QDate.currentDate())
@@ -82,59 +81,6 @@ class App_Home(QtWidgets.QWidget):
     
     def showEvent(self, event):
         self.parentWidget().en_venta = False
-    
-    # ==================
-    #  FUNCIONES ÚTILES
-    # ==================
-    def alternarNotificaciones(self):
-        """ Se llama a esta función al hacer click en la foto de perfil
-            del usuario. Anima el tamaño de la caja de notificaciones. """
-        hiddenGeom = QRect(0, 0, 400, 0)
-        shownGeom = QRect(0, 0, 400, 120)
-        
-        if not self.ui.listaNotificaciones.isVisible():
-            # Create an animation to gradually change the height of the widget
-            self.ui.listaNotificaciones.setVisible(True)
-            self.show_animation = QPropertyAnimation(self.ui.listaNotificaciones, b'geometry')
-            self.show_animation.setDuration(200)
-            self.show_animation.setStartValue(hiddenGeom)
-            self.show_animation.setEndValue(shownGeom)
-            self.show_animation.setEasingCurve(QEasingCurve.OutSine)
-            self.show_animation.start()
-        else:
-            # Hide the widget
-            self.hide_animation = QPropertyAnimation(self.ui.listaNotificaciones, b'geometry')
-            self.hide_animation.setDuration(200)
-            self.hide_animation.setStartValue(shownGeom)
-            self.hide_animation.setEndValue(hiddenGeom)
-            self.hide_animation.setEasingCurve(QEasingCurve.InSine)
-            self.hide_animation.finished.connect(lambda: self.ui.listaNotificaciones.setVisible(False))
-            self.hide_animation.start()
-    
-    def agregarNotificaciones(self):
-        """ Llena la caja de notificaciones. """
-        from utils.sql import ManejadorInventario, ManejadorVentas
-        
-        items = []
-        manejador = ManejadorVentas(self.conn)
-        
-        numPendientes, = manejador.obtenerNumPendientes(self.user.id)
-        
-        if numPendientes:
-            items.append(f'Tiene {numPendientes} pedidos pendientes.')
-        
-        manejador = ManejadorInventario(self.conn)
-        
-        for nombre, stock, minimo in manejador.obtenerInventarioFaltante():
-            items.append(
-                f'¡Hay que surtir el material {nombre}! ' +
-                f'Faltan {minimo - stock} lotes para cubrir el mínimo.'
-            )
-        
-        items = items or ['¡No hay nuevas notificaciones!']
-        
-        for item in items:
-            self.ui.listaNotificaciones.addItem(item)
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
