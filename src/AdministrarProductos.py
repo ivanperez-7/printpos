@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt, Signal
 
 from utils.mydecorators import con_fondo
 from utils.myinterfaces import InterfazFiltro
-from utils.myutils import ColorsEnum, FabricaValidadores, son_similar
+from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 from utils.sql import ManejadorInventario, ManejadorProductos
 
@@ -142,7 +142,6 @@ class App_AdministrarProductos(QtWidgets.QWidget):
         ret = qm.question(self, 'Atención',
                           'El producto seleccionado se eliminará de la base de datos. '
                           '¿Desea continuar?')
-        
         if ret != qm.Yes:
             return
         

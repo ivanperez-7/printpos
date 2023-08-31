@@ -11,6 +11,11 @@ from PySide6.QtGui import QRegularExpressionValidator
 from utils.mydecorators import run_in_thread
 
 
+__all__ = ['ColorsEnum', 'FabricaValidadores', 'Runner', 'clamp', 'chunkify',
+           'unidecode', 'son_similar', 'contiene_duplicados', 'formatDate',
+           'leer_config', 'exportarXlsx', 'enviarWhatsApp']
+
+
 class ColorsEnum:
     """ Clase para almacenar colores (hexadecimal) en variables. """
     VERDE = 0xB2FFAE

@@ -12,7 +12,7 @@ from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 from Caja import Caja
 from Login import Usuario
 from utils.mydecorators import run_in_thread
-from utils.myutils import leer_config
+from utils.myutils import *
 from utils.pdf.generadores import generarCortePDF, generarOrdenCompra, generarTicketPDF
 from utils import sql
 

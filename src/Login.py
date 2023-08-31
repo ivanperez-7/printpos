@@ -4,7 +4,7 @@ from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, Signal
 
 from utils.mydecorators import run_in_thread
-from utils.myutils import FabricaValidadores
+from utils.myutils import *
 from utils import sql
 
 

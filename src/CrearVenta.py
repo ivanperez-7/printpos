@@ -6,7 +6,7 @@ from PySide6.QtCore import QDate, QDateTime, Qt
 
 from utils.moneda import Moneda
 from utils.mydecorators import con_fondo, requiere_admin
-from utils.myutils import clamp, enviarWhatsApp, FabricaValidadores, formatDate, son_similar
+from utils.myutils import *
 from utils.mywidgets import DimBackground, LabelAdvertencia, SpeechBubble, VentanaPrincipal
 from utils.pdf import ImpresoraOrdenes, ImpresoraTickets
 from utils import sql
@@ -45,12 +45,12 @@ class ItemVenta:
     def __iter__(self):
         """ Regresa iterable para alimentar las tablas de productos.
             Cantidad | Código | Especificaciones | Precio | Descuento | Importe """
-        return iter((self.cantidad,
-                     self.codigo + (' (a doble cara)' if self.duplex else ''),
-                     self.notas,
-                     self.precio_unit,
-                     self.descuento_unit,
-                     self.importe))
+        yield from (self.cantidad,
+                    self.codigo + (' (a doble cara)' if self.duplex else ''),
+                    self.notas,
+                    self.precio_unit,
+                    self.descuento_unit,
+                    self.importe)
 
 
 @dataclass
@@ -93,6 +93,10 @@ class Venta:
         """ Compara fechas de creación y entrega para determinar si la venta será un pedido. """
         return self.fechaCreacion == self.fechaEntrega
     
+    @property
+    def ventaVacia(self):
+        return len(self.productos) == 0
+    
     def agregarProducto(self, item: ItemVenta):
         self.productos.append(item)
     
@@ -124,7 +128,7 @@ class Venta:
         return [p for p in self.productos if p.id == id]
     
     def __iter__(self):
-        return iter(self.productos)
+        yield from self.productos
 
 
 #####################
@@ -178,7 +182,7 @@ class App_CrearVenta(QtWidgets.QWidget):
         self.ui.btRegistrar.clicked.connect(self.insertarCliente)
         self.ui.btSeleccionar.clicked.connect(self.seleccionarCliente)
         self.ui.btDescuento.clicked.connect(
-            lambda: self.agregarDescuento() if self.ui.tabla_productos.rowCount() else None)
+            lambda: self.agregarDescuento() if not self.ventaDatos.ventaVacia else None)
         self.ui.btDescuentosCliente.clicked.connect(self.dialogoDescuentos.alternarDescuentos)
         self.ui.btDeshacer.clicked.connect(self.deshacerFechaEntrega)
         self.ui.btCotizacion.clicked.connect(self.generarCotizacion)
@@ -320,14 +324,10 @@ class App_CrearVenta(QtWidgets.QWidget):
     
     def generarCotizacion(self):
         """ Genera PDF con cotización de la orden actual. """
-        if self.ui.tabla_productos.rowCount():
+        if not self.ventaDatos.ventaVacia:
             modulo = App_EnviarCotizacion(self)
     
-    def confirmarVenta(self):
-        """ Abre ventana para confirmar y terminar la venta. """
-        if not self.ui.tabla_productos.rowCount():
-            return
-        
+    def verificarCliente(self) -> int | None:
         qm = QtWidgets.QMessageBox
         
         # se confirma si existe el cliente en la base de datos
@@ -345,7 +345,7 @@ class App_CrearVenta(QtWidgets.QWidget):
             return
         
         # indices para acceder a la tupla `cliente`
-        id, nombre, telefono, correo, direccion, rfc, _, _ = range(8)
+        id, nombre, telefono, correo, direccion, rfc = range(6)
         
         if not self.ventaDatos.esVentaDirecta \
                 and cliente[nombre] == 'Público general':
@@ -371,20 +371,27 @@ class App_CrearVenta(QtWidgets.QWidget):
                            'El cliente no tiene completos sus datos para la factura.\n'
                            'Por favor, llene los datos como corresponde.')
                 return
+        return cliente[id]
+    
+    def confirmarVenta(self):
+        """ Abre ventana para confirmar y terminar la venta. """
+        if self.ventaDatos.ventaVacia \
+                or (id_cliente := self.verificarCliente()) is None:
+            return
         
-        # todos los datos del cliente y fecha de entrega son correctos,
-        # ahora se checa el monto total de la venta
+        qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Concluir venta',
                           'Verifique todos los datos ingresados.\n'
                           '¿Desea concluir la venta?')
+        if ret != qm.Yes:
+            return
         
-        if ret == qm.Yes:
-            self.ventaDatos.id_cliente = cliente[id]
-            self.ventaDatos.requiereFactura = self.ui.tickFacturaSi.isChecked()
-            self.ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
-            
-            bg = DimBackground(self)
-            modulo = App_ConfirmarVenta(self, self.ventaDatos)
+        self.ventaDatos.id_cliente = id_cliente
+        self.ventaDatos.requiereFactura = self.ui.tickFacturaSi.isChecked()
+        self.ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
+        
+        bg = DimBackground(self)
+        modulo = App_ConfirmarVenta(self, self.ventaDatos)
     
     @requiere_admin
     def goHome(self, conn):

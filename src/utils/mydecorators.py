@@ -5,6 +5,9 @@ from PySide6.QtWidgets import QMessageBox, QDialog
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
 
+__all__ = ['requiere_admin', 'run_in_thread', 'con_fondo']
+
+
 ##############################################
 # <DECORADOR PARA SOLICITAR CUENTA DE ADMIN> #
 ##############################################

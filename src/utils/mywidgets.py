@@ -2,13 +2,17 @@
 from typing import Callable
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import (QFont, QIcon, QRegularExpressionValidator, 
-                           QPainter, QColor, QPolygon, QPainterPath)
-from PySide6.QtCore import Qt, QSize, QRectF, QPoint, QPropertyAnimation, QRect, QEasingCurve
+from PySide6.QtGui import *
+from PySide6.QtCore import *
 
 from Login import Usuario
 from utils.moneda import Moneda
 from utils import sql
+
+
+__all__ = ['VentanaPrincipal', 'DimBackground', 'WidgetPago', 
+           'StackPagos', 'TablaDatos', 'NumberEdit', 'LabelAdvertencia', 
+           'WarningDialog', 'SpeechBubble']
 
 
 class VentanaPrincipal(QtWidgets.QMainWindow):
@@ -47,6 +51,7 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
             self.conn.close()
             self.consultarPrecios.close()
             event.accept()
+
 
 class DimBackground(QtWidgets.QFrame):
     """ Crea un QFrame que ocupa la ventana entera, para poner énfasis en las ventanas nuevas. """
@@ -405,6 +410,57 @@ class SpeechBubble(QtWidgets.QWidget):
             self.hide_animation.setDuration(200)
             self.hide_animation.setStartValue(self.shownGeom)
             self.hide_animation.setEndValue(self.hiddenGeom)
+            self.hide_animation.setEasingCurve(QEasingCurve.InSine)
+            self.hide_animation.finished.connect(lambda: self.setVisible(False))
+            self.hide_animation.start()
+
+
+class ListaNotificaciones(QtWidgets.QListWidget):
+    def agregarNotificaciones(self, conn, user):
+        """ Llena la caja de notificaciones. """
+        from utils.sql import ManejadorInventario, ManejadorVentas
+        
+        items = []
+        manejador = ManejadorVentas(conn)
+        
+        numPendientes, = manejador.obtenerNumPendientes(user.id)
+        
+        if numPendientes:
+            items.append(f'Tiene {numPendientes} pedidos pendientes.')
+        
+        manejador = ManejadorInventario(conn)
+        
+        for nombre, stock, minimo in manejador.obtenerInventarioFaltante():
+            items.append(
+                f'¡Hay que surtir el material {nombre}! ' +
+                f'Faltan {minimo - stock} lotes para cubrir el mínimo.'
+            )
+        items = items or ['¡No hay nuevas notificaciones!']
+        
+        for item in items:
+            self.addItem(item)
+    
+    def alternarNotificaciones(self):
+        """ Se llama a esta función al hacer click en la foto de perfil
+            del usuario. Anima el tamaño de la caja de notificaciones. """
+        hiddenGeom = QRect(0, 0, 400, 0)
+        shownGeom = QRect(0, 0, 400, 120)
+        
+        if not self.isVisible():
+            # Create an animation to gradually change the height of the widget
+            self.setVisible(True)
+            self.show_animation = QPropertyAnimation(self, b'geometry')
+            self.show_animation.setDuration(200)
+            self.show_animation.setStartValue(hiddenGeom)
+            self.show_animation.setEndValue(shownGeom)
+            self.show_animation.setEasingCurve(QEasingCurve.OutSine)
+            self.show_animation.start()
+        else:
+            # Hide the widget
+            self.hide_animation = QPropertyAnimation(self, b'geometry')
+            self.hide_animation.setDuration(200)
+            self.hide_animation.setStartValue(shownGeom)
+            self.hide_animation.setEndValue(hiddenGeom)
             self.hide_animation.setEasingCurve(QEasingCurve.InSine)
             self.hide_animation.finished.connect(lambda: self.setVisible(False))
             self.hide_animation.start()

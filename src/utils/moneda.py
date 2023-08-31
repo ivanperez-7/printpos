@@ -5,23 +5,7 @@ from typing import Union
 
 
 PRECISION = 2
-OP_ERROR = lambda arg: TypeError(f'Segundo operando debe ser Moneda o numérico, no {type(arg)}.')
-
-def _preparar_op_aritm(op):
-    if isinstance(op, Moneda):
-        return op.valor
-    elif isinstance(op, (float, int)):
-        return op
-    else:
-        raise OP_ERROR(op)
-
-def _preparar_op_logico(op):
-    if isinstance(op, Moneda):
-        return op.safe_float
-    elif isinstance(op, (float, int)):
-        return round(op, PRECISION)
-    else:
-        raise OP_ERROR(op)
+OP_ERROR = lambda arg: TypeError(f'Segundo operando debe ser Moneda o numérico, no {arg.__class__}.')
 
 
 class Moneda:
@@ -36,6 +20,8 @@ class Moneda:
             self.valor = float(inicial)
         elif isinstance(inicial, str):
             self.valor = float(re.sub(r'[$, ]', '', inicial))
+        else:
+            raise TypeError('Valor inicial no tiene ningún tipo apropiado.')
     
     @property
     def safe_float(self):
@@ -62,48 +48,55 @@ class Moneda:
         return self.safe_float
     
     def __neg__(self):
-        return Moneda(-self.valor)
+        return self.__class__(-self.valor)
     
     def __repr__(self):
-        return f'Moneda: {self.valor:,.{PRECISION}f} MXN'
+        return f'Moneda: {self.safe_float:,.{PRECISION}f} MXN'
     
     def __str__(self):
-        return f'{self.valor:,.{PRECISION}f}'
+        return f'{self.safe_float:,.{PRECISION}f}'
     
     # =========================
     #  Operaciones aritméticas 
     # =========================
-    def __realizar_op_aritm(self, op, operator):
-        op_value = _preparar_op_aritm(op)
+    def __op_aritm(self, op, operator):
+        if isinstance(op, Moneda):
+            op_value = op.valor
+        elif isinstance(op, (float, int)):
+            op_value = op
+        else:
+            raise OP_ERROR(op)
         result = operator(self.valor, op_value)
-        return Moneda(result)
+        return self.__class__(result)
     
     def __add__(self, op):
-        return self.__realizar_op_aritm(op, operator.add)
-    
-    def __radd__(self, op):
-        return self.__realizar_op_aritm(op, operator.add)
+        return self.__op_aritm(op, operator.add)
     
     def __sub__(self, op):
-        return self.__realizar_op_aritm(op, operator.sub)
+        return self.__op_aritm(op, operator.sub)
     
     def __rsub__(self, op):
-        return self.__realizar_op_aritm(op, lambda x,y: y-x)
+        return self.__op_aritm(op, lambda x,y: y-x)
     
     def __mul__(self, op):
-        return self.__realizar_op_aritm(op, operator.mul)
-    
-    def __rmul__(self, op):
-        return self.__realizar_op_aritm(op, operator.mul)
+        return self.__op_aritm(op, operator.mul)
     
     def __truediv__(self, op):
-        return self.__realizar_op_aritm(op, operator.truediv)
+        return self.__op_aritm(op, operator.truediv)
+    
+    __radd__ = __add__
+    __rmul__ = __mul__
     
     # =====================
     #  Operaciones lógicas 
     # =====================
     def __comparar(self, op, operator) -> bool:
-        op_value = _preparar_op_logico(op)
+        if isinstance(op, Moneda):
+            op_value = op.safe_float
+        elif isinstance(op, (float, int)):
+            op_value = round(op, PRECISION)
+        else:
+            raise OP_ERROR(op)
         return operator(self.safe_float, op_value)
     
     def __eq__(self, op):
