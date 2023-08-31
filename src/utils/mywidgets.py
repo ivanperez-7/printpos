@@ -12,7 +12,7 @@ from utils import sql
 
 __all__ = ['VentanaPrincipal', 'DimBackground', 'WidgetPago', 
            'StackPagos', 'TablaDatos', 'NumberEdit', 'LabelAdvertencia', 
-           'WarningDialog', 'SpeechBubble']
+           'WarningDialog', 'SpeechBubble', 'ListaNotificaciones']
 
 
 class VentanaPrincipal(QtWidgets.QMainWindow):
