@@ -171,8 +171,8 @@ class App_CrearVenta(QtWidgets.QWidget):
         self.ui.btEliminar.clicked.connect(self.quitarProducto)
         self.ui.btRegresar.clicked.connect(self.goHome)
         
-        ocultar_boton = lambda: self.ui.btDescuentosCliente.setVisible(False) \
-                                or self.dialogoDescuentos.setVisible(False)
+        ocultar_boton = lambda: (self.ui.btDescuentosCliente.setVisible(False),
+                                 self.dialogoDescuentos.setVisible(False))
         
         self.ui.txtCliente.textChanged.connect(ocultar_boton)
         self.ui.txtCorreo.textChanged.connect(ocultar_boton)

@@ -76,7 +76,7 @@ class Moneda:
         return self.__op_aritm(op, operator.sub)
     
     def __rsub__(self, op):
-        return self.__op_aritm(op, lambda x,y: y-x)
+        return -self.__sub__(op)
     
     def __mul__(self, op):
         return self.__op_aritm(op, operator.mul)

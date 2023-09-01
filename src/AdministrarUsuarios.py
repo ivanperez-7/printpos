@@ -43,8 +43,8 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
             ('Usuario', 'nombre de usuario', 0)
         ])
         self.filtro.filtroCambiado.connect(
-            lambda txt: self.ui.searchBar.setPlaceholderText(f'Busque usuario por {txt}...')
-                        or self.update_display())
+            lambda txt: (self.ui.searchBar.setPlaceholderText(f'Busque usuario por {txt}...'),
+                         self.update_display()))
         
         # añade eventos para los botones
         self.ui.btAgregar.clicked.connect(self.registrarUsuario)

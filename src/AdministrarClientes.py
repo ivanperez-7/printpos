@@ -40,8 +40,8 @@ class App_AdministrarClientes(QtWidgets.QWidget):
             ('RFC', 'RFC', 5)
         ])
         self.filtro.filtroCambiado.connect(
-            lambda txt: self.ui.searchBar.setPlaceholderText(f'Busque cliente por {txt}...')
-                        or self.update_display())
+            lambda txt: (self.ui.searchBar.setPlaceholderText(f'Busque cliente por {txt}...'),
+                         self.update_display()))
         
         # restringir botón de eliminar cliente
         if not self.user.administrador:
