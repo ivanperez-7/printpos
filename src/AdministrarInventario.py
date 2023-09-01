@@ -209,8 +209,8 @@ class Base_EditarInventario(QtWidgets.QWidget):
         
         # evento para eliminar la entrada
         nuevo.btEliminar.clicked.connect(
-            lambda: self.ui.layoutScroll.removeWidget(nuevo)
-                    or nuevo.setParent(None))
+            lambda: (self.ui.layoutScroll.removeWidget(nuevo),
+                     nuevo.setParent(None)))
         
         # validador para datos numéricos
         validador = FabricaValidadores.NumeroDecimal

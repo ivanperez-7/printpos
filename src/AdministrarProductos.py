@@ -35,8 +35,8 @@ class App_AdministrarProductos(QtWidgets.QWidget):
             ('Descripción', 'descripción', 2)
         ])
         self.filtro.filtroCambiado.connect(
-            lambda txt: self.ui.searchBar.setPlaceholderText(f'Busque producto por {txt}...')
-                        or self.update_display())
+            lambda txt: (self.ui.searchBar.setPlaceholderText(f'Busque producto por {txt}...'),
+                         self.update_display()))
         
         # eventos para los botones
         self.ui.btAgregar.clicked.connect(self.agregarProducto)
@@ -237,8 +237,8 @@ class Base_EditarProducto(QtWidgets.QWidget):
         
         # evento para eliminar la entrada
         nuevo.btEliminar.clicked.connect(
-            lambda: self.ui.layoutScroll.removeWidget(nuevo)
-                    or nuevo.setParent(None))
+            lambda: (self.ui.layoutScroll.removeWidget(nuevo),
+                     nuevo.setParent(None)))
         
         # validador para datos numéricos
         nuevo.txtProductoUtiliza.setValidator(

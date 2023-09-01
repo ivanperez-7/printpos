@@ -59,8 +59,8 @@ class App_AdministrarVentas(QtWidgets.QWidget):
             ('Cliente', 'cliente', 2)
         ])
         self.filtro.filtroCambiado.connect(
-            lambda txt: self.ui.searchBar.setPlaceholderText(f'Busque venta por {txt}...')
-                        or self.update_display())
+            lambda txt: (self.ui.searchBar.setPlaceholderText(f'Busque venta por {txt}...'),
+                         self.update_display()))
         
         # crear eventos para los botones
         self.ui.btRegresar.clicked.connect(self.goHome)

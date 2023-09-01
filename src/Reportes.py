@@ -1,10 +1,11 @@
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont
-from PySide6.QtCharts import QChart, QChartView, QBarSeries, QBarSet, QBarCategoryAxis
+from PySide6.QtCharts import *
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter
 
 from utils.mywidgets import VentanaPrincipal
+from utils import sql
 
 
 class App_Reportes(QtWidgets.QWidget):
@@ -24,9 +25,9 @@ class App_Reportes(QtWidgets.QWidget):
         self.ui.btRegresar.clicked.connect(self.goHome)
     
     def test(self):
-        crsr = self.session['conn'].cursor()
+        manejador = sql.DatabaseManager(self.conn)
         
-        crsr.execute('''
+        data = manejador.fetchall('''
             SELECT 	FIRST 10
                     Clientes.nombre,
                     COUNT (
@@ -47,7 +48,7 @@ class App_Reportes(QtWidgets.QWidget):
         set0 = QBarSet('Ventas al contado')
         set1 = QBarSet('Ventas sobre pedido')
         
-        for nombre, numVentas, numPedidos in crsr:
+        for nombre, numVentas, numPedidos in data:
             categories.append(nombre)
             set0 << numVentas
             set1 << numPedidos
@@ -86,9 +87,9 @@ class App_Reportes(QtWidgets.QWidget):
         self.ui.horizontalLayout_6.addWidget(chartView)
     
     def test2(self):
-        crsr = self.session['conn'].cursor()
+        manejador = sql.DatabaseManager(self.conn)
         
-        crsr.execute('''
+        data = manejador.fetchall('''
             SELECT	FIRST 10
                     P.codigo,
                     SUM(
@@ -106,7 +107,7 @@ class App_Reportes(QtWidgets.QWidget):
         set0 = QBarSet('Ventas con este producto')
         set1 = QBarSet('Ingresos de este producto')
         
-        for codigo, cantidad, ingresos in crsr:
+        for codigo, cantidad, ingresos in data:
             categories.append(codigo)
             set0 << cantidad
             set1 << ingresos
