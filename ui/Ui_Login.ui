@@ -19,18 +19,16 @@
   </property>
   <property name="styleSheet">
    <string notr="true">QLineEdit {
-  border-radius: 8px;
-  border: 1px solid #e0e4e7;
-  padding: 5px 15px;
+	border-radius: 8px;
+	border: 1px solid #e0e4e7;
+	padding: 5px 15px;
 }
 
 QLineEdit:focus {
-  border: 1px solid #d0e3ff;
+	border: 1px solid #d0e3ff;
 }
 
-QLineEdit::placeholder {
-  color: #767e89;
-}</string>
+background-color: rgb(255, 255, 255);</string>
   </property>
   <widget class="QLabel" name="lbEstado">
    <property name="geometry">
@@ -59,7 +57,7 @@ QLineEdit::placeholder {
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QPushButton" name="btIngresar">
+  <widget class="LoginButton" name="btIngresar">
    <property name="geometry">
     <rect>
      <x>248</x>
@@ -68,32 +66,11 @@ QLineEdit::placeholder {
      <height>41</height>
     </rect>
    </property>
-   <property name="font">
-    <font>
-     <pointsize>11</pointsize>
-     <italic>false</italic>
-     <bold>false</bold>
-    </font>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QPushButton {
-  background-color: #0d6efd;
-  color: #fff;
-  font-weight: 600;
-  font: 11pt;
-  border-radius: 8px;
-  border: 1px solid #0d6efd;
-  padding: 5px 15px;
-  margin-top: 10px;
-  outline: 0px;
-}
-QPushButton:hover,
-QPushButton:focus {
-  background-color: #0b5ed7;
-}</string>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
    </property>
    <property name="text">
-    <string>Ingresar</string>
+    <string>INGRESAR</string>
    </property>
   </widget>
   <widget class="QLabel" name="lbUsuario">
@@ -176,6 +153,9 @@ QPushButton:focus {
    <property name="placeholderText">
     <string>Ingrese su nombre de usuario...</string>
    </property>
+   <property name="clearButtonEnabled">
+    <bool>true</bool>
+   </property>
   </widget>
   <widget class="QLabel" name="lbContrasenia">
    <property name="geometry">
@@ -198,7 +178,7 @@ QPushButton:focus {
   <widget class="QLabel" name="lbContrasenia_2">
    <property name="geometry">
     <rect>
-     <x>58</x>
+     <x>61</x>
      <y>356</y>
      <width>111</width>
      <height>21</height>
@@ -257,6 +237,9 @@ QPushButton:focus {
    <property name="placeholderText">
     <string>Ingrese su contraseña...</string>
    </property>
+   <property name="clearButtonEnabled">
+    <bool>true</bool>
+   </property>
   </widget>
   <widget class="QLabel" name="label">
    <property name="geometry">
@@ -294,6 +277,13 @@ QPushButton:focus {
    </property>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LoginButton</class>
+   <extends>QPushButton</extends>
+   <header>Login.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>inputUsuario</tabstop>
   <tabstop>inputContrasenia</tabstop>

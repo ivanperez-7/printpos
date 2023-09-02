@@ -232,6 +232,12 @@
    <header>utils.mywidgets.h</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>tabla_productos</tabstop>
+  <tabstop>txtPrecio</tabstop>
+  <tabstop>btListo</tabstop>
+  <tabstop>btRegresar</tabstop>
+ </tabstops>
  <resources>
   <include location="../resources.qrc"/>
  </resources>

@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>409</width>
+    <width>413</width>
     <height>527</height>
    </rect>
   </property>
@@ -148,7 +148,7 @@
     </font>
    </property>
    <property name="pixmap">
-    <pixmap resource="../../resources.qrc">:/img/resources/images/edit.png</pixmap>
+    <pixmap resource="../resources.qrc">:/img/resources/images/edit.png</pixmap>
    </property>
    <property name="scaledContents">
     <bool>true</bool>
@@ -427,9 +427,11 @@
   <tabstop>boxPermisos</tabstop>
   <tabstop>btRegistrar</tabstop>
   <tabstop>cambiarPsswd</tabstop>
+  <tabstop>btRegresar</tabstop>
  </tabstops>
  <resources>
   <include location="../resources.qrc"/>
+  <include location="../../resources.qrc"/>
  </resources>
  <connections/>
 </ui>
