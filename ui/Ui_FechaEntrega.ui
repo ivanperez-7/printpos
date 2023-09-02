@@ -156,8 +156,8 @@
   <zorder>horaEdit</zorder>
  </widget>
  <tabstops>
-  <tabstop>horaEdit</tabstop>
   <tabstop>calendario</tabstop>
+  <tabstop>horaEdit</tabstop>
   <tabstop>btListo</tabstop>
   <tabstop>btRegresar</tabstop>
  </tabstops>

@@ -682,6 +682,21 @@ QTableView:active {
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>txtCodigo</tabstop>
+  <tabstop>txtNombre</tabstop>
+  <tabstop>txtDescripcion</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>tabla_precios</tabstop>
+  <tabstop>scrollArea</tabstop>
+  <tabstop>btAgregar</tabstop>
+  <tabstop>btAceptar</tabstop>
+  <tabstop>btRegresar</tabstop>
+  <tabstop>btAgregarIntervalo</tabstop>
+  <tabstop>btEliminarIntervalo</tabstop>
+  <tabstop>txtMinM2</tabstop>
+  <tabstop>txtPrecio</tabstop>
+ </tabstops>
  <resources>
   <include location="../resources.qrc"/>
  </resources>

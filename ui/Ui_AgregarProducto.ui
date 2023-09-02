@@ -843,6 +843,26 @@ background-color: rgb(255, 255, 255);</string>
    <header>utils.mywidgets.h</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>searchBar</tabstop>
+  <tabstop>txtCantidad</tabstop>
+  <tabstop>txtNotas</tabstop>
+  <tabstop>checkDuplex</tabstop>
+  <tabstop>btAgregar</tabstop>
+  <tabstop>btCodigo</tabstop>
+  <tabstop>tabla_seleccionar</tabstop>
+  <tabstop>btDescripcion</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>btRegresar</tabstop>
+  <tabstop>tabla_granformato</tabstop>
+  <tabstop>txtNotas_2</tabstop>
+  <tabstop>txtAncho</tabstop>
+  <tabstop>btAnchoCm</tabstop>
+  <tabstop>btAnchoM</tabstop>
+  <tabstop>txtAlto</tabstop>
+  <tabstop>btAltoCm</tabstop>
+  <tabstop>btAltoM</tabstop>
+ </tabstops>
  <resources>
   <include location="../resources.qrc"/>
  </resources>
