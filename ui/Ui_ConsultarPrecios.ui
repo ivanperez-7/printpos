@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Consultar precios</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../resources.qrc">
+    <normaloff>:/img/icon.ico</normaloff>:/img/icon.ico</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_5">
    <property name="leftMargin">
@@ -715,7 +719,7 @@ background-color: rgb(255, 255, 255);</string>
  </customwidgets>
  <resources>
   <include location="../resources.qrc"/>
-  <include location="../Lib/site-packages/resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections/>
  <buttongroups>

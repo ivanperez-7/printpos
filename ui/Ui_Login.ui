@@ -26,9 +26,7 @@
 
 QLineEdit:focus {
 	border: 1px solid #d0e3ff;
-}
-
-background-color: rgb(255, 255, 255);</string>
+}</string>
   </property>
   <widget class="QLabel" name="lbEstado">
    <property name="geometry">
