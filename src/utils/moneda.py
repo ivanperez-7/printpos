@@ -5,7 +5,7 @@ from typing import Union
 
 
 PRECISION = 2
-OP_ERROR = lambda arg: TypeError(f'Segundo operando debe ser Moneda o numérico, no {arg.__class__}.')
+OP_ERROR = lambda arg: TypeError(f"Segundo operando debe ser Moneda o numérico, no '{arg.__class__.__name__}'.")
 
 
 class Moneda:

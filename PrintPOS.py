@@ -49,6 +49,9 @@ class PrintPOS(QApplication):
         self._translator = QTranslator()
         self._translator.load('qtbase_es.qm', directory='resources/translations')
         return self.installTranslator(self._translator)
+    
+    def __call__(self):
+        return self.iniciar()
 
     def __repr__(self):
         return 'QApplication afitriona de PrintPOS.'

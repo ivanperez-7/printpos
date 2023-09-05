@@ -155,29 +155,30 @@ class TablaDatos(QtWidgets.QTableWidget):
         super().__init__(parent)
         
         self.setStyleSheet("""
-        QHeaderView::section {
-            font: bold 10pt;
-            color: rgb(255, 255, 255);
-            background-color: rgb(52, 172, 224);
-            padding: 7px;
-        }
+            QHeaderView::section {
+                font: bold 10pt;
+                color: rgb(255, 255, 255);
+                background-color: rgb(52, 172, 224);
+                padding: 7px;
+            }
 
-        QTableView::item{
-            padding: 5px;
-        }
-        
-        QTableWidget {
-            alternate-background-color: rgb(240, 240, 240);
-        }
+            QTableView::item{
+                padding: 5px;
+            }
+            
+            QTableWidget {
+                alternate-background-color: rgb(240, 240, 240);
+            }
 
-        QTableView {
-            selection-background-color: rgb(85, 85, 255);
-            selection-color: rgb(255, 255, 255);
-        }
-        QTableView:active {
-            selection-background-color: rgb(85, 85, 255);
-            selection-color: rgb(255, 255, 255);
-        }""")
+            QTableView {
+                selection-background-color: rgb(85, 85, 255);
+                selection-color: rgb(255, 255, 255);
+            }
+            QTableView:active {
+                selection-background-color: rgb(85, 85, 255);
+                selection-color: rgb(255, 255, 255);
+            }
+        """)
         font = QFont()
         font.setPointSize(10)
         self.setFont(font)
@@ -192,10 +193,14 @@ class TablaDatos(QtWidgets.QTableWidget):
         self.horizontalHeader().setMinimumSectionSize(50)
     
     def quitarBordeCabecera(self):
-        self.setStyleSheet(self.styleSheet() + '\nQHeaderView::section {border: 0px;}')
+        qs = self.styleSheet()
+        borde = 'QHeaderView::section {border: 0px;}'
+        self.setStyleSheet(qs + borde)
     
-    def cambiarColorCabecera(self, color: str):
-        self.setStyleSheet(self.styleSheet() + '\nQHeaderView::section {background-color:' + color + ';}')
+    def cambiarColorCabecera(self, color: QColor):
+        qs = self.styleSheet()
+        color = 'QHeaderView::section {{ background-color: {} }};'.format(color.name())
+        self.setStyleSheet(qs + color)
     
     def configurarCabecera(self, resize_cols: Callable[[int], bool] = None,
                            align_flags=None):
@@ -306,21 +311,29 @@ class WarningDialog(QtWidgets.QMessageBox):
         self.setIcon(QtWidgets.QMessageBox.Icon.Warning)
         self.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
         self.setText(body)
-        if error: self.setDetailedText(error)
+        if error:
+            self.setDetailedText(error)
         self.exec()
 
 
 class SpeechBubble(QtWidgets.QWidget):
-    def __init__(self, parent, text=''):
+    hiddenGeom = QRect(610, 28, 0, 165)
+    shownGeom = QRect(610, 28, 345, 165)
+    
+    def __init__(self, parent, txt = ''):
         super().__init__(parent)
         
-        # Create the layout and QTextBrowser
+        self.setGeometry(self.shownGeom)
+        
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(17, 17, 17, 17)
         
         self.text_browser = QtWidgets.QTextBrowser()
         self.text_browser.setStyleSheet('''
-            QTextBrowser { border: none; background-color: transparent; }
+            QTextBrowser { 
+                border: none;
+                background-color: transparent;
+            }
             QScrollBar:vertical {
                 border: 0px solid;
                 background: #c0c0c0;
@@ -328,7 +341,6 @@ class SpeechBubble(QtWidgets.QWidget):
                 margin: 0px 0px 0px 0px;
             }
             QScrollBar::handle:vertical {         
-        
                 min-height: 0px;
                 border: 0px solid red;
                 border-radius: 4px;
@@ -344,12 +356,11 @@ class SpeechBubble(QtWidgets.QWidget):
                 subcontrol-position: top;
                 subcontrol-origin: margin;
             }
-
             QScrollBar::add-page:vertical {
-            background: none;
+                background: none;
             }
         ''')
-        self.text_browser.setPlainText(text)
+        self.text_browser.setPlainText(txt)
         font = QFont()
         font.setPointSize(11)
         self.text_browser.setFont(font)
@@ -357,25 +368,17 @@ class SpeechBubble(QtWidgets.QWidget):
         self.text_browser.setLineWrapColumnOrWidth(295)
         self.text_browser.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         
-        self.hiddenGeom = QRect(610, 28, 0, 165)
-        self.shownGeom = QRect(610, 28, 345, 165)
-        self.setGeometry(self.shownGeom)
-        
         layout.addWidget(self.text_browser)
     
     def setText(self, txt):
         self.text_browser.setPlainText(txt)
     
     def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter_path = QPainterPath()
         
-        # Draw the speech bubble background
-        bubble_rect = self.rect().adjusted(10, 10, -10, -10)  # Add padding to the bubble
-        
-        # Draw the bubble shape
-        bubble_path = QPainterPath()
-        bubble_path.addRoundedRect(QRectF(bubble_rect), 10, 10)
+        # Draw the speech bubble background with added padding
+        bubble_rect = self.rect().adjusted(10, 10, -10, -10)
+        painter_path.addRoundedRect(bubble_rect, 10, 10)
         
         # Draw the triangle at the top middle
         triangle_path = QPolygon()
@@ -384,13 +387,15 @@ class SpeechBubble(QtWidgets.QWidget):
         triangle_path << QPoint(bubble_rect.left(), triangle_center + 10)
         triangle_path << QPoint(bubble_rect.left() - 10, triangle_center)
         
-        # Set the painter properties
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(255, 255, 255, 255))
+        painter_path.addPolygon(triangle_path)
         
-        # Draw the bubble and triangle
-        painter.drawPath(bubble_path.simplified())
-        painter.drawPolygon(triangle_path)
+        # Set the painter properties
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(Qt.GlobalColor.white)
+        
+        painter.drawPath(painter_path.simplified())
     
     def alternarDescuentos(self):
         """ Se llama a esta función al hacer click en la foto de perfil
@@ -416,6 +421,9 @@ class SpeechBubble(QtWidgets.QWidget):
 
 
 class ListaNotificaciones(QtWidgets.QListWidget):
+    hiddenGeom = QRect(0, 0, 400, 0)
+    shownGeom = QRect(0, 0, 400, 120)
+        
     def agregarNotificaciones(self, conn, user):
         """ Llena la caja de notificaciones. """
         from utils.sql import ManejadorInventario, ManejadorVentas
@@ -442,25 +450,22 @@ class ListaNotificaciones(QtWidgets.QListWidget):
     
     def alternarNotificaciones(self):
         """ Se llama a esta función al hacer click en la foto de perfil
-            del usuario. Anima el tamaño de la caja de notificaciones. """
-        hiddenGeom = QRect(0, 0, 400, 0)
-        shownGeom = QRect(0, 0, 400, 120)
-        
+            del usuario. Anima el tamaño de la caja de notificaciones. """        
         if not self.isVisible():
             # Create an animation to gradually change the height of the widget
             self.setVisible(True)
             self.show_animation = QPropertyAnimation(self, b'geometry')
             self.show_animation.setDuration(200)
-            self.show_animation.setStartValue(hiddenGeom)
-            self.show_animation.setEndValue(shownGeom)
+            self.show_animation.setStartValue(self.hiddenGeom)
+            self.show_animation.setEndValue(self.shownGeom)
             self.show_animation.setEasingCurve(QEasingCurve.OutSine)
             self.show_animation.start()
         else:
             # Hide the widget
             self.hide_animation = QPropertyAnimation(self, b'geometry')
             self.hide_animation.setDuration(200)
-            self.hide_animation.setStartValue(shownGeom)
-            self.hide_animation.setEndValue(hiddenGeom)
+            self.hide_animation.setStartValue(self.shownGeom)
+            self.hide_animation.setEndValue(self.hiddenGeom)
             self.hide_animation.setEasingCurve(QEasingCurve.InSine)
             self.hide_animation.finished.connect(lambda: self.setVisible(False))
             self.hide_animation.start()

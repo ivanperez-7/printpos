@@ -6,7 +6,7 @@ import fdb
 from PySide6.QtCore import QDate
 
 from utils.moneda import Moneda
-from utils.myutils import *
+from utils.myutils import leer_config
 
 
 __all__ = ['Connection', 'Cursor', 'Error', 'conectar_db', 'DatabaseManager',

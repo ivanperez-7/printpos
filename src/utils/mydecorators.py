@@ -14,7 +14,7 @@ __all__ = ['requiere_admin', 'run_in_thread', 'con_fondo']
 class Dialog_ObtenerAdmin(QDialog):
     success = Signal(object)
     
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         from PySide6 import QtCore, QtGui, QtWidgets
         
         super().__init__(parent)
@@ -68,10 +68,7 @@ def requiere_admin(func):
         de la conexión de administrador, por ejemplo, nombre del administrador. """
     from utils import sql
     
-    def accept_handle():
-        global dialog
-        global parent
-    
+    def accept_handle(dialog: Dialog_ObtenerAdmin, parent):
         usuario = dialog.txtUsuario.text().upper()
         psswd = dialog.txtPsswd.text()
         
@@ -93,9 +90,6 @@ def requiere_admin(func):
     
     @wraps(func)
     def wrapper_decorator(*args, **kwargs):
-        global dialog
-        global parent
-        
         parent = args[0]  # QMainWindow (módulo) actual
         
         if parent.user.administrador:
@@ -103,14 +97,11 @@ def requiere_admin(func):
             return
         
         dialog = Dialog_ObtenerAdmin(parent)
-        dialog.accept = accept_handle
+        dialog.accept = lambda: accept_handle(dialog, parent)
         dialog.success.connect(lambda conn: func(*args, **kwargs, conn=conn))
-        
         dialog.show()
     
     return wrapper_decorator
-
-
 ###############################################
 # </DECORADOR PARA SOLICITAR CUENTA DE ADMIN> #
 ###############################################
@@ -135,10 +126,7 @@ def run_in_thread(func):
     def async_func(*args, **kwargs):
         task = Runner(func, *args, **kwargs)
         QThreadPool.globalInstance().start(task)
-    
     return async_func
-
-
 #########################################
 # </DECORADOR PARA EEJCUTAR EN QTHREAD> #
 #########################################

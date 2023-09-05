@@ -107,6 +107,7 @@ class App_Login(QtWidgets.QWidget):
         self.close()
         self.mainWindow = VentanaPrincipal(conn)
 
+
 ########################
 # WIDGET PERSONALIZADO #
 ########################
@@ -127,19 +128,20 @@ class LoginButton(QtWidgets.QPushButton):
 
     def _animate(self, value):
         qss = """
-            font: 75 10pt "Microsoft YaHei UI";
+            font: 75 10pt "Segoe UI";
             font-weight: bold;
             color: rgb(255, 255, 255);
             border-style: solid;
             border-radius: 15px;
             outline: 0px;
         """
-        grad = """background-color: qlineargradient(
-                                        spread:pad, x1:0, y1:0, x2:1, y2:0,
-                                        stop:0 {color1}, stop:{value} {color2}, stop: 1.0 {color1});""".format(
-            color1=self.color1.name(), color2=self.color2.name(), value=value)
-        qss += grad
-        self.setStyleSheet(qss)
+        grad = """
+            background-color: qlineargradient(
+                spread:pad, x1:0, y1:0, x2:1, y2:0,
+                stop:0 {color1}, stop:{value} {color2}, stop: 1.0 {color1});
+        """.format(color1=self.color1.name(), color2=self.color2.name(), value=value)
+        
+        self.setStyleSheet(qss + grad)
 
     def enterEvent(self, event):
         self._animation.setDirection(QtCore.QAbstractAnimation.Forward)

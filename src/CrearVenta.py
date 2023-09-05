@@ -2,6 +2,7 @@ import copy
 from dataclasses import dataclass, field
 
 from PySide6 import QtWidgets
+from PySide6.QtGui import QColor
 from PySide6.QtCore import QDate, QDateTime, Qt
 
 from utils.moneda import Moneda
@@ -191,7 +192,7 @@ class App_CrearVenta(QtWidgets.QWidget):
         self.ui.btDescuentosCliente.hide()
         
         self.ui.tabla_productos.quitarBordeCabecera()
-        self.ui.tabla_productos.cambiarColorCabecera('#000')
+        self.ui.tabla_productos.cambiarColorCabecera(QColor(Qt.black))
         self.ui.tabla_productos.configurarCabecera(
             lambda col: col != 2,
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
@@ -784,7 +785,7 @@ class App_AgregarDescuento(QtWidgets.QWidget):
             FabricaValidadores.NumeroDecimal)
         
         self.ui.tabla_productos.quitarBordeCabecera()
-        self.ui.tabla_productos.cambiarColorCabecera('#000')
+        self.ui.tabla_productos.cambiarColorCabecera(QColor(Qt.black))
         self.ui.tabla_productos.configurarCabecera(
             lambda col: col != 2,
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
