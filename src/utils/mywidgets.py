@@ -27,7 +27,7 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
         self.en_venta = False  # bandera levantada al entrar en CrearVenta
         
         icon = QIcon()
-        icon.addFile('icon.ico', QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(':img/icon.ico', QSize(), QIcon.Normal, QIcon.Off)
         self.setWindowIcon(icon)
         
         from Home import App_ConsultarPrecios
@@ -304,7 +304,7 @@ class WarningDialog(QtWidgets.QMessageBox):
         super().__init__()
         
         icon = QIcon()
-        icon.addFile('icon.ico', QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(':img/icon.ico', QSize(), QIcon.Normal, QIcon.Off)
         self.setWindowIcon(icon)
         
         self.setWindowTitle('Atención')

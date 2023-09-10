@@ -80,12 +80,12 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         InterfazPaginas(
             self.ui.btAdelante, self.ui.btUltimo,
             self.ui.btAtras, self.ui.btPrimero, self.ui.tabla_ventasDirectas) \
-            .paginaCambiada.connect(self.update_display)
+        .paginaCambiada.connect(self.update_display)
         
         InterfazPaginas(
             self.ui.btAdelante, self.ui.btUltimo,
             self.ui.btAtras, self.ui.btPrimero, self.ui.tabla_pedidos) \
-            .paginaCambiada.connect(self.update_display)
+        .paginaCambiada.connect(self.update_display)
         
         # configurar y llenar tablas
         self.ui.tabla_ventasDirectas.configurarCabecera(lambda col: col in [0, 3, 4, 5, 6, 7])
@@ -272,16 +272,19 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         # obtener número y nombre del cliente
         manejador = ManejadorVentas(self.conn)
-        idVenta = self.tabla_actual.selectedItems()[0].text()
+        id_venta = self.tabla_actual.selectedItems()[0].text()
         
-        nombre, celular = manejador.obtenerClienteAsociado(idVenta)
+        saldo = manejador.obtenerImporteTotal(id_venta) - manejador.obtenerAnticipo(id_venta)
+        nombre, celular = manejador.obtenerClienteAsociado(id_venta)
         
         # mensaje a enviar
-        mensaje = ' '.join([
-            f'*Apreciable {nombre}*:\nLe informamos que ya puede pasar a Printcopy',
-            f'a recoger su pedido con folio {idVenta}. ¡Recuerde traer su orden de compra',
-            'para concretar el pedido!\n\n¡Esperamos verle pronto! 😊'
-        ])
+        mensaje = (
+            '*Apreciable {}*:\n'
+            'Le informamos que ya puede pasar a Printcopy a recoger su pedido '
+            'con folio {}, que presenta un saldo de {} pesos. ¡Recuerde traer su '
+            'orden de compra para concretar el pedido!\n\n'
+            '¡Esperamos verle pronto! 😊'
+        ).format(nombre, id_venta, saldo)
         
         enviarWhatsApp(celular, mensaje)
     
@@ -296,9 +299,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         if (anticipo := manejador.obtenerAnticipo(idVenta)) is None:
             return
         
-        saldo = manejador.obtenerImporteTotal(idVenta) - anticipo
-        
-        if saldo:
+        if manejador.obtenerImporteTotal(idVenta) - anticipo:
             widget = App_TerminarVenta(self, idVenta)
             widget.success.connect(self.rescan_update)
             return
@@ -507,7 +508,6 @@ class App_TerminarVenta(QtWidgets.QWidget):
         
         # guardar conexión y usuario como atributos
         self.conn = first.conn
-        self.user = first.user
         
         manejador = ManejadorVentas(first.conn)
         
@@ -515,8 +515,7 @@ class App_TerminarVenta(QtWidgets.QWidget):
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
         
-        self.para_pagar = total - anticipo
-        self.ui.stackedWidget.total = self.para_pagar
+        self.ui.stackedWidget.total = total - anticipo
         
         nombreCliente, correo, telefono, fechaCreacion, fechaEntrega, *_ \
             = manejador.obtenerDatosGeneralesVenta(idx)
@@ -527,7 +526,7 @@ class App_TerminarVenta(QtWidgets.QWidget):
         self.ui.txtCreacion.setText(formatDate(fechaCreacion))
         self.ui.txtEntrega.setText(formatDate(fechaEntrega))
         self.ui.lbFolio.setText(f'{idx}')
-        self.ui.lbSaldo.setText(f'{self.para_pagar}')
+        self.ui.lbSaldo.setText(f'{total-anticipo}')
         
         self.ui.stackedWidget.agregarPago()
         

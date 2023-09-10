@@ -372,7 +372,7 @@
     <property name="font">
      <font>
       <family>Segoe UI</family>
-      <pointsize>9</pointsize>
+      <pointsize>10</pointsize>
      </font>
     </property>
     <property name="styleSheet">
@@ -431,7 +431,7 @@
  </tabstops>
  <resources>
   <include location="../resources.qrc"/>
-  <include location="../../resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections/>
 </ui>
