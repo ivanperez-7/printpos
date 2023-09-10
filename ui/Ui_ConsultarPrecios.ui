@@ -724,7 +724,7 @@ background-color: rgb(255, 255, 255);</string>
  <connections/>
  <buttongroups>
   <buttongroup name="groupButtonFiltro"/>
-  <buttongroup name="groupButtonAncho"/>
   <buttongroup name="groupButtonAlto"/>
+  <buttongroup name="groupButtonAncho"/>
  </buttongroups>
 </ui>

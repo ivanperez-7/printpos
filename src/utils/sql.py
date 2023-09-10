@@ -499,6 +499,16 @@ class ManejadorProductos(DatabaseManager):
         if result:
             return result[0]
     
+    def obtenerNombreParaTicket(self, codigo: str):
+        """ Obtener nombre para mostrar en ticket dado código de un producto. """
+        result = self.fetchone('''
+            SELECT  abreviado
+            FROM    Productos 
+            WHERE   codigo = ?;
+        ''', (codigo,))
+        if result:
+            return result[0]
+    
     def obtenerRelacionVentas(self, id_productos: int):
         """ Obtener relación con ventas en la tabla ventas_detallado. """
         return self.fetchall('''

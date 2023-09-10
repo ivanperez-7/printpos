@@ -11,7 +11,7 @@ from PySide6.QtGui import QRegularExpressionValidator
 from utils.mydecorators import run_in_thread
 
 
-__all__ = ['ColorsEnum', 'FabricaValidadores', 'Runner', 'clamp', 'chunkify',
+__all__ = ['ColorsEnum', 'FabricaValidadores', 'clamp', 'chunkify',
            'unidecode', 'son_similar', 'contiene_duplicados', 'formatDate',
            'leer_config', 'exportarXlsx', 'enviarWhatsApp']
 

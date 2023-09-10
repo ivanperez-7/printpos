@@ -25,6 +25,7 @@ class ItemVenta:
     cantidad: int  # cantidad solicitada por el cliente
     notas: str  # especificaciones del producto
     duplex: bool  # dicta si el producto es duplex
+    nombre_ticket: str # nombre para mostrar en tickets y órdenes
     
     @property
     def importe(self) -> float:
@@ -246,14 +247,12 @@ class App_CrearVenta(QtWidgets.QWidget):
                 
                 tableItem = QtWidgets.QTableWidgetItem(cell)
                 flags = tableItem.flags()
-                
-                if col == 2:
-                    flags |= Qt.ItemFlag.ItemIsEditable
-                else:
+                if col != 2:
                     flags &= ~Qt.ItemFlag.ItemIsEditable
-                
                 tableItem.setFlags(flags)
+                
                 tabla.setItem(row, col, tableItem)
+        tabla.resizeRowsToContents()
         # </llenar tabla>
         
         # <calcular precios y mostrar>
@@ -266,8 +265,6 @@ class App_CrearVenta(QtWidgets.QWidget):
         self.ui.lbImpuestos.setText(f'{impuestos}')
         self.ui.lbDescuento.setText(f'{self.ventaDatos.total_descuentos}')
         # </calcular precios y mostrar>
-        
-        tabla.resizeRowsToContents()
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
@@ -310,7 +307,7 @@ class App_CrearVenta(QtWidgets.QWidget):
             self._quitarProducto(selected)
     
     @requiere_admin
-    def _quitarProducto(self, selected: set[int], conn):
+    def _quitarProducto(self, selected, conn):
         """ En método separado para solicitar contraseña. """
         for row in sorted(selected, reverse=True):
             self.ventaDatos.quitarProducto(row)
@@ -531,7 +528,6 @@ class App_AgregarProducto(QtWidgets.QWidget):
         
         self.first.ventaDatos.agregarProducto(item)
         self.first.ventaDatos.reajustarPrecios(self.conn)
-        
         self.first.colorearActualizar()
         self.close()
     
@@ -557,6 +553,7 @@ class App_AgregarProducto(QtWidgets.QWidget):
         manejador = sql.ManejadorProductos(self.conn)
         
         idProducto = manejador.obtenerIdProducto(codigo)
+        nombre_ticket = manejador.obtenerNombreParaTicket(codigo)
         
         # obtener precio basado en cantidad
         duplex = self.ui.checkDuplex.isChecked()
@@ -571,8 +568,8 @@ class App_AgregarProducto(QtWidgets.QWidget):
         
         # insertar información del producto con cantidad y especificaciones        
         return ItemVenta(
-            idProducto, codigo, precio, 0.0, cantidad,
-            self.ui.txtNotas.text().strip(), self.ui.checkDuplex.isChecked())
+            idProducto, codigo, precio, 0.0, cantidad, self.ui.txtNotas.text().strip(), 
+            self.ui.checkDuplex.isChecked(), nombre_ticket)
     
     def agregarGranFormato(self):
         selected = self.ui.tabla_granformato.selectedItems()
@@ -606,13 +603,14 @@ class App_AgregarProducto(QtWidgets.QWidget):
         # obtener información del producto
         manejador = sql.ManejadorProductos(self.conn)
         idProducto = manejador.obtenerIdProducto(codigo)
+        nombre_ticket = manejador.obtenerNombreParaTicket(codigo)
         
         min_m2, precio = manejador.obtenerGranFormato(idProducto)
         
         # insertar información del producto con cantidad y especificaciones
         return ItemGranFormato(
             idProducto, codigo, precio, 0.0, cantidad,
-            self.ui.txtNotas_2.text().strip(), False, min_m2)
+            self.ui.txtNotas_2.text().strip(), False, nombre_ticket, min_m2)
 
 
 @con_fondo
@@ -891,21 +889,20 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
         
         for prod in self.first.ventaDatos.productos:
             mensaje.extend([
-                f'{prod.codigo} ({prod.cantidad:,.2f} unidades)',
-                f'Importe: {prod.importe:,.2f}',
+                f'{prod.nombre_ticket} ({prod.cantidad} unidades)',
+                f'Importe: ${prod.importe:,.2f}',
                 ''
             ])
         
-        mensaje.append('*Total a pagar: ' + self.first.ui.lbTotal.text() + '*')
-        
+        mensaje.append('*Total a pagar: $' + self.first.ui.lbTotal.text() + '*')
         mensaje = '\n'.join(mensaje)
-        celular = self.first.ui.txtTelefono.text()
         
+        celular = self.first.ui.txtTelefono.text()
         enviarWhatsApp(celular, mensaje)
         self.close()
     
     def imprimirTicket(self):
-        productos = [(prod.cantidad, prod.codigo, prod.precio_unit,
+        productos = [(prod.cantidad, prod.nombre_ticket, prod.precio_unit,
                       prod.descuento_unit, prod.importe)
                      for prod in self.first.ventaDatos.productos]
         

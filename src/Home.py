@@ -3,7 +3,7 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtCore import QDate, Qt, Signal
 
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
-from utils.myutils import *
+from utils.myutils import Runner, son_similar
 
 
 class App_Home(QtWidgets.QWidget):
@@ -18,10 +18,7 @@ class App_Home(QtWidgets.QWidget):
         self.ui.setupUi(self)
         
         user = parent.user
-        
-        # guardar conexión y usuarios como atributos
-        self.conn = parent.conn
-        self.user = parent.user
+        conn = parent.conn
         
         # foto de perfil del usuario
         if user.foto_perfil:
@@ -35,7 +32,7 @@ class App_Home(QtWidgets.QWidget):
         # ocultar lista y proporcionar eventos
         self.ui.listaNotificaciones.setVisible(False)
         self.ui.btFotoPerfil.clicked.connect(self.ui.listaNotificaciones.alternarNotificaciones)
-        self.ui.listaNotificaciones.agregarNotificaciones(self.conn, self.user)
+        self.ui.listaNotificaciones.agregarNotificaciones(conn, user)
         
         # configurar texto dinámico
         self.ui.fechaHoy.setDate(QDate.currentDate())
@@ -101,7 +98,6 @@ class App_Home(QtWidgets.QWidget):
     
     def exitApp(self):
         from Login import App_Login
-        
         self.login = App_Login()
         self.parentWidget().close()
 
@@ -115,7 +111,6 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
     dataChanged = Signal()  # señal para actualizar tabla en hilo principal
     
     def __init__(self, principal: VentanaPrincipal):
-        from utils.sql import ManejadorProductos
         from ui.Ui_ConsultarPrecios import Ui_ConsultarPrecios
         
         super().__init__()
@@ -129,13 +124,12 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
         LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
         
         # manejador de DB, en tabla productos
+        from utils.sql import ManejadorProductos
         self.manejador = ManejadorProductos(principal.conn)
         
         # eventos para widgets
-        self.ui.searchBar.textChanged.connect(
-            lambda: self.update_display(False))
-        self.ui.groupButtonFiltro.buttonClicked.connect(
-            lambda: self.update_display(False))
+        self.ui.searchBar.textChanged.connect(lambda: self.update_display(False))
+        self.ui.groupButtonFiltro.buttonClicked.connect(lambda: self.update_display(False))
         self.ui.tabWidget.currentChanged.connect(
             lambda: self.tabla_actual.resizeRowsToContents())
         
@@ -149,8 +143,7 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
         self.ui.groupButtonAlto.buttonClicked.connect(self.calcularPrecio)
         self.ui.groupButtonAncho.buttonClicked.connect(self.calcularPrecio)
         
-        self.dataChanged.connect(
-            lambda: self.update_display(True))
+        self.dataChanged.connect(lambda: self.update_display(True))
         
         self.ui.tabla_seleccionar.configurarCabecera(lambda col: col != 1)
         self.ui.tabla_granformato.configurarCabecera(lambda col: col != 1)
@@ -171,7 +164,7 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
         if event.spontaneous():
             event.ignore()
         else:
-            # no recomendado generalmente para terminar hilos, sin embargo
+            # no recomendado generalmente para terminar hilos, sin embargo,
             # esta vez se puede hacer así al no ser una función crítica.
             self.eventReader.stop()
             self.events.close()
