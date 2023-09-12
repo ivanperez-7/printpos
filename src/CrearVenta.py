@@ -102,32 +102,43 @@ class Venta:
     def agregarProducto(self, item: ItemVenta):
         self.productos.append(item)
     
-    def quitarProducto(self, row: int):
-        self.productos.pop(row)
+    def quitarProducto(self, idx: int):
+        self.productos.pop(idx)
     
     def reajustarPrecios(self, conn: sql.Connection):
-        ids = set(p.id for p in self.productos)
+        """ Algoritmo para reajustar precios de productos simples al haber cambios de cantidad.
+            Por cada grupo de productos idénticos:
+                1. Calcular cantidad de productos duplex y cantidad de no duplex.
+                2. Obtener precio NO DUPLEX con el total de ambas cantidades.
+                3. Obtener precio DUPLEX con la cantidad duplex correspondiente.
+                4. A todos los productos del grupo, asignar el mínimo de los dos precios obtenidos. """
+        grupos = self.obtenerGruposProductos()
         manejador = sql.ManejadorProductos(conn)
         
-        for id_prod in ids:
-            productos = self.obtenerProductosExistentes(id_prod)
+        for productos in grupos:
             productosNormal = sum(p.cantidad for p in productos if not p.duplex)
             productosDuplex = sum(p.cantidad for p in productos if p.duplex)
             
             precioNormal = manejador.obtenerPrecioSimple(
-                id_prod, productosNormal + productosDuplex, False)
+                productos[0].id, productosNormal + productosDuplex, False)
             
             if not precioNormal: continue
             
             precioDuplex = manejador.obtenerPrecioSimple(
-                id_prod, productosDuplex, True)
+                productos[0].id, productosDuplex, True)
             nuevoPrecio = min(precioNormal, precioDuplex or precioNormal)
             
             for p in productos: p.precio_unit = nuevoPrecio
     
-    def obtenerProductosExistentes(self, id: int):
-        """ Obtiene todos los productos que tienen el identificador dado. """
-        return [p for p in self.productos if p.id == id]
+    def obtenerGruposProductos(self) -> list[list[ItemVenta]]:
+        """ Obtiene una lista con listas de productos, separadas por identificador. """
+        out = dict()
+        for prod in self.productos:
+            try:
+                out[prod.id].append(prod)
+            except KeyError:
+                out[prod.id] = [prod]
+        return out.values()
     
     def __iter__(self):
         yield from self.productos
@@ -325,7 +336,7 @@ class App_CrearVenta(QtWidgets.QWidget):
         if not self.ventaDatos.ventaVacia:
             modulo = App_EnviarCotizacion(self)
     
-    def verificarCliente(self) -> int | None:
+    def verificarCliente(self):
         qm = QtWidgets.QMessageBox
         
         # se confirma si existe el cliente en la base de datos
@@ -523,7 +534,7 @@ class App_AgregarProducto(QtWidgets.QWidget):
         elif current == 1:
             item = self.agregarGranFormato()
         
-        if not item:
+        if item is None:
             return
         
         self.first.ventaDatos.agregarProducto(item)
@@ -889,7 +900,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
         
         for prod in self.first.ventaDatos.productos:
             mensaje.extend([
-                f'{prod.nombre_ticket} ({prod.cantidad} unidades)',
+                f'{prod.nombre_ticket} || {prod.cantidad} unidades',
                 f'Importe: ${prod.importe:,.2f}',
                 ''
             ])
