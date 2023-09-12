@@ -112,10 +112,9 @@ class Venta:
                 2. Obtener precio NO DUPLEX con el total de ambas cantidades.
                 3. Obtener precio DUPLEX con la cantidad duplex correspondiente.
                 4. A todos los productos del grupo, asignar el mínimo de los dos precios obtenidos. """
-        grupos = self.obtenerGruposProductos()
         manejador = sql.ManejadorProductos(conn)
         
-        for productos in grupos:
+        for productos in self.obtenerGruposProductos():
             productosNormal = sum(p.cantidad for p in productos if not p.duplex)
             productosDuplex = sum(p.cantidad for p in productos if p.duplex)
             
