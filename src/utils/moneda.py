@@ -1,6 +1,6 @@
 """ Módulo con clase `Moneda` para manejar cantidades monetarias. """
+import operator
 import re
-from typing import SupportsFloat
 
 
 PRECISION = 2
@@ -8,7 +8,7 @@ PRECISION = 2
 class Moneda:
     """ Clase para manejar cantidades monetarias
         con un máximo de dos números decimales. """
-    def __init__(self, inicial: SupportsFloat = None):
+    def __init__(self, inicial = None):
         if inicial is None:
             self.valor = 0.0
         elif isinstance(inicial, str):
@@ -21,7 +21,7 @@ class Moneda:
         return self._valor + 0.0
     
     @valor.setter
-    def valor(self, arg: SupportsFloat):
+    def valor(self, arg):
         self._valor = round(float(arg), PRECISION)
     
     @classmethod
@@ -40,6 +40,9 @@ class Moneda:
     # =====================
     def __bool__(self):
         return self.valor > 0.0
+    
+    def __int__(self):
+        return int(self.valor)
     
     def __float__(self):
         return self.valor
@@ -80,20 +83,23 @@ class Moneda:
     # =====================
     #  Operaciones lógicas 
     # =====================
+    def _bool_op(self, op, operation) -> bool:
+        return operation(self.valor, round(op, PRECISION))
+        
     def __eq__(self, op):
-        return self.valor == round(op, PRECISION)
+        return self._bool_op(op, operator.eq)
     
     def __ne__(self, op):
-        return self.valor != round(op, PRECISION)
+        return self._bool_op(op, operator.ne)
     
     def __lt__(self, op):
-        return self.valor < round(op, PRECISION)
+        return self._bool_op(op, operator.lt)
     
     def __le__(self, op):
-        return self.valor <= round(op, PRECISION)
+        return self._bool_op(op, operator.le)
     
     def __gt__(self, op):
-        return self.valor > round(op, PRECISION)
+        return self._bool_op(op, operator.gt)
     
     def __ge__(self, op):
-        return self.valor >= round(op, PRECISION)
+        return self._bool_op(op, operator.ge)

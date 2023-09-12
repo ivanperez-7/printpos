@@ -1,7 +1,5 @@
 """ Provee varias funciones útiles utilizadas frecuentemente. """
 from configparser import ConfigParser
-from datetime import datetime
-from typing import SupportsFloat
 import re
 import unicodedata
 
@@ -56,7 +54,7 @@ class Runner(QThread):
         self.wait()
 
 
-def clamp(value, smallest, largest) -> SupportsFloat:
+def clamp(value, smallest, largest):
     """ Trunca un valor dentro de un rango. """
     return sorted((value, smallest, largest))[1]
 
@@ -91,7 +89,7 @@ def contiene_duplicados(lista: list):
     return len(lista) != len(set(lista))
 
 
-def formatDate(date: QDateTime | datetime = None) -> str:
+def formatDate(date = None) -> str:
     """ Da formato en texto a un dato QDateTime o datetime de Python.
         Ejemplo: 08 de febrero 2023, 4:56 p. m. """
     if not date:
