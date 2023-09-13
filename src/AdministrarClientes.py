@@ -252,7 +252,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
     # FUNCIONES ÚTILES #
     ####################
     @property
-    def numeroTelefono(self) -> str:
+    def numeroTelefono(self):
         return '+{} {}'.format(self.ui.txtLada.text(),
                                self.ui.txtCelular.displayText())
     

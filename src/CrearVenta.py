@@ -28,12 +28,12 @@ class ItemVenta:
     nombre_ticket: str # nombre para mostrar en tickets y órdenes
     
     @property
-    def importe(self) -> float:
+    def importe(self):
         """ Costo total del producto. """
         return (self.precio_unit - self.descuento_unit) * self.cantidad
     
     @property
-    def total_descuentos(self) -> float:
+    def total_descuentos(self):
         """ Regresa el total de descuentos (descuento * cantidad). """
         return self.descuento_unit * self.cantidad
     
@@ -62,12 +62,12 @@ class ItemGranFormato(ItemVenta):
     _min_m2: float
     
     @property
-    def importe(self) -> float:
+    def importe(self):
         cantidad = max(self._min_m2, self.cantidad)
         return (self.precio_unit - self.descuento_unit) * cantidad
     
     @property
-    def total_descuentos(self) -> float:
+    def total_descuentos(self):
         cantidad = max(self._min_m2, self.cantidad)
         return self.descuento_unit * cantidad
 

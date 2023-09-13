@@ -22,7 +22,7 @@ class Usuario:
     rol: str = 'Vendedor'
     
     @property
-    def administrador(self) -> bool:
+    def administrador(self):
         """ Regresa un booleano que dice si el usuario es administrador. """
         return self.permisos.upper() == 'ADMINISTRADOR'
     

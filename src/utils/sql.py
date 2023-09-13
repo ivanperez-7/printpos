@@ -909,7 +909,7 @@ class ManejadorVentas(DatabaseManager):
         ''', (id_venta,))
         
         try:
-            estado: str = result[0]
+            estado = result[0]
             return Moneda(estado.split()[1])
         except (ValueError, IndexError):
             return None
