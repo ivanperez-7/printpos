@@ -278,7 +278,7 @@ class App_RegistrarUsuario(Base_EditarUsuario):
     #  FUNCIONES ÚTILES
     # ==================
     @property
-    def cambioContrasena(self) -> bool:
+    def cambioContrasena(self):
         """ Siempre hay cambio de contraseña. """
         return True
     
@@ -320,7 +320,7 @@ class App_EditarUsuario(Base_EditarUsuario):
     #  FUNCIONES ÚTILES
     # ==================
     @property
-    def cambioContrasena(self) -> bool:
+    def cambioContrasena(self):
         """ Hay cambio de contraseña si se solicita. """
         return self.ui.cambiarPsswd.isChecked()
     

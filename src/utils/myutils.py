@@ -89,7 +89,7 @@ def contiene_duplicados(lista: list):
     return len(lista) != len(set(lista))
 
 
-def formatDate(date = None) -> str:
+def formatDate(date = None):
     """ Da formato en texto a un dato QDateTime o datetime de Python.
         Ejemplo: 08 de febrero 2023, 4:56 p. m. """
     if not date:
