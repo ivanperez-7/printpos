@@ -209,8 +209,7 @@ class App_CrearVenta(QtWidgets.QWidget):
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
     
     def showEvent(self, event):
-        parent: VentanaPrincipal = self.parentWidget()
-        parent.en_venta = True
+        self.parentWidget().en_venta = True
     
     # ==================
     #  FUNCIONES ÚTILES

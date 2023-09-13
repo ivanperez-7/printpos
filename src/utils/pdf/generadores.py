@@ -17,6 +17,9 @@ from utils.myutils import *
 from utils.sql import ManejadorVentas
 
 
+__all__ = ['generarOrdenCompra', 'generarTicketPDF', 'generarCortePDF']
+
+
 def generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
     """ Genera un PDF con el orden de compra correspondiente a 
         la venta con índice `idx` en la base de datos.

@@ -13,7 +13,7 @@ from Caja import Caja
 from Login import Usuario
 from utils.mydecorators import run_in_thread
 from utils.myutils import *
-from utils.pdf.generadores import generarCortePDF, generarOrdenCompra, generarTicketPDF
+from utils.pdf.generadores import *
 from utils import sql
 
 
