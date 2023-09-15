@@ -55,22 +55,12 @@ class Dialog_ObtenerAdmin(QDialog):
         self.buttonBox.accepted.connect(self.accept)  # type: ignore
         self.buttonBox.rejected.connect(self.reject)  # type: ignore
         QtCore.QMetaObject.connectSlotsByName(self)
-        
-        self.show()
 
-
-def requiere_admin(func):
-    """ Decorador para solicitar contraseña de administrador
-        antes de ejecutar alguna función dada.
+    def accept(self):
+        from utils import sql
         
-        Añadir parámetro nombrado `conn` al final de la función, ya que
-        es devuelto por el decorador para extraer información que se requiera
-        de la conexión de administrador, por ejemplo, nombre del administrador. """
-    from utils import sql
-    
-    def accept_handle(dialog: Dialog_ObtenerAdmin, parent):
-        usuario = dialog.txtUsuario.text().upper()
-        psswd = dialog.txtPsswd.text()
+        usuario = self.txtUsuario.text().upper()
+        psswd = self.txtPsswd.text()
         
         if not (usuario and psswd):
             return
@@ -80,24 +70,30 @@ def requiere_admin(func):
             manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
             manejador.obtenerUsuario(usuario)
         except sql.Error:
-            dialog.close()
-            QMessageBox.warning(parent, 'Error',
+            self.close()
+            QMessageBox.warning(self.parentWidget(), 'Error',
                                 'Las credenciales no son válidas para una cuenta de administrador.')
         else:
-            dialog.close()
-            dialog.success.emit(conn)
+            self.close()
+            self.success.emit(conn)
             conn.close()
-    
+
+def requiere_admin(func):
+    """ Decorador para solicitar contraseña de administrador
+        antes de ejecutar alguna función dada.
+        
+        Añadir parámetro nombrado `conn` al final de la función, ya que
+        es devuelto por el decorador para extraer información que se requiera
+        de la conexión de administrador, por ejemplo, nombre del administrador. """
     @wraps(func)
     def wrapper_decorator(*args, **kwargs):
-        parent = args[0]  # QMainWindow (módulo) actual
+        parent = args[0]  # QWidget (módulo actual)
         
         if parent.user.administrador:
             func(*args, **kwargs, conn=parent.conn)
             return
         
         dialog = Dialog_ObtenerAdmin(parent)
-        dialog.accept = lambda: accept_handle(dialog, parent)
         dialog.success.connect(lambda conn: func(*args, **kwargs, conn=conn))
         dialog.show()
     
