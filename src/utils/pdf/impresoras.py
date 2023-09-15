@@ -1,7 +1,6 @@
 """ Provee clases para enviar documentos PDF, en bytes, a impresoras. """
 import io
 import uuid
-from functools import wraps
 from typing import overload
 
 from PySide6.QtWidgets import QWidget
@@ -17,21 +16,17 @@ from utils.pdf.generadores import *
 from utils import sql
 
 
-def verificar_impresora(func):
-    """ Simple decorador que verifica si existe atributo `printer`. """
-    @wraps(func)
-    def wrapped(*args, **kwargs):
-        cls: ImpresoraPDF = args[0]
-        if cls.printer:
-            func(*args, **kwargs)
-    return wrapped
-
-
 class ImpresoraPDF:
     """ Clase general para manejar impresoras y enviar archivos a estas. """
     
     def __init__(self):
         self.printer: QPrinter = None
+    
+    def verificarImpresora(self):
+        """ Simple función que verifica si existe atributo `printer`.
+            Arroja excepción al no ser el caso. """
+        if not self.printer:
+            raise AttributeError('Impresora aún no inicializada.')
     
     @staticmethod
     def escogerImpresora(parent: QWidget = None):
@@ -111,9 +106,9 @@ class ImpresoraOrdenes(ImpresoraPDF):
             raise ValueError('Argumentos inválidos: ninguna implementación.')
         self.printer = self.escogerImpresora(self.parent)
     
-    @verificar_impresora
     @run_in_thread
     def imprimirOrdenCompra(self, idx: int):
+        self.verificarImpresora()
         manejador = sql.ManejadorVentas(self.conn)
         data = generarOrdenCompra(manejador, idx)
         self.enviarAImpresora(data)
@@ -138,10 +133,10 @@ class ImpresoraTickets(ImpresoraPDF):
             raise ValueError('Argumentos inválidos: ninguna implementación.')
         self.printer = self.obtenerImpresoraTickets()
     
-    @verificar_impresora
     @run_in_thread
     def imprimirTicketCompra(self, idx):
         """ Genera el ticket de compra a partir de un identificador en la base de datos. """
+        self.verificarImpresora()
         # obtener datos de la compra, de la base de datos
         manejador = sql.ManejadorVentas(self.conn)
         productos = manejador.obtenerTablaTicket(idx)
@@ -161,16 +156,16 @@ class ImpresoraTickets(ImpresoraPDF):
                                     pagado, abrev[metodo], fechaCreacion)
             self.enviarAImpresora(data)
     
-    @verificar_impresora
     @run_in_thread
     def imprimirTicketPresupuesto(self, productos: list[tuple], vendedor: str):
         """ Genera un ticket para el presupuesto de una compra. """
+        self.verificarImpresora()
         data = generarTicketPDF(0, productos, vendedor)
         self.enviarAImpresora(data)
     
-    @verificar_impresora
     @run_in_thread
     def imprimirCorteCaja(self, caja: Caja, user: Usuario):
         """ Genera un ticket para el presupuesto de una compra. """
+        self.verificarImpresora()
         data = generarCortePDF(caja, user)
         self.enviarAImpresora(data)
