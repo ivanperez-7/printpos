@@ -10,7 +10,7 @@ from utils.mydecorators import con_fondo, requiere_admin
 from utils.myutils import *
 from utils.mywidgets import DimBackground, LabelAdvertencia, SpeechBubble, VentanaPrincipal
 from utils.pdf import ImpresoraOrdenes, ImpresoraTickets
-from utils import sql
+from utils.sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
 
 ##################
 # CLASE AUXILIAR #
@@ -105,14 +105,14 @@ class Venta:
     def quitarProducto(self, idx: int):
         self.productos.pop(idx)
     
-    def reajustarPrecios(self, conn: sql.Connection):
+    def reajustarPrecios(self, conn):
         """ Algoritmo para reajustar precios de productos simples al haber cambios de cantidad.
             Por cada grupo de productos idénticos:
                 1. Calcular cantidad de productos duplex y cantidad de no duplex.
                 2. Obtener precio NO DUPLEX con el total de ambas cantidades.
                 3. Obtener precio DUPLEX con la cantidad duplex correspondiente.
                 4. A todos los productos del grupo, asignar el mínimo de los dos precios obtenidos. """
-        manejador = sql.ManejadorProductos(conn)
+        manejador = ManejadorProductos(conn)
         
         for productos in self.obtenerGruposProductos():
             productosNormal = sum(p.cantidad for p in productos if not p.duplex)
@@ -338,7 +338,7 @@ class App_CrearVenta(QtWidgets.QWidget):
         qm = QtWidgets.QMessageBox
         
         # se confirma si existe el cliente en la base de datos
-        manejador = sql.ManejadorClientes(self.conn)
+        manejador = ManejadorClientes(self.conn)
         
         nombre = self.ui.txtCliente.text().strip()
         telefono = self.ui.txtTelefono.text().strip()
@@ -434,7 +434,7 @@ class App_AgregarProducto(QtWidgets.QWidget):
         self.conn = first.conn
         self.user = first.user
         
-        manejador = sql.ManejadorProductos(self.conn)
+        manejador = ManejadorProductos(self.conn)
         
         # llena la tabla de productos no gran formato        
         self.all_prod = manejador.obtenerVista('View_Productos_Simples')
@@ -559,7 +559,7 @@ class App_AgregarProducto(QtWidgets.QWidget):
         
         # obtener información del producto
         codigo = selected[0].text()
-        manejador = sql.ManejadorProductos(self.conn)
+        manejador = ManejadorProductos(self.conn)
         
         idProducto = manejador.obtenerIdProducto(codigo)
         nombre_ticket = manejador.obtenerNombreParaTicket(codigo)
@@ -610,7 +610,7 @@ class App_AgregarProducto(QtWidgets.QWidget):
             return
         
         # obtener información del producto
-        manejador = sql.ManejadorProductos(self.conn)
+        manejador = ManejadorProductos(self.conn)
         idProducto = manejador.obtenerIdProducto(codigo)
         nombre_ticket = manejador.obtenerNombreParaTicket(codigo)
         
@@ -646,7 +646,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
         self.user = first.user
         
         # llena la tabla con todos los clientes existentes
-        manejador = sql.ManejadorClientes(self.conn)
+        manejador = ManejadorClientes(self.conn)
         
         self.all = [datos for (id, *datos) in manejador.obtenerTablaPrincipal()]
         
@@ -705,7 +705,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
         self.first.establecerCliente(nombre, telefono, correo)
         
         # checar si el cliente es especial
-        manejador = sql.ManejadorClientes(self.conn)
+        manejador = ManejadorClientes(self.conn)
         
         especial, descuentos = manejador.obtenerDescuentosCliente(nombre, telefono)
         self.first.ui.btDescuentosCliente.setVisible(especial)
@@ -972,7 +972,7 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
         # mostrar datos del cliente, fechas, etc.
         self.id_ventas = self.registrarVenta()
         
-        manejadorClientes = sql.ManejadorClientes(self.conn)
+        manejadorClientes = ManejadorClientes(self.conn)
         _, nombre, telefono, correo, *_ = manejadorClientes.obtenerCliente(ventaDatos.id_cliente)
         
         self.ui.txtCliente.setText(nombre)
@@ -1026,7 +1026,7 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
     def registrarVenta(self) -> int:
         """ Registra datos principales de venta en DB
             y regresa folio de venta insertada. """
-        manejadorVentas = sql.ManejadorVentas(self.conn)
+        manejadorVentas = ManejadorVentas(self.conn)
         ventas_db_parametros = self.obtenerParametrosVentas()
         ventas_detallado_db_parametros = self.obtenerParametrosVentasDetallado()
         
@@ -1141,7 +1141,7 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
     def terminarVenta(self):
         """ Tras verificar todas las condiciones, finalizar venta y
             registrarla en la base de datos. """
-        manejadorVentas = sql.ManejadorVentas(self.conn)
+        manejadorVentas = ManejadorVentas(self.conn)
         
         # registrar pagos en tabla ventas_pagos
         for wdg in self.ui.stackedWidget.widgetsPago:
@@ -1189,7 +1189,7 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
     
     @requiere_admin
     def _abortar(self, conn):
-        manejadorAdmin = sql.ManejadorVentas(conn)
+        manejadorAdmin = ManejadorVentas(conn)
         
         estado = 'Cancelada por ' + manejadorAdmin.usuarioActivo
         if manejadorAdmin.actualizarEstadoVenta(self.id_ventas, estado,
