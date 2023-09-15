@@ -91,11 +91,10 @@ def requiere_admin(func):
         
         if parent.user.administrador:
             func(*args, **kwargs, conn=parent.conn)
-            return
-        
-        dialog = Dialog_ObtenerAdmin(parent)
-        dialog.success.connect(lambda conn: func(*args, **kwargs, conn=conn))
-        dialog.show()
+        else:
+            dialog = Dialog_ObtenerAdmin(parent)
+            dialog.success.connect(lambda conn: func(*args, **kwargs, conn=conn))
+            dialog.show()
     
     return wrapper_decorator
 ###############################################
