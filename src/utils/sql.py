@@ -33,6 +33,11 @@ def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
         return None
 
 
+def WarningDialog(*args):
+    from utils.mywidgets import WarningDialog
+    wdg = WarningDialog(*args)
+
+
 class DatabaseManager:
     """ Clase general de un administrador de bases de datos.
         Permite ejecutar consultas varias y manejar las excepciones.
@@ -53,7 +58,6 @@ class DatabaseManager:
         self.crsr: Cursor = conn.cursor()
     
     def execute(self, query, parameters=None, commit=False):
-        from utils.mywidgets import WarningDialog
         try:
             if parameters is None:
                 self.crsr.execute(query)
@@ -70,7 +74,6 @@ class DatabaseManager:
             return False
     
     def executemany(self, query, parameters=None, commit=False):
-        from utils.mywidgets import WarningDialog
         try:
             if parameters is None:
                 self.crsr.executemany(query)
@@ -87,7 +90,6 @@ class DatabaseManager:
             return False
     
     def fetchall(self, query, parameters=None) -> list[tuple]:
-        from utils.mywidgets import WarningDialog
         try:
             if parameters is None:
                 self.crsr.execute(query)
@@ -101,7 +103,6 @@ class DatabaseManager:
             return None
     
     def fetchone(self, query, parameters=None) -> tuple:
-        from utils.mywidgets import WarningDialog
         try:
             if parameters is None:
                 self.crsr.execute(query)
