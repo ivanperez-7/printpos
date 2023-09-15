@@ -33,7 +33,7 @@ def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
         return None
 
 
-def WarningDialog(*args):
+def _WarningDialog(*args):
     from utils.mywidgets import WarningDialog
     wdg = WarningDialog(*args)
 
@@ -70,7 +70,7 @@ class DatabaseManager:
             if not self.handle_exceptions:
                 raise err
             self.conn.rollback()
-            WarningDialog(self.error_txt, err.args[0])
+            _WarningDialog(self.error_txt, err.args[0])
             return False
     
     def executemany(self, query, parameters=None, commit=False):
@@ -86,7 +86,7 @@ class DatabaseManager:
             if not self.handle_exceptions:
                 raise err
             self.conn.rollback()
-            WarningDialog(self.error_txt, err.args[0])
+            _WarningDialog(self.error_txt, err.args[0])
             return False
     
     def fetchall(self, query, parameters=None) -> list[tuple]:
@@ -99,7 +99,7 @@ class DatabaseManager:
         except Error as err:
             if not self.handle_exceptions:
                 raise err
-            WarningDialog(self.error_txt, err.args[0])
+            _WarningDialog(self.error_txt, err.args[0])
             return None
     
     def fetchone(self, query, parameters=None) -> tuple:
@@ -112,7 +112,7 @@ class DatabaseManager:
         except Error as err:
             if not self.handle_exceptions:
                 raise err
-            WarningDialog(self.error_txt, err.args[0])
+            _WarningDialog(self.error_txt, err.args[0])
             return None
     
     @property
