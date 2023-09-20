@@ -337,7 +337,7 @@ class App_EditarCliente(Base_EditarCliente):
         nombre = cliente[1]
         celular = cliente[2].replace(' ', '')
         correo = cliente[3]
-        especial = bool(cliente[6])
+        especial = cliente[6]
         
         self.agregarDatosPorDefecto(nombre, celular, correo)
         

@@ -326,10 +326,8 @@ class App_EditarUsuario(Base_EditarUsuario):
     
     def cambiarTrigger(self, state):
         """ Indica si se desea cambiar la contraseña en la operación. """
-        enable = bool(state)
-        
-        self.ui.groupPsswd.setEnabled(enable)
-        self.ui.groupPsswdConf.setEnabled(enable)
+        self.ui.groupPsswd.setEnabled(state)
+        self.ui.groupPsswdConf.setEnabled(state)
     
     def ejecutarOperacion(self, params):
         manejador = ManejadorUsuarios(self.conn)
