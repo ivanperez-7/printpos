@@ -19,6 +19,8 @@ from utils.sql import ManejadorVentas
 
 __all__ = ['generarOrdenCompra', 'generarTicketPDF', 'generarCortePDF']
 
+stringify_float = lambda f: f'{int(f):,}' if f.is_integer() else f'{f:,.2f}'
+
 
 def generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
     """ Genera un PDF con el orden de compra correspondiente a 
@@ -79,8 +81,7 @@ def generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
                 prodPrecio, prodImporte) in enumerate(chunk):
             y_sep = -32.4 * i  # separador por renglón de la tabla
             
-            prodCantidad_str = f'{int(prodCantidad)}' if prodCantidad.is_integer() \
-                else f'{prodCantidad:,.2f}'
+            prodCantidad_str = stringify_float(prodCantidad)
             can.drawCentredString(49, 381 + y_sep, prodCantidad_str)
             can.drawCentredString(306, 381 + y_sep, f'{prodPrecio:,.2f}')
             can.drawCentredString(353, 381 + y_sep, f'{prodImporte:,.2f}')
@@ -166,7 +167,7 @@ def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float,
     
     for cantidad, nombre, precio, descuento, importe in productos:
         data.append([
-            f'{int(cantidad)}' if cantidad.is_integer() else f'{cantidad:,.2f}',
+            stringify_float(cantidad),
             Paragraph(nombre, styles['Center']),
             f'{precio:,.2f}',
             f'{descuento:,.2f}' if descuento > 0 else '',

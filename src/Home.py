@@ -193,7 +193,7 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
             self.all_prod = self.manejador.obtenerVista('View_Productos_Simples')
             self.all_gran = self.manejador.obtenerVista('View_Gran_Formato')
         
-        filtro = int(self.ui.btDescripcion.isChecked())
+        filtro = self.ui.btDescripcion.isChecked()
         txt_busqueda = self.ui.searchBar.text()
         
         # <tabla de productos normales>

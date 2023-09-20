@@ -479,7 +479,7 @@ class App_AgregarProducto(QtWidgets.QWidget):
         """ Actualiza la tabla y el contador de clientes.
             Acepta una cadena de texto para la búsqueda de clientes.
             También lee de nuevo la tabla de clientes, si se desea. """
-        filtro = int(self.ui.btDescripcion.isChecked())
+        filtro = self.ui.btDescripcion.isChecked()
         
         # <tabla de productos normales>
         tabla = self.ui.tabla_seleccionar
