@@ -45,15 +45,16 @@ class DatabaseManager:
         Todas las operaciones realizadas en esta clase y en clases derivadas
         pueden regresar `False` o `None` al ocurrir un error, por lo que siempre se 
         debe verificar el resultado obtenido para asegurar una correcta funcionalidad. """
+    
     def __init__(self, conn: Connection,
                        error_txt: str = None,
-                       handle_exceptions: bool = True):
+                       *, handle_exceptions: bool = True):
         if not isinstance(conn, Connection):
             raise Error("Tipo de conexión a DB no válido.")
         
-        self.conn = conn
-        self.error_txt = error_txt or '¡Acceso fallido a base de datos!'
-        self.handle_exceptions = handle_exceptions
+        self._conn = conn
+        self._error_txt = error_txt or '¡Acceso fallido a base de datos!'
+        self._handle_exceptions = handle_exceptions
         
         self.crsr: Cursor = conn.cursor()
     
@@ -64,13 +65,13 @@ class DatabaseManager:
             else:
                 self.crsr.execute(query, parameters)
             if commit:
-                self.conn.commit()
+                self._conn.commit()
             return True
         except Error as err:
-            if not self.handle_exceptions:
+            if not self._handle_exceptions:
                 raise err
-            self.conn.rollback()
-            _WarningDialog(self.error_txt, err.args[0])
+            self._conn.rollback()
+            _WarningDialog(self._error_txt, err.args[0])
             return False
     
     def executemany(self, query, parameters=None, commit=False):
@@ -80,13 +81,13 @@ class DatabaseManager:
             else:
                 self.crsr.executemany(query, parameters)
             if commit:
-                self.conn.commit()
+                self._conn.commit()
             return True
         except Error as err:
-            if not self.handle_exceptions:
+            if not self._handle_exceptions:
                 raise err
-            self.conn.rollback()
-            _WarningDialog(self.error_txt, err.args[0])
+            self._conn.rollback()
+            _WarningDialog(self._error_txt, err.args[0])
             return False
     
     def fetchall(self, query, parameters=None) -> list[tuple]:
@@ -97,9 +98,9 @@ class DatabaseManager:
                 self.crsr.execute(query, parameters)
             return self.crsr.fetchall()
         except Error as err:
-            if not self.handle_exceptions:
+            if not self._handle_exceptions:
                 raise err
-            _WarningDialog(self.error_txt, err.args[0])
+            _WarningDialog(self._error_txt, err.args[0])
             return None
     
     def fetchone(self, query, parameters=None) -> tuple:
@@ -110,9 +111,9 @@ class DatabaseManager:
                 self.crsr.execute(query, parameters)
             return self.crsr.fetchone()
         except Error as err:
-            if not self.handle_exceptions:
+            if not self._handle_exceptions:
                 raise err
-            _WarningDialog(self.error_txt, err.args[0])
+            _WarningDialog(self._error_txt, err.args[0])
             return None
     
     @property
@@ -147,9 +148,6 @@ class DatabaseManager:
 
 class ManejadorCaja(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Caja. """
-    
-    def __init__(self, conn: Connection, error_txt: str = None):
-        super().__init__(conn, error_txt)
     
     def obtenerMovimientos(self, inicio: QDate, final: QDate):
         """ Obtener historial completo de movimientos de caja.
@@ -188,9 +186,6 @@ class ManejadorCaja(DatabaseManager):
 
 class ManejadorClientes(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Clientes. """
-    
-    def __init__(self, conn: Connection, error_txt: str = None):
-        super().__init__(conn, error_txt)
     
     def obtenerTablaPrincipal(self):
         """ Sentencia para alimentar la tabla principal de clientes. """
@@ -286,9 +281,6 @@ class ManejadorClientes(DatabaseManager):
 
 class ManejadorInventario(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Inventario. """
-    
-    def __init__(self, conn: Connection, error_txt: str = None):
-        super().__init__(conn, error_txt)
     
     def obtenerTablaPrincipal(self):
         """ Sentencia para alimentar tabla principal de elementos. """
@@ -417,8 +409,6 @@ class ManejadorInventario(DatabaseManager):
 
 class ManejadorMetodosPago(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla metodos_pago. """
-    def __init__(self, conn: Connection):
-        super().__init__(conn)
     
     def obtenerIdMetodo(self, metodo: str):
         """ Obtener ID del método de pago dado su nombre. """
@@ -431,9 +421,6 @@ class ManejadorMetodosPago(DatabaseManager):
 
 class ManejadorProductos(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Inventario. """
-    
-    def __init__(self, conn: Connection, error_txt: str = None):
-        super().__init__(conn, error_txt)
     
     def obtenerTablaPrincipal(self):
         """ Sentencia para alimentar tabla principal de productos. """
@@ -686,15 +673,11 @@ class ManejadorProductos(DatabaseManager):
 class ManejadorReportes(DatabaseManager):
     """ Clase con diversas consultas específicas para el módulo de reportes. """
     
-    def __init__(self, conn: Connection, error_txt: str = None):
-        super().__init__(conn, error_txt)
+    pass
 
 
 class ManejadorVentas(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Ventas. """
-    
-    def __init__(self, conn: Connection, error_txt: str = None):
-        super().__init__(conn, error_txt)
     
     def tablaVentas(self, inicio: QDate = QDate.currentDate(),
                     final: QDate = QDate.currentDate(),
@@ -978,7 +961,7 @@ class ManejadorVentas(DatabaseManager):
         """ Inserta pago de venta a tabla ventas_pagos.
         
             No hace `commit`, a menos que se indique lo contrario. """
-        id_metodo = ManejadorMetodosPago(self.conn).obtenerIdMetodo(metodo)
+        id_metodo = ManejadorMetodosPago(self._conn).obtenerIdMetodo(metodo)
         
         return self.execute('''
             INSERT INTO ventas_pagos (
@@ -1004,7 +987,7 @@ class ManejadorVentas(DatabaseManager):
         if importe <= 0.:
             return True
         
-        manejador = ManejadorProductos(self.conn)
+        manejador = ManejadorProductos(self._conn)
         id_producto = manejador.obtenerIdProducto('COMISION')
         
         params = (id_ventas, id_producto, importe,
@@ -1022,11 +1005,6 @@ class ManejadorVentas(DatabaseManager):
 
 class ManejadorUsuarios(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Usuarios. """
-    
-    def __init__(self, conn: Connection,
-                       error_txt: str = None,
-                       handle_exceptions: bool = True):
-        super().__init__(conn, error_txt, handle_exceptions)
     
     def obtenerTablaPrincipal(self):
         """ Obtener tabla principal para el módulo de administrar usuarios. """
