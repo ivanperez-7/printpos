@@ -237,7 +237,7 @@ class NumberEdit(QtWidgets.QLineEdit):
         
         # validadores para datos numéricos
         self.setValidator(
-            QRegularExpressionValidator(r'\d*\.?\d{0,2}'))
+            QRegularExpressionValidator(r'\d{1,15}\.?\d{0,2}'))
     
     def bloquear(self, monto):
         self.cantidad = monto
