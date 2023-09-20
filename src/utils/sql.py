@@ -205,18 +205,18 @@ class ManejadorClientes(DatabaseManager):
         ''')
     
     @overload
-    def obtenerCliente(self, id_cliente: int) -> tuple: ...
+    def obtenerCliente(self, id_cliente) -> tuple: ...
     @overload
     def obtenerCliente(self, nombre: str, telefono: str) -> tuple: ...
     
-    def obtenerCliente(self, *args, **kwargs):
+    def obtenerCliente(self, *args):
         """ Obtener todos los datos de un cliente. """
         if len(args) == 2 and all(isinstance(arg, str) for arg in args):
             query = ''' SELECT  * 
                         FROM    Clientes 
                         WHERE   nombre = ? 
                                 AND telefono = ?; '''
-        elif len(args) == 1 and isinstance(args[0], int):
+        elif len(args) == 1:
             query = ''' SELECT  * 
                         FROM    Clientes 
                         WHERE   id_clientes = ?; '''

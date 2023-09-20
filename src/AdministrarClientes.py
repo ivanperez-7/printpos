@@ -173,7 +173,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
         if not selected or selected[0].text() == '1':
             return
         
-        widget = App_EditarCliente(self, int(selected[0].text()))
+        widget = App_EditarCliente(self, selected[0].text())
         widget.success.connect(
             lambda: self.update_display(rescan=True))
     
@@ -258,6 +258,8 @@ class Base_EditarCliente(QtWidgets.QWidget):
     
     def agregarDatosPorDefecto(self, nombre: str, celular: str, correo: str):
         """ Datos por defecto, proveído por ambas clases heredadas. """
+        if correo and correo.startswith('N/A'):
+            correo = ''
         celular = celular.replace(' ', '')
         
         self.ui.txtNombre.setText(nombre)
@@ -274,7 +276,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
                                            self.ui.txtCorreo.text(),
                                            self.ui.txtDireccion.toPlainText(),
                                            self.ui.txtRFC.text(),
-                                           int(self.ui.checkDescuentos.isChecked()),
+                                           self.ui.checkDescuentos.isChecked(),
                                            self.ui.txtDescuentos.toPlainText()
                                        ))
         
