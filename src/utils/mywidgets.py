@@ -268,33 +268,32 @@ class LabelAdvertencia(QtWidgets.QLabel):
     def __init__(self, parent: QtWidgets.QTableWidget, msj: str):
         super().__init__(parent)
         
-        self._parent = parent
+        self.parent = parent
         self.msj = msj
-        
-        self.setMinimumSize(QSize(282, 52))
         
         font = QFont()
         font.setPointSize(14)
-        
+        self.setMinimumSize(282, 52)
         self.setFont(font)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.actualizarLabel()
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        
+        self.actualizarLabel()
         
         parent.resizeEvent = self.relocate
         parent.model().rowsInserted.connect(self.actualizarLabel)
         parent.model().rowsRemoved.connect(self.actualizarLabel)
     
     def relocate(self, event):
-        w_t, h_t = self._parent.width(), self._parent.height()
+        w_t, h_t = self.parent.width(), self.parent.height()
         pm_x = (w_t - self.width()) // 2
         pm_y = (h_t - self.height()) // 2
         
         self.move(pm_x, pm_y)
-        QtWidgets.QTableWidget.resizeEvent(self._parent, event)
+        QtWidgets.QTableWidget.resizeEvent(self.parent, event)
     
     def actualizarLabel(self):
-        self.setText(self.msj if not self._parent.rowCount() else '')
+        self.setText(self.msj if not self.parent.rowCount() else '')
 
 
 class WarningDialog(QtWidgets.QMessageBox):
