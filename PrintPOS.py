@@ -46,9 +46,9 @@ class PrintPOS(QApplication):
     
     def instalarTraductor(self):
         """ Instala traductor para idioma español. """
-        self._translator = QTranslator()
-        self._translator.load('qtbase_es.qm', directory='resources/translations')
-        return self.installTranslator(self._translator)
+        tr = QTranslator(self)
+        tr.load('qtbase_es.qm', directory='resources/translations')
+        return self.installTranslator(tr)
     
     def __call__(self):
         return self.iniciar()

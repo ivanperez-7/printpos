@@ -256,20 +256,16 @@ class App_Caja(QtWidgets.QWidget):
 
 class Dialog_Registrar(QtWidgets.QDialog):
     def __init__(self, parent: App_Caja, egreso=False):
-        from PySide6 import QtCore, QtGui
+        from PySide6 import QtCore
         
         super().__init__(parent)
         
         self.egreso = egreso  # es egreso o no
-        
         self.conn = parent.conn
         self.user = parent.user
-        self.parent_ = parent
         
-        if egreso:
-            self.setWindowTitle("Registrar egreso")
-        else:
-            self.setWindowTitle("Registrar ingreso")
+        ttl = 'Registrar ' + ('egreso' if egreso else 'ingreso')
+        self.setWindowTitle(ttl)
         
         self.setFixedSize(525, 160)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
@@ -354,7 +350,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         self.show()
     
     def accept(self):
-        if self.monto == 0. or not self.motivo:
+        if self.monto == 0 or not self.motivo:
             return
         
         id_metodo = ManejadorMetodosPago(self.conn).obtenerIdMetodo(self.metodo)
@@ -373,7 +369,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         QtWidgets.QMessageBox.information(
             self, 'Éxito', '¡Movimiento registrado!')
         
-        self.parent_.update_display()
+        self.parentWidget().update_display()
         self.close()
     
     @property
