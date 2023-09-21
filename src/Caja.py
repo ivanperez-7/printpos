@@ -68,19 +68,19 @@ class Caja:
         """ Regresa lista de movimientos que son egresos. """
         return filter(lambda m: not m.esIngreso, self.movimientos)
     
-    def __total(self, _iter: list[Movimiento], metodo: str = None):
+    def _total(self, _iter: list[Movimiento], metodo: str = None):
         if metodo:
             _iter = filter(lambda m: m.metodo.startswith(metodo), _iter)
         return Moneda.sum(m.monto for m in _iter)
     
     def totalIngresos(self, metodo: str = None):
-        return self.__total(self.todoIngresos(), metodo)
+        return self._total(self.todoIngresos(), metodo)
     
     def totalEgresos(self, metodo: str = None):
-        return self.__total(self.todoEgresos(), metodo)
+        return self._total(self.todoEgresos(), metodo)
     
     def totalCorte(self, metodo: str = None):
-        return self.__total(self.movimientos, metodo)
+        return self._total(self.movimientos, metodo)
 
 
 #####################

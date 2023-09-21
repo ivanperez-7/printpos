@@ -121,13 +121,15 @@ class Venta:
             precioNormal = manejador.obtenerPrecioSimple(
                 productos[0].id, productosNormal + productosDuplex, False)
             
-            if not precioNormal: continue
+            if precioNormal is None:
+                continue
             
             precioDuplex = manejador.obtenerPrecioSimple(
                 productos[0].id, productosDuplex, True)
             nuevoPrecio = min(precioNormal, precioDuplex or precioNormal)
             
-            for p in productos: p.precio_unit = nuevoPrecio
+            for p in productos:
+                p.precio_unit = nuevoPrecio
     
     def obtenerGruposProductos(self) -> list[list[ItemVenta]]:
         """ Obtiene una lista con listas de productos, separadas por identificador. """
