@@ -2,7 +2,7 @@
     Inicia una QApplication y abre la ventana de iniciar sesión. """
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTranslator
-from PySide6.QtGui import QPalette, QColor
+from PySide6.QtGui import QPalette, Qt
 
 from Login import App_Login
 
@@ -26,21 +26,17 @@ class PrintPOS(QApplication):
     
     def configurarPaleta(self):
         """ Configura paleta y estilo de la aplicación. """
-        BLANCO = QColor(255, 255, 255)
-        NEGRO = QColor(0, 0, 0)
-        GRIS = QColor(128, 128, 128)
-        
         palette = self.palette()
         CR = QPalette.ColorRole
         
-        palette.setColor(CR.Window, QColor(245, 245, 245))  # color de ventana -> gris claro
-        palette.setColor(CR.WindowText, NEGRO)  # texto de ventana -> negro
-        palette.setColor(CR.Base, BLANCO)  # color base -> blanco
-        palette.setColor(CR.AlternateBase, BLANCO)  # color alternativo base -> blanco
-        palette.setColor(CR.Text, NEGRO)  # color de texto -> negro
-        palette.setColor(CR.Button, BLANCO)  # botones -> blanco
-        palette.setColor(CR.ButtonText, NEGRO)  # texto de botones -> negro
-        palette.setColor(CR.PlaceholderText, GRIS)  # texto placeholder -> gris
+        palette.setColor(CR.Window, 0xF5F5F5)  # color de ventana -> gris claro
+        palette.setColor(CR.WindowText, Qt.black)  # texto de ventana -> negro
+        palette.setColor(CR.Base, Qt.white)  # color base -> blanco
+        palette.setColor(CR.AlternateBase, Qt.white)  # color alternativo base -> blanco
+        palette.setColor(CR.Text, Qt.black)  # color de texto -> negro
+        palette.setColor(CR.Button, Qt.white)  # botones -> blanco
+        palette.setColor(CR.ButtonText, Qt.black)  # texto de botones -> negro
+        palette.setColor(CR.PlaceholderText, 0x808080)  # texto placeholder -> gris
         
         self.setPalette(palette)
     
