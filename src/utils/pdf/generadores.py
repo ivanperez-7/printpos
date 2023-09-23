@@ -11,7 +11,6 @@ from PyPDF2 import PdfReader, PdfWriter
 from PySide6.QtCore import QDateTime
 
 from Caja import Caja
-from Login import Usuario
 from utils.moneda import Moneda
 from utils.myutils import *
 from utils.sql import ManejadorVentas
@@ -272,7 +271,7 @@ def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float,
     return buffer
 
 
-def generarCortePDF(caja: Caja, user: Usuario):
+def generarCortePDF(caja: Caja, responsable: str):
     """ Función para generar el corte de caja, comprendido entre fechas dadas.
         Contiene:
             - Realizado el: (fecha)
@@ -323,7 +322,7 @@ def generarCortePDF(caja: Caja, user: Usuario):
         Paragraph('Resumen de movimientos de caja', styles['Heading1']),
         Spacer(1, 6),
         
-        Paragraph('Realizado por: ' + user.nombre, styles['Left']),
+        Paragraph('Realizado por: ' + responsable, styles['Left']),
         Paragraph('Fecha y hora: ' + formatDate(), styles['Left']),
         Spacer(1, 6),
         

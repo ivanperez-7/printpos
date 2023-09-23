@@ -164,8 +164,8 @@ class ImpresoraTickets(ImpresoraPDF):
         self.enviarAImpresora(data)
     
     @run_in_thread
-    def imprimirCorteCaja(self, caja: Caja, user: Usuario):
+    def imprimirCorteCaja(self, caja: Caja, responsable: str):
         """ Genera un ticket para el presupuesto de una compra. """
         self.verificarImpresora()
-        data = generarCortePDF(caja, user)
+        data = generarCortePDF(caja, responsable)
         self.enviarAImpresora(data)

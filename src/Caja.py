@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import overload
+from typing import overload, Iterable
 
 from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QDateTime
@@ -60,24 +60,26 @@ class Caja:
         else:
             raise TypeError('Lista debe ser de tuplas o Movimiento.')
     
+    @property
     def todoIngresos(self):
         """ Regresa lista de movimientos que son ingresos. """
         return filter(lambda m: m.esIngreso, self.movimientos)
     
+    @property
     def todoEgresos(self):
         """ Regresa lista de movimientos que son egresos. """
         return filter(lambda m: not m.esIngreso, self.movimientos)
     
-    def _total(self, _iter: list[Movimiento], metodo: str = None):
+    def _total(self, _iter: Iterable[Movimiento], metodo: str = None):
         if metodo:
             _iter = filter(lambda m: m.metodo.startswith(metodo), _iter)
         return Moneda.sum(m.monto for m in _iter)
     
     def totalIngresos(self, metodo: str = None):
-        return self._total(self.todoIngresos(), metodo)
+        return self._total(self.todoIngresos, metodo)
     
     def totalEgresos(self, metodo: str = None):
-        return self._total(self.todoEgresos(), metodo)
+        return self._total(self.todoEgresos, metodo)
     
     def totalCorte(self, metodo: str = None):
         return self._total(self.movimientos, metodo)
@@ -170,7 +172,7 @@ class App_Caja(QtWidgets.QWidget):
         self.ui.lbIngresosTransferencia.setText(
             'Transferencias bancarias: ${}'.format(movimientos.totalIngresos('Transferencia')))
         
-        for row, movimiento in enumerate(movimientos.todoIngresos()):
+        for row, movimiento in enumerate(movimientos.todoIngresos):
             tabla.insertRow(row)
             
             for col, dato in enumerate(movimiento):
@@ -204,7 +206,7 @@ class App_Caja(QtWidgets.QWidget):
         self.ui.lbEgresosTransferencia.setText(
             'Transferencias bancarias: ${}'.format(-movimientos.totalEgresos('Transferencia')))
         
-        for row, movimiento in enumerate(movimientos.todoEgresos()):
+        for row, movimiento in enumerate(movimientos.todoEgresos):
             tabla.insertRow(row)
             
             for col, dato in enumerate(movimiento):
@@ -225,13 +227,13 @@ class App_Caja(QtWidgets.QWidget):
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           'Se procederá a imprimir el corte de caja entre '
-                          'las fechas proporcionadas. \n¿Desea continuar?')
+                          'las fechas proporcionadas.\n¿Desea continuar?')
         
         if ret == qm.Yes:
             from utils.pdf import ImpresoraTickets
             
             impresora = ImpresoraTickets(self)
-            impresora.imprimirCorteCaja(self.all_movimientos, self.user)
+            impresora.imprimirCorteCaja(self.all_movimientos, self.user.nombre)
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
