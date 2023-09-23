@@ -206,7 +206,7 @@ class App_CrearVenta(QtWidgets.QWidget):
         self.ui.btDescuentosCliente.hide()
         
         self.ui.tabla_productos.quitarBordeCabecera()
-        self.ui.tabla_productos.cambiarColorCabecera(QColor(Qt.black))
+        self.ui.tabla_productos.cambiarColorCabecera(Qt.black)
         self.ui.tabla_productos.configurarCabecera(
             lambda col: col != 2,
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
@@ -795,7 +795,7 @@ class App_AgregarDescuento(QtWidgets.QWidget):
             FabricaValidadores.NumeroDecimal)
         
         self.ui.tabla_productos.quitarBordeCabecera()
-        self.ui.tabla_productos.cambiarColorCabecera(QColor(Qt.black))
+        self.ui.tabla_productos.cambiarColorCabecera(Qt.black)
         self.ui.tabla_productos.configurarCabecera(
             lambda col: col != 2,
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)

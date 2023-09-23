@@ -198,10 +198,11 @@ class TablaDatos(QtWidgets.QTableWidget):
         borde = 'QHeaderView::section {border: 0px;}'
         self.setStyleSheet(qs + borde)
     
-    def cambiarColorCabecera(self, color: QColor):
+    def cambiarColorCabecera(self, color):
         qs = self.styleSheet()
-        color = 'QHeaderView::section {{ background-color: {} }};'.format(color.name())
-        self.setStyleSheet(qs + color)
+        color = QColor(color)
+        color_qs = 'QHeaderView::section {{ background-color: {} }};'.format(color.name())
+        self.setStyleSheet(qs + color_qs)
     
     def configurarCabecera(self, resize_cols: Callable[[int], bool] = None,
                            align_flags=None):
