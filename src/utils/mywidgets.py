@@ -128,7 +128,8 @@ class StackPagos(QtWidgets.QStackedWidget):
     
     @property
     def widgetsPago(self) -> Iterator[WidgetPago]:
-        yield from [self.widget(i) for i in range(self.count())]
+        for i in range(self.count()):
+            yield self.widget(i)
     
     @property
     def totalEnEfectivo(self):
