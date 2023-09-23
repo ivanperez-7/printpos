@@ -1,5 +1,5 @@
 """ Módulo con widgets personalizados varios. """
-from typing import Callable
+from typing import Callable, Iterator
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import *
@@ -127,8 +127,8 @@ class StackPagos(QtWidgets.QStackedWidget):
             self.removeWidget(self.currentWidget())
     
     @property
-    def widgetsPago(self) -> list[WidgetPago]:
-        return [self.widget(i) for i in range(self.count())]
+    def widgetsPago(self) -> Iterator[WidgetPago]:
+        yield from [self.widget(i) for i in range(self.count())]
     
     @property
     def totalEnEfectivo(self):

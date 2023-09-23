@@ -1,5 +1,6 @@
 import copy
 from dataclasses import dataclass, field
+from typing import Iterator
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QColor
@@ -131,15 +132,15 @@ class Venta:
             for p in productos:
                 p.precio_unit = nuevoPrecio
     
-    def obtenerGruposProductos(self) -> list[list[ItemVenta]]:
-        """ Obtiene una lista con listas de productos, separadas por identificador. """
+    def obtenerGruposProductos(self) -> Iterator[list[ItemVenta]]:
+        """ Obtiene un generador con listas de productos, separadas por identificador. """
         out = dict()
         for prod in self.productos:
             try:
                 out[prod.id].append(prod)
             except KeyError:
                 out[prod.id] = [prod]
-        return out.values()
+        yield from out.values()
     
     def __iter__(self):
         yield from self.productos

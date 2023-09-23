@@ -68,7 +68,7 @@ def unidecode(input_str: str):
     """ Elimina (normaliza) los acentos en una cadena de texto y 
         convierte a minúsculas. Ejemplo: 'Pérez' -> 'perez'. """
     nfkd_form = unicodedata.normalize('NFKD', input_str)
-    normalized = u''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+    normalized = u''.join(c for c in nfkd_form if not unicodedata.combining(c))
     return normalized.lower()
 
 
@@ -92,11 +92,11 @@ def contiene_duplicados(lista: list):
 def formatDate(date = None):
     """ Da formato en texto a un dato QDateTime o datetime de Python.
         Ejemplo: 08 de febrero 2023, 4:56 p. m. """
-    if not date:
+    if date is None:
         date = QDateTime.currentDateTime()
-    
     locale = QLocale(QLocale.Spanish, QLocale.Mexico)
-    return locale.toString(date, "d 'de' MMMM yyyy, h:mm ap")
+    formatted = locale.toString(date, "d 'de' MMMM yyyy, h:mm ap")
+    return unicodedata.normalize('NFKD', formatted)
 
 
 def leer_config():
