@@ -3,10 +3,9 @@ from dataclasses import dataclass, field
 from typing import Iterator
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import QColor
 from PySide6.QtCore import QDate, QDateTime, Qt
 
-from utils.moneda import Moneda
+from utils import Moneda
 from utils.mydecorators import con_fondo, requiere_admin
 from utils.myutils import *
 from utils.mywidgets import DimBackground, LabelAdvertencia, SpeechBubble, VentanaPrincipal

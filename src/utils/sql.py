@@ -5,7 +5,7 @@ from typing import overload, TypeAlias
 import fdb
 from PySide6.QtCore import QDate
 
-from utils.moneda import Moneda
+from utils import Moneda
 from utils.myutils import leer_config
 
 
