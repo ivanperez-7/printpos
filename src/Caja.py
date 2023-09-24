@@ -6,7 +6,7 @@ from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QDateTime
 from PySide6.QtGui import QFont
 
-from utils.moneda import Moneda
+from utils import Moneda
 from utils.myinterfaces import InterfazFechas
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal

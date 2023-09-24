@@ -6,8 +6,7 @@ from PySide6.QtGui import *
 from PySide6.QtCore import *
 
 from Login import Usuario
-from utils.moneda import Moneda
-from utils import sql
+from utils import Moneda, sql
 
 
 __all__ = ['VentanaPrincipal', 'DimBackground', 'WidgetPago', 

@@ -11,7 +11,7 @@ from PyPDF2 import PdfReader, PdfWriter
 from PySide6.QtCore import QDateTime
 
 from Caja import Caja
-from utils.moneda import Moneda
+from utils import Moneda
 from utils.myutils import *
 from utils.sql import ManejadorVentas
 
