@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt, Signal
+import PySide6.QtGui
 
 from utils.mydecorators import run_in_thread
 from utils.myutils import FabricaValidadores
@@ -63,8 +64,8 @@ class App_Login(QtWidgets.QWidget):
         
         self.show()
     
-    def keyPressEvent(self, qKeyEvent):
-        if qKeyEvent.key() in {Qt.Key_Return, Qt.Key_Enter} and not self.lock:
+    def keyPressEvent(self, event):
+        if event.key() in {Qt.Key_Return, Qt.Key_Enter} and not self.lock:
             self.verificar_info()
 
     # ==================

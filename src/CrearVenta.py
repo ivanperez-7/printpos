@@ -148,6 +148,8 @@ class Venta:
 #####################
 # VENTANA PRINCIPAL #
 #####################
+ventaDatos: Venta = ...
+
 class App_CrearVenta(QtWidgets.QWidget):
     """ Backend para la función de crear ventas.
         TODO:
@@ -164,7 +166,8 @@ class App_CrearVenta(QtWidgets.QWidget):
         LabelAdvertencia(self.ui.tabla_productos, '¡Aún no hay productos!')
         
         # VARIABLE DE LA VENTA ACTIVA ACTUAL
-        self.ventaDatos = Venta()
+        global ventaDatos
+        ventaDatos = Venta()
         
         # guardar conexión y usuarios como atributos
         self.conn = parent.conn
@@ -176,12 +179,12 @@ class App_CrearVenta(QtWidgets.QWidget):
         
         # datos por defecto
         self.ui.txtVendedor.setText(self.user.nombre)
-        self.ui.lbFecha.setText(formatDate(self.ventaDatos.fechaEntrega))
+        self.ui.lbFecha.setText(formatDate(ventaDatos.fechaEntrega))
         self.ui.btDeshacer.setVisible(False)
         
         # crear eventos para los botones
-        self.ui.btCalendario.clicked.connect(self.cambiarFecha)
-        self.ui.btAgregar.clicked.connect(self.agregarProducto)
+        self.ui.btCalendario.clicked.connect(lambda: App_FechaEntrega(self))
+        self.ui.btAgregar.clicked.connect(lambda: App_AgregarProducto(self))
         self.ui.btEliminar.clicked.connect(self.quitarProducto)
         self.ui.btRegresar.clicked.connect(self.goHome)
         
@@ -194,9 +197,9 @@ class App_CrearVenta(QtWidgets.QWidget):
         
         self.ui.tabla_productos.itemChanged.connect(self.item_changed)
         self.ui.btRegistrar.clicked.connect(self.insertarCliente)
-        self.ui.btSeleccionar.clicked.connect(self.seleccionarCliente)
+        self.ui.btSeleccionar.clicked.connect(lambda: App_SeleccionarCliente(self))
         self.ui.btDescuento.clicked.connect(
-            lambda: self.agregarDescuento() if not self.ventaDatos.ventaVacia else None)
+            lambda: self.agregarDescuento() if not ventaDatos.ventaVacia else None)
         self.ui.btDescuentosCliente.clicked.connect(self.dialogoDescuentos.alternarDescuentos)
         self.ui.btDeshacer.clicked.connect(self.deshacerFechaEntrega)
         self.ui.btCotizacion.clicked.connect(self.generarCotizacion)
@@ -218,7 +221,7 @@ class App_CrearVenta(QtWidgets.QWidget):
     # ==================
     def item_changed(self, item: QtWidgets.QTableWidgetItem):
         if item.column() == 2:
-            self.ventaDatos.productos[item.row()].notas = item.text()
+            ventaDatos.productos[item.row()].notas = item.text()
     
     def establecerCliente(self, nombre: str, telefono: str, correo: str):
         """ Atajo para modificar datos del cliente seleccionado. """
@@ -229,12 +232,12 @@ class App_CrearVenta(QtWidgets.QWidget):
     def actualizarLabelFecha(self):
         """ Actualizar widget de fecha de entrega:
             label y botón de deshacer. """
-        self.ui.lbFecha.setText(formatDate(self.ventaDatos.fechaEntrega))
-        self.ui.btDeshacer.setVisible(not self.ventaDatos.esVentaDirecta)
+        self.ui.lbFecha.setText(formatDate(ventaDatos.fechaEntrega))
+        self.ui.btDeshacer.setVisible(not ventaDatos.esVentaDirecta)
     
     def deshacerFechaEntrega(self):
         """ Deshacer cambio de fecha de entrega. """
-        self.ventaDatos.fechaEntrega = QDateTime(self.ventaDatos.fechaCreacion)
+        ventaDatos.fechaEntrega = QDateTime(ventaDatos.fechaCreacion)
         self.actualizarLabelFecha()
     
     def colorearActualizar(self):
@@ -244,7 +247,7 @@ class App_CrearVenta(QtWidgets.QWidget):
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
         
-        for row, prod in enumerate(self.ventaDatos):
+        for row, prod in enumerate(ventaDatos):
             tabla.insertRow(row)
             
             for col, dato in enumerate(prod):
@@ -267,27 +270,19 @@ class App_CrearVenta(QtWidgets.QWidget):
         # </llenar tabla>
         
         # <calcular precios y mostrar>
-        preciosConIVA = self.ventaDatos.total
+        preciosConIVA = ventaDatos.total
         preciosSinIVA = preciosConIVA / 1.16
         impuestos = preciosConIVA - preciosSinIVA
         
         self.ui.lbTotal.setText(f'{preciosConIVA}')
         self.ui.lbSubtotal.setText(f'{preciosSinIVA}')
         self.ui.lbImpuestos.setText(f'{impuestos}')
-        self.ui.lbDescuento.setText(f'{self.ventaDatos.total_descuentos}')
+        self.ui.lbDescuento.setText(f'{ventaDatos.total_descuentos}')
         # </calcular precios y mostrar>
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
-    def cambiarFecha(self):
-        """ Abre ventana para cambiar la fecha de entrega. """
-        modulo = App_FechaEntrega(self)
-    
-    def seleccionarCliente(self):
-        """ Abre ventana para seleccionar un cliente de la base de datos. """
-        modulo = App_SeleccionarCliente(self)
-    
     def insertarCliente(self):
         """ Abre ventana para registrar un cliente. """
         from AdministrarClientes import App_RegistrarCliente
@@ -299,10 +294,6 @@ class App_CrearVenta(QtWidgets.QWidget):
             correo=self.ui.txtCorreo.text()
         )
         modulo.success.connect(self.establecerCliente)
-    
-    def agregarProducto(self):
-        """ Abre ventana para agregar un producto a la orden. """
-        modulo = App_AgregarProducto(self)
     
     def quitarProducto(self):
         """ Pide confirmación para eliminar un producto de la tabla. """
@@ -321,9 +312,9 @@ class App_CrearVenta(QtWidgets.QWidget):
     def _quitarProducto(self, selected, conn):
         """ En método separado para solicitar contraseña. """
         for row in sorted(selected, reverse=True):
-            self.ventaDatos.quitarProducto(row)
+            ventaDatos.quitarProducto(row)
         
-        self.ventaDatos.reajustarPrecios(self.conn)
+        ventaDatos.reajustarPrecios(self.conn)
         self.colorearActualizar()
     
     @requiere_admin
@@ -333,58 +324,52 @@ class App_CrearVenta(QtWidgets.QWidget):
     
     def generarCotizacion(self):
         """ Genera PDF con cotización de la orden actual. """
-        if not self.ventaDatos.ventaVacia:
+        if not ventaDatos.ventaVacia:
             modulo = App_EnviarCotizacion(self)
     
     def verificarCliente(self):
-        qm = QtWidgets.QMessageBox
-        
         # se confirma si existe el cliente en la base de datos
         manejador = ManejadorClientes(self.conn)
         
         nombre = self.ui.txtCliente.text().strip()
         telefono = self.ui.txtTelefono.text().strip()
-        
         cliente = manejador.obtenerCliente(nombre, telefono)
         
+        warning = lambda txt: QtWidgets.QMessageBox.warning(self, '¡Atención!', txt)
+        
         if not cliente:
-            qm.warning(self, '¡Atención!',
-                       'No se encontró el cliente en la base de datos.\n'
-                       'Por favor, regístrelo como un nuevo cliente o seleccione "Público general".')
+            warning('No se encontró el cliente en la base de datos.\n'
+                    'Por favor, regístrelo como un nuevo cliente o seleccione "Público general".')
             return
         
         # indices para acceder a la tupla `cliente`
         id, nombre, telefono, correo, direccion, rfc = range(6)
         
-        if not self.ventaDatos.esVentaDirecta \
-                and cliente[nombre] == 'Público general':
-            qm.warning(self, '¡Atención!',
-                       'No se puede generar un pedido a nombre de "Público general".\n'
-                       'Por favor, seleccione un cliente y/o regístrelo.')
+        if not ventaDatos.esVentaDirecta and cliente[nombre] == 'Público general':
+            warning('No se puede generar un pedido a nombre de "Público general".\n'
+                    'Por favor, seleccione un cliente y/o regístrelo.')
             return
         
         if self.ui.tickFacturaSi.isChecked():
             if cliente[nombre] == 'Público general':
-                qm.warning(self, '¡Atención!',
-                           'No se puede generar una factura a nombre de "Público general".\n'
-                           'Por favor, verifique que los datos del cliente sean correctos.')
+                warning('No se puede generar una factura a nombre de "Público general".\n'
+                        'Por favor, verifique que los datos del cliente sean correctos.')
                 return
             
-            if not (cliente[correo] and cliente[direccion] and cliente[rfc]):
+            if not all((cliente[correo], cliente[direccion], cliente[rfc])):
                 from AdministrarClientes import App_EditarCliente
                 
                 modulo = App_EditarCliente(self, cliente[id])
                 modulo.success.connect(self.establecerCliente)
                 
-                qm.warning(self, '¡Atención!',
-                           'El cliente no tiene completos sus datos para la factura.\n'
-                           'Por favor, llene los datos como corresponde.')
+                warning('El cliente no tiene completos sus datos para la factura.\n'
+                        'Por favor, llene los datos como corresponde.')
                 return
         return cliente[id]
     
     def confirmarVenta(self):
         """ Abre ventana para confirmar y terminar la venta. """
-        if self.ventaDatos.ventaVacia \
+        if ventaDatos.ventaVacia \
                 or (id_cliente := self.verificarCliente()) is None:
             return
         
@@ -395,12 +380,12 @@ class App_CrearVenta(QtWidgets.QWidget):
         if ret != qm.Yes:
             return
         
-        self.ventaDatos.id_cliente = id_cliente
-        self.ventaDatos.requiereFactura = self.ui.tickFacturaSi.isChecked()
-        self.ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
+        ventaDatos.id_cliente = id_cliente
+        ventaDatos.requiereFactura = self.ui.tickFacturaSi.isChecked()
+        ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
         
         bg = DimBackground(self)
-        modulo = App_ConfirmarVenta(self, self.ventaDatos)
+        modulo = App_ConfirmarVenta(self)
     
     @requiere_admin
     def goHome(self, conn):
@@ -466,8 +451,8 @@ class App_AgregarProducto(QtWidgets.QWidget):
     def showEvent(self, event):
         self.update_display()
     
-    def keyPressEvent(self, qKeyEvent):
-        if qKeyEvent.key() in {Qt.Key_Return, Qt.Key_Enter}:
+    def keyPressEvent(self, event):
+        if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
             self.done()
     
     # ==================
@@ -537,8 +522,8 @@ class App_AgregarProducto(QtWidgets.QWidget):
         if item is None:
             return
         
-        self.first.ventaDatos.agregarProducto(item)
-        self.first.ventaDatos.reajustarPrecios(self.conn)
+        ventaDatos.agregarProducto(item)
+        ventaDatos.reajustarPrecios(self.conn)
         self.first.colorearActualizar()
         self.close()
     
@@ -664,8 +649,8 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
     def showEvent(self, event):
         self.update_display()
     
-    def keyPressEvent(self, qKeyEvent):
-        if qKeyEvent.key() in {Qt.Key_Return, Qt.Key_Enter}:
+    def keyPressEvent(self, event):
+        if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
             self.done()
     
     # ==================
@@ -738,7 +723,7 @@ class App_FechaEntrega(QtWidgets.QWidget):
         self.first = first
         
         # datos por defecto
-        fechaEntrega = first.ventaDatos.fechaEntrega
+        fechaEntrega = ventaDatos.fechaEntrega
         self.ui.calendario.setSelectedDate(fechaEntrega.date())
         self.ui.horaEdit.setTime(fechaEntrega.time())
         
@@ -752,8 +737,8 @@ class App_FechaEntrega(QtWidgets.QWidget):
         
         self.show()
     
-    def keyPressEvent(self, qKeyEvent):
-        if qKeyEvent.key() in {Qt.Key_Return, Qt.Key_Enter}:
+    def keyPressEvent(self, event):
+        if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
             self.done()
     
     def done(self):
@@ -763,9 +748,8 @@ class App_FechaEntrega(QtWidgets.QWidget):
             self.ui.calendario.selectedDate(),
             self.ui.horaEdit.time())
         
-        self.first.ventaDatos.fechaEntrega = dateTime
+        ventaDatos.fechaEntrega = dateTime
         self.first.actualizarLabelFecha()
-        
         self.close()
 
 
@@ -804,8 +788,8 @@ class App_AgregarDescuento(QtWidgets.QWidget):
     def showEvent(self, event):
         self.update_display()
     
-    def keyPressEvent(self, qKeyEvent):
-        if qKeyEvent.key() in {Qt.Key_Return, Qt.Key_Enter}:
+    def keyPressEvent(self, event):
+        if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
             self.done()
     
     # ================ #
@@ -816,7 +800,7 @@ class App_AgregarDescuento(QtWidgets.QWidget):
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
         
-        self.productosVenta = self.first.ventaDatos.productos
+        self.productosVenta = ventaDatos.productos
         
         for row, prod in enumerate(self.productosVenta):
             tabla.insertRow(row)
@@ -898,7 +882,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
             '-------------------------------------------'
         ]
         
-        for prod in self.first.ventaDatos.productos:
+        for prod in ventaDatos.productos:
             mensaje.extend([
                 f'{prod.nombre_ticket} || {prod.cantidad} unidades',
                 f'Importe: ${prod.importe:,.2f}',
@@ -915,7 +899,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
     def imprimirTicket(self):
         productos = [(prod.cantidad, prod.nombre_ticket, prod.precio_unit,
                       prod.descuento_unit, prod.importe)
-                     for prod in self.first.ventaDatos.productos]
+                     for prod in ventaDatos.productos]
         
         vendedor = self.first.ui.txtVendedor.text()
         
@@ -930,7 +914,7 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
     COMISION_DEBITO = 1.98
     COMISION_CREDITO = 3.16
     
-    def __init__(self, first: App_CrearVenta, ventaDatos: Venta):
+    def __init__(self, first: App_CrearVenta):
         from ui.Ui_ConfirmarVenta import Ui_ConfirmarVenta
         
         super().__init__(first)
@@ -943,9 +927,6 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
         # guardar conexión y usuarios como atributos
         self.conn = first.conn
         self.user = first.user
-        
-        # venta inicial, SIN NIGUNA COMISIÓN POR TARJETA
-        self.ventaDatos = ventaDatos
         
         # si la venta es directa, ocultar los widgets para apartados
         if ventaDatos.esVentaDirecta:
@@ -1006,9 +987,8 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
             lambda col: col != 2,
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         
-        self.recalcularImportes(self.ventaDatos)
-        self.update_display(self.ventaDatos)
-        
+        self.recalcularImportes(ventaDatos)
+        self.update_display(ventaDatos)
         self.show()
         
         # brincar el proceso si el pago es de cero
@@ -1044,7 +1024,7 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
     
     def handleComision(self, bt: QtWidgets.QRadioButton):
         """ Mostrar u ocultar comisión según método de pago. """
-        venta = copy.deepcopy(self.ventaDatos)
+        venta = copy.deepcopy(ventaDatos)
         metodo = bt.text()
         
         if metodo.endswith('crédito'):
@@ -1054,7 +1034,7 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
             item = ItemVenta.generarItemComision(venta.total, self.COMISION_DEBITO)
             venta.agregarProducto(item)
         else:
-            venta = self.ventaDatos
+            venta = ventaDatos      # regresar a venta original
         
         self.recalcularImportes(venta)
         self.update_display(venta)
@@ -1093,12 +1073,12 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
     
     def obtenerParametrosVentas(self):
         """ Parámetros para tabla ventas (datos generales). """
-        return (self.ventaDatos.id_cliente,
+        return (ventaDatos.id_cliente,
                 self.user.id,
-                self.ventaDatos.fechaCreacion.toPython(),
-                self.ventaDatos.fechaEntrega.toPython(),
-                self.ventaDatos.comentarios.strip(),
-                self.ventaDatos.requiereFactura,
+                ventaDatos.fechaCreacion.toPython(),
+                ventaDatos.fechaEntrega.toPython(),
+                ventaDatos.comentarios.strip(),
+                ventaDatos.requiereFactura,
                 'No terminada')
     
     def obtenerParametrosVentasDetallado(self):
@@ -1110,7 +1090,7 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
                  prod.notas,
                  prod.duplex,
                  prod.importe)
-                for prod in self.ventaDatos.productos]
+                for prod in ventaDatos.productos]
     
     def cambiarAnticipo(self):
         """ Cambiar el anticipo pagado por el cliente. """
