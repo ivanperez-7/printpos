@@ -322,11 +322,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         """ Pide confirmación para marcar como cancelada una venta. """
         if not (selected := self.tabla_actual.selectedItems()):
             return
-        
-        idVenta = selected[0].text()
-        estado = selected[6].text()
-        
-        if estado == 'Cancelada':
+        if selected[6].text() == 'Cancelada':
             return
         
         # abrir pregunta
@@ -337,9 +333,17 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         if ret != qm.Yes:
             return
         
+        # preguntar por devolución y manejar tabla ventas_pagos como corresponde
+        ret = qm.question(self, 'Devolución de dinero',
+                          '¿Desea registrar la devolución de los pagos realizados en esta venta?')
+        
         manejador = ManejadorVentas(self.conn)
         estado = 'Cancelada por ' + manejador.usuarioActivo
+        idVenta = selected[0].text()
         
+        if ret == qm.Yes:
+            if not manejador.anularPagos(idVenta):
+                return
         if not manejador.actualizarEstadoVenta(idVenta, estado, commit=True):
             return
         

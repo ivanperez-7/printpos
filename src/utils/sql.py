@@ -970,6 +970,13 @@ class ManejadorVentas(DatabaseManager):
             VALUES (?,?,?,?,?);
         ''', (id_ventas, id_metodo, datetime.now(), monto, recibido), commit=commit)
     
+    def anularPagos(self, id_venta: int, commit: bool = False):
+        """ Anula pagos en tabla ventas_pagos. No hace `commit` automáticamente. """
+        for metodo, monto, recibido in self.obtenerPagosVenta(id_venta):
+            if not self.insertarPago(id_venta, metodo, -monto, 0.):
+                return False
+        return True
+    
     def actualizarEstadoVenta(self, id_ventas: int, estado: str, commit: bool = False):
         """ Actualiza estado de venta a parámetro.
         
