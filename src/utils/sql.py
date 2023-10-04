@@ -713,6 +713,7 @@ class ManejadorVentas(DatabaseManager):
             WHERE   fecha_hora_creacion = fecha_hora_entrega
                     AND ? <= CAST(fecha_hora_creacion AS DATE)
                     AND CAST(fecha_hora_creacion AS DATE) <= ?
+                    AND (VP.monto IS NULL or VP.monto >= 0)
             GROUP   BY 1, 2, 3, 4, 6, 7, 8, 9
             ORDER	BY Ventas.id_ventas DESC;
         ''', (inicio.toPython(), final.toPython()))
@@ -753,6 +754,7 @@ class ManejadorVentas(DatabaseManager):
                     AND (? <= CAST(fecha_hora_creacion AS DATE)
                          AND CAST(fecha_hora_creacion AS DATE) <= ?
                          OR estado LIKE 'Recibido%')
+                    AND (VP.monto IS NULL or VP.monto >= 0)
                     {restrict}
             GROUP   BY 1, 2, 3, 4, 5, 7, 8, 9, 10
             ORDER	BY Ventas.id_ventas DESC;
