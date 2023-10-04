@@ -151,7 +151,6 @@ class App_Caja(QtWidgets.QWidget):
         self.llenar_egresos()
         
         total = self.all_movimientos.totalCorte()
-        
         self.ui.lbTotal.setText(f'Total del corte: ${total}')
     
     def llenar_ingresos(self):

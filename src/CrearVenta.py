@@ -634,8 +634,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
         
         # llena la tabla con todos los clientes existentes
         manejador = ManejadorClientes(self.conn)
-        
-        self.all = [datos for (id, *datos) in manejador.obtenerTablaPrincipal()]
+        self.all = [datos for (_, *datos) in manejador.obtenerTablaPrincipal()]
         
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)
@@ -891,10 +890,10 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
         
         mensaje.append('*Total a pagar: $' + self.first.ui.lbTotal.text() + '*')
         mensaje = '\n'.join(mensaje)
-        
         celular = self.first.ui.txtTelefono.text()
-        enviarWhatsApp(celular, mensaje)
-        self.close()
+        
+        if enviarWhatsApp(celular, mensaje):
+            self.close()
     
     def imprimirTicket(self):
         productos = [(prod.cantidad, prod.nombre_ticket, prod.precio_unit,
