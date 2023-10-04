@@ -142,6 +142,7 @@ def enviarWhatsApp(phone_no: str, message: str):
         phone_no = '+52' + phone_no
     
     try:
-        web.open_new_tab(f'https://web.whatsapp.com/send?phone={phone_no}&text={quote(message)}')
+        return web.open_new_tab(f'https://web.whatsapp.com/send?phone={phone_no}&text={quote(message)}')
     except Exception as err:
         print('Could not open browser: ' + str(err))
+        return False

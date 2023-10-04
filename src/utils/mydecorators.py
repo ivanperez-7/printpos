@@ -131,10 +131,10 @@ def con_fondo(modulo):
     """ Decorador para crear un fondo oscurecedor en la ventana principal. """
     orig_init = modulo.__init__
     
-    def __init__(self, *args, **kws):
+    def __init__(self, *args, **kwargs):
         from utils.mywidgets import DimBackground
         
-        orig_init(self, *args, **kws)
+        orig_init(self, *args, **kwargs)
         
         parent = args[0]  # QMainWindow, parent widget
         parent.bg = DimBackground(parent)
