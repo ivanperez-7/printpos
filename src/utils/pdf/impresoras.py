@@ -9,7 +9,6 @@ from PySide6.QtGui import QPainter, QImage
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 
 from Caja import Caja
-from Login import Usuario
 from utils.mydecorators import run_in_thread
 from utils.myutils import *
 from utils.pdf.generadores import *
@@ -25,8 +24,7 @@ class ImpresoraPDF:
     def verificarImpresora(self):
         """ Simple función que verifica si existe atributo `printer`.
             Arroja excepción al no ser el caso. """
-        if not self.printer:
-            raise AttributeError('Impresora aún no inicializada.')
+        assert self.printer, 'Impresora aún no inicializada.'
     
     @staticmethod
     def escogerImpresora(parent: QWidget = None):
