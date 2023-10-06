@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTranslator
 from PySide6.QtGui import QPalette, Qt
 
-from Login import App_Login
+from backends.Login import App_Login
 
 
 class PrintPOS(QApplication):

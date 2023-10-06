@@ -28,7 +28,7 @@ class App_Ajustes(QtWidgets.QWidget):
         """
         Cierra la ventana y regresa a Home.
         """
-        from Home import App_Home
+        from backends.Home import App_Home
         
         parent = self.parentWidget()  # QMainWindow
         new = App_Home(parent)

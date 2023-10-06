@@ -5,7 +5,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import *
 from PySide6.QtCore import *
 
-from Login import Usuario
+from backends.Login import Usuario
 from utils import Moneda, sql
 
 
@@ -29,7 +29,7 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
         icon.addFile(':img/icon.ico', QSize(), QIcon.Normal, QIcon.Off)
         self.setWindowIcon(icon)
         
-        from Home import App_ConsultarPrecios
+        from backends.Home import App_ConsultarPrecios
         self.consultarPrecios = App_ConsultarPrecios(self)
         self.goHome()
         
@@ -38,7 +38,7 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
     def goHome(self):
         """ Regresar al menú principal.
             Crea módulo Home y establece como widget principal. """
-        from Home import App_Home
+        from backends.Home import App_Home
         new = App_Home(self)
         self.setCentralWidget(new)
     
