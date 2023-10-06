@@ -5,8 +5,8 @@ from typing import overload, TypeAlias
 import fdb
 from PySide6.QtCore import QDate
 
+import config
 from utils import Moneda
-from utils.myutils import leer_config
 
 
 Connection: TypeAlias = fdb.Connection
@@ -17,13 +17,9 @@ Error: TypeAlias = fdb.Error
 def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
     """ Crea conexión a base de datos y regresa objeto Connection.
         Regresa `None` al ocurrir un error. """
-    config = leer_config()
-    red_local = config['DEFAULT']['red_local']
-    nombre = config['SUCURSAL']['nombre']
-    
     try:
         return fdb.connect(
-            dsn=red_local + f':{nombre}.fdb',
+            dsn='{}:{}.fdb'.format(config.RED_LOCAL, config.NOMBRE_SUCURSAL),
             user=usuario,
             password=psswd,
             charset='UTF8',
