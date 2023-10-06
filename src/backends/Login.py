@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt, Signal
-import PySide6.QtGui
 
 from utils.mydecorators import run_in_thread
 from utils.myutils import FabricaValidadores
