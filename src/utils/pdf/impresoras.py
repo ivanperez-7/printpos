@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QImage
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 
-from Caja import Caja
+from backends.Caja import Caja
 from utils.mydecorators import run_in_thread
 from utils.myutils import *
 from utils.pdf.generadores import *

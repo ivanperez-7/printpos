@@ -10,7 +10,7 @@ from reportlab.lib.units import mm
 from PyPDF2 import PdfReader, PdfWriter
 from PySide6.QtCore import QDateTime
 
-from Caja import Caja
+from backends.Caja import Caja
 from utils import Moneda
 from utils.myutils import *
 from utils.sql import ManejadorVentas

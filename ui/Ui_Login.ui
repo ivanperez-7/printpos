@@ -279,7 +279,7 @@ QLineEdit:focus {
   <customwidget>
    <class>LoginButton</class>
    <extends>QPushButton</extends>
-   <header>Login.h</header>
+   <header>backends.Login.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

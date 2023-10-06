@@ -47,14 +47,14 @@ class App_Home(QtWidgets.QWidget):
             w.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         
         # crear eventos para los botones
-        from AdministrarVentas import App_AdministrarVentas
-        from AdministrarInventario import App_AdministrarInventario
-        from AdministrarProductos import App_AdministrarProductos
-        from AdministrarClientes import App_AdministrarClientes
-        from AdministrarUsuarios import App_AdministrarUsuarios
-        # from Ajustes import App_Ajustes
-        from Caja import App_Caja
-        from Reportes import App_Reportes
+        from backends.AdministrarVentas import App_AdministrarVentas
+        from backends.AdministrarInventario import App_AdministrarInventario
+        from backends.AdministrarProductos import App_AdministrarProductos
+        from backends.AdministrarClientes import App_AdministrarClientes
+        from backends.AdministrarUsuarios import App_AdministrarUsuarios
+        # from backends.Ajustes import App_Ajustes
+        from backends.Caja import App_Caja
+        from backends.Reportes import App_Reportes
         
         self.ui.btCrearVenta.clicked.connect(self.iniciarVenta)
         self.ui.btProductos.clicked.connect(lambda: self.crearVentana(App_AdministrarProductos))
@@ -83,7 +83,7 @@ class App_Home(QtWidgets.QWidget):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def iniciarVenta(self):
-        from CrearVenta import App_CrearVenta
+        from backends.CrearVenta import App_CrearVenta
         
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Iniciar venta',
@@ -97,7 +97,7 @@ class App_Home(QtWidgets.QWidget):
         parent.setCentralWidget(new)
     
     def exitApp(self):
-        from Login import App_Login
+        from backends.Login import App_Login
         self.login = App_Login()
         self.parentWidget().close()
 
