@@ -10,8 +10,8 @@ from utils.mydecorators import run_in_thread
 
 
 __all__ = ['ColorsEnum', 'FabricaValidadores', 'clamp', 'chunkify',
-           'unidecode', 'son_similar', 'contiene_duplicados', 'formatDate',
-           'leer_config', 'exportarXlsx', 'enviarWhatsApp']
+           'unidecode', 'son_similar', 'contiene_duplicados',
+           'formatDate','exportarXlsx', 'enviarWhatsApp']
 
 
 class ColorsEnum:
@@ -97,13 +97,6 @@ def formatDate(date = None):
     locale = QLocale(QLocale.Spanish, QLocale.Mexico)
     formatted = locale.toString(date, "d 'de' MMMM yyyy, h:mm ap")
     return unicodedata.normalize('NFKD', formatted)
-
-
-def leer_config():
-    """ Lee config.ini y regresa objeto ConfigParser. """
-    config = ConfigParser(inline_comment_prefixes=';')
-    config.read('config.ini', encoding='UTF8')
-    return config
 
 
 @run_in_thread

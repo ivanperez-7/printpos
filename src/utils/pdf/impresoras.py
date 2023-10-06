@@ -9,6 +9,7 @@ from PySide6.QtGui import QPainter, QImage
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 
 from backends.Caja import Caja
+import config
 from utils.mydecorators import run_in_thread
 from utils.myutils import *
 from utils.pdf.generadores import *
@@ -45,10 +46,9 @@ class ImpresoraPDF:
         """ Lee impresora de tickets en archivo config. En hilo principal. """
         from utils.mywidgets import WarningDialog
         
-        config = leer_config()
-        printerName = config['IMPRESORAS']['default']
-        
+        printerName = config.IMPRESORA_TICKETS
         pInfo = QPrinterInfo.printerInfo(printerName)
+        
         if not pInfo.printerName():
             WarningDialog(f'¡No se encontró la impresora {printerName}!')
             return None

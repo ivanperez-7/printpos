@@ -11,6 +11,7 @@ from PyPDF2 import PdfReader, PdfWriter
 from PySide6.QtCore import QDateTime
 
 from backends.Caja import Caja
+import config
 from utils import Moneda
 from utils.myutils import *
 from utils.sql import ManejadorVentas
@@ -224,19 +225,19 @@ def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float,
         folio = ''
     
     # leer datos de sucursal de archivo de configuración
-    config = leer_config()
-    SUCURSAL = config['SUCURSAL']
+    calle, fracc = config.DIRECCION_SUCURSAL
+    telefono = config.TELEFONO_SUCURSAL
     
     # elementos para constuir el PDF
     elements = [
         logo,
         Spacer(1, 6),
         
-        Paragraph(SUCURSAL['p1'], styles['Center']),
-        Paragraph(SUCURSAL['p2'], styles['Center']),
+        Paragraph(calle, styles['Center']),
+        Paragraph(fracc, styles['Center']),
         Spacer(1, 6),
         
-        Paragraph(SUCURSAL['p3'], styles['Center']),
+        Paragraph(telefono, styles['Center']),
         Spacer(1, 6),
         
         Paragraph('* ' * 40, styles['Center']),
