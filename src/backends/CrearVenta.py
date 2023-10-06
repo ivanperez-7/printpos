@@ -285,7 +285,7 @@ class App_CrearVenta(QtWidgets.QWidget):
     # ====================================
     def insertarCliente(self):
         """ Abre ventana para registrar un cliente. """
-        from backends.AdministrarClientes import App_RegistrarCliente
+        from .AdministrarClientes import App_RegistrarCliente
         
         modulo = App_RegistrarCliente(
             self,
@@ -357,7 +357,7 @@ class App_CrearVenta(QtWidgets.QWidget):
                 return
             
             if not all((cliente[correo], cliente[direccion], cliente[rfc])):
-                from backends.AdministrarClientes import App_EditarCliente
+                from .AdministrarClientes import App_EditarCliente
                 
                 modulo = App_EditarCliente(self, cliente[id])
                 modulo.success.connect(self.establecerCliente)
