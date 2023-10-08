@@ -22,11 +22,6 @@ class ImpresoraPDF:
     def __init__(self):
         self.printer: QPrinter = None
     
-    def verificarImpresora(self):
-        """ Simple función que verifica si existe atributo `printer`.
-            Arroja excepción al no ser el caso. """
-        assert self.printer, 'Impresora aún no inicializada.'
-    
     @staticmethod
     def escogerImpresora(parent: QWidget = None):
         """ Diálogo para escoger impresora. En hilo principal. """
@@ -106,7 +101,8 @@ class ImpresoraOrdenes(ImpresoraPDF):
     
     @run_in_thread
     def imprimirOrdenCompra(self, idx: int):
-        self.verificarImpresora()
+        assert self.printer, 'Impresora aún no inicializada.'
+        
         manejador = sql.ManejadorVentas(self.conn)
         data = generarOrdenCompra(manejador, idx)
         self.enviarAImpresora(data)
@@ -134,7 +130,7 @@ class ImpresoraTickets(ImpresoraPDF):
     @run_in_thread
     def imprimirTicketCompra(self, idx):
         """ Genera el ticket de compra a partir de un identificador en la base de datos. """
-        self.verificarImpresora()
+        assert self.printer, 'Impresora aún no inicializada.'
         # obtener datos de la compra, de la base de datos
         manejador = sql.ManejadorVentas(self.conn)
         productos = manejador.obtenerTablaTicket(idx)
@@ -157,13 +153,15 @@ class ImpresoraTickets(ImpresoraPDF):
     @run_in_thread
     def imprimirTicketPresupuesto(self, productos: list[tuple], vendedor: str):
         """ Genera un ticket para el presupuesto de una compra. """
-        self.verificarImpresora()
+        assert self.printer, 'Impresora aún no inicializada.'
+        
         data = generarTicketPDF(0, productos, vendedor)
         self.enviarAImpresora(data)
     
     @run_in_thread
     def imprimirCorteCaja(self, caja: Caja, responsable: str):
         """ Genera un ticket para el presupuesto de una compra. """
-        self.verificarImpresora()
+        assert self.printer, 'Impresora aún no inicializada.'
+        
         data = generarCortePDF(caja, responsable)
         self.enviarAImpresora(data)

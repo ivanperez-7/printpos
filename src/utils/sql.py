@@ -668,8 +668,55 @@ class ManejadorProductos(DatabaseManager):
 
 class ManejadorReportes(DatabaseManager):
     """ Clase con diversas consultas específicas para el módulo de reportes. """
+    def obtenerIngresosBrutos(self):
+        """ Obtiene ingresos brutos de ventas concretadas o pendientes.
+            Devuelve: cantidad total, número de ventas. """
+        return self.fetchone('''
+            SELECT  SUM(importe),
+                    COUNT(DISTINCT V.id_ventas)
+            FROM    ventas_detallado VD
+                    LEFT JOIN ventas V
+                           ON VD.id_ventas = V.id_ventas
+            WHERE   V.estado NOT LIKE 'Cancelada%'
+                    AND V.estado != 'No terminada';
+        ''')
     
-    pass
+    def obtenerTopVendedor(self, count: int = 1):
+        """ Consultar los primeros `count` vendedores con más ventas.
+            Devuelve: nombre, suma de ingresos brutos. """
+        return self.fetchone(f'''
+            SELECT  FIRST {count}
+                    U.NOMBRE,
+                    SUM(importe) AS ingreso_bruto
+            FROM    Ventas V
+                    LEFT JOIN ventas_detallado VD
+                           ON V.id_ventas = VD.id_ventas
+                    LEFT JOIN Usuarios U
+                           ON V.id_usuarios = U.ID_USUARIOS
+            WHERE   V.estado NOT LIKE 'Cancelada%'
+                    AND V.estado != 'No terminada'
+            GROUP   BY U.nombre
+            ORDER   BY 2 DESC;
+        ''')
+    
+    def obtenerTopProducto(self, count: int = 1):
+        """ Consultar los primeros `count` productos más vendidos.
+            Devuelve: abreviado, código, número de unidades vendidas. """
+        return self.fetchone(f'''
+            SELECT  FIRST {count}
+                    P.abreviado,
+                    P.codigo,
+                    SUM(cantidad)
+            FROM    ventas_detallado VD
+                    LEFT JOIN ventas V
+                           ON VD.id_ventas = V.id_ventas
+                    LEFT JOIN Productos P
+                           ON VD.id_productos = P.id_productos
+            WHERE   V.estado NOT LIKE 'Cancelada%'
+                    AND V.estado != 'No terminada'
+            GROUP   BY 1, 2
+            ORDER   BY 3 DESC;
+        ''')
 
 
 class ManejadorVentas(DatabaseManager):
