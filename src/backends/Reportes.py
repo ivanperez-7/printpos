@@ -5,8 +5,10 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter
 
 from utils.mywidgets import VentanaPrincipal
-from utils import sql
+from utils.sql import ManejadorReportes
 
+
+stringify_float = lambda f: f'{int(f):,}' if f.is_integer() else f'{f:,.2f}'
 
 class App_Reportes(QtWidgets.QWidget):
     """ Backend para la ventana de reportes varios. """
@@ -23,9 +25,30 @@ class App_Reportes(QtWidgets.QWidget):
         self.user = parent.user
         
         self.ui.btRegresar.clicked.connect(self.goHome)
-    
+        
+        # alimentar QLabels
+        man = ManejadorReportes(self.conn)
+        brutos, num_ventas = man.obtenerIngresosBrutos()
+        self.ui.lbIngresosBrutos.setText('${:,.2f}'.format(brutos))
+        self.ui.lbCountVentas.setText('a través de {:,d} ventas'.format(num_ventas))
+        
+        vendedor, cantidad = man.obtenerTopVendedor()
+        self.ui.lbVendedorBrutos.setText(vendedor)
+        self.ui.lbVendedorTotal.setText('${:,.2f}'.format(cantidad))
+        
+        abreviado, codigo, count = man.obtenerTopProducto()
+        self.ui.lbProdVendidos.setText(codigo)
+        self.ui.lbProdCount.setText(stringify_float(count) + ' unidades')
+        
+        # widgets de gráficos
+        test = self.test()
+        self.ui.stackedWidget.addWidget(test)
+        
+        self.ui.btTablero.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(0))
+        self.ui.btVentas.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(1))
+        
     def test(self):
-        manejador = sql.DatabaseManager(self.conn)
+        manejador = ManejadorReportes(self.conn)
         
         data = manejador.fetchall('''
             SELECT 	FIRST 10
@@ -83,11 +106,10 @@ class App_Reportes(QtWidgets.QWidget):
         chartView = QChartView(chart)
         chartView.setFont(font)
         chartView.setRenderHint(QPainter.Antialiasing)
-        
-        self.ui.horizontalLayout_6.addWidget(chartView)
+        return chartView
     
     def test2(self):
-        manejador = sql.DatabaseManager(self.conn)
+        manejador = ManejadorReportes(self.conn)
         
         data = manejador.fetchall('''
             SELECT	FIRST 10
@@ -139,7 +161,7 @@ class App_Reportes(QtWidgets.QWidget):
         chart.legend().setAlignment(Qt.AlignBottom)
         chart.legend().setFont(font)
         
-        chartView = MyChartView(chart)
+        chartView = QChartView(chart)
         chartView.setFont(font)
         chartView.setRenderHint(QPainter.Antialiasing)
         
@@ -153,37 +175,6 @@ class App_Reportes(QtWidgets.QWidget):
 #########################################
 # WIDGETS PERSONALIZADOS PARA EL MÓDULO #
 #########################################
-class MyChartView(QChartView):
-    def __init__(self, chart):
-        super().__init__(chart)
-        
-        # Enable mouse tracking to receive mouse move events
-        self.setMouseTracking(True)
-        
-        # Variables for tracking panning
-        self.is_panning = False
-        self.pan_start = None
-    
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.is_panning = True
-            self.pan_start = event.pos()
-    
-    def mouseMoveEvent(self, event):
-        if self.is_panning:
-            # Calculate the distance moved
-            delta = event.pos() - self.pan_start
-            
-            # Adjust the chart's view transform based on the movement
-            chart = self.chart()
-            chart.scroll(-delta.x(), delta.y())
-            
-            # Update the pan start position
-            self.pan_start = event.pos()
-    
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.is_panning = False
 
 
 """
@@ -200,20 +191,4 @@ This can help you identify customers who are loyal to your store and reward them
 
 Sales Trends Report: You can display a report that shows the sales trends in your store over a period of time, such as monthly or 
 quarterly. This can help you identify the seasonal trends in your business and make informed decisions about inventory and promotions.
-
--- ingresos brutos por cliente
-SELECT  id_clientes,
-        SUM(importe) AS ingreso_bruto
-FROM    Ventas as V
-        LEFT JOIN Ventas_Detallado as VD
-               ON V.id_ventas = VD.id_ventas
-GROUP   BY id_clientes;
-
--- ingresos brutos por usuario
-SELECT  id_usuarios,
-        SUM(importe) AS ingreso_bruto
-FROM    Ventas as V
-        LEFT JOIN Ventas_Detallado as VD
-               ON V.id_ventas = VD.id_ventas
-GROUP   BY id_usuarios;
 """

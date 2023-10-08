@@ -469,3 +469,7 @@ class ListaNotificaciones(QtWidgets.QListWidget):
             self.hide_animation.setEasingCurve(QEasingCurve.InSine)
             self.hide_animation.finished.connect(lambda: self.setVisible(False))
             self.hide_animation.start()
+    
+    @property
+    def sinNotificaciones(self):
+        return self.item(0).text().startswith('¡No hay nuevas')

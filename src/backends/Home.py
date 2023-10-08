@@ -75,6 +75,11 @@ class App_Home(QtWidgets.QWidget):
                       self.ui.frameProductos,
                       self.ui.frameReportes]:
                 w.setEnabled(False)
+        
+        if not self.ui.listaNotificaciones.sinNotificaciones:
+            lab = QtWidgets.QLabel(self.ui.frame_5)
+            lab.setPixmap(self._create_pixmap(self.ui.listaNotificaciones.count()))
+            lab.setGeometry(392, 5, 26, 26)
     
     def showEvent(self, event):
         self.parentWidget().en_venta = False
@@ -100,6 +105,29 @@ class App_Home(QtWidgets.QWidget):
         from .Login import App_Login
         self.login = App_Login()
         self.parentWidget().close()
+
+    @staticmethod
+    def _create_pixmap(point: int):
+        from PySide6 import QtCore, QtGui
+        
+        rect = QtCore.QRect(QtCore.QPoint(), 23 * QtCore.QSize(1, 1))
+        pixmap = QtGui.QPixmap(rect.size())
+        rect.adjust(1, 1, -1, -1)
+        pixmap.fill(QtCore.Qt.transparent)
+        painter = QtGui.QPainter(pixmap)
+        painter.setRenderHints(
+            QtGui.QPainter.Antialiasing | QtGui.QPainter.TextAntialiasing
+        )
+        
+        pen = painter.pen()
+        pen.setColor(QtCore.Qt.white)
+        painter.setPen(QtCore.Qt.NoPen)
+        painter.setBrush(QtGui.QBrush(QtGui.QColor(250, 62, 62)))
+        painter.drawEllipse(rect)
+        painter.setPen(pen)
+        painter.drawText(rect, QtCore.Qt.AlignCenter, str(point))
+        painter.end()
+        return pixmap
 
 
 ##################################

@@ -322,7 +322,9 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         """ Pide confirmación para marcar como cancelada una venta. """
         if not (selected := self.tabla_actual.selectedItems()):
             return
-        if selected[6].text() == 'Cancelada':
+        
+        checar_estado = lambda i: selected[i].text().startswith('Cancelada')
+        if checar_estado(5) or checar_estado(6):
             return
         
         # abrir pregunta

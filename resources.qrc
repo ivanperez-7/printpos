@@ -1,5 +1,13 @@
 <RCC>
   <qresource prefix="img">
+    <file>resources/images/paq_block.png</file>
+    <file>resources/images/user_block.png</file>
+    <file>resources/images/dolar.png</file>
+    <file>resources/images/blocks-h.png</file>
+    <file>resources/images/paquete.png</file>
+    <file>resources/images/grupo.png</file>
+    <file>resources/images/crecimiento.png</file>
+    <file>resources/images/blocks.png</file>
     <file>resources/images/undo.png</file>
     <file>resources/images/calculator.png</file>
     <file>resources/images/plus2.png</file>
