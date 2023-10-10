@@ -268,7 +268,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         ttl = 'Registrar ' + ('egreso' if egreso else 'ingreso')
         self.setWindowTitle(ttl)
         
-        self.setFixedSize(525, 160)
+        self.setFixedSize(480, 160)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setModal(True)
         self.setWindowModality(Qt.ApplicationModal)
@@ -280,7 +280,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         font = QFont()
         font.setPointSize(10)
         label.setFont(font)
-        label.setText("Monto:")
+        label.setText("Monto a registrar:")
         label.setObjectName("label")
         formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, label)
         txtCantidad = QtWidgets.QLineEdit(self)
@@ -322,7 +322,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         horizontalLayout.addWidget(btTarjetaDebito, 0, Qt.AlignHCenter | Qt.AlignVCenter)
         btTransferencia = QtWidgets.QRadioButton(frame)
         btTransferencia.setFont(font)
-        btTransferencia.setText("Transferencia bancaria")
+        btTransferencia.setText("Transferencia")
         btTransferencia.setObjectName("btTransferencia")
         groupMetodo.addButton(btTransferencia)
         horizontalLayout.addWidget(btTransferencia, 0, Qt.AlignHCenter | Qt.AlignVCenter)
@@ -382,7 +382,10 @@ class Dialog_Registrar(QtWidgets.QDialog):
     
     @property
     def metodo(self):
-        return self.groupMetodo.checkedButton().text()
+        out = self.groupMetodo.checkedButton().text()
+        if out == 'Transferencia':
+            out += ' bancaria'
+        return out
     
     @property
     def motivo(self):

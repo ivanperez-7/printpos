@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>461</width>
-    <height>506</height>
+    <height>482</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Iniciar sesión</string>
+   <string>PrintPOS</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../resources.qrc">
@@ -32,9 +32,9 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>28</x>
-     <y>430</y>
+     <y>417</y>
      <width>191</width>
-     <height>55</height>
+     <height>41</height>
     </rect>
    </property>
    <property name="font">
@@ -59,7 +59,7 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>248</x>
-     <y>435</y>
+     <y>417</y>
      <width>181</width>
      <height>41</height>
     </rect>
@@ -71,29 +71,11 @@ QLineEdit:focus {
     <string>INGRESAR</string>
    </property>
   </widget>
-  <widget class="QLabel" name="lbUsuario">
-   <property name="geometry">
-    <rect>
-     <x>61</x>
-     <y>160</y>
-     <width>81</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>11</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Usuario:</string>
-   </property>
-  </widget>
   <widget class="QRadioButton" name="radioButton">
    <property name="geometry">
     <rect>
      <x>108</x>
-     <y>388</y>
+     <y>360</y>
      <width>111</width>
      <height>20</height>
     </rect>
@@ -134,9 +116,9 @@ QLineEdit:focus {
   <widget class="QLineEdit" name="inputUsuario">
    <property name="geometry">
     <rect>
-     <x>61</x>
-     <y>180</y>
-     <width>331</width>
+     <x>95</x>
+     <y>170</y>
+     <width>295</width>
      <height>41</height>
     </rect>
    </property>
@@ -145,9 +127,6 @@ QLineEdit:focus {
      <pointsize>12</pointsize>
     </font>
    </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
    <property name="placeholderText">
     <string>Ingrese su nombre de usuario...</string>
    </property>
@@ -155,29 +134,11 @@ QLineEdit:focus {
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="lbContrasenia">
-   <property name="geometry">
-    <rect>
-     <x>61</x>
-     <y>260</y>
-     <width>91</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>11</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Contraseña:</string>
-   </property>
-  </widget>
   <widget class="QLabel" name="lbContrasenia_2">
    <property name="geometry">
     <rect>
      <x>61</x>
-     <y>356</y>
+     <y>328</y>
      <width>111</width>
      <height>21</height>
     </rect>
@@ -195,7 +156,7 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>238</x>
-     <y>388</y>
+     <y>360</y>
      <width>121</width>
      <height>20</height>
     </rect>
@@ -215,9 +176,9 @@ QLineEdit:focus {
   <widget class="QLineEdit" name="inputContrasenia">
    <property name="geometry">
     <rect>
-     <x>61</x>
-     <y>280</y>
-     <width>331</width>
+     <x>95</x>
+     <y>250</y>
+     <width>295</width>
      <height>41</height>
     </rect>
    </property>
@@ -228,9 +189,6 @@ QLineEdit:focus {
    </property>
    <property name="echoMode">
     <enum>QLineEdit::Password</enum>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
    </property>
    <property name="placeholderText">
     <string>Ingrese su contraseña...</string>
@@ -272,6 +230,44 @@ QLineEdit:focus {
    </property>
    <property name="text">
     <string>Ingresar</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>61</x>
+     <y>179</y>
+     <width>26</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap resource="../resources.qrc">:/img/resources/images/user_login.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>61</x>
+     <y>260</y>
+     <width>23</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap resource="../resources.qrc">:/img/resources/images/lock.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
    </property>
   </widget>
  </widget>

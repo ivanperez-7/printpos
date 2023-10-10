@@ -20,14 +20,32 @@ FERNET_KEY = base64.urlsafe_b64encode(bytes(MOBO_UUID, 'utf-8')[-32:])
 #################################
 # VARIABLES PARA ACCEDER A .INI #
 #################################
-def _get(section, option):
-    """ Lee config.ini y regresa objeto ConfigParser. """
-    config = ConfigParser(inline_comment_prefixes=';')
-    config.read('config.ini', encoding='UTF8')
-    return config[section][option]
+class _INIManager:
+    def __init__(self):
+        self.config = ConfigParser(inline_comment_prefixes=';')
+        
+    def _get(self, section, option):
+        self.config.read('config.ini', encoding='UTF8')
+        return self.config[section][option]
+    
+    @property
+    def RED_LOCAL(self):
+        return self._get('DEFAULT', 'red_local')
+    
+    @property
+    def IMPRESORA_TICKETS(self):
+        return self._get('DEFAULT', 'impresora')
+    
+    @property
+    def NOMBRE_SUCURSAL(self):
+        return self._get('SUCURSAL', 'nombre')
+    
+    @property
+    def DIRECCION_SUCURSAL(self):
+        return self._get('SUCURSAL', 'p1'), self._get('SUCURSAL', 'p2')
+    
+    @property
+    def TELEFONO_SUCURSAL(self):
+        return self._get('SUCURSAL', 'p3')
 
-RED_LOCAL = _get('DEFAULT', 'red_local')
-IMPRESORA_TICKETS = _get('DEFAULT', 'impresora')
-NOMBRE_SUCURSAL = _get('SUCURSAL', 'nombre')
-DIRECCION_SUCURSAL = _get('SUCURSAL', 'p1'), _get('SUCURSAL', 'p2')
-TELEFONO_SUCURSAL = _get('SUCURSAL', 'p3')
+INI = _INIManager()
