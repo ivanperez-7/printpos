@@ -66,8 +66,7 @@ class App_Login(QtWidgets.QWidget):
         
         self.show()
         self.ui.inputUsuario.setFocus()
-        self.ui.btIngresar.clicked.connect(
-            lambda: self.verificar_info() if not self.lock else None)
+        self.validar_licencia()
     
     def keyPressEvent(self, event):
         if event.key() in {Qt.Key_Return, Qt.Key_Enter} and not self.lock:
