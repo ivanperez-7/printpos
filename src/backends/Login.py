@@ -77,17 +77,19 @@ class App_Login(QtWidgets.QWidget):
     @run_in_thread
     def validar_licencia(self):
         activado, error = licensing.validar_licencia()
-        if not activado:
-            self.failure.emit(error)
-        else:
+        if activado:
             self.validated.emit()
+        else:
+            self.failure.emit(error)
     
     def exito_verificacion(self):
+        """ En método separado para regresar al hilo principal."""
         self.ui.btIngresar.clicked.connect(
             lambda: self.verificar_info() if not self.lock else None)
         print("noice licencia activada !!!")
     
     def error_verificacion(self, error):
+        """ En método separado para regresar al hilo principal."""
         match error:
             case licensing.Errores.LICENCIA_NO_EXISTENTE:
                 self.ui.btIngresar.clicked.connect(lambda: self._crear_dialogo(error))
