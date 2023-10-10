@@ -1,0 +1,15 @@
+# cache de Python
+**/__pycache__/
+# archivos .py de UI compilados
+src/ui/*
+# módulos instalados por pip
+Lib/
+# scripts del entorno virtual
+Scripts/
+# configuración del entorno
+pyvenv.cfg
+# carpetas de configuración IDE
+.idea/
+.vscode/
+# carpetas generadas por nuitka
+PrintPOS.*/
