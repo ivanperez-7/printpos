@@ -5,7 +5,7 @@ from typing import overload, TypeAlias
 import fdb
 from PySide6.QtCore import QDate
 
-import config
+from config import INI
 from utils import Moneda
 
 
@@ -19,7 +19,7 @@ def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
         Regresa `None` al ocurrir un error. """
     try:
         return fdb.connect(
-            dsn='{}:{}.fdb'.format(config.RED_LOCAL, config.NOMBRE_SUCURSAL),
+            dsn='{}:{}.fdb'.format(INI.RED_LOCAL, INI.NOMBRE_SUCURSAL),
             user=usuario,
             password=psswd,
             charset='UTF8',
