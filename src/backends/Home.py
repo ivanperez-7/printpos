@@ -68,7 +68,7 @@ class App_Home(QtWidgets.QWidget):
         self.ui.btSalir.clicked.connect(self.exitApp)
         
         # deshabilitar funciones para usuarios normales
-        if user.rol.upper() != 'ADMINISTRADOR':
+        if user.rol != 'ADMINISTRADOR':
             for w in [self.ui.frameInventario,
                       self.ui.frameCaja,
                       self.ui.frameUsuarios,
