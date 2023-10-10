@@ -1,3 +1,6 @@
+""" Módulo con métodos de activación, desactivación y validación de licencias.
+
+    Provee también una clase `Enum` para manejar los errores que puedan resultar. """
 from cryptography.fernet import Fernet
 from enum import Enum as _Enum, auto as _auto
 import json

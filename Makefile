@@ -2,13 +2,16 @@ EXEC=PrintPOS
 
 all: setup
 
-resources_rc.py: resources.qrc resources/images/*
+src/ui/resources_rc.py: resources.qrc resources/images/*
 	pyside6-rcc -o $@ $<
 
-ui/%.py: ui/%.ui
-	pyside6-uic -o $@ $<
+src/ui/%.py: designer/%.ui
+	pyside6-uic --from-imports -o $@ $<
 
-setup: resources_rc.py $(addsuffix .py, $(basename $(wildcard ui/*.ui)))
+UI_FILES := $(wildcard designer/*.ui)
+PY_FILES := $(patsubst designer/%.ui, src/ui/%.py, $(UI_FILES))
+
+setup: src/ui/resources_rc.py $(PY_FILES)
 
 launch:
 	python $(EXEC).py
