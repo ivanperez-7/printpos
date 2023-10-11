@@ -121,7 +121,7 @@
   <widget class="QPushButton" name="btActivar">
    <property name="geometry">
     <rect>
-     <x>260</x>
+     <x>160</x>
      <y>280</y>
      <width>75</width>
      <height>24</height>
@@ -134,7 +134,7 @@
   <widget class="QPushButton" name="btCerrar">
    <property name="geometry">
     <rect>
-     <x>160</x>
+     <x>260</x>
      <y>280</y>
      <width>75</width>
      <height>24</height>

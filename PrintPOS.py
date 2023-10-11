@@ -29,7 +29,7 @@ class PrintPOS(QApplication):
         palette = self.palette()
         CR = QPalette.ColorRole
         
-        palette.setColor(CR.Window, 0xF5F5F5)  # color de ventana -> gris claro
+        palette.setColor(CR.Window, Qt.white)  # color de ventana -> gris claro
         palette.setColor(CR.WindowText, Qt.black)  # texto de ventana -> negro
         palette.setColor(CR.Base, Qt.white)  # color base -> blanco
         palette.setColor(CR.AlternateBase, Qt.white)  # color alternativo base -> blanco

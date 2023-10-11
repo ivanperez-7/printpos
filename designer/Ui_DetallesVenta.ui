@@ -2,6 +2,9 @@
 <ui version="4.0">
  <class>DetallesVenta</class>
  <widget class="QWidget" name="DetallesVenta">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -659,6 +662,9 @@
              <family>Segoe UI</family>
              <pointsize>11</pointsize>
             </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">border: 1px solid #cacaca;</string>
            </property>
            <property name="readOnly">
             <bool>true</bool>

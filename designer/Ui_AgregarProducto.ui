@@ -2,6 +2,9 @@
 <ui version="4.0">
  <class>AgregarProducto</class>
  <widget class="QWidget" name="AgregarProducto">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -868,8 +871,8 @@ background-color: rgb(255, 255, 255);</string>
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup"/>
   <buttongroup name="groupFiltro"/>
  </buttongroups>
 </ui>
