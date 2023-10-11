@@ -2,7 +2,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont
 from PySide6.QtCharts import *
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPainter
+from PySide6.QtGui import QPainter, QPen
 
 from utils.myinterfaces import InterfazFechas
 from utils.mywidgets import VentanaPrincipal
@@ -48,137 +48,15 @@ class App_Reportes(QtWidgets.QWidget):
         self.ui.lbProdVendidos.setText(codigo)
         self.ui.lbProdCount.setText(stringify_float(count) + ' unidades')
         
-        # widgets de gráficos
-        self.ui.stackedWidget.addWidget(self.test())
-        self.ui.stackedWidget.addWidget(self.test2())
+        self.ui.placeholder_1.alimentarDatos(self.conn)
+        #self.ui.placeholder_2.alimentarDatos(self.conn)
         
         self.ui.btTablero.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(0))
         self.ui.btVentas.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(1))
-        self.ui.btProductos.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(2))
-        
-    def test(self):
-        manejador = ManejadorReportes(self.conn)
-        
-        data = manejador.fetchall('''
-            SELECT 	FIRST 10
-                    Clientes.nombre,
-                    COUNT (
-                        IIF(fecha_hora_creacion = fecha_hora_entrega, 1, NULL)
-                    ) AS numDirectas,
-                    COUNT (
-                        IIF(fecha_hora_creacion != fecha_hora_entrega, 1, NULL)
-                    ) AS numPedidos
-            FROM 	Ventas
-                    LEFT JOIN Clientes
-                        ON Ventas.id_clientes = Clientes.id_clientes
-            WHERE	nombre != 'Público general'
-            GROUP	BY Clientes.nombre
-            ORDER	BY COUNT(id_ventas) DESC;
-        ''')
-        
-        categories = []
-        set0 = QBarSet('Ventas al contado')
-        set1 = QBarSet('Ventas sobre pedido')
-        
-        for nombre, numVentas, numPedidos in data:
-            categories.append(nombre)
-            set0 << numVentas
-            set1 << numPedidos
-        
-        series = QBarSeries()
-        series.append(set0)
-        series.append(set1)
-        
-        font = QFont()
-        font.setPointSize(11)
-        
-        chart = QChart()
-        chart.setScale(1)
-        chart.addSeries(series)
-        chart.setTitle('Clientes con más ventas del negocio')
-        chart.setTitleFont(font)
-        chart.setAnimationOptions(QChart.SeriesAnimations)
-        
-        axis = QBarCategoryAxis()
-        axis.append(categories)
-        chart.createDefaultAxes()
-        chart.setAxisX(axis, series)
-        chart.axisX().setLabelsFont(font)
-        chart.axisX().setTitleFont(font)
-        chart.axisY().setLabelsFont(font)
-        chart.axisY().setTitleFont(font)
-        
-        chart.legend().setVisible(True)
-        chart.legend().setAlignment(Qt.AlignBottom)
-        chart.legend().setFont(font)
-        
-        chartView = QChartView(chart)
-        chartView.setFont(font)
-        chartView.setRenderHint(QPainter.Antialiasing)
-        return chartView
-    
-    def test2(self):
-        manejador = ManejadorReportes(self.conn)
-        
-        data = manejador.fetchall('''
-            SELECT	FIRST 10
-                    P.codigo,
-                    SUM(
-                        cantidad * IIF(cantidad > 0, 1, NULL)
-                    ) AS numVentas,
-                    SUM(importe) AS ingresos
-            FROM	Ventas_Detallado AS VD
-                    LEFT JOIN Ventas AS V
-                           ON V.id_ventas = VD.id_ventas
-                    LEFT JOIN Productos AS P
-                           ON VD.id_productos = P.id_productos
-            WHERE   V.estado NOT LIKE 'Cancelada%'
-                    AND V.estado != 'No terminada'
-            GROUP	BY 1
-            ORDER	BY 2 DESC;
-        ''')
-        
-        categories = []
-        set0 = QBarSet('Ventas con este producto')
-        set1 = QBarSet('Ingresos de este producto')
-        
-        for codigo, cantidad, ingresos in data:
-            categories.append(codigo)
-            set0 << cantidad
-            set1 << ingresos
-        
-        series = QBarSeries()
-        series.append(set0)
-        series.append(set1)
-        
-        font = QFont()
-        font.setPointSize(11)
-        
-        chart = QChart()
-        chart.setScale(1)
-        chart.addSeries(series)
-        chart.setTitle('Productos más vendidos')
-        chart.setTitleFont(font)
-        chart.setAnimationOptions(QChart.SeriesAnimations)
-        
-        axis = QBarCategoryAxis()
-        axis.append(categories)
-        chart.createDefaultAxes()
-        chart.setAxisX(axis, series)
-        chart.axisX().setLabelsFont(font)
-        chart.axisX().setTitleFont(font)
-        chart.axisY().setLabelsFont(font)
-        chart.axisY().setTitleFont(font)
-        
-        chart.legend().setVisible(True)
-        chart.legend().setAlignment(Qt.AlignBottom)
-        chart.legend().setFont(font)
-        
-        chartView = QChartView(chart)
-        chartView.setFont(font)
-        chartView.setRenderHint(QPainter.Antialiasing)
-        return chartView
-    
+        self.ui.btVendedores.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(2))
+        self.ui.btClientes.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(3))
+        self.ui.btProductos.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(4))
+      
     def goHome(self):
         parent: VentanaPrincipal = self.parentWidget()
         parent.goHome()
@@ -201,7 +79,7 @@ class ChartView(QChartView):
         manejador = ManejadorReportes(conn)
         
         data = manejador.fetchall('''
-            SELECT 	FIRST 10
+            SELECT 	FIRST 5
                     Clientes.nombre,
                     COUNT (
                         IIF(fecha_hora_creacion = fecha_hora_entrega, 1, NULL)
@@ -232,6 +110,7 @@ class ChartView(QChartView):
         
         font = self.font()
         chart = QChart()
+        chart.addSeries(series)
         chart.setScale(1)
         chart.setTitle('Clientes con más ventas del negocio')
         chart.setTitleFont(font)
@@ -249,8 +128,39 @@ class ChartView(QChartView):
         chart.legend().setVisible(True)
         chart.legend().setAlignment(Qt.AlignBottom)
         chart.legend().setFont(font)
-        chart.addSeries(series)
         self.setChart(chart)
+
+
+class ChartView2(QChartView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        font = QFont()
+        font.setPointSize(11)
+        self.series = QPieSeries()
+        
+        self.series.append('Jane', 1)
+        self.series.append('Joe', 2)
+        self.series.append('Andy', 3)
+        self.series.append('Barbara', 4)
+        self.series.append('Axel', 5)
+
+        self.slice = self.series.slices()[1]
+        self.slice.setExploded(True)
+        self.slice.setLabelVisible(True)
+        self.slice.setPen(QPen(Qt.darkGreen, 2))
+        self.slice.setBrush(Qt.green)
+        self.slice.setLabelFont(font)
+        chart = QChart()
+        chart.setFont(font)
+        chart.setTitleFont(font)
+        chart.addSeries(self.series)
+        chart.setTitle('Simple piechart example')
+        chart.legend().hide()
+        
+        self.setChart(chart)
+        self.setRenderHint(QPainter.Antialiasing)
+
 
 """
 POSIBLES IDEAS.
