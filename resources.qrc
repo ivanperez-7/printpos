@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="img">
+    <file>resources/images/comprador.png</file>
     <file>resources/images/user_login.png</file>
     <file>resources/images/lock.png</file>
     <file>resources/images/key-set.png</file>

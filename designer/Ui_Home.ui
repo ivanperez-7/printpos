@@ -238,13 +238,6 @@
                 <pointsize>10</pointsize>
                </font>
               </property>
-              <property name="styleSheet">
-               <string notr="true">QListWidget {
-	alternate-background-color: rgb(240, 240, 240);
-}
-QListWidget::item { margin: 5px; }
-QFrame {border: 2px solid;}</string>
-              </property>
               <property name="frameShape">
                <enum>QFrame::WinPanel</enum>
               </property>

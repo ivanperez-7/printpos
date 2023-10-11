@@ -13,6 +13,7 @@ __all__ = ['VentanaPrincipal', 'DimBackground', 'WidgetPago',
            'StackPagos', 'TablaDatos', 'NumberEdit', 'LabelAdvertencia', 
            'WarningDialog', 'SpeechBubble', 'ListaNotificaciones']
 
+alternate_bg = QColor(225, 225, 225)
 
 class VentanaPrincipal(QtWidgets.QMainWindow):
     def __init__(self, conn: sql.Connection):
@@ -167,7 +168,7 @@ class TablaDatos(QtWidgets.QTableWidget):
             }
             
             QTableWidget {
-                alternate-background-color: rgb(240, 240, 240);
+                alternate-background-color: %s;
             }
 
             QTableView {
@@ -178,7 +179,7 @@ class TablaDatos(QtWidgets.QTableWidget):
                 selection-background-color: rgb(85, 85, 255);
                 selection-color: rgb(255, 255, 255);
             }
-        """)
+        """%alternate_bg.name())
         font = QFont()
         font.setPointSize(10)
         self.setFont(font)
@@ -423,7 +424,22 @@ class SpeechBubble(QtWidgets.QWidget):
 class ListaNotificaciones(QtWidgets.QListWidget):
     hiddenGeom = QRect(0, 0, 400, 0)
     shownGeom = QRect(0, 0, 400, 120)
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
         
+        self.setStyleSheet('''
+            QListWidget {
+                alternate-background-color: %s;
+            }
+            QListWidget::item { 
+                margin: 5px;
+            }
+            QFrame {
+                border: 2px solid;
+            }
+        '''%alternate_bg.name())
+    
     def agregarNotificaciones(self, conn, user):
         """ Llena la caja de notificaciones. """
         from utils.sql import ManejadorInventario, ManejadorVentas
