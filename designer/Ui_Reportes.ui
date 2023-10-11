@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1339</width>
+    <width>1331</width>
     <height>656</height>
    </rect>
   </property>
@@ -14,6 +14,9 @@
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
    <item alignment="Qt::AlignLeft|Qt::AlignTop">
     <widget class="QFrame" name="frame">
      <property name="minimumSize">
@@ -36,7 +39,7 @@
        <number>20</number>
       </property>
       <property name="leftMargin">
-       <number>27</number>
+       <number>36</number>
       </property>
       <property name="rightMargin">
        <number>18</number>
@@ -107,14 +110,35 @@
       </sizepolicy>
      </property>
      <layout class="QGridLayout" name="gridLayout_5">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
       <property name="horizontalSpacing">
        <number>26</number>
       </property>
       <item row="0" column="0" rowspan="2">
        <widget class="QFrame" name="frameBotones">
         <property name="styleSheet">
-         <string notr="true">background-color: rgb(245, 245, 245);
-border-radius: 40px;</string>
+         <string notr="true">QPushButton {
+	background-color: transparent;
+	text-align: left;
+	padding-left: 30px;
+	border-bottom-right-radius: 28px;
+	border-top-right-radius: 28px;
+}
+
+QPushButton:hover {
+	background-color: rgba(2,123,255,255);
+	color: white;
+}
+QPushButton:pressed {
+	background-color: rgba(0,95,160,255);
+	color: white;
+}
+QPushButton:checked {
+	background-color: rgba(2,123,255,255);
+	color: white;
+}</string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout">
          <property name="leftMargin">
@@ -156,26 +180,6 @@ border-radius: 40px;</string>
            </property>
            <property name="cursor">
             <cursorShape>PointingHandCursor</cursorShape>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
-	background-color: transparent;
-	text-align: left;
-	padding-left: 20px;
-}
-
-QPushButton:hover {
-	background-color: rgba(2,123,255,255);
-	color: white;
-}
-QPushButton:pressed {
-	background-color: rgba(0,95,160,255);
-	color: white;
-}
-QPushButton:checked {
-	background-color: rgba(2,123,255,255);
-	color: white;
-}</string>
            </property>
            <property name="text">
             <string>   Tablero</string>
@@ -232,26 +236,6 @@ QPushButton:checked {
            <property name="cursor">
             <cursorShape>PointingHandCursor</cursorShape>
            </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
-	background-color: transparent;
-	text-align: left;
-	padding-left: 20px;
-}
-
-QPushButton:hover {
-	background-color: rgba(2,123,255,255);
-	color: white;
-}
-QPushButton:pressed {
-	background-color: rgba(0,95,160,255);
-	color: white;
-}
-QPushButton:checked {
-	background-color: rgba(2,123,255,255);
-	color: white;
-}</string>
-           </property>
            <property name="text">
             <string>   Reportes de ventas</string>
            </property>
@@ -286,7 +270,7 @@ QPushButton:checked {
            </property>
            <property name="minimumSize">
             <size>
-             <width>270</width>
+             <width>280</width>
              <height>70</height>
             </size>
            </property>
@@ -303,26 +287,6 @@ QPushButton:checked {
            </property>
            <property name="cursor">
             <cursorShape>PointingHandCursor</cursorShape>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
-	background-color: transparent;
-	text-align: left;
-	padding-left: 20px;
-}
-
-QPushButton:hover {
-	background-color: rgba(2,123,255,255);
-	color: white;
-}
-QPushButton:pressed {
-	background-color: rgba(0,95,160,255);
-	color: white;
-}
-QPushButton:checked {
-	background-color: rgba(2,123,255,255);
-	color: white;
-}</string>
            </property>
            <property name="text">
             <string>   Reportes de vendedores</string>
@@ -349,7 +313,7 @@ QPushButton:checked {
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="btVendedores_2">
+          <widget class="QPushButton" name="btClientes">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -375,26 +339,6 @@ QPushButton:checked {
            </property>
            <property name="cursor">
             <cursorShape>PointingHandCursor</cursorShape>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
-	background-color: transparent;
-	text-align: left;
-	padding-left: 20px;
-}
-
-QPushButton:hover {
-	background-color: rgba(2,123,255,255);
-	color: white;
-}
-QPushButton:pressed {
-	background-color: rgba(0,95,160,255);
-	color: white;
-}
-QPushButton:checked {
-	background-color: rgba(2,123,255,255);
-	color: white;
-}</string>
            </property>
            <property name="text">
             <string>   Reportes de clientes</string>
@@ -447,26 +391,6 @@ QPushButton:checked {
            </property>
            <property name="cursor">
             <cursorShape>PointingHandCursor</cursorShape>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
-	background-color: transparent;
-	text-align: left;
-	padding-left: 20px;
-}
-
-QPushButton:hover {
-	background-color: rgba(2,123,255,255);
-	color: white;
-}
-QPushButton:pressed {
-	background-color: rgba(0,95,160,255);
-	color: white;
-}
-QPushButton:checked {
-	background-color: rgba(2,123,255,255);
-	color: white;
-}</string>
            </property>
            <property name="text">
             <string>   Reportes de productos</string>
@@ -692,11 +616,14 @@ QPushButton:checked {
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>990</width>
-           <height>616</height>
+           <width>1007</width>
+           <height>488</height>
           </rect>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_10">
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
           <item>
            <widget class="QStackedWidget" name="stackedWidget">
             <property name="currentIndex">
@@ -704,11 +631,14 @@ QPushButton:checked {
             </property>
             <widget class="QWidget" name="page">
              <layout class="QGridLayout" name="gridLayout">
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
               <property name="horizontalSpacing">
                <number>40</number>
               </property>
               <property name="verticalSpacing">
-               <number>50</number>
+               <number>30</number>
               </property>
               <item row="0" column="2">
                <widget class="QWidget" name="productoW" native="true">
@@ -804,155 +734,6 @@ QPushButton:checked {
                       </property>
                       <property name="text">
                        <string>Lo más vendido</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-              </item>
-              <item row="1" column="0" colspan="3">
-               <widget class="QWidget" name="widget_4" native="true">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>200</height>
-                 </size>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true"/>
-                </property>
-                <layout class="QHBoxLayout" name="horizontalLayout_2">
-                 <property name="spacing">
-                  <number>50</number>
-                 </property>
-                 <property name="leftMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>0</number>
-                 </property>
-                 <item>
-                  <widget class="QWidget" name="placeholder_1" native="true">
-                   <property name="styleSheet">
-                    <string notr="true">background-color: rgb(255, 255, 255);
-border-radius: 15px;</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QWidget" name="widget_5" native="true">
-                   <property name="styleSheet">
-                    <string notr="true">background-color: rgb(255, 255, 255);
-border-radius: 15px;</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-              </item>
-              <item row="0" column="0">
-               <widget class="QWidget" name="ingresosW" native="true">
-                <property name="styleSheet">
-                 <string notr="true">QWidget#ingresosW {
-	background-color: rgb(255, 255, 255);
-	border-radius: 15px;
-	border: 3px solid #ddd;
-}</string>
-                </property>
-                <layout class="QHBoxLayout" name="horizontalLayout_5">
-                 <property name="leftMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>0</number>
-                 </property>
-                 <item>
-                  <widget class="QLabel" name="label_4">
-                   <property name="maximumSize">
-                    <size>
-                     <width>80</width>
-                     <height>80</height>
-                    </size>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true"/>
-                   </property>
-                   <property name="text">
-                    <string/>
-                   </property>
-                   <property name="pixmap">
-                    <pixmap resource="../resources.qrc">:/img/resources/images/dolar.png</pixmap>
-                   </property>
-                   <property name="scaledContents">
-                    <bool>true</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QWidget" name="widgett" native="true">
-                   <layout class="QGridLayout" name="gridLayout_2">
-                    <property name="topMargin">
-                     <number>15</number>
-                    </property>
-                    <property name="bottomMargin">
-                     <number>15</number>
-                    </property>
-                    <item row="1" column="0">
-                     <widget class="QLabel" name="lbIngresosBrutos">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="font">
-                       <font>
-                        <pointsize>12</pointsize>
-                       </font>
-                      </property>
-                      <property name="text">
-                       <string>$59,124.57</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="1">
-                     <widget class="QLabel" name="lbCountVentas">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="text">
-                       <string>a través de 5,123 ventas</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="0" colspan="2">
-                     <widget class="QLabel" name="label">
-                      <property name="font">
-                       <font>
-                        <pointsize>13</pointsize>
-                        <bold>true</bold>
-                       </font>
-                      </property>
-                      <property name="text">
-                       <string>Ingresos brutos</string>
                       </property>
                      </widget>
                     </item>
@@ -1065,8 +846,111 @@ border-radius: 15px;</string>
                 </layout>
                </widget>
               </item>
-              <item row="2" column="0" colspan="3">
-               <widget class="QWidget" name="widget_6" native="true">
+              <item row="0" column="0">
+               <widget class="QWidget" name="ingresosW" native="true">
+                <property name="styleSheet">
+                 <string notr="true">QWidget#ingresosW {
+	background-color: rgb(255, 255, 255);
+	border-radius: 15px;
+	border: 3px solid #ddd;
+}</string>
+                </property>
+                <layout class="QHBoxLayout" name="horizontalLayout_5">
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label_4">
+                   <property name="maximumSize">
+                    <size>
+                     <width>80</width>
+                     <height>80</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true"/>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="pixmap">
+                    <pixmap resource="../resources.qrc">:/img/resources/images/dolar.png</pixmap>
+                   </property>
+                   <property name="scaledContents">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QWidget" name="widgett" native="true">
+                   <layout class="QGridLayout" name="gridLayout_2">
+                    <property name="topMargin">
+                     <number>15</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>15</number>
+                    </property>
+                    <item row="1" column="0">
+                     <widget class="QLabel" name="lbIngresosBrutos">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <pointsize>12</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>$59,124.57</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="1" column="1">
+                     <widget class="QLabel" name="lbCountVentas">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="text">
+                       <string>a través de 5,123 ventas</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="0" colspan="2">
+                     <widget class="QLabel" name="label">
+                      <property name="font">
+                       <font>
+                        <pointsize>13</pointsize>
+                        <bold>true</bold>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Ingresos brutos</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="1" column="0" colspan="3">
+               <widget class="QWidget" name="widget_4" native="true">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                   <horstretch>0</horstretch>
@@ -1082,7 +966,7 @@ border-radius: 15px;</string>
                 <property name="styleSheet">
                  <string notr="true"/>
                 </property>
-                <layout class="QHBoxLayout" name="horizontalLayout_11">
+                <layout class="QHBoxLayout" name="horizontalLayout_2">
                  <property name="spacing">
                   <number>50</number>
                  </property>
@@ -1092,16 +976,31 @@ border-radius: 15px;</string>
                  <property name="rightMargin">
                   <number>0</number>
                  </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
                  <item>
-                  <widget class="QWidget" name="widget_7" native="true">
+                  <widget class="ChartView" name="placeholder_1" native="true">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
                    <property name="styleSheet">
                     <string notr="true">background-color: rgb(255, 255, 255);
 border-radius: 15px;</string>
                    </property>
                   </widget>
                  </item>
-                 <item>
-                  <widget class="QWidget" name="widget_8" native="true">
+                 <item alignment="Qt::AlignRight">
+                  <widget class="ChartView2" name="widget_5" native="true">
+                   <property name="minimumSize">
+                    <size>
+                     <width>350</width>
+                     <height>0</height>
+                    </size>
+                   </property>
                    <property name="styleSheet">
                     <string notr="true">background-color: rgb(255, 255, 255);
 border-radius: 15px;</string>
@@ -1113,6 +1012,10 @@ border-radius: 15px;</string>
               </item>
              </layout>
             </widget>
+            <widget class="QWidget" name="page_2"/>
+            <widget class="QWidget" name="page_3"/>
+            <widget class="QWidget" name="page_4"/>
+            <widget class="QWidget" name="page_5"/>
            </widget>
           </item>
          </layout>
@@ -1124,6 +1027,20 @@ border-radius: 15px;</string>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ChartView</class>
+   <extends>QWidget</extends>
+   <header>backends.Reportes.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ChartView2</class>
+   <extends>QWidget</extends>
+   <header>backends.Reportes.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../resources.qrc"/>
  </resources>
