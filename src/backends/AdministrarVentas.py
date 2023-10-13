@@ -89,7 +89,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         # configurar y llenar tablas
         self.ui.tabla_ventasDirectas.configurarCabecera(lambda col: col in [0, 3, 4, 5, 6, 7])
-        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in [0, 1, 5, 6, 7, 8])
+        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in [0, 3, 4, 5, 7, 8, 10])
     
     def showEvent(self, event):
         self.rescan_update()
@@ -251,6 +251,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
                 
                 button_cell = QtWidgets.QPushButton(' Enviar recordatorio')
                 button_cell.setIcon(QIcon(":/img/resources/images/whatsapp.png"))
+                button_cell.setFixedWidth(180)
                 button_cell.clicked.connect(self.enviarRecordatorio)
                 
                 tabla.setCellWidget(row, col + 1, button_cell)

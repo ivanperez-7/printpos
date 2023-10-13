@@ -470,12 +470,6 @@ class WidgetElemento(QtWidgets.QWidget):
                                  "        background-color: transparent;\n"
                                  "        border: none;\n"
                                  "        padding: 0px;\n"
-                                 "    }\n"
-                                 "    QPushButton:hover {\n"
-                                 "        background-color: rgba(255, 255, 255, 0);\n"
-                                 "    }\n"
-                                 "    QPushButton:pressed {\n"
-                                 "        background-color: rgba(255, 255, 255, 0);\n"
                                  "    }")
         icon = QIcon()
         icon.addFile(":/img/resources/images/cancel.png", QtCore.QSize(), QIcon.Normal, QIcon.Off)

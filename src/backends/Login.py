@@ -69,7 +69,7 @@ class App_Login(QtWidgets.QWidget):
         self.validar_licencia()
     
     def keyPressEvent(self, event):
-        if event.key() in {Qt.Key_Return, Qt.Key_Enter} and not self.lock:
+        if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
             self.ui.btIngresar.click()
 
     # ==================
@@ -125,7 +125,7 @@ class App_Login(QtWidgets.QWidget):
             self.lock = False
             return
         
-        self.ui.lbEstado.setStyleSheet('color: rgb(0, 0, 0);')
+        self.ui.lbEstado.setStyleSheet('color: #000;')
         self.ui.lbEstado.setText('Conectando a la base de datos...')
         
         rol = self.ui.groupRol.checkedButton().text()
@@ -136,7 +136,7 @@ class App_Login(QtWidgets.QWidget):
             manejador.obtenerUsuario(usuario)
         except sql.Error as err:
             print(err.args[0])
-            self.ui.lbEstado.setStyleSheet('color: rgb(255, 0, 0);')
+            self.ui.lbEstado.setStyleSheet('color: #f00;')
             self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
             self.lock = False
         else:
@@ -213,7 +213,7 @@ class LoginButton(QtWidgets.QPushButton):
         qss = """
             font: 75 10pt "Segoe UI";
             font-weight: bold;
-            color: rgb(255, 255, 255);
+            color: #fff;
             border-style: solid;
             border-radius: 15px;
             outline: 0px;

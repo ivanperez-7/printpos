@@ -156,6 +156,7 @@ class ChartView2(QChartView):
         chart.setTitleFont(font)
         chart.addSeries(self.series)
         chart.setTitle('Simple piechart example')
+        chart.setAnimationOptions(QChart.SeriesAnimations)
         chart.legend().hide()
         
         self.setChart(chart)

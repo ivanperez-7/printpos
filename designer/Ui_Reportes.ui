@@ -55,12 +55,7 @@
         border: none;
         padding: 0px;
     }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
+</string>
         </property>
         <property name="text">
          <string notr="true"/>
@@ -128,7 +123,7 @@
 }
 
 QPushButton:hover {
-	background-color: rgba(2,123,255,255);
+	background-color: rgb(52, 172, 224);
 	color: white;
 }
 QPushButton:pressed {
@@ -136,7 +131,7 @@ QPushButton:pressed {
 	color: white;
 }
 QPushButton:checked {
-	background-color: rgba(2,123,255,255);
+	background-color: rgb(52, 172, 224);
 	color: white;
 }</string>
         </property>
@@ -966,20 +961,11 @@ QPushButton:checked {
                 <property name="styleSheet">
                  <string notr="true"/>
                 </property>
-                <layout class="QHBoxLayout" name="horizontalLayout_2">
-                 <property name="spacing">
-                  <number>50</number>
-                 </property>
-                 <property name="leftMargin">
+                <layout class="QGridLayout" name="gridLayout_6">
+                 <property name="verticalSpacing">
                   <number>0</number>
                  </property>
-                 <property name="rightMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>0</number>
-                 </property>
-                 <item>
+                 <item row="0" column="0" rowspan="2">
                   <widget class="ChartView" name="placeholder_1" native="true">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -988,12 +974,11 @@ QPushButton:checked {
                     </sizepolicy>
                    </property>
                    <property name="styleSheet">
-                    <string notr="true">background-color: rgb(255, 255, 255);
-border-radius: 15px;</string>
+                    <string notr="true"/>
                    </property>
                   </widget>
                  </item>
-                 <item alignment="Qt::AlignRight">
+                 <item row="0" column="1" alignment="Qt::AlignRight">
                   <widget class="ChartView2" name="widget_5" native="true">
                    <property name="minimumSize">
                     <size>
@@ -1002,8 +987,20 @@ border-radius: 15px;</string>
                     </size>
                    </property>
                    <property name="styleSheet">
-                    <string notr="true">background-color: rgb(255, 255, 255);
-border-radius: 15px;</string>
+                    <string notr="true"/>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1" alignment="Qt::AlignRight">
+                  <widget class="ChartView2" name="widget_7" native="true">
+                   <property name="minimumSize">
+                    <size>
+                     <width>350</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true"/>
                    </property>
                   </widget>
                  </item>
@@ -1012,10 +1009,34 @@ border-radius: 15px;</string>
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="page_2"/>
-            <widget class="QWidget" name="page_3"/>
-            <widget class="QWidget" name="page_4"/>
-            <widget class="QWidget" name="page_5"/>
+            <widget class="QWidget" name="page_2">
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <item>
+               <widget class="QTableWidget" name="tableWidget"/>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="page_3">
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <item>
+               <widget class="QTableWidget" name="tableWidget_2"/>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="page_4">
+             <layout class="QHBoxLayout" name="horizontalLayout_11">
+              <item>
+               <widget class="QTableWidget" name="tableWidget_3"/>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="page_5">
+             <layout class="QHBoxLayout" name="horizontalLayout_12">
+              <item>
+               <widget class="QTableWidget" name="tableWidget_4"/>
+              </item>
+             </layout>
+            </widget>
            </widget>
           </item>
          </layout>
