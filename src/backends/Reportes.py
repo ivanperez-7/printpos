@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont
 from PySide6.QtCharts import *
@@ -25,6 +27,11 @@ class App_Reportes(QtWidgets.QWidget):
         self.conn = parent.conn
         self.user = parent.user
         
+        for tbl in [self.ui.tableWidget, self.ui.tableWidget_2, self.ui.tableWidget_3, self.ui.tableWidget_4]:
+            #tbl.configurarCabecera(lambda col: col <= 2 or col == 7, Qt.AlignCenter | Qt.TextWordWrap)
+            tbl.tamanoCabecera(11)
+            tbl.quitarBordeCabecera()
+        
         # fechas por defecto
         manejador = ManejadorVentas(self.conn)
         fechaMin = manejador.obtenerFechaPrimeraVenta()
@@ -33,6 +40,24 @@ class App_Reportes(QtWidgets.QWidget):
                        self.ui.dateDesde, self.ui.dateHasta, fechaMin)
         
         self.ui.btRegresar.clicked.connect(self.goHome)
+        self.ui.dateHasta.dateChanged.connect(self.actualizar_datos)
+        self.ui.dateDesde.dateChanged.connect(self.actualizar_datos)
+        
+        self.ui.btTablero.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(0))
+        self.ui.btVentas.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(1))
+        self.ui.btVendedores.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(2))
+        self.ui.btClientes.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(3))
+        self.ui.btProductos.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(4))
+    
+    def showEvent(self, event):
+        self.actualizar_datos()
+    
+    # ==================
+    #  FUNCIONES ÚTILES
+    # ==================
+    def actualizar_datos(self):
+        fechaDesde = self.ui.dateDesde.date()
+        fechaHasta = self.ui.dateHasta.date()
         
         # alimentar QLabels
         man = ManejadorReportes(self.conn)
@@ -48,15 +73,20 @@ class App_Reportes(QtWidgets.QWidget):
         self.ui.lbProdVendidos.setText(codigo)
         self.ui.lbProdCount.setText(stringify_float(count) + ' unidades')
         
+        # gráficas 
         self.ui.placeholder_1.alimentarDatos(self.conn)
-        #self.ui.placeholder_2.alimentarDatos(self.conn)
         
-        self.ui.btTablero.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(0))
-        self.ui.btVentas.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(1))
-        self.ui.btVendedores.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(2))
-        self.ui.btClientes.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(3))
-        self.ui.btProductos.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(4))
-      
+        # llenar tablas
+        tabla = self.ui.tableWidget_3
+        tabla.llenar(man.obtenerReporteClientes())
+        tabla.resizeColumnsToContents()
+        tabla.resizeRowsToContents()
+        
+        tabla = self.ui.tableWidget_2
+        tabla.llenar(man.obtenerReporteVendedores())
+        tabla.resizeColumnsToContents()
+        tabla.resizeRowsToContents()
+    
     def goHome(self):
         parent: VentanaPrincipal = self.parentWidget()
         parent.goHome()
@@ -166,14 +196,8 @@ class ChartView2(QChartView):
 """
 POSIBLES IDEAS.
 
-Customer Sales Ranking: You can display a list of the top customers who have spent the most money in your store. This can help you 
-identify your loyal customers and reward them with special offers or discounts.
-
 Product Sales Report: You can display a report that shows which products are selling the most in your store. This can help you 
 identify which products are popular among your customers and make informed decisions about inventory and promotions.
-
-Customer Loyalty Report: You can display a report that shows how frequently your customers return to your store and make purchases. 
-This can help you identify customers who are loyal to your store and reward them with special offers or discounts.
 
 Sales Trends Report: You can display a report that shows the sales trends in your store over a period of time, such as monthly or 
 quarterly. This can help you identify the seasonal trends in your business and make informed decisions about inventory and promotions.

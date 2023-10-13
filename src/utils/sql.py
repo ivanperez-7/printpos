@@ -717,6 +717,58 @@ class ManejadorReportes(DatabaseManager):
             GROUP   BY 1, 2
             ORDER   BY 3 DESC;
         ''')
+        
+    def obtenerReporteVendedores(self):
+        return self.fetchall("""
+            WITH ventas_canceladas AS (
+            SELECT  U.id_usuarios,
+                    COUNT(V.id_ventas) AS num_canceladas
+            FROM    usuarios U
+                    LEFT JOIN ventas V
+                           ON V.id_usuarios = U.id_usuarios
+            WHERE   V.estado LIKE 'Cancelada%'
+            GROUP   BY 1
+            )
+
+            SELECT  U.nombre,
+                    COUNT(V.id_ventas) || ' ventas' as ventas_concretadas,
+                    COALESCE(VC.num_canceladas, 0) || ' ventas' as ventas_canceladas,
+                    SUM(importe) as ventas_brutas,
+                    SUM(importe) / COUNT(U.nombre) as ventas_promedio
+            FROM    usuarios U
+                    LEFT JOIN ventas V
+                           ON V.id_usuarios = U.id_usuarios
+                    LEFT JOIN ventas_detallado VD
+                           ON VD.id_ventas = V.id_ventas
+                    LEFT JOIN ventas_canceladas VC
+                           ON VC.id_usuarios = U.id_usuarios
+            WHERE   V.estado NOT LIKE 'Cancelada%'
+                    AND V.estado != 'No terminada'
+            GROUP   BY 1, 3
+            ORDER   BY COUNT(V.id_ventas) DESC;
+    """)
+    
+    def obtenerReporteClientes(self):
+        return self.fetchall("""
+            SELECT  nombre,
+                    MIN(V.fecha_hora_creacion) as primera_compra,
+                    MAX(V.fecha_hora_creacion) as ultima_compra,
+                    COUNT(V.id_ventas) || ' compras' as num_concretadas,
+                    CAST(COUNT(nombre) AS FLOAT) / 120 as frecuencia_compras,
+                    SUM(importe) as compras_brutas,
+                    SUM(importe) / COUNT(V.id_ventas) as compra_promedio,
+                    LIST(DISTINCT VD.id_productos) AS prod_mas_comprado
+            FROM    clientes C
+                    LEFT JOIN ventas V
+                           ON C.id_clientes = V.id_clientes
+                    LEFT JOIN ventas_detallado VD
+                           ON VD.id_ventas = V.id_ventas
+            WHERE   C.nombre != 'Público general'
+                    AND V.estado NOT LIKE 'Cancelada%'
+                    AND V.estado != 'No terminada'
+            GROUP   BY 1
+            ORDER   BY SUM(importe) DESC;
+        """)
 
 
 class ManejadorVentas(DatabaseManager):

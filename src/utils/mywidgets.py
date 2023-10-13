@@ -1,4 +1,5 @@
 """ Módulo con widgets personalizados varios. """
+from datetime import datetime
 from typing import Callable, Iterator
 
 from PySide6 import QtWidgets
@@ -6,6 +7,7 @@ from PySide6.QtGui import *
 from PySide6.QtCore import *
 
 from backends.Login import Usuario
+from utils.myutils import formatDate
 from utils import Moneda, sql
 
 
@@ -192,6 +194,27 @@ class TablaDatos(QtWidgets.QTableWidget):
         self.setWordWrap(True)
         self.verticalHeader().hide()
         self.horizontalHeader().setMinimumSectionSize(50)
+    
+    def llenar(self, data):
+        self.setRowCount(0)
+        
+        for row, prod in enumerate(data):
+            self.insertRow(row)
+            
+            for col, dato in enumerate(prod):
+                if isinstance(dato, float):
+                    cell = f'{dato:,.2f}'
+                elif isinstance(dato, datetime):
+                    cell = formatDate(dato)
+                else:
+                    cell = str(dato or '')
+                tableItem = QtWidgets.QTableWidgetItem(cell)
+                self.setItem(row, col, tableItem)
+    
+    def tamanoCabecera(self, pt: int):
+        qs = self.styleSheet()
+        header = 'QHeaderView::section {font: bold %dpt;}'%pt
+        self.setStyleSheet(qs + header)
     
     def quitarBordeCabecera(self):
         qs = self.styleSheet()
