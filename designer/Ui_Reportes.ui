@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1331</width>
+    <width>1349</width>
     <height>656</height>
    </rect>
   </property>
@@ -529,6 +529,9 @@ QPushButton:checked {
          <item alignment="Qt::AlignRight">
           <widget class="QFrame" name="frame_13">
            <layout class="QHBoxLayout" name="horizontalLayout_9">
+            <property name="spacing">
+             <number>10</number>
+            </property>
             <property name="leftMargin">
              <number>60</number>
             </property>
@@ -539,7 +542,7 @@ QPushButton:checked {
              <widget class="QPushButton" name="btHoy">
               <property name="minimumSize">
                <size>
-                <width>100</width>
+                <width>110</width>
                 <height>0</height>
                </size>
               </property>
@@ -550,7 +553,7 @@ QPushButton:checked {
                </font>
               </property>
               <property name="text">
-               <string notr="true">Hoy</string>
+               <string notr="true">Esta quincena</string>
               </property>
              </widget>
             </item>
@@ -569,7 +572,7 @@ QPushButton:checked {
                </font>
               </property>
               <property name="text">
-               <string notr="true">Esta semana</string>
+               <string notr="true">Este mes</string>
               </property>
              </widget>
             </item>
@@ -588,7 +591,7 @@ QPushButton:checked {
                </font>
               </property>
               <property name="text">
-               <string notr="true">Este mes</string>
+               <string notr="true">Este año</string>
               </property>
              </widget>
             </item>
@@ -600,6 +603,9 @@ QPushButton:checked {
       </item>
       <item row="1" column="1">
        <widget class="QScrollArea" name="scrollArea">
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
         </property>
@@ -611,7 +617,7 @@ QPushButton:checked {
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>1007</width>
+           <width>1025</width>
            <height>488</height>
           </rect>
          </property>
@@ -624,7 +630,7 @@ QPushButton:checked {
             <property name="currentIndex">
              <number>0</number>
             </property>
-            <widget class="QWidget" name="page">
+            <widget class="QWidget" name="tablero">
              <layout class="QGridLayout" name="gridLayout">
               <property name="bottomMargin">
                <number>0</number>
@@ -1009,31 +1015,261 @@ QPushButton:checked {
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="page_2">
+            <widget class="QWidget" name="ventas">
              <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
               <item>
-               <widget class="QTableWidget" name="tableWidget"/>
+               <widget class="TablaDatos" name="tableWidget">
+                <column>
+                 <property name="text">
+                  <string>Cliente</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Primera compra</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Última compra</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compras concretadas</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Frecuencia de compras</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compras canceladas</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compras brutas</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compra promedio</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Producto más comprado</string>
+                 </property>
+                </column>
+               </widget>
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="page_3">
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <widget class="QWidget" name="vendedores">
+             <layout class="QVBoxLayout" name="verticalLayout_3">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
               <item>
-               <widget class="QTableWidget" name="tableWidget_2"/>
+               <widget class="TablaDatos" name="tableWidget_2">
+                <column>
+                 <property name="text">
+                  <string>Cliente</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Primera compra</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Última compra</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compras concretadas</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Frecuencia de compras</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compras canceladas</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compras brutas</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compra promedio</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Producto más comprado</string>
+                 </property>
+                </column>
+               </widget>
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="page_4">
+            <widget class="QWidget" name="clientes">
              <layout class="QHBoxLayout" name="horizontalLayout_11">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
               <item>
-               <widget class="QTableWidget" name="tableWidget_3"/>
+               <widget class="TablaDatos" name="tableWidget_3">
+                <column>
+                 <property name="text">
+                  <string>Cliente</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Primera compra</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Última compra</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compras concretadas</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Frecuencia de compras</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compras brutas</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compra promedio</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Producto más comprado</string>
+                 </property>
+                </column>
+               </widget>
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="page_5">
-             <layout class="QHBoxLayout" name="horizontalLayout_12">
+            <widget class="QWidget" name="productos">
+             <layout class="QVBoxLayout" name="verticalLayout_4">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
               <item>
-               <widget class="QTableWidget" name="tableWidget_4"/>
+               <widget class="TablaDatos" name="tableWidget_4">
+                <column>
+                 <property name="text">
+                  <string>Cliente</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Primera compra</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Última compra</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compras concretadas</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Frecuencia de compras</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compras canceladas</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compras brutas</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Compra promedio</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Producto más comprado</string>
+                 </property>
+                </column>
+               </widget>
               </item>
              </layout>
             </widget>
@@ -1060,6 +1296,11 @@ QPushButton:checked {
    <extends>QWidget</extends>
    <header>backends.Reportes.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TablaDatos</class>
+   <extends>QTableWidget</extends>
+   <header>utils.mywidgets.h</header>
   </customwidget>
  </customwidgets>
  <resources>
