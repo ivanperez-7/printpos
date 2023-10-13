@@ -71,7 +71,7 @@ class Dialog_ObtenerAdmin(QDialog):
             manejador.obtenerUsuario(usuario)
         except sql.Error:
             self.close()
-            QMessageBox.warning(self.parentWidget(), 'Error',
+            QMessageBox.warning(self.parentWidget(), 'Permiso denegado',
                                 'Las credenciales no son válidas para una cuenta de administrador.')
         else:
             self.close()

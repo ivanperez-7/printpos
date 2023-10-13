@@ -1,7 +1,7 @@
 """ Módulo con métodos de activación, desactivación y validación de licencias.
 
     Provee también una clase `Enum` para manejar los errores que puedan resultar. """
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet as _Fernet
 from enum import Enum as _Enum, auto as _auto
 import json
 import requests
@@ -59,7 +59,7 @@ def activar_licencia(license_key: str):
             shutil.rmtree(_config.LICENSE_PATH, ignore_errors=True)
         
         with open(_config.LICENSE_PATH, 'wb') as license_file:
-            f = Fernet(_config.FERNET_KEY)
+            f = _Fernet(_config.FERNET_KEY)
             license_data = {
                 'license_key': license_key,
                 'instance_id': r['instance']['id']
@@ -85,7 +85,7 @@ def desactivar_licencia():
         return False
     
     with open(_config.LICENSE_PATH, 'rb') as license_file:
-        f = Fernet(_config.FERNET_KEY)
+        f = _Fernet(_config.FERNET_KEY)
         data = f.decrypt(license_file.read())
         
         license_data = json.loads(data.decode('utf-8'))
@@ -125,7 +125,7 @@ def validar_licencia():
         return False, Errores.LICENCIA_NO_EXISTENTE
     
     with open(_config.LICENSE_PATH, 'rb') as license_file:
-        f = Fernet(_config.FERNET_KEY)
+        f = _Fernet(_config.FERNET_KEY)
         data = f.decrypt(license_file.read())
         
         license_data = json.loads(data.decode('utf-8'))
