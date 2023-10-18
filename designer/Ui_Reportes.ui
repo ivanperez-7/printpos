@@ -539,7 +539,7 @@ QPushButton:checked {
              <number>0</number>
             </property>
             <item>
-             <widget class="QPushButton" name="btHoy">
+             <widget class="QPushButton" name="btQuincena">
               <property name="minimumSize">
                <size>
                 <width>110</width>
@@ -558,7 +558,7 @@ QPushButton:checked {
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="btEstaSemana">
+             <widget class="QPushButton" name="btMes">
               <property name="minimumSize">
                <size>
                 <width>100</width>
@@ -577,7 +577,7 @@ QPushButton:checked {
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="btEsteMes">
+             <widget class="QPushButton" name="btAnio">
               <property name="minimumSize">
                <size>
                 <width>100</width>
@@ -1098,47 +1098,27 @@ QPushButton:checked {
                <widget class="TablaDatos" name="tableWidget_2">
                 <column>
                  <property name="text">
-                  <string>Cliente</string>
+                  <string>Vendedor</string>
                  </property>
                 </column>
                 <column>
                  <property name="text">
-                  <string>Primera compra</string>
+                  <string>Ventas concretadas</string>
                  </property>
                 </column>
                 <column>
                  <property name="text">
-                  <string>Última compra</string>
+                  <string>Ventas canceladas</string>
                  </property>
                 </column>
                 <column>
                  <property name="text">
-                  <string>Compras concretadas</string>
+                  <string>Ventas brutas</string>
                  </property>
                 </column>
                 <column>
                  <property name="text">
-                  <string>Frecuencia de compras</string>
-                 </property>
-                </column>
-                <column>
-                 <property name="text">
-                  <string>Compras canceladas</string>
-                 </property>
-                </column>
-                <column>
-                 <property name="text">
-                  <string>Compras brutas</string>
-                 </property>
-                </column>
-                <column>
-                 <property name="text">
-                  <string>Compra promedio</string>
-                 </property>
-                </column>
-                <column>
-                 <property name="text">
-                  <string>Producto más comprado</string>
+                  <string>Venta promedio</string>
                  </property>
                 </column>
                </widget>
@@ -1182,11 +1162,6 @@ QPushButton:checked {
                 <column>
                  <property name="text">
                   <string>Compras concretadas</string>
-                 </property>
-                </column>
-                <column>
-                 <property name="text">
-                  <string>Frecuencia de compras</string>
                  </property>
                 </column>
                 <column>

@@ -243,31 +243,9 @@ class App_CrearVenta(QtWidgets.QWidget):
     def colorearActualizar(self):
         """ Llenar tabla con los productos seleccionados,
             luego calcular precios y actualizar los QLabel. """
-        # <llenar tabla>
         tabla = self.ui.tabla_productos
-        tabla.setRowCount(0)
-        
-        for row, prod in enumerate(ventaDatos):
-            tabla.insertRow(row)
-            
-            for col, dato in enumerate(prod):
-                if isinstance(dato, float):
-                    if col == 4 and not dato:
-                        cell = ''
-                    else:
-                        cell = f'{dato:,.2f}'
-                else:
-                    cell = str(dato or '')
-                
-                tableItem = QtWidgets.QTableWidgetItem(cell)
-                flags = tableItem.flags()
-                if col != 2:
-                    flags &= ~Qt.ItemFlag.ItemIsEditable
-                tableItem.setFlags(flags)
-                
-                tabla.setItem(row, col, tableItem)
-        tabla.resizeRowsToContents()
-        # </llenar tabla>
+        tabla.modelo = tabla.Modelos.CREAR_VENTA
+        tabla.llenar(ventaDatos)
         
         # <calcular precios y mostrar>
         preciosConIVA = ventaDatos.total

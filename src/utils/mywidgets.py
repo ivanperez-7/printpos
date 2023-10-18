@@ -1,5 +1,6 @@
 """ Módulo con widgets personalizados varios. """
 from datetime import datetime
+from enum import Enum, auto
 from typing import Callable, Iterator
 
 from PySide6 import QtWidgets
@@ -154,8 +155,13 @@ class StackPagos(QtWidgets.QStackedWidget):
 
 
 class TablaDatos(QtWidgets.QTableWidget):
+    class Modelos(Enum):
+        DEFAULT = auto()
+        CREAR_VENTA = auto()
+        
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.modelo = self.Modelos.DEFAULT
         
         self.setStyleSheet("""
             QHeaderView::section {
@@ -196,20 +202,11 @@ class TablaDatos(QtWidgets.QTableWidget):
         self.horizontalHeader().setMinimumSectionSize(50)
     
     def llenar(self, data):
-        self.setRowCount(0)
-        
-        for row, prod in enumerate(data):
-            self.insertRow(row)
-            
-            for col, dato in enumerate(prod):
-                if isinstance(dato, float):
-                    cell = f'{dato:,.2f}'
-                elif isinstance(dato, datetime):
-                    cell = formatDate(dato)
-                else:
-                    cell = str(dato or '')
-                tableItem = QtWidgets.QTableWidgetItem(cell)
-                self.setItem(row, col, tableItem)
+        funcs = {
+            self.Modelos.DEFAULT: self._llenar_default,
+            self.Modelos.CREAR_VENTA: self._llenar_crear_venta
+        }
+        funcs[self.modelo](data)
     
     def tamanoCabecera(self, pt: int):
         qs = self.styleSheet()
@@ -247,6 +244,47 @@ class TablaDatos(QtWidgets.QTableWidget):
                 mode = QtWidgets.QHeaderView.ResizeMode.Stretch
             
             header.setSectionResizeMode(col, mode)
+    
+    # ************************************* #
+    def _llenar_default(self, data):
+        self.setRowCount(0)
+        
+        for row, prod in enumerate(data):
+            self.insertRow(row)
+            
+            for col, dato in enumerate(prod):
+                if isinstance(dato, float):
+                    cell = f'{dato:,.2f}'
+                elif isinstance(dato, datetime):
+                    cell = formatDate(dato)
+                else:
+                    cell = str(dato or '')
+                tableItem = QtWidgets.QTableWidgetItem(cell)
+                self.setItem(row, col, tableItem)
+    
+    def _llenar_crear_venta(self, data):
+        self.setRowCount(0)
+        
+        for row, prod in enumerate(data):
+            self.insertRow(row)
+            
+            for col, dato in enumerate(prod):
+                if isinstance(dato, float):
+                    if col == 4 and not dato:
+                        cell = ''
+                    else:
+                        cell = f'{dato:,.2f}'
+                else:
+                    cell = str(dato or '')
+                
+                tableItem = QtWidgets.QTableWidgetItem(cell)
+                flags = tableItem.flags()
+                if col != 2:
+                    flags &= ~Qt.ItemFlag.ItemIsEditable
+                tableItem.setFlags(flags)
+                
+                self.setItem(row, col, tableItem)
+        self.resizeRowsToContents()
 
 
 class NumberEdit(QtWidgets.QLineEdit):

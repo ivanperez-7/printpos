@@ -69,11 +69,9 @@ class InterfazFechas(QObject):
         hoy = QDate.currentDate()
         fechaMin = fechaMin or hoy
         
-        dateDesde.setDate(hoy)
         dateDesde.setMaximumDate(hoy)
         dateDesde.setMinimumDate(fechaMin)
-        
-        dateHasta.setDate(hoy)
+
         dateHasta.setMaximumDate(hoy)
         dateHasta.setMinimumDate(fechaMin)
         
@@ -81,6 +79,8 @@ class InterfazFechas(QObject):
         btHoy.clicked.connect(self.hoy_handle)
         btSemana.clicked.connect(self.semana_handle)
         btMes.clicked.connect(self.mes_handle)
+        
+        self.hoy_handle()
     
     def hoy_handle(self):
         hoy = QDate.currentDate()
@@ -89,9 +89,10 @@ class InterfazFechas(QObject):
     
     def semana_handle(self):
         hoy = QDate.currentDate()
+        current_day_of_week = hoy.dayOfWeek()
         
-        start = hoy.addDays(-hoy.dayOfWeek())
-        end = hoy.addDays(6 - hoy.dayOfWeek())
+        start = hoy.addDays(-current_day_of_week)
+        end = hoy.addDays(6 - current_day_of_week)
         
         self.dateDesde.setDate(start)
         self.dateHasta.setDate(end)
@@ -101,6 +102,70 @@ class InterfazFechas(QObject):
         
         start = QDate(hoy.year(), hoy.month(), 1)
         end = QDate(hoy.year(), hoy.month(), hoy.daysInMonth())
+        
+        self.dateDesde.setDate(start)
+        self.dateHasta.setDate(end)
+
+
+class InterfazFechasReportes(QObject):
+    """ Interfaz para manejar widgets de fechas desde y hasta,
+        por medio de botones de 'Hoy', 'Esta semana' y 'Este mes'. """
+    
+    def __init__(self, btQuincena: QPushButton,
+                 btMes: QPushButton,
+                 btAnio: QPushButton,
+                 dateDesde: QDateEdit,
+                 dateHasta: QDateEdit,
+                 fechaMin: QDate = None):
+        super().__init__(dateDesde)
+        
+        self.dateDesde = dateDesde
+        self.dateHasta = dateHasta
+        
+        # configurar fechas permitidas
+        hoy = QDate.currentDate()
+        fechaMin = fechaMin or hoy
+        
+        dateDesde.setMaximumDate(hoy)
+        dateDesde.setMinimumDate(fechaMin)
+        
+        dateHasta.setMaximumDate(hoy)
+        dateHasta.setMinimumDate(fechaMin)
+        
+        # eventos para los botones
+        btQuincena.clicked.connect(self.quincena_handle)
+        btMes.clicked.connect(self.mes_handle)
+        btAnio.clicked.connect(self.anio_handle)
+        
+        self.quincena_handle()
+    
+    def quincena_handle(self):
+        hoy = QDate.currentDate()
+        
+        if hoy.day() <= 15:
+            start = QDate(hoy.year(), hoy.month(), 1)
+            end = QDate(hoy.year(), hoy.month(), 15)
+        else:
+            start = QDate(hoy.year(), hoy.month(), 16)
+            end = QDate(hoy.year(), hoy.month(), hoy.daysInMonth())
+        
+        self.dateDesde.setDate(start)
+        self.dateHasta.setDate(end)
+    
+    def mes_handle(self):
+        hoy = QDate.currentDate()
+        
+        start = QDate(hoy.year(), hoy.month(), 1)
+        end = QDate(hoy.year(), hoy.month(), hoy.daysInMonth())
+        
+        self.dateDesde.setDate(start)
+        self.dateHasta.setDate(end)
+    
+    def anio_handle(self):
+        hoy = QDate.currentDate()
+        
+        start = QDate(hoy.year(), 1, 1)
+        end = QDate(hoy.year(), 12, 31)
         
         self.dateDesde.setDate(start)
         self.dateHasta.setDate(end)
