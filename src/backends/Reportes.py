@@ -1,12 +1,10 @@
-from datetime import datetime
-
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont
 from PySide6.QtCharts import *
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QPen
 
-from utils.myinterfaces import InterfazFechas
+from utils.myinterfaces import InterfazFechasReportes
 from utils.mywidgets import VentanaPrincipal
 from utils.sql import ManejadorReportes, ManejadorVentas
 
@@ -36,12 +34,14 @@ class App_Reportes(QtWidgets.QWidget):
         manejador = ManejadorVentas(self.conn)
         fechaMin = manejador.obtenerFechaPrimeraVenta()
         
-        InterfazFechas(self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
-                       self.ui.dateDesde, self.ui.dateHasta, fechaMin)
+        InterfazFechasReportes(
+            self.ui.btQuincena, self.ui.btMes, self.ui.btAnio,
+            self.ui.dateDesde, self.ui.dateHasta, fechaMin)
         
         self.ui.btRegresar.clicked.connect(self.goHome)
-        self.ui.dateHasta.dateChanged.connect(self.actualizar_datos)
-        self.ui.dateDesde.dateChanged.connect(self.actualizar_datos)
+        self.ui.stackedWidget.currentChanged.connect(self.actualizar_widget_activo)
+        self.ui.dateHasta.dateChanged.connect(self.actualizar_widget_activo)
+        self.ui.dateDesde.dateChanged.connect(self.actualizar_widget_activo)
         
         self.ui.btTablero.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(0))
         self.ui.btVentas.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(1))
@@ -50,15 +50,32 @@ class App_Reportes(QtWidgets.QWidget):
         self.ui.btProductos.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(4))
     
     def showEvent(self, event):
-        self.actualizar_datos()
+        self.actualizar_widget_activo()
     
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def actualizar_datos(self):
-        fechaDesde = self.ui.dateDesde.date()
-        fechaHasta = self.ui.dateHasta.date()
-        
+    @property
+    def fechaDesde(self):
+        return self.ui.dateDesde.date()
+    
+    @property
+    def fechaHasta(self):
+        return self.ui.dateHasta.date()
+    
+    def actualizar_widget_activo(self):
+        funcs = [
+            self.actualizar_tablero,
+            self.actualizar_tablero,
+            self._actualizar_datos2,
+            self._actualizar_datos,
+            self.actualizar_tablero
+        ]
+        idx = self.ui.stackedWidget.currentIndex()
+        funcs[idx]()
+    
+    # ************************************************ #
+    def actualizar_tablero(self):
         # alimentar QLabels
         man = ManejadorReportes(self.conn)
         brutos, num_ventas = man.obtenerIngresosBrutos()
@@ -75,15 +92,18 @@ class App_Reportes(QtWidgets.QWidget):
         
         # gráficas 
         self.ui.placeholder_1.alimentarDatos(self.conn)
-        
-        # llenar tablas
+    
+    def _actualizar_datos(self):
+        man = ManejadorReportes(self.conn)
         tabla = self.ui.tableWidget_3
-        tabla.llenar(man.obtenerReporteClientes())
+        tabla.llenar(man.obtenerReporteClientes(self.fechaDesde, self.fechaHasta))
         tabla.resizeColumnsToContents()
         tabla.resizeRowsToContents()
-        
+    
+    def _actualizar_datos2(self):
+        man = ManejadorReportes(self.conn)
         tabla = self.ui.tableWidget_2
-        tabla.llenar(man.obtenerReporteVendedores())
+        tabla.llenar(man.obtenerReporteVendedores(self.fechaDesde, self.fechaHasta))
         tabla.resizeColumnsToContents()
         tabla.resizeRowsToContents()
     
