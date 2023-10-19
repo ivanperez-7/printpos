@@ -6,6 +6,7 @@ from typing import Callable, Iterator
 from PySide6 import QtWidgets
 from PySide6.QtGui import *
 from PySide6.QtCore import *
+import PySide6.QtGui
 
 from backends.Login import Usuario
 from utils.myutils import formatDate
@@ -54,6 +55,33 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
             self.conn.close()
             self.consultarPrecios.close()
             event.accept()
+
+
+class ClickableIcon(QtWidgets.QPushButton):
+    """ QPushButton con un stylesheet apropiado para eliminar bordes. """
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        self.setStyleSheet('''
+            /* Normal state */
+            QPushButton {
+                background-color: transparent;
+                border: none;
+                padding: 0px;
+            }
+            /* Hover state */
+            QPushButton:hover {
+                border: none;
+            }
+            /* Focus state */
+            QPushButton:focus {
+                border: none;
+                outline: none; /* Remove the dotted focus outline */
+            }
+        ''')
+        self.setFlat(True)
+        self.setCursor(Qt.PointingHandCursor)
 
 
 class DimBackground(QtWidgets.QFrame):
@@ -161,6 +189,7 @@ class TablaDatos(QtWidgets.QTableWidget):
         
     def __init__(self, parent=None):
         super().__init__(parent)
+        
         self.modelo = self.Modelos.DEFAULT
         
         self.setStyleSheet("""

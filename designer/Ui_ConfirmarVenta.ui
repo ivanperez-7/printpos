@@ -541,28 +541,9 @@
           <number>4</number>
          </property>
          <item>
-          <widget class="QPushButton" name="btQuitar">
-           <property name="cursor">
-            <cursorShape>PointingHandCursor</cursorShape>
-           </property>
+          <widget class="ClickableIcon" name="btQuitar">
            <property name="toolTip">
             <string>Quitar este pago de la venta</string>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-           </property>
-           <property name="text">
-            <string notr="true"/>
            </property>
            <property name="icon">
             <iconset resource="../resources.qrc">
@@ -573,9 +554,6 @@
              <width>20</width>
              <height>20</height>
             </size>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -596,26 +574,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="btAnterior">
-           <property name="cursor">
-            <cursorShape>PointingHandCursor</cursorShape>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-           </property>
-           <property name="text">
-            <string notr="true"/>
-           </property>
+          <widget class="ClickableIcon" name="btAnterior">
            <property name="icon">
             <iconset resource="../resources.qrc">
              <normaloff>:/img/resources/images/back.png</normaloff>:/img/resources/images/back.png</iconset>
@@ -625,9 +584,6 @@
              <width>20</width>
              <height>20</height>
             </size>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -644,26 +600,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="btSiguiente">
-           <property name="cursor">
-            <cursorShape>PointingHandCursor</cursorShape>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-           </property>
-           <property name="text">
-            <string notr="true"/>
-           </property>
+          <widget class="ClickableIcon" name="btSiguiente">
            <property name="icon">
             <iconset resource="../resources.qrc">
              <normaloff>:/img/resources/images/next.png</normaloff>:/img/resources/images/next.png</iconset>
@@ -673,9 +610,6 @@
              <width>20</width>
              <height>20</height>
             </size>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -696,28 +630,9 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="btAgregar">
-           <property name="cursor">
-            <cursorShape>PointingHandCursor</cursorShape>
-           </property>
+          <widget class="ClickableIcon" name="btAgregar">
            <property name="toolTip">
             <string>Agregar pago a la venta</string>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-           </property>
-           <property name="text">
-            <string notr="true"/>
            </property>
            <property name="icon">
             <iconset resource="../resources.qrc">
@@ -728,9 +643,6 @@
              <width>20</width>
              <height>20</height>
             </size>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -970,6 +882,11 @@
   <customwidget>
    <class>TablaDatos</class>
    <extends>QTableWidget</extends>
+   <header>utils.mywidgets.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ClickableIcon</class>
+   <extends>QPushButton</extends>
    <header>utils.mywidgets.h</header>
   </customwidget>
   <customwidget>

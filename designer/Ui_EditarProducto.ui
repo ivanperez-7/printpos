@@ -57,23 +57,7 @@
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
-          <widget class="QPushButton" name="btRegresar">
-           <property name="cursor">
-            <cursorShape>PointingHandCursor</cursorShape>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-           </property>
+          <widget class="ClickableIcon" name="btRegresar">
            <property name="icon">
             <iconset resource="../resources.qrc">
              <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
@@ -83,9 +67,6 @@
              <width>40</width>
              <height>40</height>
             </size>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -398,7 +379,7 @@ QTableView:active {
             </property>
            </column>
           </widget>
-          <widget class="QPushButton" name="btAgregarIntervalo">
+          <widget class="ClickableIcon" name="btAgregarIntervalo">
            <property name="geometry">
             <rect>
              <x>340</x>
@@ -412,22 +393,6 @@ QTableView:active {
              <family>Segoe UI</family>
             </font>
            </property>
-           <property name="cursor">
-            <cursorShape>PointingHandCursor</cursorShape>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-           </property>
            <property name="icon">
             <iconset resource="../resources.qrc">
              <normaloff>:/img/resources/images/plus2.png</normaloff>:/img/resources/images/plus2.png</iconset>
@@ -438,11 +403,8 @@ QTableView:active {
              <height>20</height>
             </size>
            </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
           </widget>
-          <widget class="QPushButton" name="btEliminarIntervalo">
+          <widget class="ClickableIcon" name="btEliminarIntervalo">
            <property name="geometry">
             <rect>
              <x>340</x>
@@ -456,22 +418,6 @@ QTableView:active {
              <family>Segoe UI</family>
             </font>
            </property>
-           <property name="cursor">
-            <cursorShape>PointingHandCursor</cursorShape>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-           </property>
            <property name="icon">
             <iconset resource="../resources.qrc">
              <normaloff>:/img/resources/images/minus2.png</normaloff>:/img/resources/images/minus2.png</iconset>
@@ -481,9 +427,6 @@ QTableView:active {
              <width>20</width>
              <height>20</height>
             </size>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
            </property>
           </widget>
          </widget>
@@ -682,6 +625,13 @@ QTableView:active {
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ClickableIcon</class>
+   <extends>QPushButton</extends>
+   <header>utils.mywidgets.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>txtCodigo</tabstop>
   <tabstop>txtNombre</tabstop>

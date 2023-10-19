@@ -668,17 +668,21 @@ class ManejadorProductos(DatabaseManager):
 
 class ManejadorReportes(DatabaseManager):
     """ Clase con diversas consultas específicas para el módulo de reportes. """
+    restr_ventas_terminadas = '''
+        V.estado NOT LIKE 'Cancelada%'
+        AND V.estado != 'No terminada'
+    '''
+    
     def obtenerIngresosBrutos(self):
         """ Obtiene ingresos brutos de ventas concretadas o pendientes.
             Devuelve: cantidad total, número de ventas. """
-        return self.fetchone('''
+        return self.fetchone(f'''
             SELECT  SUM(importe),
                     COUNT(DISTINCT V.id_ventas)
             FROM    ventas_detallado VD
                     LEFT JOIN ventas V
                            ON VD.id_ventas = V.id_ventas
-            WHERE   V.estado NOT LIKE 'Cancelada%'
-                    AND V.estado != 'No terminada';
+            WHERE   {self.restr_ventas_terminadas};
         ''')
     
     def obtenerTopVendedor(self, count: int = 1):
@@ -693,8 +697,7 @@ class ManejadorReportes(DatabaseManager):
                            ON V.id_ventas = VD.id_ventas
                     LEFT JOIN Usuarios U
                            ON V.id_usuarios = U.ID_USUARIOS
-            WHERE   V.estado NOT LIKE 'Cancelada%'
-                    AND V.estado != 'No terminada'
+            WHERE   {self.restr_ventas_terminadas}
             GROUP   BY U.nombre
             ORDER   BY 2 DESC;
         ''')
@@ -702,7 +705,7 @@ class ManejadorReportes(DatabaseManager):
     def obtenerTopProducto(self, count: int = 1):
         """ Consultar los primeros `count` productos más vendidos.
             Devuelve: abreviado, código, número de unidades vendidas. """
-        return self.fetchone(f'''
+        result = self.fetchall(f'''
             SELECT  FIRST {count}
                     P.abreviado,
                     P.codigo,
@@ -712,14 +715,48 @@ class ManejadorReportes(DatabaseManager):
                            ON VD.id_ventas = V.id_ventas
                     LEFT JOIN Productos P
                            ON VD.id_productos = P.id_productos
-            WHERE   V.estado NOT LIKE 'Cancelada%'
-                    AND V.estado != 'No terminada'
+            WHERE   {self.restr_ventas_terminadas}
             GROUP   BY 1, 2
             ORDER   BY 3 DESC;
         ''')
+        if count <= 1:
+            return result[0]
+        return result
+    
+    def obtenerGraficaMetodos(self):
+        return self.fetchall(f'''
+            SELECT  MP.metodo,
+                    COUNT(*) num_pagos
+            FROM    ventas_pagos VP
+                    LEFT JOIN ventas V
+                           ON VP.id_ventas = V.id_ventas
+                    LEFT JOIN metodos_pago MP
+                           ON VP.id_metodo_pago = MP.id_metodo_pago
+            WHERE   {self.restr_ventas_terminadas}
+            GROUP   BY 1;
+        ''')
+    
+    def obtenerGraficaVentas(self, year):
+        """ Regresa lista de tuplas para la gráfica de barras de ventas:
+            [(mes/año, suma, número de ventas)]. """
+        return self.fetchall(f"""
+            SELECT  EXTRACT(YEAR FROM fecha_hora_creacion)
+                        || '-'
+                        || LPAD(EXTRACT(MONTH FROM fecha_hora_creacion), 2, '0') 
+                    AS formatted_date,
+                    SUM(VD.importe) AS total_sales,
+                    COUNT(DISTINCT V.id_ventas) AS num_ventas
+            FROM    ventas_detallado VD
+                    LEFT JOIN ventas V
+                           ON VD.id_ventas = V.id_ventas
+            WHERE   {self.restr_ventas_terminadas}
+                    AND EXTRACT(YEAR FROM fecha_hora_creacion) = ?
+            GROUP   BY EXTRACT(YEAR FROM fecha_hora_creacion), EXTRACT(MONTH FROM fecha_hora_creacion)
+            ORDER   BY 1;
+        """, (year,))
         
     def obtenerReporteVendedores(self, fechaDesde: QDate, fechaHasta: QDate):
-        return self.fetchall("""
+        return self.fetchall(f"""
             WITH ventas_canceladas AS (
             SELECT  U.id_usuarios,
                     COUNT(
@@ -747,8 +784,7 @@ class ManejadorReportes(DatabaseManager):
                         ON VD.id_ventas = V.id_ventas
                     JOIN ventas_canceladas VC
                         ON VC.id_usuarios = U.id_usuarios
-            WHERE   V.estado NOT LIKE 'Cancelada%'
-                    AND V.estado != 'No terminada'
+            WHERE   {self.restr_ventas_terminadas}
                     AND ? <= CAST(fecha_hora_creacion AS DATE)
                     AND CAST(fecha_hora_creacion AS DATE) <= ?
             GROUP   BY 1, 3
@@ -756,9 +792,7 @@ class ManejadorReportes(DatabaseManager):
     """, (fechaDesde.toPython(), fechaHasta.toPython())*2)
     
     def obtenerReporteClientes(self, fechaDesde: QDate, fechaHasta: QDate):
-        restr = """
-            V.estado NOT LIKE 'Cancelada%'
-            AND V.estado != 'No terminada'
+        restr = self.restr_ventas_terminadas + """
             AND ? <= CAST(fecha_hora_creacion AS DATE)
             AND CAST(fecha_hora_creacion AS DATE) <= ?
         """

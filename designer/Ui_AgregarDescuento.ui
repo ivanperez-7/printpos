@@ -61,7 +61,7 @@
      <string>Agregar descuento</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="btRegresar">
+   <widget class="ClickableIcon" name="btRegresar">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -69,27 +69,6 @@
       <width>41</width>
       <height>41</height>
      </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Segoe UI</family>
-     </font>
-    </property>
-    <property name="cursor">
-     <cursorShape>PointingHandCursor</cursorShape>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
     </property>
     <property name="icon">
      <iconset resource="../resources.qrc">
@@ -100,9 +79,6 @@
       <width>40</width>
       <height>40</height>
      </size>
-    </property>
-    <property name="flat">
-     <bool>true</bool>
     </property>
    </widget>
   </widget>
@@ -229,6 +205,11 @@
   <customwidget>
    <class>TablaDatos</class>
    <extends>QTableWidget</extends>
+   <header>utils.mywidgets.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ClickableIcon</class>
+   <extends>QPushButton</extends>
    <header>utils.mywidgets.h</header>
   </customwidget>
  </customwidgets>

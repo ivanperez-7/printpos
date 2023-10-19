@@ -107,7 +107,7 @@ class App_Login(QtWidgets.QWidget):
     def _crear_dialogo(self, error):
         wdg = DialogoActivacion(self)    
         wdg.success.connect(lambda: (self.ui.btIngresar.clicked.disconnect(),
-                                     self.validar_licencia()))
+                                     self.exito_verificacion()))
         if error == licensing.Errores.LICENCIA_NO_VALIDA:
             wdg.ui.label.setText('¡Su licencia ha expirado!')
     

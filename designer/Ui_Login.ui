@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>461</width>
-    <height>482</height>
+    <height>490</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,7 +32,7 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>28</x>
-     <y>417</y>
+     <y>422</y>
      <width>191</width>
      <height>41</height>
     </rect>
@@ -59,7 +59,7 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>248</x>
-     <y>417</y>
+     <y>422</y>
      <width>181</width>
      <height>41</height>
     </rect>
@@ -75,7 +75,7 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>108</x>
-     <y>360</y>
+     <y>365</y>
      <width>111</width>
      <height>20</height>
     </rect>
@@ -99,7 +99,7 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>50</x>
-     <y>80</y>
+     <y>85</y>
      <width>161</width>
      <height>16</height>
     </rect>
@@ -117,7 +117,7 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>95</x>
-     <y>170</y>
+     <y>175</y>
      <width>295</width>
      <height>41</height>
     </rect>
@@ -138,7 +138,7 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>61</x>
-     <y>328</y>
+     <y>333</y>
      <width>111</width>
      <height>21</height>
     </rect>
@@ -156,7 +156,7 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>238</x>
-     <y>360</y>
+     <y>365</y>
      <width>121</width>
      <height>20</height>
     </rect>
@@ -177,7 +177,7 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>95</x>
-     <y>250</y>
+     <y>255</y>
      <width>295</width>
      <height>41</height>
     </rect>
@@ -201,7 +201,7 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>248</x>
-     <y>30</y>
+     <y>35</y>
      <width>171</width>
      <height>91</height>
     </rect>
@@ -217,7 +217,7 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>50</x>
-     <y>40</y>
+     <y>45</y>
      <width>101</width>
      <height>41</height>
     </rect>
@@ -236,7 +236,7 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>61</x>
-     <y>179</y>
+     <y>184</y>
      <width>26</width>
      <height>26</height>
     </rect>
@@ -255,7 +255,7 @@ QLineEdit:focus {
    <property name="geometry">
     <rect>
      <x>61</x>
-     <y>260</y>
+     <y>265</y>
      <width>23</width>
      <height>23</height>
     </rect>
@@ -270,12 +270,37 @@ QLineEdit:focus {
     <bool>true</bool>
    </property>
   </widget>
+  <widget class="ClickableIcon" name="btAjustes">
+   <property name="geometry">
+    <rect>
+     <x>13</x>
+     <y>13</y>
+     <width>20</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/img/resources/images/settings.png</normaloff>:/img/resources/images/settings.png</iconset>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>20</width>
+     <height>20</height>
+    </size>
+   </property>
+  </widget>
  </widget>
  <customwidgets>
   <customwidget>
    <class>LoginButton</class>
    <extends>QPushButton</extends>
    <header>backends.Login.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ClickableIcon</class>
+   <extends>QPushButton</extends>
+   <header>utils.mywidgets.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>
