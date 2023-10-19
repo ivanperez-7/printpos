@@ -1,7 +1,9 @@
+from functools import partial
+
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont
 from PySide6.QtCharts import *
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QDate
 from PySide6.QtGui import QPainter, QPen
 
 from utils.myinterfaces import InterfazFechasReportes
@@ -25,8 +27,12 @@ class App_Reportes(QtWidgets.QWidget):
         self.conn = parent.conn
         self.user = parent.user
         
-        for tbl in [self.ui.tableWidget, self.ui.tableWidget_2, self.ui.tableWidget_3, self.ui.tableWidget_4]:
-            #tbl.configurarCabecera(lambda col: col <= 2 or col == 7, Qt.AlignCenter | Qt.TextWordWrap)
+        for tbl in [self.ui.tableWidget,
+                    self.ui.tableWidget_2,
+                    self.ui.tableWidget_3,
+                    self.ui.tableWidget_4]:
+            tbl.configurarCabecera(lambda col: col not in [0, 3, 4, 5], 
+                                   Qt.AlignCenter | Qt.TextWordWrap)
             tbl.tamanoCabecera(11)
             tbl.quitarBordeCabecera()
         
@@ -91,20 +97,20 @@ class App_Reportes(QtWidgets.QWidget):
         self.ui.lbProdCount.setText(stringify_float(count) + ' unidades')
         
         # gráficas 
-        self.ui.placeholder_1.alimentarDatos(self.conn)
+        self.ui.bar_ventas.alimentar_datos(self.conn)
+        self.ui.pie_prods.alimentar_productos(self.conn)
+        self.ui.pie_metodos.alimentar_metodos(self.conn)
     
     def _actualizar_datos(self):
         man = ManejadorReportes(self.conn)
         tabla = self.ui.tableWidget_3
         tabla.llenar(man.obtenerReporteClientes(self.fechaDesde, self.fechaHasta))
-        tabla.resizeColumnsToContents()
         tabla.resizeRowsToContents()
     
     def _actualizar_datos2(self):
         man = ManejadorReportes(self.conn)
         tabla = self.ui.tableWidget_2
         tabla.llenar(man.obtenerReporteVendedores(self.fechaDesde, self.fechaHasta))
-        tabla.resizeColumnsToContents()
         tabla.resizeRowsToContents()
     
     def goHome(self):
@@ -125,59 +131,37 @@ class ChartView(QChartView):
         self.setFont(font)
         self.setRenderHint(QPainter.Antialiasing)
     
-    def alimentarDatos(self, conn):
-        manejador = ManejadorReportes(conn)
-        
-        data = manejador.fetchall('''
-            SELECT 	FIRST 5
-                    Clientes.nombre,
-                    COUNT (
-                        IIF(fecha_hora_creacion = fecha_hora_entrega, 1, NULL)
-                    ) AS numDirectas,
-                    COUNT (
-                        IIF(fecha_hora_creacion != fecha_hora_entrega, 1, NULL)
-                    ) AS numPedidos
-            FROM 	Ventas
-                    LEFT JOIN Clientes
-                        ON Ventas.id_clientes = Clientes.id_clientes
-            WHERE	nombre != 'Público general'
-            GROUP	BY Clientes.nombre
-            ORDER	BY COUNT(id_ventas) DESC;
-        ''')
-        
-        categories = []
-        set0 = QBarSet('Ventas al contado')
-        set1 = QBarSet('Ventas sobre pedido')
-        
-        for nombre, numVentas, numPedidos in data:
-            categories.append(nombre)
-            set0 << numVentas
-            set1 << numPedidos
-        
-        series = QBarSeries()
-        series.append(set0)
-        series.append(set1)
-        
-        font = self.font()
+    def alimentar_datos(self, conn):
         chart = QChart()
+        series = QBarSeries()
+        set0 = QBarSet("Ventas brutas")
+        
+        # Replace this with your sales data for each month
+        man = ManejadorReportes(conn)
+        current_year = QDate.currentDate().year()
+        data = man.obtenerGraficaVentas(current_year)
+        
+        month_labels = []
+        
+        for anio_mes, total, num_ventas in data:
+            set0.append(total)
+            month_labels.append(anio_mes)
+
+        series.append(set0)
         chart.addSeries(series)
-        chart.setScale(1)
-        chart.setTitle('Clientes con más ventas del negocio')
-        chart.setTitleFont(font)
-        chart.setAnimationOptions(QChart.SeriesAnimations)
-        
-        axis = QBarCategoryAxis()
-        axis.append(categories)
+
+        chart.setTitle(f"Ventas por mes del año {current_year}")
+        chart.setFont(self.font())
+        chart.setTitleFont(self.font())
+        chart.setAnimationOptions(QChart.AllAnimations)
+
+        categories_axis = QBarCategoryAxis()
+        categories_axis.append(month_labels)
+        #categories_axis.setLabelsFont(self.font())
+        #categories_axis.setTitleFont(self.font())
         chart.createDefaultAxes()
-        chart.setAxisX(axis, series)
-        chart.axisX().setLabelsFont(font)
-        chart.axisX().setTitleFont(font)
-        chart.axisY().setLabelsFont(font)
-        chart.axisY().setTitleFont(font)
-        
-        chart.legend().setVisible(True)
-        chart.legend().setAlignment(Qt.AlignBottom)
-        chart.legend().setFont(font)
+        chart.setAxisX(categories_axis, series)
+
         self.setChart(chart)
 
 
@@ -187,30 +171,66 @@ class ChartView2(QChartView):
         
         font = QFont()
         font.setPointSize(11)
-        self.series = QPieSeries()
+        self.setFont(font)
+    
+    def alimentar_productos(self, conn):
+        man = ManejadorReportes(conn)
+        series = QPieSeries()
         
-        self.series.append('Jane', 1)
-        self.series.append('Joe', 2)
-        self.series.append('Andy', 3)
-        self.series.append('Barbara', 4)
-        self.series.append('Axel', 5)
+        for abrev, codigo, num in man.obtenerTopProducto(6)[1:]:
+            s = series.append(codigo + ' ({})'.format(stringify_float(num)), num)
+            s.hovered.connect(partial(self.handle_slice_hover, s))
 
-        self.slice = self.series.slices()[1]
-        self.slice.setExploded(True)
-        self.slice.setLabelVisible(True)
-        self.slice.setPen(QPen(Qt.darkGreen, 2))
-        self.slice.setBrush(Qt.green)
-        self.slice.setLabelFont(font)
+        _slice = max(series.slices(), key=lambda s: s.value())
+        _slice.setLabelVisible(True)
+        _slice.setPen(QPen(Qt.darkRed, 2))
+        _slice.setBrush(Qt.red)
+        _slice.hovered.disconnect()
+        _slice.hovered.connect(partial(self.handle_max_hover, _slice))
+        
         chart = QChart()
-        chart.setFont(font)
-        chart.setTitleFont(font)
-        chart.addSeries(self.series)
-        chart.setTitle('Simple piechart example')
+        chart.setFont(self.font())
+        chart.setTitleFont(self.font())
+        chart.addSeries(series)
+        chart.setTitle('Los otros productos más vendidos')
         chart.setAnimationOptions(QChart.SeriesAnimations)
         chart.legend().hide()
         
         self.setChart(chart)
         self.setRenderHint(QPainter.Antialiasing)
+    
+    def alimentar_metodos(self, conn):
+        man = ManejadorReportes(conn)
+        series = QPieSeries()
+        
+        for metodo, num in man.obtenerGraficaMetodos():
+            s = series.append(metodo + ' ({})'.format(num), num)
+            s.hovered.connect(partial(self.handle_slice_hover, s))
+
+        _slice = max(series.slices(), key=lambda s: s.value())
+        _slice.setLabelVisible(True)
+        _slice.setPen(QPen(Qt.darkBlue, 2))
+        _slice.setBrush(Qt.blue)
+        _slice.hovered.disconnect()
+        _slice.hovered.connect(partial(self.handle_max_hover, _slice))
+        
+        chart = QChart()
+        chart.setFont(self.font())
+        chart.setTitleFont(self.font())
+        chart.addSeries(series)
+        chart.setTitle('Métodos de pago más usados')
+        chart.setAnimationOptions(QChart.SeriesAnimations)
+        chart.legend().hide()
+        
+        self.setChart(chart)
+        self.setRenderHint(QPainter.Antialiasing)
+    
+    def handle_slice_hover(self, _slice, state):
+        _slice.setExploded(state)
+        _slice.setLabelVisible(state)
+    
+    def handle_max_hover(self, _slice, state):
+        _slice.setExploded(state)
 
 
 """

@@ -53,7 +53,7 @@
      <string>Cotización de venta</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="btRegresar">
+   <widget class="ClickableIcon" name="btRegresar">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -61,22 +61,6 @@
       <width>40</width>
       <height>40</height>
      </rect>
-    </property>
-    <property name="cursor">
-     <cursorShape>PointingHandCursor</cursorShape>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
     </property>
     <property name="icon">
      <iconset resource="../resources.qrc">
@@ -87,9 +71,6 @@
       <width>40</width>
       <height>40</height>
      </size>
-    </property>
-    <property name="flat">
-     <bool>true</bool>
     </property>
    </widget>
   </widget>
@@ -133,7 +114,7 @@
     <string notr="true"/>
    </property>
    <property name="pixmap">
-    <pixmap resource="../../resources.qrc">:/img/resources/images/whatsapp.png</pixmap>
+    <pixmap resource="../resources.qrc">:/img/resources/images/whatsapp.png</pixmap>
    </property>
    <property name="scaledContents">
     <bool>true</bool>
@@ -154,7 +135,6 @@
    <property name="font">
     <font>
      <pointsize>12</pointsize>
-     <weight>50</weight>
      <bold>false</bold>
     </font>
    </property>
@@ -212,7 +192,6 @@
    <property name="font">
     <font>
      <pointsize>12</pointsize>
-     <weight>50</weight>
      <bold>false</bold>
     </font>
    </property>
@@ -245,7 +224,7 @@
     <string notr="true"/>
    </property>
    <property name="pixmap">
-    <pixmap resource="../../resources.qrc">:/img/resources/images/bill.png</pixmap>
+    <pixmap resource="../resources.qrc">:/img/resources/images/bill.png</pixmap>
    </property>
    <property name="scaledContents">
     <bool>true</bool>
@@ -263,9 +242,17 @@
   <zorder>label_64</zorder>
   <zorder>label_65</zorder>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ClickableIcon</class>
+   <extends>QPushButton</extends>
+   <header>utils.mywidgets.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../resources.qrc"/>
   <include location="../resources.qrc"/>
+  <include location="../../resources.qrc"/>
  </resources>
  <connections/>
 </ui>

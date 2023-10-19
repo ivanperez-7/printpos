@@ -41,28 +41,7 @@
        <number>15</number>
       </property>
       <item>
-       <widget class="QPushButton" name="btRegresar">
-        <property name="font">
-         <font>
-          <family>Segoe UI</family>
-         </font>
-        </property>
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-        </property>
+       <widget class="ClickableIcon" name="btRegresar">
         <property name="icon">
          <iconset resource="../resources.qrc">
           <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
@@ -72,9 +51,6 @@
           <width>40</width>
           <height>40</height>
          </size>
-        </property>
-        <property name="flat">
-         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -234,28 +210,7 @@ background-color: rgb(255, 255, 255);</string>
              <number>30</number>
             </property>
             <item>
-             <widget class="QPushButton" name="btAgregar">
-              <property name="font">
-               <font>
-                <family>Segoe UI</family>
-               </font>
-              </property>
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-              </property>
+             <widget class="ClickableIcon" name="btAgregar">
               <property name="icon">
                <iconset resource="../resources.qrc">
                 <normaloff>:/img/resources/images/plus.png</normaloff>:/img/resources/images/plus.png</iconset>
@@ -266,34 +221,10 @@ background-color: rgb(255, 255, 255);</string>
                 <height>40</height>
                </size>
               </property>
-              <property name="flat">
-               <bool>true</bool>
-              </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="btEditar">
-              <property name="font">
-               <font>
-                <family>Segoe UI</family>
-               </font>
-              </property>
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-              </property>
+             <widget class="ClickableIcon" name="btEditar">
               <property name="icon">
                <iconset resource="../resources.qrc">
                 <normaloff>:/img/resources/images/edit.png</normaloff>:/img/resources/images/edit.png</iconset>
@@ -304,34 +235,10 @@ background-color: rgb(255, 255, 255);</string>
                 <height>40</height>
                </size>
               </property>
-              <property name="flat">
-               <bool>true</bool>
-              </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="btEliminar">
-              <property name="font">
-               <font>
-                <family>Segoe UI</family>
-               </font>
-              </property>
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-              </property>
+             <widget class="ClickableIcon" name="btEliminar">
               <property name="icon">
                <iconset resource="../resources.qrc">
                 <normaloff>:/img/resources/images/trash.png</normaloff>:/img/resources/images/trash.png</iconset>
@@ -341,9 +248,6 @@ background-color: rgb(255, 255, 255);</string>
                 <width>40</width>
                 <height>40</height>
                </size>
-              </property>
-              <property name="flat">
-               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -506,6 +410,11 @@ background-color: rgb(255, 255, 255);</string>
   <customwidget>
    <class>TablaDatos</class>
    <extends>QTableWidget</extends>
+   <header>utils.mywidgets.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ClickableIcon</class>
+   <extends>QPushButton</extends>
    <header>utils.mywidgets.h</header>
   </customwidget>
  </customwidgets>

@@ -45,21 +45,7 @@
        <number>18</number>
       </property>
       <item>
-       <widget class="QPushButton" name="btRegresar">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-</string>
-        </property>
-        <property name="text">
-         <string notr="true"/>
-        </property>
+       <widget class="ClickableIcon" name="btRegresar">
         <property name="icon">
          <iconset resource="../resources.qrc">
           <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
@@ -69,9 +55,6 @@
           <width>40</width>
           <height>40</height>
          </size>
-        </property>
-        <property name="flat">
-         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -972,7 +955,7 @@ QPushButton:checked {
                   <number>0</number>
                  </property>
                  <item row="0" column="0" rowspan="2">
-                  <widget class="ChartView" name="placeholder_1" native="true">
+                  <widget class="ChartView" name="bar_ventas" native="true">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                      <horstretch>0</horstretch>
@@ -985,7 +968,7 @@ QPushButton:checked {
                   </widget>
                  </item>
                  <item row="0" column="1" alignment="Qt::AlignRight">
-                  <widget class="ChartView2" name="widget_5" native="true">
+                  <widget class="ChartView2" name="pie_prods" native="true">
                    <property name="minimumSize">
                     <size>
                      <width>350</width>
@@ -998,7 +981,7 @@ QPushButton:checked {
                   </widget>
                  </item>
                  <item row="1" column="1" alignment="Qt::AlignRight">
-                  <widget class="ChartView2" name="widget_7" native="true">
+                  <widget class="ChartView2" name="pie_metodos" native="true">
                    <property name="minimumSize">
                     <size>
                      <width>350</width>
@@ -1261,6 +1244,16 @@ QPushButton:checked {
  </widget>
  <customwidgets>
   <customwidget>
+   <class>TablaDatos</class>
+   <extends>QTableWidget</extends>
+   <header>utils.mywidgets.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ClickableIcon</class>
+   <extends>QPushButton</extends>
+   <header>utils.mywidgets.h</header>
+  </customwidget>
+  <customwidget>
    <class>ChartView</class>
    <extends>QWidget</extends>
    <header>backends.Reportes.h</header>
@@ -1271,11 +1264,6 @@ QPushButton:checked {
    <extends>QWidget</extends>
    <header>backends.Reportes.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>TablaDatos</class>
-   <extends>QTableWidget</extends>
-   <header>utils.mywidgets.h</header>
   </customwidget>
  </customwidgets>
  <resources>

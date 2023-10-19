@@ -75,26 +75,7 @@
              <number>12</number>
             </property>
             <item>
-             <widget class="QPushButton" name="btRegresar">
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-              </property>
-              <property name="text">
-               <string notr="true"/>
-              </property>
+             <widget class="ClickableIcon" name="btRegresar">
               <property name="icon">
                <iconset resource="../resources.qrc">
                 <normaloff>:/img/resources/images/leftarrow.png</normaloff>:/img/resources/images/leftarrow.png</iconset>
@@ -104,9 +85,6 @@
                 <width>40</width>
                 <height>40</height>
                </size>
-              </property>
-              <property name="flat">
-               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -149,27 +127,8 @@
             </property>
             <item row="0" column="0" rowspan="2">
              <widget class="QPushButton" name="btDeshacer">
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
               <property name="toolTip">
                <string>Deshacer fecha de entrega</string>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-              </property>
-              <property name="text">
-               <string notr="true"/>
               </property>
               <property name="icon">
                <iconset resource="../resources.qrc">
@@ -180,9 +139,6 @@
                 <width>20</width>
                 <height>20</height>
                </size>
-              </property>
-              <property name="flat">
-               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -204,26 +160,7 @@
              </widget>
             </item>
             <item row="0" column="3" rowspan="2">
-             <widget class="QPushButton" name="btCalendario">
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-              </property>
-              <property name="text">
-               <string notr="true"/>
-              </property>
+             <widget class="ClickableIcon" name="btCalendario">
               <property name="icon">
                <iconset resource="../resources.qrc">
                 <normaloff>:/img/resources/images/calendar.png</normaloff>:/img/resources/images/calendar.png</iconset>
@@ -233,9 +170,6 @@
                 <width>40</width>
                 <height>40</height>
                </size>
-              </property>
-              <property name="flat">
-               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -604,26 +538,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QPushButton" name="btAgregar">
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-              </property>
-              <property name="text">
-               <string notr="true"/>
-              </property>
+             <widget class="ClickableIcon" name="btAgregar">
               <property name="icon">
                <iconset resource="../resources.qrc">
                 <normaloff>:/img/resources/images/plus.png</normaloff>:/img/resources/images/plus.png</iconset>
@@ -634,32 +549,10 @@
                 <height>40</height>
                </size>
               </property>
-              <property name="flat">
-               <bool>true</bool>
-              </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="btEliminar">
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">QPushButton {
-        background-color: transparent;
-        border: none;
-        padding: 0px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0);
-    }
-    QPushButton:pressed {
-        background-color: rgba(255, 255, 255, 0);
-    }</string>
-              </property>
-              <property name="text">
-               <string notr="true"/>
-              </property>
+             <widget class="ClickableIcon" name="btEliminar">
               <property name="icon">
                <iconset resource="../resources.qrc">
                 <normaloff>:/img/resources/images/trash.png</normaloff>:/img/resources/images/trash.png</iconset>
@@ -669,9 +562,6 @@
                 <width>40</width>
                 <height>40</height>
                </size>
-              </property>
-              <property name="flat">
-               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -744,7 +634,7 @@
               </column>
               <column>
                <property name="text">
-                <string>Descuento $</string>
+                <string>Descuento</string>
                </property>
               </column>
               <column>
@@ -1352,7 +1242,7 @@
            </property>
            <property name="styleSheet">
             <string notr="true">background-color: rgb(224, 52, 172);
-color: rgb(255, 255, 255);
+color: white;
 border-radius: 0px;</string>
            </property>
            <property name="text">
@@ -1388,7 +1278,7 @@ border-radius: 0px;</string>
            </property>
            <property name="styleSheet">
             <string notr="true">background-color: rgb(0, 220, 0);
-color: rgb(255, 255, 255);
+color: white;
 border-radius: 0px;</string>
            </property>
            <property name="text">
@@ -1672,6 +1562,11 @@ border-radius: 0px;</string>
   <customwidget>
    <class>TablaDatos</class>
    <extends>QTableWidget</extends>
+   <header>utils.mywidgets.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ClickableIcon</class>
+   <extends>QPushButton</extends>
    <header>utils.mywidgets.h</header>
   </customwidget>
  </customwidgets>
