@@ -144,10 +144,12 @@ class StackPagos(QtWidgets.QStackedWidget):
     def agregarPago(self):
         """ Agrega widget de pago a la lista y regresa el widget. """
         wdg = WidgetPago()
-        wdg.ui.txtPago.textChanged.connect(lambda: wdg.calcularCambio(self.totalEnEfectivo))
-        wdg.grupoBotones.buttonClicked.connect(lambda: wdg.calcularCambio(self.totalEnEfectivo))
+        calcular = lambda: wdg.calcularCambio(self.totalEnEfectivo)
         
-        self.currentChanged.connect(lambda: wdg.calcularCambio(self.totalEnEfectivo))
+        wdg.ui.txtPago.textChanged.connect(calcular)
+        wdg.grupoBotones.buttonClicked.connect(calcular)
+        self.currentChanged.connect(calcular)
+        
         self.addWidget(wdg)
         self.setCurrentWidget(wdg)
         return wdg
@@ -171,12 +173,15 @@ class StackPagos(QtWidgets.QStackedWidget):
     @property
     def pagosValidos(self):
         montoPagado = sum(wdg.montoPagado for wdg in self.widgetsPago)
+        if self.total == montoPagado == 0. and self.count() == 1:
+            return True
+        
         n_efec = [wdg.metodoSeleccionado for wdg in self.widgetsPago].count('Efectivo')
         
         if n_efec == 0:
             sumaCorrecta = montoPagado == self.total
         elif n_efec == 1:
-            sumaCorrecta = montoPagado >= self.total
+            sumaCorrecta = self.totalEnEfectivo > 0. and montoPagado >= self.total
         else:
             return False
         return all(wdg.montoPagado for wdg in self.widgetsPago) and sumaCorrecta

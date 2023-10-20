@@ -54,12 +54,12 @@ class DatabaseManager:
         
         self.crsr: Cursor = conn.cursor()
     
-    def execute(self, query, parameters=None, commit=False):
+    def _partial_execute(self, func, query, parameters, commit):
         try:
             if parameters is None:
-                self.crsr.execute(query)
+                func(query)
             else:
-                self.crsr.execute(query, parameters)
+                func(query, parameters)
             if commit:
                 self._conn.commit()
             return True
@@ -69,48 +69,40 @@ class DatabaseManager:
             self._conn.rollback()
             _WarningDialog(self._error_txt, err.args[0])
             return False
+    
+    def _partial_fetch(self, func, query, parameters):
+        try:
+            if parameters is None:
+                self.crsr.execute(query)
+            else:
+                self.crsr.execute(query, parameters)
+            return func()
+        except Error as err:
+            if not self._handle_exceptions:
+                raise err
+            self._conn.rollback()
+            _WarningDialog(self._error_txt, err.args[0])
+            return None
+        
+    def execute(self, query, parameters=None, commit=False):
+        func = self.crsr.execute
+        return self._partial_execute(func, query, parameters, commit)
     
     def executemany(self, query, parameters=None, commit=False):
-        try:
-            if parameters is None:
-                self.crsr.executemany(query)
-            else:
-                self.crsr.executemany(query, parameters)
-            if commit:
-                self._conn.commit()
-            return True
-        except Error as err:
-            if not self._handle_exceptions:
-                raise err
-            self._conn.rollback()
-            _WarningDialog(self._error_txt, err.args[0])
-            return False
+        func = self.crsr.executemany
+        return self._partial_execute(func, query, parameters, commit)
     
     def fetchall(self, query, parameters=None) -> list[tuple]:
-        try:
-            if parameters is None:
-                self.crsr.execute(query)
-            else:
-                self.crsr.execute(query, parameters)
-            return self.crsr.fetchall()
-        except Error as err:
-            if not self._handle_exceptions:
-                raise err
-            _WarningDialog(self._error_txt, err.args[0])
-            return None
+        func = self.crsr.fetchall
+        return self._partial_fetch(func, query, parameters)
     
     def fetchone(self, query, parameters=None) -> tuple:
-        try:
-            if parameters is None:
-                self.crsr.execute(query)
-            else:
-                self.crsr.execute(query, parameters)
-            return self.crsr.fetchone()
-        except Error as err:
-            if not self._handle_exceptions:
-                raise err
-            _WarningDialog(self._error_txt, err.args[0])
-            return None
+        func = self.crsr.fetchone
+        return self._partial_fetch(func, query, parameters)
+    
+    def obtenerVista(self, vista: str):
+        """ Atajo de sentencia SELECT para obtener una vista. """
+        return self.fetchall(f'SELECT * FROM {vista};')
     
     @property
     def usuarioActivo(self) -> str:
@@ -136,10 +128,6 @@ class DatabaseManager:
         result = self.fetchone('SELECT CURRENT_ROLE FROM RDB$DATABASE;')
         if result:
             return result[0]
-    
-    def obtenerVista(self, vista: str):
-        """ Atajo de sentencia SELECT para obtener una vista. """
-        return self.fetchall(f'SELECT * FROM {vista};')
 
 
 class ManejadorCaja(DatabaseManager):
@@ -677,11 +665,11 @@ class ManejadorReportes(DatabaseManager):
         """ Obtiene ingresos brutos de ventas concretadas o pendientes.
             Devuelve: cantidad total, número de ventas. """
         return self.fetchone(f'''
-            SELECT  SUM(importe),
+            SELECT  SUM(monto),
                     COUNT(DISTINCT V.id_ventas)
-            FROM    ventas_detallado VD
-                    LEFT JOIN ventas V
-                           ON VD.id_ventas = V.id_ventas
+            FROM    ventas V
+                    LEFT JOIN ventas_pagos VP
+                           ON VP.id_ventas = V.id_ventas
             WHERE   {self.restr_ventas_terminadas};
         ''')
     
@@ -790,6 +778,25 @@ class ManejadorReportes(DatabaseManager):
             GROUP   BY 1, 3
             ORDER   BY COUNT(DISTINCT V.id_ventas) DESC;
     """, (fechaDesde.toPython(), fechaHasta.toPython())*2)
+    
+    def obtenerGraficaVentasVendedor(self, vendedor: str, year: int):
+        return self.fetchall(f'''
+            SELECT  EXTRACT(YEAR FROM fecha_hora_creacion)
+                        || '-'
+                        || LPAD(EXTRACT(MONTH FROM fecha_hora_creacion), 2, '0') 
+                    AS formatted_date,
+                    SUM(VD.importe) AS total_sales
+            FROM    ventas_detallado VD
+                    LEFT JOIN ventas V
+                        ON VD.id_ventas = V.id_ventas
+                    LEFT JOIN Usuarios U
+                        ON V.id_usuarios = U.ID_USUARIOS
+            WHERE   {self.restr_ventas_terminadas}
+                    AND EXTRACT(YEAR FROM fecha_hora_creacion) = ?
+                    AND U.nombre = ?
+            GROUP   BY EXTRACT(YEAR FROM fecha_hora_creacion), EXTRACT(MONTH FROM fecha_hora_creacion)
+            ORDER   BY 1;
+        ''', (year, vendedor))
     
     def obtenerReporteClientes(self, fechaDesde: QDate, fechaHasta: QDate):
         restr = self.restr_ventas_terminadas + """
