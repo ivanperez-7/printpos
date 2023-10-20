@@ -73,8 +73,8 @@ class App_Reportes(QtWidgets.QWidget):
         funcs = [
             self.actualizar_tablero,
             self.actualizar_tablero,
-            self._actualizar_datos2,
-            self._actualizar_datos,
+            self.actualizar_vendedores,
+            self.actualizar_clientes,
             self.actualizar_tablero
         ]
         idx = self.ui.stackedWidget.currentIndex()
@@ -101,17 +101,21 @@ class App_Reportes(QtWidgets.QWidget):
         self.ui.pie_prods.alimentar_productos(self.conn)
         self.ui.pie_metodos.alimentar_metodos(self.conn)
     
-    def _actualizar_datos(self):
+    def actualizar_clientes(self):
         man = ManejadorReportes(self.conn)
         tabla = self.ui.tableWidget_3
         tabla.llenar(man.obtenerReporteClientes(self.fechaDesde, self.fechaHasta))
         tabla.resizeRowsToContents()
     
-    def _actualizar_datos2(self):
+    def actualizar_vendedores(self):
         man = ManejadorReportes(self.conn)
         tabla = self.ui.tableWidget_2
         tabla.llenar(man.obtenerReporteVendedores(self.fechaDesde, self.fechaHasta))
         tabla.resizeRowsToContents()
+        
+        tabla.clicked.connect(
+            lambda index: self.ui.vend_w_graph.alimentar_vendedor(self.conn,
+                                                                  index.siblingAtColumn(0).data()))
     
     def goHome(self):
         parent: VentanaPrincipal = self.parentWidget()
@@ -163,6 +167,39 @@ class ChartView(QChartView):
         chart.setAxisX(categories_axis, series)
 
         self.setChart(chart)
+    
+    def alimentar_vendedor(self, conn, vendedor: str):
+        chart = QChart()
+        series = QBarSeries()
+        set0 = QBarSet("Ventas brutas")
+        
+        # Replace this with your sales data for each month
+        man = ManejadorReportes(conn)
+        current_year = QDate.currentDate().year()
+        data = man.obtenerGraficaVentasVendedor(vendedor, current_year)
+        
+        month_labels = []
+        
+        for anio_mes, total in data:
+            set0.append(total)
+            month_labels.append(anio_mes)
+
+        series.append(set0)
+        chart.addSeries(series)
+
+        chart.setTitle(f"Ventas de {vendedor} en el año {current_year}")
+        chart.setFont(self.font())
+        chart.setTitleFont(self.font())
+        chart.setAnimationOptions(QChart.AllAnimations)
+
+        categories_axis = QBarCategoryAxis()
+        categories_axis.append(month_labels)
+        #categories_axis.setLabelsFont(self.font())
+        #categories_axis.setTitleFont(self.font())
+        chart.createDefaultAxes()
+        chart.setAxisX(categories_axis, series)
+
+        self.setChart(chart)
 
 
 class ChartView2(QChartView):
@@ -183,8 +220,8 @@ class ChartView2(QChartView):
 
         _slice = max(series.slices(), key=lambda s: s.value())
         _slice.setLabelVisible(True)
-        _slice.setPen(QPen(Qt.darkRed, 2))
-        _slice.setBrush(Qt.red)
+        _slice.setPen(QPen(Qt.darkGreen, 2))
+        _slice.setBrush(Qt.green)
         _slice.hovered.disconnect()
         _slice.hovered.connect(partial(self.handle_max_hover, _slice))
         
@@ -236,9 +273,11 @@ class ChartView2(QChartView):
 """
 POSIBLES IDEAS.
 
-Product Sales Report: You can display a report that shows which products are selling the most in your store. This can help you 
-identify which products are popular among your customers and make informed decisions about inventory and promotions.
+Product Sales Report: You can display a report that shows which products are selling the most in your store. 
+This can help you identify which products are popular among your customers and make informed decisions about
+inventory and promotions.
 
-Sales Trends Report: You can display a report that shows the sales trends in your store over a period of time, such as monthly or 
-quarterly. This can help you identify the seasonal trends in your business and make informed decisions about inventory and promotions.
+Sales Trends Report: You can display a report that shows the sales trends in your store over a period of time, 
+such as monthly or quarterly. This can help you identify the seasonal trends in your business and make informed 
+decisions about inventory and promotions.
 """

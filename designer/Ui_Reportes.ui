@@ -1065,6 +1065,9 @@ QPushButton:checked {
             </widget>
             <widget class="QWidget" name="vendedores">
              <layout class="QVBoxLayout" name="verticalLayout_3">
+              <property name="spacing">
+               <number>0</number>
+              </property>
               <property name="leftMargin">
                <number>0</number>
               </property>
@@ -1104,6 +1107,16 @@ QPushButton:checked {
                   <string>Venta promedio</string>
                  </property>
                 </column>
+               </widget>
+              </item>
+              <item>
+               <widget class="ChartView" name="vend_w_graph" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>250</height>
+                 </size>
+                </property>
                </widget>
               </item>
              </layout>
