@@ -144,7 +144,7 @@ class StackPagos(QtWidgets.QStackedWidget):
     def agregarPago(self):
         """ Agrega widget de pago a la lista y regresa el widget. """
         wdg = WidgetPago()
-        calcular = lambda: wdg.calcularCambio(self.totalEnEfectivo)
+        calcular = lambda: wdg.calcularCambio(self.restanteEnEfectivo)
         
         wdg.ui.txtPago.textChanged.connect(calcular)
         wdg.grupoBotones.buttonClicked.connect(calcular)
@@ -165,7 +165,7 @@ class StackPagos(QtWidgets.QStackedWidget):
             yield self.widget(i)
     
     @property
-    def totalEnEfectivo(self):
+    def restanteEnEfectivo(self):
         """ Residuo del total menos lo ya pagado con moneda electrónico. """
         return self.total - sum(wdg.montoPagado for wdg in self.widgetsPago
                                 if wdg.metodoSeleccionado != 'Efectivo')
@@ -181,10 +181,10 @@ class StackPagos(QtWidgets.QStackedWidget):
         if n_efec == 0:
             sumaCorrecta = montoPagado == self.total
         elif n_efec == 1:
-            sumaCorrecta = self.totalEnEfectivo > 0. and montoPagado >= self.total
+            sumaCorrecta = self.restanteEnEfectivo > 0. and montoPagado >= self.total
         else:
             return False
-        return all(wdg.montoPagado for wdg in self.widgetsPago) and sumaCorrecta
+        return sumaCorrecta and all(wdg.montoPagado for wdg in self.widgetsPago)
 
 
 class TablaDatos(QtWidgets.QTableWidget):
@@ -240,6 +240,7 @@ class TablaDatos(QtWidgets.QTableWidget):
             self.Modelos.DEFAULT: self._llenar_default,
             self.Modelos.CREAR_VENTA: self._llenar_crear_venta
         }
+        self.setRowCount(0)
         funcs[self.modelo](data)
     
     def tamanoCabecera(self, pt: int):
@@ -281,14 +282,12 @@ class TablaDatos(QtWidgets.QTableWidget):
     
     # ************************************* #
     def _llenar_default(self, data):
-        self.setRowCount(0)
-        
         for row, prod in enumerate(data):
             self.insertRow(row)
             
             for col, dato in enumerate(prod):
                 if isinstance(dato, float):
-                    cell = f'{dato:,.2f}'
+                    cell = f'${dato:,.2f}'
                 elif isinstance(dato, datetime):
                     cell = formatDate(dato)
                 else:
@@ -297,8 +296,6 @@ class TablaDatos(QtWidgets.QTableWidget):
                 self.setItem(row, col, tableItem)
     
     def _llenar_crear_venta(self, data):
-        self.setRowCount(0)
-        
         for row, prod in enumerate(data):
             self.insertRow(row)
             

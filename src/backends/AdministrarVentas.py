@@ -603,7 +603,7 @@ class App_TerminarVenta(QtWidgets.QWidget):
         
         for wdg in self.ui.stackedWidget.widgetsPago:
             montoAPagar = wdg.montoPagado if wdg.metodoSeleccionado != 'Efectivo' \
-                else self.ui.stackedWidget.totalEnEfectivo
+                else self.ui.stackedWidget.restanteEnEfectivo
                 
             if not manejadorVentas.insertarPago(self.id_ventas, wdg.metodoSeleccionado,
                                                 montoAPagar, wdg.montoPagado):

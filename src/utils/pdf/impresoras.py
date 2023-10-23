@@ -41,7 +41,7 @@ class ImpresoraPDF:
         """ Lee impresora de tickets en archivo config. En hilo principal. """
         from utils.mywidgets import WarningDialog
         
-        printerName = INI.IMPRESORA_TICKETS
+        printerName = INI.IMPRESORA
         pInfo = QPrinterInfo.printerInfo(printerName)
         
         if not pInfo.printerName():

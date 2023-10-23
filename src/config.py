@@ -1,6 +1,6 @@
 """ Módulo con variables de configuraciones para varios usos. """
-from configparser import ConfigParser
 import base64
+from configparser import ConfigParser
 from pathlib import Path
 import os
 
@@ -21,32 +21,36 @@ FERNET_KEY = base64.urlsafe_b64encode(
 #################################
 # VARIABLES PARA ACCEDER A .INI #
 #################################
+_INIParser = ConfigParser(inline_comment_prefixes=';')
+
 class _INIManager:
     def __init__(self):
-        self.config = ConfigParser(inline_comment_prefixes=';')
+        _INIParser.read('config.ini', encoding='UTF8')
+
+        for section in _INIParser.sections():
+            for option in _INIParser.options(section):
+                self._create_property(section, option)
+    
+    def guardar(self):
+        with open('config.ini', 'w+', encoding='utf8') as configfile:
+            _INIParser.write(configfile)
+    
+    def _create_property(self, section, option):
+        def getter(self):
+            _INIParser.read('config.ini', encoding='UTF8')
+            return _INIParser.get(section, option)
+
+        def setter(self, value):
+            _INIParser.set(section, option, value)
         
-    def _get(self, section, option):
-        self.config.read('config.ini', encoding='UTF8')
-        return self.config[section][option]
-    
-    @property
-    def RED_LOCAL(self):
-        return self._get('DEFAULT', 'red_local')
-    
-    @property
-    def IMPRESORA_TICKETS(self):
-        return self._get('DEFAULT', 'impresora')
-    
-    @property
-    def NOMBRE_SUCURSAL(self):
-        return self._get('SUCURSAL', 'nombre')
+        setattr(self.__class__, option.upper(), property(getter, setter))
+        setattr(self, option.upper(), getter(self))
     
     @property
     def DIRECCION_SUCURSAL(self):
-        return self._get('SUCURSAL', 'p1'), self._get('SUCURSAL', 'p2')
-    
-    @property
-    def TELEFONO_SUCURSAL(self):
-        return self._get('SUCURSAL', 'p3')
+        """ Calles y fracc. de la sucursal. Regresa una cadena por cada dato. """
+        return self.P1, self.P2
 
 INI = _INIManager()
+""" Manejador para el archivo `config.ini`.
+    Revisar archivo para los atributos válidos del manejador. """
