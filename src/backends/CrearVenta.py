@@ -455,15 +455,7 @@ class App_AgregarProducto(QtWidgets.QWidget):
                                 and son_similar(txt_busqueda, prod[filtro]),
                    self.all_prod)
         
-        for row, prod in enumerate(found):
-            tabla.insertRow(row)
-            
-            for col, cell in enumerate(prod):
-                if isinstance(cell, float):
-                    cell = f'{cell:,.2f}'
-                else:
-                    cell = str(cell or '')
-                tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
+        tabla.llenar(found)
         # </tabla de productos normales>
         
         # <tabla de gran formato>
@@ -475,17 +467,8 @@ class App_AgregarProducto(QtWidgets.QWidget):
                                 and son_similar(txt_busqueda, prod[filtro]),
                    self.all_gran)
         
-        for row, prod in enumerate(found):
-            tabla.insertRow(row)
-            
-            for col, cell in enumerate(prod):
-                if isinstance(cell, float):
-                    cell = f'{cell:,.2f}'
-                else:
-                    cell = str(cell or '')
-                tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
+        tabla.llenar(found)
         # </tabla de gran formato>
-        
         self.tabla_actual.resizeRowsToContents()
     
     def done(self):
@@ -645,13 +628,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
                                    and son_similar(txt_busqueda, cliente[0]),
                    self.all)
         
-        for row, item in enumerate(found):
-            tabla.insertRow(row)
-            
-            for col, dato in enumerate(item):
-                cell = str(dato or '')
-                tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
-        
+        tabla.llenar(found)
         tabla.resizeRowsToContents()
     
     def done(self):
@@ -776,20 +753,8 @@ class App_AgregarDescuento(QtWidgets.QWidget):
         """ Insertar productos a la tabla. """
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
-        
-        self.productosVenta = ventaDatos.productos
-        
-        for row, prod in enumerate(self.productosVenta):
-            tabla.insertRow(row)
-            
-            for col, dato in enumerate(prod):
-                if isinstance(dato, float):
-                    cell = f'{dato:,.2f}'
-                else:
-                    cell = str(dato or '')
-                
-                cell = QtWidgets.QTableWidgetItem(cell)
-                tabla.setItem(row, col, cell)
+        tabla.modelo = tabla.Modelos.CREAR_VENTA
+        tabla.llenar(ventaDatos.productos)
     
     def done(self):
         """ Acepta los cambios e inserta descuento en la lista de productos. """
@@ -798,7 +763,7 @@ class App_AgregarDescuento(QtWidgets.QWidget):
         if not selected:
             return
         
-        prod = self.productosVenta[selected[0].row()]
+        prod = ventaDatos.productos[selected[0].row()]
         
         try:
             nuevo_precio = float(self.ui.txtPrecio.text())
@@ -1019,24 +984,8 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
     def update_display(self, venta: Venta):
         """ Llenar tabla de productos. """
         tabla = self.ui.tabla_productos
-        tabla.setRowCount(0)
-        
-        for row, prod in enumerate(venta):
-            tabla.insertRow(row)
-            
-            for col, dato in enumerate(prod):
-                if isinstance(dato, float):
-                    if col == 4 and not dato:
-                        cell = ''
-                    else:
-                        cell = f'{dato:,.2f}'
-                else:
-                    cell = str(dato or '')
-                
-                cell = QtWidgets.QTableWidgetItem(cell)
-                tabla.setItem(row, col, cell)
-        
-        tabla.resizeRowsToContents()
+        tabla.modelo = tabla.Modelos.CREAR_VENTA
+        tabla.llenar(ventaDatos)
     
     def recalcularImportes(self, venta: Venta):
         """ Calcular total de la compra y precio a pagarse ahora mismo. """
@@ -1105,7 +1054,7 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
         # registrar pagos en tabla ventas_pagos
         for wdg in self.ui.stackedWidget.widgetsPago:
             montoAPagar = wdg.montoPagado if wdg.metodoSeleccionado != 'Efectivo' \
-                else self.ui.stackedWidget.totalEnEfectivo
+                else self.ui.stackedWidget.restanteEnEfectivo
                 
             if not manejadorVentas.insertarPago(self.id_ventas, wdg.metodoSeleccionado,
                                                 montoAPagar, wdg.montoPagado):

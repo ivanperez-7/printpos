@@ -97,7 +97,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
         # resalta si un cliente no ha venido en _ días
         dias = int(self.ui.resaltarDias.text())
         # timestamp ahora mismo
-        timestamp_now = QDate.currentDate().dayOfYear()
+        timestamp_now = QDate.currentDate()
         
         found = self.all if not txt_busqueda else \
             filter(
@@ -110,24 +110,22 @@ class App_AdministrarClientes(QtWidgets.QWidget):
             
             for col, dato in enumerate(cliente):
                 if isinstance(dato, datetime):
-                    cell = formatDate(dato)
+                    delta = QDate(dato).daysTo(timestamp_now)
+                    cell = '{} ({})'.format(formatDate(dato), daysTo(delta))
                 else:
                     cell = str(dato or '')
                 tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
-            # al salir del ciclo, todos los usos subsecuentes de `col`
+            # al salir del ciclo, todos los usos subsecuentes de `row` y `col`
             # apuntan a la última columna de la tabla.
             
             tabla.item(row, 1).setFont(bold)
             
-            if not self.ui.resaltarCheck.isChecked():
-                continue
-            
-            ultimaVisita = QDate(cliente[-1])
-            
-            if ultimaVisita and timestamp_now - ultimaVisita.dayOfYear() >= dias:
-                color = QColor(ColorsEnum.ROJO)
-                tabla.item(row, col).setBackground(color)
-        
+            if self.ui.resaltarCheck.isChecked():
+                ultimaVisita = QDate(cliente[6])
+                
+                if ultimaVisita and ultimaVisita.daysTo(timestamp_now) >= dias:
+                    color = QColor(ColorsEnum.ROJO)
+                    tabla.item(row, col).setBackground(color)
         tabla.resizeRowsToContents()
     
     def exportarExcel(self):

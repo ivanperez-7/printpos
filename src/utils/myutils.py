@@ -1,5 +1,5 @@
 """ Provee varias funciones útiles utilizadas frecuentemente. """
-from configparser import ConfigParser
+from datetime import datetime, timedelta
 import re
 import unicodedata
 
@@ -10,7 +10,7 @@ from utils.mydecorators import run_in_thread
 
 
 __all__ = ['ColorsEnum', 'FabricaValidadores', 'clamp', 'chunkify',
-           'unidecode', 'son_similar', 'contiene_duplicados',
+           'daysTo', 'unidecode', 'son_similar', 'contiene_duplicados',
            'formatDate','exportarXlsx', 'enviarWhatsApp']
 
 
@@ -62,6 +62,30 @@ def clamp(value, smallest, largest):
 def chunkify(array: list, size: int):
     """ Divide un arreglo en subarreglos de un tamaño dado. """
     return [array[x: x + size] for x in range(0, len(array), size)]
+
+
+def daysTo(num_days: int):
+    """ Dar formato a un número de días a 'hace {} días/semanas/años'. """
+    if num_days < 0:
+        return "Invalid input"
+
+    if num_days < 1:
+        return "hoy"
+    elif num_days == 1:
+        return "hace un día"
+    elif num_days < 7:
+        return f"hace {num_days} días"
+    elif num_days < 14:
+        return "hace una semana"
+    elif num_days < 30:
+        weeks_ago = num_days // 7
+        return f"hace {weeks_ago} semanas"
+    elif num_days < 365:
+        months_ago = num_days // 30
+        return f"hace {months_ago} mes{'es' if months_ago > 1 else ''}"
+    else:
+        years_ago = num_days // 365
+        return f"hace {years_ago} año{'s' if years_ago > 1 else ''}"
 
 
 def unidecode(input_str: str):

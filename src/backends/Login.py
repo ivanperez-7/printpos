@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+import socket
 
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt, Signal
 
+from config import INI
 import licensing
 from utils.mydecorators import run_in_thread
 from utils.myutils import FabricaValidadores
@@ -63,6 +65,8 @@ class App_Login(QtWidgets.QWidget):
         self.logged.connect(self.crearVentanaPrincipal)
         self.validated.connect(self.exito_verificacion)
         self.failure.connect(self.error_verificacion)
+        
+        self.ui.btAjustes.clicked.connect(lambda: AjustesDB(self))
         
         self.show()
         self.ui.inputUsuario.setFocus()
@@ -152,6 +156,31 @@ class App_Login(QtWidgets.QWidget):
 ########################
 # WIDGET PERSONALIZADO #
 ########################
+class AjustesDB(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        from ui.Ui_AjustesDB import Ui_AjustesDB
+        
+        super().__init__(parent)
+        
+        self.ui = Ui_AjustesDB()
+        self.ui.setupUi(self)
+        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
+        
+        self.ui.lineNombre.setText(socket.gethostname())
+        self.ui.lineDireccion.setText(socket.gethostbyname(socket.gethostname()))
+        self.ui.lineNombreServ.setText(INI.NOMBRE_SERVIDOR)
+        
+        self.ui.btAceptar.clicked.connect(self.done)
+        self.ui.btRegresar.clicked.connect(self.close)
+        
+        self.show()
+    
+    def done(self):
+        INI.NOMBRE_SERVIDOR = self.ui.lineNombreServ.text()
+        INI.guardar()
+        self.close()
+
+
 class DialogoActivacion(QtWidgets.QWidget):
     success = Signal()
     
