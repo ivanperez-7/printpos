@@ -424,6 +424,9 @@ class App_AgregarProducto(QtWidgets.QWidget):
         self.ui.tabla_seleccionar.configurarCabecera(lambda col: col != 1)
         self.ui.tabla_granformato.configurarCabecera(lambda col: col != 1)
         
+        self.ui.tabla_seleccionar.setSortingEnabled(True)
+        self.ui.tabla_granformato.setSortingEnabled(True)
+        
         self.show()
     
     def showEvent(self, event):
@@ -604,6 +607,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
         self.ui.tabla_seleccionar.itemDoubleClicked.connect(self.done)
         
         self.ui.tabla_seleccionar.configurarCabecera(lambda col: col in [1, 4])
+        self.ui.tabla_seleccionar.setSortingEnabled(True)
         self.show()
     
     def showEvent(self, event):

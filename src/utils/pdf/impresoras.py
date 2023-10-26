@@ -62,7 +62,7 @@ class ImpresoraPDF:
         for i, page in enumerate(doc):
             pix = page.get_pixmap(dpi=300, alpha=False)
             image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
-            # image.save(uuid.uuid4().hex + '.jpg')
+            #image.save(uuid.uuid4().hex + '.jpg')
             
             rect = painter.viewport()
             qtImageScaled = image.scaled(rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)

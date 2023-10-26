@@ -226,7 +226,7 @@ def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float,
     
     # leer datos de sucursal de archivo de configuración
     calle, fracc = INI.DIRECCION_SUCURSAL
-    telefono = INI.TELEFONO_SUCURSAL
+    telefono = INI.TELEFONO
     
     # elementos para constuir el PDF
     elements = [

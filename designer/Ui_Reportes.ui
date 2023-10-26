@@ -951,9 +951,6 @@ QPushButton:checked {
                  <string notr="true"/>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_6">
-                 <property name="verticalSpacing">
-                  <number>0</number>
-                 </property>
                  <item row="0" column="0" rowspan="2">
                   <widget class="ChartView" name="bar_ventas" native="true">
                    <property name="sizePolicy">
@@ -961,9 +958,6 @@ QPushButton:checked {
                      <horstretch>0</horstretch>
                      <verstretch>0</verstretch>
                     </sizepolicy>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true"/>
                    </property>
                   </widget>
                  </item>
@@ -975,9 +969,6 @@ QPushButton:checked {
                      <height>0</height>
                     </size>
                    </property>
-                   <property name="styleSheet">
-                    <string notr="true"/>
-                   </property>
                   </widget>
                  </item>
                  <item row="1" column="1" alignment="Qt::AlignRight">
@@ -987,9 +978,6 @@ QPushButton:checked {
                      <width>350</width>
                      <height>0</height>
                     </size>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true"/>
                    </property>
                   </widget>
                  </item>
@@ -1066,7 +1054,7 @@ QPushButton:checked {
             <widget class="QWidget" name="vendedores">
              <layout class="QVBoxLayout" name="verticalLayout_3">
               <property name="spacing">
-               <number>0</number>
+               <number>12</number>
               </property>
               <property name="leftMargin">
                <number>0</number>
@@ -1180,7 +1168,7 @@ QPushButton:checked {
              </layout>
             </widget>
             <widget class="QWidget" name="productos">
-             <layout class="QVBoxLayout" name="verticalLayout_4">
+             <layout class="QGridLayout" name="gridLayout_7">
               <property name="leftMargin">
                <number>0</number>
               </property>
@@ -1193,51 +1181,80 @@ QPushButton:checked {
               <property name="bottomMargin">
                <number>0</number>
               </property>
-              <item>
-               <widget class="TablaDatos" name="tableWidget_4">
+              <property name="spacing">
+               <number>20</number>
+              </property>
+              <item row="1" column="0">
+               <widget class="ChartView" name="ventas_prod_graph" native="true">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>250</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1" alignment="Qt::AlignRight">
+               <widget class="TablaDatos" name="tabla_intervalos">
+                <property name="minimumSize">
+                 <size>
+                  <width>300</width>
+                  <height>0</height>
+                 </size>
+                </property>
                 <column>
                  <property name="text">
-                  <string>Cliente</string>
+                  <string>A partir de...</string>
                  </property>
                 </column>
                 <column>
                  <property name="text">
-                  <string>Primera compra</string>
+                  <string>Es precio duplex</string>
                  </property>
                 </column>
                 <column>
                  <property name="text">
-                  <string>Última compra</string>
+                  <string>Unidades vendidas</string>
+                 </property>
+                </column>
+               </widget>
+              </item>
+              <item row="0" column="0" colspan="2">
+               <widget class="TablaDatos" name="tabla_prods">
+                <column>
+                 <property name="text">
+                  <string>Nombre de producto</string>
                  </property>
                 </column>
                 <column>
                  <property name="text">
-                  <string>Compras concretadas</string>
+                  <string>Código</string>
                  </property>
                 </column>
                 <column>
                  <property name="text">
-                  <string>Frecuencia de compras</string>
+                  <string>Última vez comprado</string>
                  </property>
                 </column>
                 <column>
                  <property name="text">
-                  <string>Compras canceladas</string>
+                  <string>Unidades vendidas</string>
                  </property>
                 </column>
                 <column>
                  <property name="text">
-                  <string>Compras brutas</string>
+                  <string>Unidades vendidas en promedio por venta</string>
                  </property>
                 </column>
                 <column>
                  <property name="text">
-                  <string>Compra promedio</string>
-                 </property>
-                </column>
-                <column>
-                 <property name="text">
-                  <string>Producto más comprado</string>
+                  <string>Ingresos brutos</string>
                  </property>
                 </column>
                </widget>
@@ -1257,13 +1274,13 @@ QPushButton:checked {
  </widget>
  <customwidgets>
   <customwidget>
-   <class>TablaDatos</class>
-   <extends>QTableWidget</extends>
+   <class>ClickableIcon</class>
+   <extends>QPushButton</extends>
    <header>utils.mywidgets.h</header>
   </customwidget>
   <customwidget>
-   <class>ClickableIcon</class>
-   <extends>QPushButton</extends>
+   <class>TablaDatos</class>
+   <extends>QTableWidget</extends>
    <header>utils.mywidgets.h</header>
   </customwidget>
   <customwidget>

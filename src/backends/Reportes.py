@@ -3,7 +3,7 @@ from functools import partial
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont
 from PySide6.QtCharts import *
-from PySide6.QtCore import Qt, QDate
+from PySide6.QtCore import Qt, QDate, QModelIndex
 from PySide6.QtGui import QPainter, QPen
 
 from utils.myinterfaces import InterfazFechasReportes
@@ -30,11 +30,20 @@ class App_Reportes(QtWidgets.QWidget):
         for tbl in [self.ui.tableWidget,
                     self.ui.tableWidget_2,
                     self.ui.tableWidget_3,
-                    self.ui.tableWidget_4]:
+                    self.ui.tabla_prods,
+                    self.ui.tabla_intervalos]:
+            tbl.setSortingEnabled(True)
             tbl.configurarCabecera(lambda col: col not in [0, 3, 4, 5], 
                                    Qt.AlignCenter | Qt.TextWordWrap)
             tbl.tamanoCabecera(11)
             tbl.quitarBordeCabecera()
+        
+        for i, bt in enumerate([self.ui.btTablero,
+                                self.ui.btVentas,
+                                self.ui.btVendedores,
+                                self.ui.btClientes,
+                                self.ui.btProductos]):
+            bt.clicked.connect(partial(self.ui.stackedWidget.setCurrentIndex, i))
         
         # fechas por defecto
         manejador = ManejadorVentas(self.conn)
@@ -48,12 +57,6 @@ class App_Reportes(QtWidgets.QWidget):
         self.ui.stackedWidget.currentChanged.connect(self.actualizar_widget_activo)
         self.ui.dateHasta.dateChanged.connect(self.actualizar_widget_activo)
         self.ui.dateDesde.dateChanged.connect(self.actualizar_widget_activo)
-        
-        self.ui.btTablero.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(0))
-        self.ui.btVentas.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(1))
-        self.ui.btVendedores.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(2))
-        self.ui.btClientes.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(3))
-        self.ui.btProductos.clicked.connect(lambda: self.ui.stackedWidget.setCurrentIndex(4))
     
     def showEvent(self, event):
         self.actualizar_widget_activo()
@@ -75,7 +78,7 @@ class App_Reportes(QtWidgets.QWidget):
             self.actualizar_tablero,
             self.actualizar_vendedores,
             self.actualizar_clientes,
-            self.actualizar_tablero
+            self.actualizar_productos
         ]
         idx = self.ui.stackedWidget.currentIndex()
         funcs[idx]()
@@ -108,14 +111,31 @@ class App_Reportes(QtWidgets.QWidget):
         tabla.resizeRowsToContents()
     
     def actualizar_vendedores(self):
+        def handle(index: QModelIndex):
+            nombre = index.siblingAtColumn(0).data()
+            self.ui.vend_w_graph.alimentar_vendedor(self.conn, nombre)
+        
         man = ManejadorReportes(self.conn)
         tabla = self.ui.tableWidget_2
         tabla.llenar(man.obtenerReporteVendedores(self.fechaDesde, self.fechaHasta))
         tabla.resizeRowsToContents()
+        tabla.clicked.connect(handle)
+    
+    def actualizar_productos(self):
+        self.ui.tabla_intervalos.modelo = self.ui.tabla_intervalos.Modelos.CREAR_VENTA
+        self.ui.tabla_intervalos.configurarCabecera(lambda col: col == 0)
+        self.ui.tabla_intervalos.setSortingEnabled(False)
         
-        tabla.clicked.connect(
-            lambda index: self.ui.vend_w_graph.alimentar_vendedor(self.conn,
-                                                                  index.siblingAtColumn(0).data()))
+        def handle(index: QModelIndex):
+            codigo = index.siblingAtColumn(1).data()
+            self.ui.ventas_prod_graph.alimentar_producto(self.conn, codigo)
+            self.ui.tabla_intervalos.llenar(man.obtenerVentasIntervalos(codigo))
+        
+        man = ManejadorReportes(self.conn)
+        tabla = self.ui.tabla_prods
+        tabla.llenar(man.obtenerReporteProductos(self.fechaDesde, self.fechaHasta))
+        tabla.resizeRowsToContents()
+        tabla.clicked.connect(handle)
     
     def goHome(self):
         parent: VentanaPrincipal = self.parentWidget()
@@ -161,11 +181,11 @@ class ChartView(QChartView):
 
         categories_axis = QBarCategoryAxis()
         categories_axis.append(month_labels)
-        #categories_axis.setLabelsFont(self.font())
-        #categories_axis.setTitleFont(self.font())
         chart.createDefaultAxes()
         chart.setAxisX(categories_axis, series)
 
+        chart.layout().setContentsMargins(0, 0, 0, 0);
+        chart.setBackgroundRoundness(0);
         self.setChart(chart)
     
     def alimentar_vendedor(self, conn, vendedor: str):
@@ -194,11 +214,44 @@ class ChartView(QChartView):
 
         categories_axis = QBarCategoryAxis()
         categories_axis.append(month_labels)
-        #categories_axis.setLabelsFont(self.font())
-        #categories_axis.setTitleFont(self.font())
         chart.createDefaultAxes()
         chart.setAxisX(categories_axis, series)
 
+        chart.layout().setContentsMargins(0, 0, 0, 0);
+        chart.setBackgroundRoundness(0);
+        self.setChart(chart)
+    
+    def alimentar_producto(self, conn, codigo: str):
+        chart = QChart()
+        series = QBarSeries()
+        set0 = QBarSet("Ventas brutas")
+        
+        # Replace this with your sales data for each month
+        man = ManejadorReportes(conn)
+        current_year = QDate.currentDate().year()
+        data = man.obtenerGraficaVentasProducto(codigo, current_year)
+        
+        month_labels = []
+        
+        for anio_mes, total in data:
+            set0.append(total)
+            month_labels.append(anio_mes)
+
+        series.append(set0)
+        chart.addSeries(series)
+
+        chart.setTitle(f"Ventas de {codigo} en el año {current_year}")
+        chart.setFont(self.font())
+        chart.setTitleFont(self.font())
+        chart.setAnimationOptions(QChart.AllAnimations)
+
+        categories_axis = QBarCategoryAxis()
+        categories_axis.append(month_labels)
+        chart.createDefaultAxes()
+        chart.setAxisX(categories_axis, series)
+
+        chart.layout().setContentsMargins(0, 0, 0, 0);
+        chart.setBackgroundRoundness(0);
         self.setChart(chart)
 
 
@@ -208,7 +261,9 @@ class ChartView2(QChartView):
         
         font = QFont()
         font.setPointSize(11)
+        
         self.setFont(font)
+        self.setRenderHint(QPainter.Antialiasing)
     
     def alimentar_productos(self, conn):
         man = ManejadorReportes(conn)
@@ -233,8 +288,9 @@ class ChartView2(QChartView):
         chart.setAnimationOptions(QChart.SeriesAnimations)
         chart.legend().hide()
         
+        chart.layout().setContentsMargins(0, 0, 0, 0);
+        chart.setBackgroundRoundness(0);
         self.setChart(chart)
-        self.setRenderHint(QPainter.Antialiasing)
     
     def alimentar_metodos(self, conn):
         man = ManejadorReportes(conn)
@@ -259,8 +315,9 @@ class ChartView2(QChartView):
         chart.setAnimationOptions(QChart.SeriesAnimations)
         chart.legend().hide()
         
+        chart.layout().setContentsMargins(0, 0, 0, 0);
+        chart.setBackgroundRoundness(0);
         self.setChart(chart)
-        self.setRenderHint(QPainter.Antialiasing)
     
     def handle_slice_hover(self, _slice, state):
         _slice.setExploded(state)
@@ -268,16 +325,3 @@ class ChartView2(QChartView):
     
     def handle_max_hover(self, _slice, state):
         _slice.setExploded(state)
-
-
-"""
-POSIBLES IDEAS.
-
-Product Sales Report: You can display a report that shows which products are selling the most in your store. 
-This can help you identify which products are popular among your customers and make informed decisions about
-inventory and promotions.
-
-Sales Trends Report: You can display a report that shows the sales trends in your store over a period of time, 
-such as monthly or quarterly. This can help you identify the seasonal trends in your business and make informed 
-decisions about inventory and promotions.
-"""

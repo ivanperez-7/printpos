@@ -1,7 +1,7 @@
 """ Módulo con manejadores para tablas en la base de datos. """
 from datetime import datetime
-from functools import partial
-from typing import overload, TypeAlias
+from functools import partial, partialmethod
+from typing import overload
 
 import fdb
 from PySide6.QtCore import QDate
@@ -10,9 +10,9 @@ from config import INI
 from utils import Moneda
 
 
-Connection: TypeAlias = fdb.Connection
-Cursor: TypeAlias = fdb.Cursor
-Error: TypeAlias = fdb.Error
+Connection = fdb.Connection
+Cursor = fdb.Cursor
+Error = fdb.Error
 
 
 def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
@@ -26,7 +26,8 @@ def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
             charset='UTF8',
             role=rol)
     except Error as err:
-        print(err.args[0])
+        txt, sqlcode, gdscode = err.args
+        print('\n{}'.format(sqlcode), gdscode, '\n'+txt)
         return None
 
 
@@ -404,9 +405,9 @@ class ManejadorProductos(DatabaseManager):
                     COALESCE(SUM(PUI.utiliza_inventario * I.precio_unidad), 0.0) AS costo
                 FROM
                     Productos AS P
-                    LEFT JOIN Productos_Utiliza_Inventario AS PUI
+                    LEFT JOIN productos_utiliza_inventario AS PUI
                         ON P.id_productos = PUI.id_productos
-                    LEFT JOIN Inventario AS I
+                    LEFT JOIN inventario AS I
                         ON PUI.id_inventario = I.id_inventario
                 GROUP BY
                     1
@@ -426,16 +427,15 @@ class ManejadorProductos(DatabaseManager):
                 C_Prod.costo,
                 COALESCE(P_gran.precio_m2, P_Inv.precio_con_iva) - C_Prod.costo AS utilidad
             FROM
-                Productos AS P
-                LEFT JOIN Productos_Intervalos AS P_Inv
+                productos AS P
+                LEFT JOIN productos_intervalos AS P_Inv
                     ON P_Inv.id_productos = P.id_productos
-                LEFT JOIN Productos_Gran_Formato AS P_gran
+                LEFT JOIN productos_gran_formato AS P_gran
                     ON P.id_productos = P_gran.id_productos
                 JOIN costo_produccion AS C_Prod
                     ON P.id_productos = C_Prod.id_productos
             ORDER BY
-                1,
-                desde ASC;
+                1, desde ASC;
         ''')
     
     def obtenerProducto(self, id_productos: int):
@@ -799,7 +799,7 @@ class ManejadorReportes(DatabaseManager):
             GROUP BY
                 1, 3
             ORDER BY
-                COUNT(DISTINCT V.id_ventas) DESC;
+                4 DESC;
     ''', (fechaDesde.toPython(), fechaHasta.toPython())*2)
     
     def obtenerGraficaVentasVendedor(self, vendedor: str, year: int):
@@ -877,89 +877,131 @@ class ManejadorReportes(DatabaseManager):
             ORDER BY
                 5 DESC;
         ''', (fechaDesde.toPython(), fechaHasta.toPython())*2)
+    
+    def obtenerReporteProductos(self, fechaDesde: QDate, fechaHasta: QDate):
+        return self.fetchall(f'''
+            SELECT
+                abreviado,
+                codigo,
+                MAX(V.fecha_hora_creacion)          AS ultima_compra,
+                SUM(cantidad) || ' unidades'        AS num_vendidos,
+                ROUND(AVG(cantidad)) || ' unidades' AS promedio_vendidos,
+                SUM(importe)                        AS ingresos_brutos
+            FROM
+                productos P
+                LEFT JOIN ventas_detallado VD
+                    ON P.id_productos = VD.id_productos
+                LEFT JOIN ventas V
+                    ON VD.id_ventas = V.id_ventas
+            WHERE
+                {self.restr_ventas_terminadas}
+                AND CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?
+            GROUP BY
+                1, 2
+            ORDER BY
+                SUM(cantidad) DESC;
+        ''', (fechaDesde.toPython(), fechaHasta.toPython())*2)
+    
+    def obtenerGraficaVentasProducto(self, codigo: str, year: int):
+        return self.fetchall(f'''
+            SELECT
+                EXTRACT(YEAR FROM fecha_hora_creacion)
+                    || '-'
+                    || LPAD(EXTRACT(MONTH FROM fecha_hora_creacion), 2, '0') AS formatted_date,
+                SUM(importe)                                                 AS total_sales
+            FROM
+                ventas_detallado VD
+                LEFT JOIN ventas V
+                    ON VD.id_ventas = V.id_ventas
+                LEFT JOIN productos P
+                    ON P.id_productos = VD.id_productos
+            WHERE
+                {self.restr_ventas_terminadas}
+                AND EXTRACT(YEAR FROM fecha_hora_creacion) = ?
+                AND P.codigo = ?
+            GROUP BY
+                EXTRACT(YEAR FROM fecha_hora_creacion),
+                EXTRACT(MONTH FROM fecha_hora_creacion)
+            ORDER BY
+                1;
+        ''', (year, codigo))
+    
+    def obtenerVentasIntervalos(self, codigo: str):
+        return self.fetchall('''
+            SELECT
+                P_Inv.desde,
+                CASE P_Inv.duplex
+                    WHEN true THEN 'Sí'
+                    ELSE 'No'
+                END,
+                SUM(VD.cantidad) AS unit_vendidas
+            FROM
+                ventas_detallado VD
+                JOIN productos_intervalos P_Inv
+                    ON VD.id_productos = P_Inv.id_productos
+                       AND VD.duplex = P_Inv.duplex
+                       AND VD.cantidad >= P_Inv.desde
+                LEFT JOIN productos P
+                    ON VD.id_productos = P.id_productos
+            WHERE
+                P.codigo = ?
+            GROUP BY
+                1, 2;
+        ''', (codigo,))
 
 
 class ManejadorVentas(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Ventas. """
     
-    def tablaVentas(self, inicio: QDate = QDate.currentDate(),
-                    final: QDate = QDate.currentDate(),
-                    restrict: int = None):
-        """ Sentencia para alimentar la tabla principal de ventas directas. 
-        
-            Requiere fechas de inicio y final, tipo QDate.
-            
-            Restringir a un solo usuario, si se desea. """
-        restrict = f'AND Usuarios.id_usuarios = {restrict}' if restrict else ''
+    def _tablaParcial(self, fecha_entrega: bool,
+                      inicio: QDate = QDate.currentDate(),
+                      final: QDate = QDate.currentDate(),
+                      restrict: int = None):
+        restrict = f'AND U.id_usuarios = {restrict}' if restrict else ''
+        col_fecha_entrega = 'fecha_hora_entrega,' if fecha_entrega else ''
+        clausula_where = 'fecha_hora_entrega {} fecha_hora_creacion'.format(
+            '!=' if fecha_entrega else '=')
+        clausula_group = '1, 2, 3, 4, 5, 7, 8, 9, 10' if fecha_entrega else '1, 2, 3, 4, 6, 7, 8, 9'
         
         return self.fetchall(f'''
-            SELECT  Ventas.id_ventas,
-                    Usuarios.nombre,
-                    Clientes.nombre,
-                    fecha_hora_creacion,
-                    SUM(importe) AS total,
-                    estado,
-                    VP.monto,
-                    metodo,
-                    comentarios
-            FROM    Ventas
-                    LEFT JOIN ventas_pagos VP
-                           ON VP.id_ventas = Ventas.id_ventas
-                    LEFT JOIN metodos_pago MP
-                           ON VP.id_metodo_pago = MP.id_metodo_pago
-                    LEFT JOIN Usuarios
-                           ON Ventas.id_usuarios = Usuarios.id_usuarios
-                    LEFT JOIN Clientes
-                           ON Ventas.id_clientes = Clientes.id_clientes
-                    LEFT JOIN Ventas_Detallado
-                           ON Ventas.id_ventas = Ventas_Detallado.id_ventas
-            WHERE   fecha_hora_creacion = fecha_hora_entrega
-                    AND CAST(fecha_hora_creacion AS DATE) BETWEEN ? AND ?
-                    AND (VP.monto IS NULL or VP.monto >= 0)
-            GROUP   BY 1, 2, 3, 4, 6, 7, 8, 9
-            ORDER	BY Ventas.id_ventas DESC;
+            SELECT
+                V.id_ventas,
+                U.nombre             AS nombre_vendedor,
+                C.nombre             AS nombre_cliente,
+                fecha_hora_creacion,
+                {col_fecha_entrega}
+                SUM(importe)         AS total,
+                estado,
+                VP.monto,
+                metodo,
+                comentarios
+            FROM
+                ventas V
+                LEFT JOIN ventas_pagos VP
+                    ON VP.id_ventas = V.id_ventas
+                LEFT JOIN metodos_pago MP
+                    ON VP.id_metodo_pago = MP.id_metodo_pago
+                LEFT JOIN usuarios U
+                    ON V.id_usuarios = U.id_usuarios
+                LEFT JOIN clientes C
+                    ON V.id_clientes = C.id_clientes
+                LEFT JOIN ventas_detallado VD
+                    ON V.id_ventas = VD.id_ventas
+			WHERE
+                {clausula_where}
+                AND (CAST(fecha_hora_creacion AS DATE) BETWEEN ? AND ?
+                     OR estado LIKE 'Recibido%')
+                AND (VP.monto IS NULL or VP.monto >= 0)
+                {restrict}
+            GROUP BY
+                {clausula_group}
+            ORDER BY
+                1 DESC;
         ''', (inicio.toPython(), final.toPython()))
     
-    def tablaPedidos(self, inicio: QDate = QDate.currentDate(),
-                     final: QDate = QDate.currentDate(),
-                     restrict: int = None):
-        """ Sentencia para alimentar la tabla principal de pedidos. 
-        
-            Requiere fechas de inicio y final, tipo QDate.
-            
-            Restringir a un solo usuario, si se desea. """
-        restrict = f'AND Usuarios.id_usuarios = {restrict}' if restrict else ''
-        
-        return self.fetchall(f'''
-            SELECT  Ventas.id_ventas,
-                    Usuarios.nombre,
-                    Clientes.nombre,
-                    fecha_hora_creacion,
-                    fecha_hora_entrega,
-                    SUM(importe) AS total,
-                    estado,
-                    VP.monto,
-                    metodo,
-                    comentarios
-            FROM    Ventas
-                    LEFT JOIN ventas_pagos VP
-                           ON VP.id_ventas = Ventas.id_ventas
-                    LEFT JOIN metodos_pago MP
-                           ON VP.id_metodo_pago = MP.id_metodo_pago
-                    LEFT JOIN Usuarios
-                           ON Ventas.id_usuarios = Usuarios.id_usuarios
-                    LEFT JOIN Clientes
-                           ON Ventas.id_clientes = Clientes.id_clientes
-                    LEFT JOIN Ventas_Detallado
-                           ON Ventas.id_ventas = Ventas_Detallado.id_ventas
-			WHERE   fecha_hora_creacion != fecha_hora_entrega
-                    AND (CAST(fecha_hora_creacion AS DATE) BETWEEN ? AND ?
-                         OR estado LIKE 'Recibido%')
-                    AND (VP.monto IS NULL or VP.monto >= 0)
-                    {restrict}
-            GROUP   BY 1, 2, 3, 4, 5, 7, 8, 9, 10
-            ORDER	BY Ventas.id_ventas DESC;
-        ''', (inicio.toPython(), final.toPython()))
+    tablaVentas = partialmethod(_tablaParcial, False)
+
+    tablaPedidos = partialmethod(_tablaParcial, True)
     
     def obtenerFechas(self, id_venta: int):
         """ Obtener fechas de creación y entrega de la venta dada. """

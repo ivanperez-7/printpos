@@ -22,22 +22,23 @@ FERNET_KEY = base64.urlsafe_b64encode(
 # VARIABLES PARA ACCEDER A .INI #
 #################################
 _INIParser = ConfigParser(inline_comment_prefixes=';')
+filename = 'config.ini'
 
 class _INIManager:
     def __init__(self):
-        _INIParser.read('config.ini', encoding='UTF8')
+        _INIParser.read(filename, encoding='UTF8')
 
         for section in _INIParser.sections():
             for option in _INIParser.options(section):
                 self._create_property(section, option)
     
     def guardar(self):
-        with open('config.ini', 'w+', encoding='utf8') as configfile:
+        with open(filename, 'w+', encoding='utf8') as configfile:
             _INIParser.write(configfile)
     
     def _create_property(self, section, option):
         def getter(self):
-            _INIParser.read('config.ini', encoding='UTF8')
+            _INIParser.read(filename, encoding='UTF8')
             return _INIParser.get(section, option)
 
         def setter(self, value):
