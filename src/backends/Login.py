@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import socket
 
 from PySide6 import QtWidgets, QtGui, QtCore
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QMutex, Signal
 
 from config import INI
 import licensing
@@ -42,6 +42,8 @@ class Usuario:
 #####################
 # VENTANA PRINCIPAL #
 #####################
+mutex = QMutex()
+
 class App_Login(QtWidgets.QWidget):
     """ Backend para la pantalla de inicio de sesión. """
     validated = Signal()
@@ -56,8 +58,6 @@ class App_Login(QtWidgets.QWidget):
         self.ui = Ui_Login()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
-        
-        self.lock = False
         
         # validador para nombre de usuario
         self.ui.inputUsuario.setValidator(FabricaValidadores.IdFirebird)
@@ -89,8 +89,7 @@ class App_Login(QtWidgets.QWidget):
     
     def exito_verificacion(self):
         """ En método separado para regresar al hilo principal."""
-        self.ui.btIngresar.clicked.connect(
-            lambda: self.verificar_info() if not self.lock else None)
+        self.ui.btIngresar.clicked.connect(self.verificar_info)
         print("noice licencia activada !!!")
     
     def error_verificacion(self, error):
@@ -109,7 +108,7 @@ class App_Login(QtWidgets.QWidget):
                     'Por favor, verifique su acceso a internet e intente nuevamente.')
     
     def _crear_dialogo(self, error):
-        wdg = DialogoActivacion(self)    
+        wdg = DialogoActivacion(self)
         wdg.success.connect(lambda: (self.ui.btIngresar.clicked.disconnect(),
                                      self.exito_verificacion()))
         if error == licensing.Errores.LICENCIA_NO_VALIDA:
@@ -118,7 +117,8 @@ class App_Login(QtWidgets.QWidget):
     @run_in_thread
     def verificar_info(self):
         """ Verifica datos ingresados consultando la tabla Usuarios. """
-        self.lock = True
+        if not mutex.try_lock():
+            return
         
         # verificar que se ingresaron datos
         usuario = self.ui.inputUsuario.text().upper()
@@ -126,10 +126,10 @@ class App_Login(QtWidgets.QWidget):
         
         if not (usuario and psswd):
             self.ui.lbEstado.clear()
-            self.lock = False
+            mutex.unlock()
             return
         
-        self.ui.lbEstado.setStyleSheet('color: #000;')
+        self.ui.lbEstado.setStyleSheet('color: black;')
         self.ui.lbEstado.setText('Conectando a la base de datos...')
         
         rol = self.ui.groupRol.checkedButton().text()
@@ -140,11 +140,12 @@ class App_Login(QtWidgets.QWidget):
             manejador.obtenerUsuario(usuario)
         except sql.Error as err:
             print(err.args[0])
-            self.ui.lbEstado.setStyleSheet('color: #f00;')
+            self.ui.lbEstado.setStyleSheet('color: red;')
             self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
-            self.lock = False
         else:
             self.logged.emit(conn)
+        finally:
+            mutex.unlock()
     
     def crearVentanaPrincipal(self, conn):
         """ En método separado para regresar al hilo principal."""
@@ -183,6 +184,7 @@ class AjustesDB(QtWidgets.QWidget):
 
 class DialogoActivacion(QtWidgets.QWidget):
     success = Signal()
+    failed = Signal(licensing.Errores)
     
     def __init__(self, parent=None):
         from ui.Ui_Activacion import Ui_Activacion
@@ -196,31 +198,44 @@ class DialogoActivacion(QtWidgets.QWidget):
         self.ui.btActivar.clicked.connect(self.accept)
         self.ui.btCerrar.clicked.connect(self.close)
         
+        self.success.connect(self.exito_verificacion)
+        self.failed.connect(self.error_verificacion)
+        
         self.show()
 
+    @run_in_thread
     def accept(self):
-        if not (licencia := self.ui.lineLicencia.text().strip()):
+        licencia = self.ui.lineLicencia.text().strip()
+        if not (licencia and mutex.try_lock()):
             return
         
         activado, error = licensing.activar_licencia(licencia)
         if activado:
-            QtWidgets.QMessageBox.information(
-                self, 'Licencia activada', 
-                '¡Muchas gracias por adquirir PrintPOS! '
-                'Su licencia ha sido activada con éxito.'
-            )
-            self.close()
             self.success.emit()
         else:
-            match error:
-                case licensing.Errores.ACTIVACION_FALLIDA:
-                    txt = 'Ha ocurrido un error al activar su licencia en línea.\n' \
-                          'Por favor, verifique su acceso a internet e intente nuevamente.'
-                
-                case licensing.Errores.ACTIVACION_NO_VALIDA:
-                    txt = 'La clave ingresada no es válida. Por favor, verifique este dato.\n' \
-                          'Si el problema persiste, será necesario que contacte a soporte.'
-            QtWidgets.QMessageBox.warning(self, 'Activación fallida', txt)
+            self.failed.emit(error)
+        mutex.unlock()
+    
+    def exito_verificacion(self):
+        """ En método separado para regresar al hilo principal."""
+        self.close()
+        QtWidgets.QMessageBox.information(
+            self, 'Licencia activada', 
+            '¡Muchas gracias por adquirir PrintPOS! '
+            'Su licencia ha sido activada con éxito.'
+        )
+    
+    def error_verificacion(self, error):
+        """ En método separado para regresar al hilo principal."""
+        match error:
+            case licensing.Errores.ACTIVACION_FALLIDA:
+                txt = 'Ha ocurrido un error al activar su licencia en línea.\n' \
+                      'Por favor, verifique su acceso a internet e intente nuevamente.'
+            
+            case licensing.Errores.ACTIVACION_NO_VALIDA:
+                txt = 'La clave ingresada no es válida. Por favor, verifique este dato.\n' \
+                      'Si el problema persiste, será necesario que contacte a soporte.'
+        QtWidgets.QMessageBox.warning(self, 'Activación fallida', txt)
 
 
 class LoginButton(QtWidgets.QPushButton):

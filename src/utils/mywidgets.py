@@ -6,11 +6,10 @@ from typing import Callable, Iterator
 from PySide6 import QtWidgets
 from PySide6.QtGui import *
 from PySide6.QtCore import *
-import PySide6.QtGui
 
 from backends.Login import Usuario
-from utils.myutils import formatDate
-from utils import Moneda, sql
+from utils.myutils import unidecode, formatDate
+from utils import Moneda, Moneda, sql
 
 
 __all__ = ['VentanaPrincipal', 'DimBackground', 'WidgetPago', 
@@ -108,12 +107,11 @@ class WidgetPago(QtWidgets.QFrame):
         """ Recalcular cambio a entregar. Notar que sólo se ejecuta
             cuando el método de pago actual es efectivo. """
         if self.metodoSeleccionado != 'Efectivo':
-            self.ui.lbCambio.setText(f'{Moneda.cero}')
-            return
-        
-        pago = self.ui.txtPago.cantidad
-        cambio = max(Moneda.cero, pago - para_pagar)
-        self.ui.lbCambio.setText(f'{cambio}')
+            m = Moneda.cero
+        else:
+            pago = self.ui.txtPago.cantidad
+            m = max(Moneda.cero, pago - para_pagar)
+        self.ui.lbCambio.setText(str(m))
     
     @property
     def montoPagado(self):
@@ -187,6 +185,22 @@ class StackPagos(QtWidgets.QStackedWidget):
         return sumaCorrecta and all(wdg.montoPagado for wdg in self.widgetsPago)
 
 
+class MyTableItem(QtWidgets.QTableWidgetItem):
+    def __init__(self, text, sort_key=None):
+        super().__init__(text)
+        self.sort_key = sort_key
+
+    def __lt__(self, other):
+        if self.sort_key:
+            try:
+                return self.sort_key < other.sort_key
+            except Exception as err:
+                print(err)
+                return unidecode(self.text()) < unidecode(other.text())
+        else:
+            return unidecode(self.text()) < unidecode(other.text())
+
+
 class TablaDatos(QtWidgets.QTableWidget):
     class Modelos(Enum):
         DEFAULT = auto()
@@ -236,12 +250,17 @@ class TablaDatos(QtWidgets.QTableWidget):
         self.horizontalHeader().setMinimumSectionSize(50)
     
     def llenar(self, data):
+        sort = self.isSortingEnabled()
+        self.setSortingEnabled(False)
+        self.setRowCount(0)
+        
         funcs = {
             self.Modelos.DEFAULT: self._llenar_default,
             self.Modelos.CREAR_VENTA: self._llenar_crear_venta
         }
-        self.setRowCount(0)
         funcs[self.modelo](data)
+        
+        self.setSortingEnabled(sort)
     
     def tamanoCabecera(self, pt: int):
         qs = self.styleSheet()
@@ -286,13 +305,16 @@ class TablaDatos(QtWidgets.QTableWidget):
             self.insertRow(row)
             
             for col, dato in enumerate(prod):
+                sort_key = None
                 if isinstance(dato, float):
                     cell = f'${dato:,.2f}'
+                    sort_key = Moneda(dato)
                 elif isinstance(dato, datetime):
                     cell = formatDate(dato)
+                    sort_key = dato
                 else:
                     cell = str(dato or '')
-                tableItem = QtWidgets.QTableWidgetItem(cell)
+                tableItem = MyTableItem(cell, sort_key)
                 self.setItem(row, col, tableItem)
     
     def _llenar_crear_venta(self, data):
@@ -308,7 +330,7 @@ class TablaDatos(QtWidgets.QTableWidget):
                 else:
                     cell = str(dato or '')
                 
-                tableItem = QtWidgets.QTableWidgetItem(cell)
+                tableItem = MyTableItem(cell)
                 flags = tableItem.flags()
                 if col != 2:
                     flags &= ~Qt.ItemFlag.ItemIsEditable
