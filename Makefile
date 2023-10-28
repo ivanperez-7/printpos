@@ -26,6 +26,8 @@ install:
 		--include-data-files=icon.ico=icon.ico \
 		--nofollow-import-to=unittest \
 		--nofollow-import-to=tkinter \
+		--force-stderr-spec=%PROGRAM_BASE%.err.txt \
+		--force-stdout-spec=%PROGRAM_BASE%.out.txt \
 		--windows-icon-from-ico=icon.ico \
 		--assume-yes-for-downloads \
 		--remove-output

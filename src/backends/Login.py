@@ -90,7 +90,7 @@ class App_Login(QtWidgets.QWidget):
     def exito_verificacion(self):
         """ En método separado para regresar al hilo principal."""
         self.ui.btIngresar.clicked.connect(self.verificar_info)
-        print("noice licencia activada !!!")
+        print("exito_verificacion()")
     
     def error_verificacion(self, error):
         """ En método separado para regresar al hilo principal."""
