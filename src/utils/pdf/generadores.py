@@ -1,7 +1,14 @@
 """ Provee métodos para generar diversos PDF en bytes. """
 import io
 
-from reportlab.platypus import *
+from reportlab.platypus import (
+    Image,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table, 
+    TableStyle,
+)
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT

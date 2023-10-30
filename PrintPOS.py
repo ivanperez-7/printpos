@@ -56,4 +56,6 @@ class PrintPOS(QApplication):
 app = PrintPOS()
 
 if __name__ == '__main__':
+    # este módulo genera mucho tiempo de espera, por alguna razón
+    from utils.pdf.generadores import *
     app.iniciar()
