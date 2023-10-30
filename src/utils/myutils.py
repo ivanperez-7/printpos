@@ -1,8 +1,11 @@
 """ Provee varias funciones útiles utilizadas frecuentemente. """
-from datetime import datetime, timedelta
 import re
 import unicodedata
+from urllib.parse import quote
+import webbrowser as web
 
+from openpyxl import Workbook
+from openpyxl.styles import Font
 from PySide6.QtCore import QDateTime, QThread, QLocale
 from PySide6.QtGui import QRegularExpressionValidator
 
@@ -128,9 +131,6 @@ def exportarXlsx(rutaArchivo, titulos, datos):
     """ Exporta una lista de tuplas a un archivo MS Excel, con extensión xlsx.
         Requiere el nombre del archivo, una lista con los títulos para las
         columnas, y una lista de tuplas con los datos principales. """
-    from openpyxl import Workbook
-    from openpyxl.styles import Font
-    
     wb = Workbook()
     ws = wb.active
     
@@ -152,9 +152,6 @@ def enviarWhatsApp(phone_no: str, message: str):
     """ Enviar mensaje por WhatsApp abriendo el navegador de internet.
         TODO:
             - open("https://web.whatsapp.com/accept?code=" + receiver) """
-    from urllib.parse import quote
-    import webbrowser as web
-    
     if '+' not in phone_no:  # agregar código de país de México
         phone_no = '+52' + phone_no
     

@@ -37,7 +37,7 @@ class App_Home(QtWidgets.QWidget):
         # configurar texto dinámico
         self.ui.fechaHoy.setDate(QDate.currentDate())
         self.ui.usuario.setText(user.nombre)
-        self.ui.tipo_usuario.setText(user.permisos)
+        self.ui.tipo_usuario.setText(user.rol.capitalize())
         
         # deshabilita eventos del mouse para los textos en los botones
         items = vars(self.ui)
@@ -151,6 +151,8 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
         LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
         
+        self.conn = principal.conn
+        
         # manejador de DB, en tabla productos
         from utils.sql import ManejadorProductos
         self.manejador = ManejadorProductos(principal.conn)
@@ -176,13 +178,8 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
         self.ui.tabla_seleccionar.configurarCabecera(lambda col: col != 1)
         self.ui.tabla_granformato.configurarCabecera(lambda col: col != 1)
         
-        # eventos de Firebird para escuchar cambios en tabla productos
-        self.events = principal.conn.event_conduit(['cambio_productos'])
-        self.events.begin()
-        # crear QThread manualmente, para poder destruirlo al cerrar ventana
-        self.eventReader = Runner(self.listenEvents)
+        self.eventReader = Runner(self.startEvents)
         self.eventReader.start()
-        
         self.showMinimized()
     
     def showEvent(self, event):
@@ -205,9 +202,11 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
     def tabla_actual(self):
         return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][self.ui.tabWidget.currentIndex()]
     
-    def listenEvents(self):
-        """ Escucha trigger 'cambio_productos' en la base de datos.
-            Al suceder, se actualizan las tablas de productos. """
+    def startEvents(self):
+        # eventos de Firebird para escuchar cambios en tabla productos
+        self.events = self.conn.event_conduit(['cambio_productos'])
+        self.events.begin()
+        
         while True:
             self.events.wait()
             self.dataChanged.emit()
