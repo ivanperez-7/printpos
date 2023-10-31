@@ -428,8 +428,8 @@ class App_DetallesVenta(QtWidgets.QWidget):
         
         # intenta calcular el saldo restante
         if anticipo:
-            self.ui.lbAnticipo.setText(f'{anticipo}')
-            self.ui.lbSaldo.setText(f'{total - anticipo}')
+            self.ui.lbAnticipo.setText(str(anticipo))
+            self.ui.lbSaldo.setText(str(total - anticipo))
         else:
             for w in [self.ui.lbAnticipo,
                       self.ui.lbSaldo,
@@ -454,8 +454,8 @@ class App_DetallesVenta(QtWidgets.QWidget):
         self.ui.txtEntrega.setText(formatDate(fechaEntrega))
         self.ui.txtComentarios.setPlainText(comentarios)
         self.ui.txtVendedor.setText(nombreUsuario)
-        self.ui.lbFolio.setText(f'{idx}')
-        self.ui.lbTotal.setText(f'{total}')
+        self.ui.lbFolio.setText(idx)
+        self.ui.lbTotal.setText(str(total))
         
         # evento para botón de regresar
         self.ui.btRegresar.clicked.connect(self.close)
@@ -532,8 +532,8 @@ class App_TerminarVenta(QtWidgets.QWidget):
         self.ui.txtTelefono.setText(telefono)
         self.ui.txtCreacion.setText(formatDate(fechaCreacion))
         self.ui.txtEntrega.setText(formatDate(fechaEntrega))
-        self.ui.lbFolio.setText(f'{idx}')
-        self.ui.lbSaldo.setText(f'{total-anticipo}')
+        self.ui.lbFolio.setText(idx)
+        self.ui.lbSaldo.setText(str(total-anticipo))
         
         self.ui.stackedWidget.agregarPago()
         

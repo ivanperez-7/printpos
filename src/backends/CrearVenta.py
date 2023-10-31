@@ -249,10 +249,10 @@ class App_CrearVenta(QtWidgets.QWidget):
         preciosSinIVA = preciosConIVA / 1.16
         impuestos = preciosConIVA - preciosSinIVA
         
-        self.ui.lbTotal.setText(f'{preciosConIVA}')
-        self.ui.lbSubtotal.setText(f'{preciosSinIVA}')
-        self.ui.lbImpuestos.setText(f'{impuestos}')
-        self.ui.lbDescuento.setText(f'{ventaDatos.total_descuentos}')
+        self.ui.lbTotal.setText(str(preciosConIVA))
+        self.ui.lbSubtotal.setText(str(preciosSinIVA))
+        self.ui.lbImpuestos.setText(str(impuestos))
+        self.ui.lbDescuento.setText(str(ventaDatos.total_descuentos))
         # </calcular precios y mostrar>
     
     # ====================================
