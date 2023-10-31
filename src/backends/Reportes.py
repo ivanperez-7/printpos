@@ -33,7 +33,7 @@ class App_Reportes(QtWidgets.QWidget):
                     self.ui.tabla_prods,
                     self.ui.tabla_intervalos]:
             tbl.setSortingEnabled(True)
-            tbl.configurarCabecera(lambda col: col not in [0, 3, 4, 5], 
+            tbl.configurarCabecera(lambda col: col not in {0, 3, 4, 5}, 
                                    Qt.AlignCenter | Qt.TextWordWrap)
             tbl.tamanoCabecera(11)
             tbl.quitarBordeCabecera()

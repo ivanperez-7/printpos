@@ -1,3 +1,6 @@
+from functools import partial
+import inspect
+
 from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import QDate, Qt, Signal
@@ -46,27 +49,6 @@ class App_Home(QtWidgets.QWidget):
         for w in items:
             w.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         
-        # crear eventos para los botones
-        from .AdministrarVentas import App_AdministrarVentas
-        from .AdministrarInventario import App_AdministrarInventario
-        from .AdministrarProductos import App_AdministrarProductos
-        from .AdministrarClientes import App_AdministrarClientes
-        from .AdministrarUsuarios import App_AdministrarUsuarios
-        from .Ajustes import App_Ajustes
-        from .Caja import App_Caja
-        from .Reportes import App_Reportes
-        
-        self.ui.btCrearVenta.clicked.connect(self.iniciarVenta)
-        self.ui.btProductos.clicked.connect(lambda: self.crearVentana(App_AdministrarProductos))
-        self.ui.btInventario.clicked.connect(lambda: self.crearVentana(App_AdministrarInventario))
-        self.ui.btVentas.clicked.connect(lambda: self.crearVentana(App_AdministrarVentas))
-        self.ui.btCaja.clicked.connect(lambda: self.crearVentana(App_Caja))
-        self.ui.btClientes.clicked.connect(lambda: self.crearVentana(App_AdministrarClientes))
-        self.ui.btUsuarios.clicked.connect(lambda: self.crearVentana(App_AdministrarUsuarios))
-        self.ui.btReportes.clicked.connect(lambda: self.crearVentana(App_Reportes))
-        self.ui.btAjustes.clicked.connect(lambda: self.crearVentana(App_Ajustes))
-        self.ui.btSalir.clicked.connect(self.exitApp)
-        
         # deshabilitar funciones para usuarios normales
         if user.rol != 'ADMINISTRADOR':
             for w in [self.ui.frameInventario,
@@ -78,11 +60,44 @@ class App_Home(QtWidgets.QWidget):
         
         if not self.ui.listaNotificaciones.sinNotificaciones:
             lab = QtWidgets.QLabel(self.ui.frame_5)
-            lab.setPixmap(self._create_pixmap(self.ui.listaNotificaciones.count()))
+            lab.setPixmap(_create_pixmap(self.ui.listaNotificaciones.count()))
             lab.setGeometry(392, 5, 26, 26)
     
     def showEvent(self, event):
+        self.conectar_botones()
         self.parentWidget().en_venta = False
+    
+    def conectar_botones(self):
+        from .AdministrarVentas import App_AdministrarVentas
+        from .AdministrarInventario import App_AdministrarInventario
+        from .AdministrarProductos import App_AdministrarProductos
+        from .AdministrarClientes import App_AdministrarClientes
+        from .AdministrarUsuarios import App_AdministrarUsuarios
+        from .Ajustes import App_Ajustes
+        from .Caja import App_Caja
+        from .Reportes import App_Reportes
+        
+        # create a dictionary to map buttons to their corresponding classes
+        button_class_mapping = {
+            self.ui.btCrearVenta: self.iniciarVenta,
+            self.ui.btProductos: App_AdministrarProductos,
+            self.ui.btInventario: App_AdministrarInventario,
+            self.ui.btVentas: App_AdministrarVentas,
+            self.ui.btCaja: App_Caja,
+            self.ui.btClientes: App_AdministrarClientes,
+            self.ui.btUsuarios: App_AdministrarUsuarios,
+            self.ui.btReportes: App_Reportes,
+            self.ui.btAjustes: App_Ajustes,
+            self.ui.btSalir: self.exitApp
+        }
+
+        # connect buttons to their corresponding functions or classes
+        for button, action in button_class_mapping.items():
+            if inspect.isclass(action):
+                handle = partial(self.crearVentana, action)
+                button.clicked.connect(handle)
+            else:
+                button.clicked.connect(action)
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
@@ -106,28 +121,28 @@ class App_Home(QtWidgets.QWidget):
         self.login = App_Login()
         self.parentWidget().close()
 
-    @staticmethod
-    def _create_pixmap(point: int):
-        from PySide6 import QtCore, QtGui
-        
-        rect = QtCore.QRect(QtCore.QPoint(), 23 * QtCore.QSize(1, 1))
-        pixmap = QtGui.QPixmap(rect.size())
-        rect.adjust(1, 1, -1, -1)
-        pixmap.fill(QtCore.Qt.transparent)
-        painter = QtGui.QPainter(pixmap)
-        painter.setRenderHints(
-            QtGui.QPainter.Antialiasing | QtGui.QPainter.TextAntialiasing
-        )
-        
-        pen = painter.pen()
-        pen.setColor(QtCore.Qt.white)
-        painter.setPen(QtCore.Qt.NoPen)
-        painter.setBrush(QtGui.QBrush(QtGui.QColor(250, 62, 62)))
-        painter.drawEllipse(rect)
-        painter.setPen(pen)
-        painter.drawText(rect, QtCore.Qt.AlignCenter, str(point))
-        painter.end()
-        return pixmap
+
+def _create_pixmap(point: int):
+    from PySide6 import QtCore, QtGui
+    
+    rect = QtCore.QRect(QtCore.QPoint(), 23 * QtCore.QSize(1, 1))
+    pixmap = QtGui.QPixmap(rect.size())
+    rect.adjust(1, 1, -1, -1)
+    pixmap.fill(QtCore.Qt.transparent)
+    painter = QtGui.QPainter(pixmap)
+    painter.setRenderHints(
+        QtGui.QPainter.Antialiasing | QtGui.QPainter.TextAntialiasing
+    )
+    
+    pen = painter.pen()
+    pen.setColor(QtCore.Qt.white)
+    painter.setPen(QtCore.Qt.NoPen)
+    painter.setBrush(QtGui.QBrush(QtGui.QColor(250, 62, 62)))
+    painter.drawEllipse(rect)
+    painter.setPen(pen)
+    painter.drawText(rect, QtCore.Qt.AlignCenter, str(point))
+    painter.end()
+    return pixmap
 
 
 ##################################

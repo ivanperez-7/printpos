@@ -122,8 +122,8 @@ class App_Caja(QtWidgets.QWidget):
         self.ui.dateHasta.dateChanged.connect(self.update_display)
         self.ui.btImprimir.clicked.connect(self.confirmarImprimir)
         
-        self.ui.tabla_ingresos.configurarCabecera(lambda col: col not in [0, 2])
-        self.ui.tabla_egresos.configurarCabecera(lambda col: col not in [0, 2])
+        self.ui.tabla_ingresos.configurarCabecera(lambda col: col not in {0, 2})
+        self.ui.tabla_egresos.configurarCabecera(lambda col: col not in {0, 2})
     
     def showEvent(self, event):
         self.update_display()

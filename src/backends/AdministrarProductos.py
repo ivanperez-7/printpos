@@ -46,7 +46,7 @@ class App_AdministrarProductos(QtWidgets.QWidget):
         
         self.ui.searchBar.textChanged.connect(lambda: self.update_display())
         
-        self.ui.tabla_productos.configurarCabecera(lambda col: col not in [1, 2, 3])
+        self.ui.tabla_productos.configurarCabecera(lambda col: col not in {1, 2, 3})
     
     def showEvent(self, event):
         self.update_display(rescan=True)

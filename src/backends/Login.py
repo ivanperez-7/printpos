@@ -81,11 +81,14 @@ class App_Login(QtWidgets.QWidget):
     # ==================
     @run_in_thread
     def validar_licencia(self):
+        self.ui.lbEstado.setText('Verificando licencia...')
+        
         activado, error = licensing.validar_licencia()
         if activado:
             self.validated.emit()
         else:
             self.failure.emit(error)
+        self.ui.lbEstado.clear()
     
     def exito_verificacion(self):
         """ En método separado para regresar al hilo principal."""
