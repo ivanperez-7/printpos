@@ -606,7 +606,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
         self.ui.searchBar.textChanged.connect(self.update_display)
         self.ui.tabla_seleccionar.itemDoubleClicked.connect(self.done)
         
-        self.ui.tabla_seleccionar.configurarCabecera(lambda col: col in [1, 4])
+        self.ui.tabla_seleccionar.configurarCabecera(lambda col: col in {1, 4})
         self.ui.tabla_seleccionar.setSortingEnabled(True)
         self.show()
     

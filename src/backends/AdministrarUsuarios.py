@@ -55,7 +55,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
         self.ui.searchBar.textChanged.connect(lambda: self.update_display())
         self.ui.mostrarCheck.stateChanged.connect(self.mostrarTrigger)
         
-        self.ui.tabla_usuarios.configurarCabecera(lambda col: col in [0, 2])
+        self.ui.tabla_usuarios.configurarCabecera(lambda col: col in {0, 2})
     
     def showEvent(self, event):
         self.update_display(rescan=True)

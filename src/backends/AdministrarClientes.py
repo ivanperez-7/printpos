@@ -58,7 +58,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
         self.ui.resaltarDias.textChanged.connect(self.resaltarTrigger)
         self.ui.btExportar.clicked.connect(self.exportarExcel)
         
-        self.ui.tabla_clientes.configurarCabecera(lambda col: col in [0, 2, 5, 6])
+        self.ui.tabla_clientes.configurarCabecera(lambda col: col in {0, 2, 5, 6})
     
     def showEvent(self, event):
         self.update_display(rescan=True)
