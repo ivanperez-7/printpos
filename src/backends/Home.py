@@ -62,10 +62,8 @@ class App_Home(QtWidgets.QWidget):
             lab = QtWidgets.QLabel(self.ui.frame_5)
             lab.setPixmap(_create_pixmap(self.ui.listaNotificaciones.count()))
             lab.setGeometry(392, 5, 26, 26)
-    
-    def showEvent(self, event):
+        
         self.conectar_botones()
-        self.parentWidget().en_venta = False
     
     def conectar_botones(self):
         from .AdministrarVentas import App_AdministrarVentas

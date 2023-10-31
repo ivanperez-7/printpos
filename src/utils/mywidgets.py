@@ -27,7 +27,6 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
         
         self.conn = conn
         self.user = Usuario.generarUsuarioActivo(conn)
-        self.en_venta = False  # bandera levantada al entrar en CrearVenta
         
         icon = QIcon()
         icon.addFile(':img/icon.ico', QSize(), QIcon.Normal, QIcon.Off)
@@ -48,7 +47,10 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
     
     def closeEvent(self, event):
         """ En eventos específicos, restringimos el cerrado del sistema. """
-        if self.en_venta and not self.user.administrador:
+        from backends.CrearVenta import App_CrearVenta
+        en_venta = isinstance(self.centralWidget(), App_CrearVenta)
+        
+        if en_venta and not self.user.administrador:
             event.ignore()
         else:
             self.conn.close()
