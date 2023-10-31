@@ -126,7 +126,7 @@
              <number>9</number>
             </property>
             <item row="0" column="0" rowspan="2">
-             <widget class="QPushButton" name="btDeshacer">
+             <widget class="ClickableIcon" name="btDeshacer">
               <property name="toolTip">
                <string>Deshacer fecha de entrega</string>
               </property>

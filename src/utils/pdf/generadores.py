@@ -77,11 +77,11 @@ def generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
         can.drawString(75, 493, nombre)
         can.drawString(75, 470, telefono)
         can.drawString(150, 448, formatDate(entrega))
-        can.drawCentredString(353, 148, f'{saldo}')
-        can.drawCentredString(353, 170, f'{anticipo}')
+        can.drawCentredString(353, 148, str(saldo))
+        can.drawCentredString(353, 170, str(anticipo))
         
         can.setFont('Helvetica-Bold', 10)
-        can.drawCentredString(353, 192, f'{total}')
+        can.drawCentredString(353, 192, str(total))
         can.setFont('Helvetica', 10)
         
         for i, (prodCantidad, prodNombre, prodEspecificaciones,
@@ -203,11 +203,11 @@ def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float,
     total = Moneda(total)
     pagado = Moneda(pagado)
     
-    table2 = [['IMPORTE:', f'{total}']]
+    table2 = [['IMPORTE:', str(total)]]
     
     if pagado:
-        table2.extend([['Pagado:', f'{pagado}'],
-                       ['Cambio:', f'{pagado - total}']])
+        table2.extend([['Pagado:', str(pagado)],
+                       ['Cambio:', str(pagado - total)]])
     
     table2 = Table(table2, hAlign='RIGHT')
     

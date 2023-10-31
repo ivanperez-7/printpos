@@ -223,7 +223,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
         
         # modificar valores a los de la base de datos
         nuevo.boxProducto.setCurrentText(codigo)
-        nuevo.txtProductoUtiliza.setText(f'{cantidad}')
+        nuevo.txtProductoUtiliza.setText(str(cantidad))
         
         self.ui.layoutScroll.addWidget(nuevo)
     
