@@ -7,7 +7,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import *
 from PySide6.QtCore import *
 
-from backends.Login import Usuario
+from backends.Login import App_Login, Usuario
 from utils.myutils import unidecode, formatDate
 from utils import Moneda, Moneda, sql
 
@@ -48,6 +48,7 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         """ En eventos específicos, restringimos el cerrado del sistema. """
         from backends.CrearVenta import App_CrearVenta
+        
         en_venta = isinstance(self.centralWidget(), App_CrearVenta)
         
         if en_venta and not self.user.administrador:
@@ -56,6 +57,7 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
             self.conn.close()
             self.consultarPrecios.close()
             event.accept()
+            login = App_Login()
 
 
 class ClickableIcon(QtWidgets.QPushButton):
@@ -193,14 +195,10 @@ class MyTableItem(QtWidgets.QTableWidgetItem):
         self.sort_key = sort_key
 
     def __lt__(self, other):
-        if self.sort_key:
-            try:
-                return self.sort_key < other.sort_key
-            except Exception as err:
-                print(err)
-                return unidecode(self.text()) < unidecode(other.text())
-        else:
+        if not isinstance(other, MyTableItem) or self.sort_key is None:
             return unidecode(self.text()) < unidecode(other.text())
+        else:
+            return self.sort_key < other.sort_key
 
 
 class TablaDatos(QtWidgets.QTableWidget):

@@ -70,7 +70,11 @@ class App_Login(QtWidgets.QWidget):
         
         self.show()
         self.ui.inputUsuario.setFocus()
-        self.validar_licencia()
+        
+        if not qApp.licencia_validada:
+            self.validar_licencia()
+        else:
+            self.exito_verificacion()
     
     def keyPressEvent(self, event):
         if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
@@ -88,7 +92,9 @@ class App_Login(QtWidgets.QWidget):
             self.validated.emit()
         else:
             self.failure.emit(error)
+        
         self.ui.lbEstado.clear()
+        qApp.licencia_validada = activado
     
     def exito_verificacion(self):
         """ En método separado para regresar al hilo principal."""
@@ -168,6 +174,7 @@ class AjustesDB(QtWidgets.QWidget):
         
         self.ui = Ui_AjustesDB()
         self.ui.setupUi(self)
+        self.setFixedSize(self.size())
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         
         self.ui.lineNombre.setText(socket.gethostname())
@@ -196,6 +203,7 @@ class DialogoActivacion(QtWidgets.QWidget):
         
         self.ui = Ui_Activacion()
         self.ui.setupUi(self)
+        self.setFixedSize(self.size())
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         
         self.ui.btActivar.clicked.connect(self.accept)
@@ -232,12 +240,12 @@ class DialogoActivacion(QtWidgets.QWidget):
         """ En método separado para regresar al hilo principal."""
         match error:
             case licensing.Errores.ACTIVACION_FALLIDA:
-                txt = 'Ha ocurrido un error al activar su licencia en línea.\n' \
-                      'Por favor, verifique su acceso a internet e intente nuevamente.'
+                txt = ('Ha ocurrido un error al activar su licencia en línea.\n'
+                       'Por favor, verifique su acceso a internet e intente nuevamente.')
             
             case licensing.Errores.ACTIVACION_NO_VALIDA:
-                txt = 'La clave ingresada no es válida. Por favor, verifique este dato.\n' \
-                      'Si el problema persiste, será necesario que contacte a soporte.'
+                txt = ('La clave ingresada no es válida. Por favor, verifique este dato.\n'
+                       'Si el problema persiste, será necesario que contacte a soporte.')
         QtWidgets.QMessageBox.warning(self, 'Activación fallida', txt)
 
 

@@ -3,6 +3,7 @@ import re
 import unicodedata
 from urllib.parse import quote
 import webbrowser as web
+import uuid
 
 from openpyxl import Workbook
 from openpyxl.styles import Font
@@ -13,8 +14,8 @@ from utils.mydecorators import run_in_thread
 
 
 __all__ = ['ColorsEnum', 'FabricaValidadores', 'clamp', 'chunkify',
-           'daysTo', 'unidecode', 'son_similar', 'contiene_duplicados',
-           'formatDate','exportarXlsx', 'enviarWhatsApp']
+           'daysTo', 'unidecode', 'randFile', 'son_similar', 'stringify_float',
+           'contiene_duplicados', 'formatDate','exportarXlsx', 'enviarWhatsApp']
 
 
 class ColorsEnum:
@@ -99,6 +100,19 @@ def unidecode(input_str: str):
     return normalized.lower()
 
 
+def stringify_float(f):
+    try:
+        return f'{int(f):,}' if f.is_integer() else f'{f:,.2f}'
+    except AttributeError:
+        return f'{f:,}'
+
+
+def randFile(ext: str):
+    """ Genera archivo de extensión dada con nombre aleatorio. """
+    ext = re.sub('[^a-zA-Z]*', '', ext)
+    return uuid.uuid4().hex + '.' + ext
+
+
 def son_similar(str1: str, str2: str):
     """ Determina si dos cadenas son similares o no. """
     # convertir, por si acaso
@@ -154,9 +168,4 @@ def enviarWhatsApp(phone_no: str, message: str):
             - open("https://web.whatsapp.com/accept?code=" + receiver) """
     if '+' not in phone_no:  # agregar código de país de México
         phone_no = '+52' + phone_no
-    
-    try:
-        return web.open_new_tab(f'https://web.whatsapp.com/send?phone={phone_no}&text={quote(message)}')
-    except Exception as err:
-        print('Could not open browser: ' + str(err))
-        return False
+    return web.open_new_tab(f'https://web.whatsapp.com/send?phone={phone_no}&text={quote(message)}')

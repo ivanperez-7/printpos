@@ -14,8 +14,9 @@ class PrintPOS(QApplication):
     def __init__(self):
         super().__init__()
         
-        self.setStyle('Fusion')
+        self.licencia_validada = False
         
+        self.setStyle('Fusion')
         self.configurarPaleta()
         self.instalarTraductor()
     

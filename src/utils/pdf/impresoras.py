@@ -1,8 +1,8 @@
 """ Provee clases para enviar documentos PDF, en bytes, a impresoras. """
 import io
-import uuid
 from typing import overload
 
+import fitz
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QImage
@@ -12,6 +12,7 @@ from backends.Caja import Caja
 from config import INI
 from utils.mydecorators import run_in_thread
 from utils.myutils import *
+from utils.mywidgets import WarningDialog
 from utils.pdf.generadores import *
 from utils import sql
 
@@ -34,42 +35,39 @@ class ImpresoraPDF:
         
         if dialog.exec() != QPrintDialog.Accepted:
             return None
-        return printer
+        else:
+            return printer
     
     @staticmethod
     def obtenerImpresoraTickets():
         """ Lee impresora de tickets en archivo config. En hilo principal. """
-        from utils.mywidgets import WarningDialog
-        
-        printerName = INI.IMPRESORA
-        pInfo = QPrinterInfo.printerInfo(printerName)
-        
+        pInfo = QPrinterInfo.printerInfo(INI.IMPRESORA)
         if not pInfo.printerName():
-            WarningDialog(f'¡No se encontró la impresora {printerName}!')
+            WarningDialog(f'¡No se encontró la impresora {INI.IMPRESORA}!')
             return None
-        
-        return QPrinter(pInfo, QPrinter.HighResolution)
+        else:
+            return QPrinter(pInfo, QPrinter.HighResolution)
     
     def enviarAImpresora(self, data: io.BytesIO):
         """ Convertir PDF a imagen y mandar a impresora. """
-        import fitz
-        
         doc = fitz.open(stream=data)
         painter = QPainter()
+        
         if not painter.begin(self.printer):
             return
         
         for i, page in enumerate(doc):
             pix = page.get_pixmap(dpi=300, alpha=False)
             image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
-            #image.save(uuid.uuid4().hex + '.jpg')
+            #image.save(randFile('jpg'))
             
             rect = painter.viewport()
             qtImageScaled = image.scaled(rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
             painter.drawImage(rect, qtImageScaled)
             
-            if i > 0:
-                self.printer.newPage()
+            if i < len(doc) - 1 and not self.printer.newPage():   # no se pudo crear nueva página
+                print(f"Failed to create a new page for page {i + 2}")
+                break
         painter.end()
     
     def __repr__(self):
@@ -146,16 +144,16 @@ class ImpresoraTickets(ImpresoraPDF):
                  'Tarjeta de débito': 'TVP'}
         
         for metodo, monto, pagado in manejador.obtenerPagosVenta(idx):
-            data = generarTicketPDF(idx, productos, vendedor, monto,
+            data = generarTicketPDF(productos, vendedor, idx, monto,
                                     pagado, abrev[metodo], fechaCreacion)
             self.enviarAImpresora(data)
     
     @run_in_thread
-    def imprimirTicketPresupuesto(self, productos: list[tuple], vendedor: str):
+    def imprimirTicketPresupuesto(self, productos: list, vendedor: str):
         """ Genera un ticket para el presupuesto de una compra. """
         assert self.printer, 'Impresora aún no inicializada.'
         
-        data = generarTicketPDF(0, productos, vendedor)
+        data = generarTicketPDF(productos, vendedor)
         self.enviarAImpresora(data)
     
     @run_in_thread
