@@ -28,7 +28,7 @@ class App_Home(QtWidgets.QWidget):
             qp = QPixmap()
             qp.loadFromData(user.foto_perfil)
         else:
-            qp = QPixmap("resources/images/user.png")
+            qp = QPixmap(":/img/resources/images/user.png")
         
         self.ui.btFotoPerfil.setIcon(qp)
         
@@ -115,8 +115,6 @@ class App_Home(QtWidgets.QWidget):
         parent.setCentralWidget(new)
     
     def exitApp(self):
-        from .Login import App_Login
-        self.login = App_Login()
         self.parentWidget().close()
 
 

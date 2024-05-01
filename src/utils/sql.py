@@ -91,6 +91,9 @@ class DatabaseManager:
             _WarningDialog(self._error_txt, err.args[0])
             return None
     
+    def commit(self):
+        return self._conn.commit()
+    
     def obtenerVista(self, vista: str):
         """ Atajo de sentencia SELECT para obtener una vista. """
         return self.fetchall(f'SELECT * FROM {vista};')
@@ -827,8 +830,8 @@ class ManejadorReportes(DatabaseManager):
         ''', (year, vendedor))
     
     def obtenerReporteClientes(self, fechaDesde: QDate, fechaHasta: QDate):
-        restr = self.restr_ventas_terminadas \
-            + "AND CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?"
+        restr = (self.restr_ventas_terminadas
+            + "AND CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?")
         
         return self.fetchall(f'''
             WITH prod_mas_comprados AS (
@@ -1046,7 +1049,7 @@ class ManejadorVentas(DatabaseManager):
         """ Obtiene tabla de productos para las órdenes de compra:
         
             Cantidad | Producto | Especificaciones | Precio | Importe """
-        return self.fetchall('''
+        yield from self.fetchall('''
             SELECT  cantidad,
                     abreviado || IIF(duplex, ' (a doble cara)', ''),
                     especificaciones,
@@ -1061,25 +1064,42 @@ class ManejadorVentas(DatabaseManager):
     def obtenerTablaTicket(self, id_venta: int):
         """ Obtiene tabla de productos para los tickets de ventas directas.
         
-            Cantidad | Producto | Precio | Descuento | Importe """
-        return self.fetchall('''
-            SELECT	cantidad,
-                    abreviado || IIF(VD.duplex, ' (a doble cara)', ''),
+            Cantidad | Producto | Precio | Descuento | Importe
+            
+            Es el único método que regresa objetos ItemVenta ya que se
+            necesita calcular el total de descuento para los tickets. """
+        from backends.CrearVenta import ItemVenta, ItemGranFormato
+        
+        id, abrev, precio, desc, cant, duplex, categoria = range(7)
+        manejador = ManejadorProductos(self._conn)
+        
+        for p in self.fetchall('''
+            SELECT	P.id_productos,
+                    abreviado,
                     precio,
                     descuento,
-                    importe
-            FROM	Ventas_Detallado AS VD
-                    LEFT JOIN Productos AS P
-                        ON VD.id_productos = P.id_productos
+                    cantidad,
+                    VD.duplex,
+                    P.categoria
+            FROM	ventas_detallado VD
+                    LEFT JOIN productos P
+                           ON VD.id_productos = P.id_productos
             WHERE	id_ventas = ?;
-        ''', (id_venta,))
+        ''', (id_venta,)):
+            data = (0, '', p[abrev], p[precio], p[desc], p[cant], '', p[duplex])
+            if p[categoria] == 'S':
+                item = ItemVenta(*data)
+            else:
+                min_m2, _ = manejador.obtenerGranFormato(p[id])
+                item = ItemGranFormato(*data, min_m2)
+            yield item
     
     def obtenerTablaProductosVenta(self, id_venta: int):
         """ Obtener tabla de productos para widgets de
             detalles de venta, terminar compra, etc. 
             
             Cantidad | Código | Especificaciones | Precio | Descuento | Importe """
-        return self.fetchall('''
+        yield from self.fetchall('''
             SELECT  cantidad,
                     codigo || IIF(duplex, ' (a doble cara)', ''),
                     especificaciones,
@@ -1158,7 +1178,7 @@ class ManejadorVentas(DatabaseManager):
     
     def obtenerPagosVenta(self, id_venta: int):
         """ Obtener listado de pagos realizados en esta venta. """
-        return self.fetchall('''
+        yield from self.fetchall('''
             SELECT  metodo,
                     monto,
                     recibido

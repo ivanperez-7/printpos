@@ -26,8 +26,6 @@ from utils.sql import ManejadorVentas
 
 __all__ = ['generarOrdenCompra', 'generarTicketPDF', 'generarCortePDF']
 
-stringify_float = lambda f: f'{int(f):,}' if f.is_integer() else f'{f:,.2f}'
-
 
 def generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
     """ Genera un PDF con el orden de compra correspondiente a 
@@ -88,8 +86,7 @@ def generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
                 prodPrecio, prodImporte) in enumerate(chunk):
             y_sep = -32.4 * i  # separador por renglón de la tabla
             
-            prodCantidad_str = stringify_float(prodCantidad)
-            can.drawCentredString(49, 381 + y_sep, prodCantidad_str)
+            can.drawCentredString(49, 381 + y_sep, stringify_float(prodCantidad))
             can.drawCentredString(306, 381 + y_sep, f'{prodPrecio:,.2f}')
             can.drawCentredString(353, 381 + y_sep, f'{prodImporte:,.2f}')
             
@@ -138,9 +135,9 @@ def generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
     return buffer
 
 
-def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float, float]],
-                      vendedor: str, total: float = None, pagado: float = 0., metodo_pago: str = None, 
-                      fechaCreacion: QDateTime = QDateTime.currentDateTime()):
+def generarTicketPDF(productos: list, vendedor: str, folio: int = 0,
+                     total: float = None, pagado: float = 0., metodo_pago: str = None,
+                     fechaCreacion: QDateTime = QDateTime.currentDateTime()):
     """ Función general para generar el ticket de compra o presupuesto.
         Contiene:
             - Logo
@@ -153,7 +150,7 @@ def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float,
     buffer = io.BytesIO()
     
     doc = SimpleDocTemplate(buffer,
-                            pagesize=(80 * mm, 297 * mm),
+                            pagesize=(80*mm, 297*mm),
                             rightMargin=0, leftMargin=0,
                             topMargin=0, bottomMargin=0)
     
@@ -167,23 +164,23 @@ def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float,
                               fontSize=8, alignment=TA_LEFT))
     
     # contenido del PDF
-    logo = Image('resources/images/logo.png', width=50 * mm, height=26.4 * mm)
+    logo = Image('resources/images/logo.png', width=50*mm, height=26.4*mm)
     data = [['CANT.', 'PRODUCTO', 'P/U', 'DESC.', 'TOTAL']]
     
     total_desc = Moneda()
     
-    for cantidad, nombre, precio, descuento, importe in productos:
+    for prod in productos:
         data.append([
-            stringify_float(cantidad),
-            Paragraph(nombre, styles['Center']),
-            f'{precio:,.2f}',
-            f'{descuento:,.2f}' if descuento > 0 else '',
-            f'{importe:,.2f}'
+            stringify_float(prod.cantidad),
+            Paragraph(prod.nombre_ticket, styles['Center']),
+            f'{prod.precio_unit:,.2f}',
+            f'{prod.descuento_unit:,.2f}' if prod.descuento_unit > 0 else '',
+            f'{prod.importe:,.2f}'
         ])
-        total_desc += descuento * cantidad  # TODO: no funciona para productos g.f.
+        total_desc += prod.total_descuentos
     
     # productos de la compra
-    tabla_productos = Table(data, colWidths=[10 * mm, 28 * mm, 12 * mm, 12 * mm, 12 * mm])
+    tabla_productos = Table(data, colWidths=[10*mm, 28*mm, 12*mm, 12*mm, 12*mm])
     
     tabla_productos.setStyle(TableStyle([
         ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -199,7 +196,7 @@ def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float,
     
     # total a pagar
     if total is None:
-        total = sum(p[4] for p in productos)
+        total = sum(prod.importe for prod in productos)
     total = Moneda(total)
     pagado = Moneda(pagado)
     
@@ -224,8 +221,9 @@ def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float,
         titulo = 'TICKET DE COMPRA'
         pie = '¡Muchas gracias por su compra!'
         
-        folio = f'<b>Folio de venta</b>: {folio} ' \
-                + '&nbsp; ' * 7 + f'<b>Método de pago</b>: {metodo_pago}'
+        folio = (f'<b>Folio de venta</b>: {folio} ' 
+                 + '&nbsp; ' * 7
+                 + f'<b>Método de pago</b>: {metodo_pago}')
     else:
         titulo = 'COTIZACIÓN DE VENTA'
         pie = '¡Muchas gracias por su visita!'
@@ -251,7 +249,7 @@ def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float,
         Paragraph(titulo, styles['Center']),
         Paragraph('* ' * 40, styles['Center']),
         Paragraph(folio, styles['Left']),
-        Paragraph(f'<b>Fecha</b>: ' + formatDate(fechaCreacion), styles['Left']),
+        Paragraph('<b>Fecha</b>: ' + formatDate(fechaCreacion), styles['Left']),
         Spacer(1, 10),
         
         tabla_productos,
@@ -259,13 +257,14 @@ def generarTicketPDF(folio: int, productos: list[tuple[float, str, float, float,
         
         table2]
     
-    elements += [
-        Spacer(1, 12),
-        
-        Paragraph(f'¡Hoy se ahorró ${total_desc}!', styles['Center_2']),
-        Spacer(1, 25),
-        
-        Paragraph('Autoriza descuentos: ' + '_' * 24, styles['Left'])] if total_desc else []
+    if total_desc:
+        elements += [
+            Spacer(1, 12),
+            
+            Paragraph(f'¡Hoy se ahorró ${total_desc}!', styles['Center_2']),
+            Spacer(1, 25),
+            
+            Paragraph('Autoriza descuentos: ' + '_' * 24, styles['Left'])]
     
     elements += [
         Spacer(1, 15),

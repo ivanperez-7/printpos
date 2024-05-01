@@ -20,8 +20,13 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
         TODO:
             - mecanismo de reseteo de contraseña (sin permisos de admin)
             - registros de acciones: inicios de sesión, modificación de ajustes y usuarios, acciones en general
-            - personalización: foto de perfil y colores del UI
-            - reportes de actividad de usuario: inicios de sesión, # de ventas realizadas, ganancias generadas """
+            - personalización: foto de perfil y colores del UI 
+            
+        BUG:
+            - cambiar de ADMIN a VENDEDOR debe quitar GRANT ADMIN ROLE en Firebird
+            - cambiar de VENDEDOR a ADMIN, debe dar ADMIN ROLE
+            - al crear usuario ADMIN, no se puede cambiar su propio rol
+            - reincorporar usuarios dados de baja """
     
     def __init__(self, parent: VentanaPrincipal):
         from ui.Ui_AdministrarUsuarios import Ui_AdministrarUsuarios
@@ -289,7 +294,6 @@ class App_RegistrarUsuario(Base_EditarUsuario):
         
         usuario, _, permisos = params
         psswd = self.ui.txtPsswd.text()
-        
         admin_role = (permisos == 'Administrador')
         
         return manejador.crearUsuarioServidor(usuario, psswd, admin_role)

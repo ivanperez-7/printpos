@@ -8,10 +8,9 @@ from PySide6.QtGui import QPainter, QPen
 
 from utils.myinterfaces import InterfazFechasReportes
 from utils.mywidgets import VentanaPrincipal
+from utils.myutils import stringify_float
 from utils.sql import ManejadorReportes, ManejadorVentas
 
-
-stringify_float = lambda f: f'{int(f):,}' if f.is_integer() else f'{f:,.2f}'
 
 class App_Reportes(QtWidgets.QWidget):
     """ Backend para la ventana de reportes varios. """

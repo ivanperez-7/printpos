@@ -5,7 +5,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
 from PySide6.QtCore import QDateTime, QModelIndex, Qt, Signal
 
-from utils.mydecorators import con_fondo
+from utils.mydecorators import con_fondo, requiere_admin
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -19,7 +19,15 @@ from utils.sql import ManejadorVentas
 class App_AdministrarVentas(QtWidgets.QWidget):
     """ Backend para la ventana de administración de ventas.
         TODO:
-        -   ocultamiento de folios """
+        -   ocultamiento de folios
+        
+        Varios anticipos (no solo dos) para órdenes
+        Tener ticket para cada pago asociada a la orden
+        Todos pueden cerrar orden de compra y 
+            reflejar en el estado quién cerró orden
+            
+        BUG: ventas con varios pagos de mismo método y misma cantidad
+             agrupa pagos de distintas fechas en tabla de pedidos. """
     
     def __init__(self, parent: VentanaPrincipal):
         from ui.Ui_AdministrarVentas import Ui_AdministrarVentas
@@ -48,10 +56,6 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         InterfazFechas(self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
                        self.ui.dateDesde, self.ui.dateHasta, fechaMin)
         
-        # deshabilitar botones es caso de no ser administrador
-        if not self.user.administrador:
-            self.ui.btCancelar.hide()
-        
         # añadir menú de opciones al botón para filtrar
         self.filtro = InterfazFiltro(self.ui.btFiltrar, [
             ('Folio', 'folio', 0),
@@ -77,15 +81,15 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         self.ui.tabla_pedidos.doubleClicked.connect(self.detallesVenta)
         self.ui.tabWidget.currentChanged.connect(self.cambiar_pestana)
         
-        InterfazPaginas(
+        (InterfazPaginas(
             self.ui.btAdelante, self.ui.btUltimo,
-            self.ui.btAtras, self.ui.btPrimero, self.ui.tabla_ventasDirectas) \
-        .paginaCambiada.connect(self.update_display)
+            self.ui.btAtras, self.ui.btPrimero, self.ui.tabla_ventasDirectas)
+         .paginaCambiada.connect(self.update_display))
         
-        InterfazPaginas(
+        (InterfazPaginas(
             self.ui.btAdelante, self.ui.btUltimo,
-            self.ui.btAtras, self.ui.btPrimero, self.ui.tabla_pedidos) \
-        .paginaCambiada.connect(self.update_display)
+            self.ui.btAtras, self.ui.btPrimero, self.ui.tabla_pedidos)
+         .paginaCambiada.connect(self.update_display))
         
         # configurar y llenar tablas
         self.ui.tabla_ventasDirectas.configurarCabecera(lambda col: col in {0, 3, 4, 5, 6, 7})
@@ -140,7 +144,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         manejador = ManejadorVentas(self.conn)
         self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, restrict)
-        self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta, restrict)
+        self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta)
     
     def update_display(self):
         self.llenar_tabla_ventas()
@@ -244,7 +248,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
             
             if estado.startswith('Cancelada'):
                 tabla.item(row, 6).setBackground(QColor(ColorsEnum.ROJO))
-            elif estado.startswith('Terminada'):
+            elif estado.startswith('Entregado') or estado.startswith('Terminada'):
                 tabla.item(row, 6).setBackground(QColor(ColorsEnum.VERDE))
             elif estado.startswith('Recibido'):
                 tabla.item(row, 6).setBackground(QColor(ColorsEnum.AMARILLO))
@@ -313,7 +317,9 @@ class App_AdministrarVentas(QtWidgets.QWidget):
             return
         
         # terminar venta directamente, al no tener saldo restante
-        if not manejador.actualizarEstadoVenta(idVenta, 'Terminada', commit=True):
+        man = ManejadorVentas(self.conn)
+        if not manejador.actualizarEstadoVenta(idVenta, 'Entregado por ' + man.usuarioActivo,
+                                               commit=True):
             return
         
         qm.information(self, 'Éxito', 'Se marcó como terminada la venta seleccionada.')
@@ -333,16 +339,18 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         ret = qm.question(self, 'Atención',
                           'La venta seleccionada se marcará como cancelada.\n'
                           'Esta operación no se puede deshacer. ¿Desea continuar?')
-        if ret != qm.Yes:
-            return
-        
+        if ret == qm.Yes:
+            self._cancelarVenta(selected[0].text())
+    
+    @requiere_admin
+    def _cancelarVenta(self, idVenta, conn):
         # preguntar por devolución y manejar tabla ventas_pagos como corresponde
+        qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Devolución de dinero',
                           '¿Desea registrar la devolución de los pagos realizados en esta venta?')
         
-        manejador = ManejadorVentas(self.conn)
+        manejador = ManejadorVentas(conn)
         estado = 'Cancelada por ' + manejador.usuarioActivo
-        idVenta = selected[0].text()
         
         if ret == qm.Yes:
             if not manejador.anularPagos(idVenta):
@@ -602,15 +610,16 @@ class App_TerminarVenta(QtWidgets.QWidget):
         manejadorVentas = ManejadorVentas(self.conn)
         
         for wdg in self.ui.stackedWidget.widgetsPago:
-            montoAPagar = wdg.montoPagado if wdg.metodoSeleccionado != 'Efectivo' \
-                else self.ui.stackedWidget.restanteEnEfectivo
+            montoAPagar = (wdg.montoPagado if wdg.metodoSeleccionado != 'Efectivo'
+                else self.ui.stackedWidget.restanteEnEfectivo)
                 
             if not manejadorVentas.insertarPago(self.id_ventas, wdg.metodoSeleccionado,
                                                 montoAPagar, wdg.montoPagado):
                 return
         
         # marcar venta como terminada
-        if not manejadorVentas.actualizarEstadoVenta(self.id_ventas, 'Terminada',
+        if not manejadorVentas.actualizarEstadoVenta(self.id_ventas,
+                                                     'Entregado por ' + manejadorVentas.usuarioActivo,
                                                      commit=True):
             return
         
