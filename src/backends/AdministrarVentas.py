@@ -92,8 +92,8 @@ class App_AdministrarVentas(QtWidgets.QWidget):
          .paginaCambiada.connect(self.update_display))
         
         # configurar y llenar tablas
-        self.ui.tabla_ventasDirectas.configurarCabecera(lambda col: col in {0, 3, 4, 5, 6, 7})
-        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in {0, 3, 4, 5, 7, 8, 10})
+        self.ui.tabla_ventasDirectas.configurarCabecera(lambda col: col in {0, 3, 4, 5})
+        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in {0, 3, 4, 5, 6, 8})
     
     def showEvent(self, event):
         self.rescan_update()
