@@ -28,15 +28,8 @@ class ColorsEnum:
 class FabricaValidadores:
     """ Clase para generar validadores de expresiones regulares
         (`QRegularExpressionValidator`) para widgets. """
-    @classmethod
-    @property
-    def IdFirebird(cls):
-        return QRegularExpressionValidator(r'[a-zA-Z0-9_$]+')
-    
-    @classmethod
-    @property
-    def NumeroDecimal(cls):
-        return QRegularExpressionValidator(r'\d*\.?\d*')
+    IdFirebird = QRegularExpressionValidator(r'[a-zA-Z0-9_$]+')
+    NumeroDecimal = QRegularExpressionValidator(r'\d*\.?\d*')
 
 
 class Runner(QThread):

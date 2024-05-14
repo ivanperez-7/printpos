@@ -54,7 +54,9 @@ class PrintPOS(QApplication):
         return 'QApplication afitriona de PrintPOS.'
 
 
-app = PrintPOS()
+if qApp is None:
+    app = PrintPOS()
+
 
 if __name__ == '__main__':
     # este módulo genera mucho tiempo de espera, por alguna razón

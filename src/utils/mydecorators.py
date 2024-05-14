@@ -14,7 +14,7 @@ __all__ = ['requiere_admin', 'run_in_thread', 'con_fondo']
 class Dialog_ObtenerAdmin(QDialog):
     success = Signal(object)
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None): # código GUI
         from PySide6 import QtCore, QtGui, QtWidgets
         
         super().__init__(parent)

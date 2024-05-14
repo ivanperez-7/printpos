@@ -3,11 +3,17 @@ import operator
 import re
 
 
-PRECISION = 2
+class useless(type):
+    """ Para habilitar `Moneda.cero`. """
+    @property
+    def cero(cls):
+        return cls(0.)
 
-class Moneda:
+class Moneda(metaclass=useless):
     """ Clase para manejar cantidades monetarias
         con un máximo de dos números decimales. """
+    PRECISION = 2
+    
     def __init__(self, inicial = None):
         if inicial is None:
             self.valor = 0.0
@@ -22,13 +28,7 @@ class Moneda:
     
     @valor.setter
     def valor(self, arg):
-        self._valor = round(float(arg), PRECISION)
-    
-    @classmethod
-    @property
-    def cero(cls):
-        """ Forma explícita de generar valor cero. """
-        return cls(0.)
+        self._valor = round(float(arg), self.PRECISION)
     
     @staticmethod
     def sum(iter_) -> 'Moneda':
@@ -54,10 +54,10 @@ class Moneda:
         return self.__class__(-self.valor)
     
     def __repr__(self):
-        return f'Moneda: {self.valor:,.{PRECISION}f} MXN'
+        return f'Moneda: {self.valor:,.{self.PRECISION}f} MXN'
     
     def __str__(self):
-        return f'{self.valor:,.{PRECISION}f}'
+        return f'{self.valor:,.{self.PRECISION}f}'
     
     # =========================
     #  Operaciones aritméticas 
@@ -84,7 +84,7 @@ class Moneda:
     #  Operaciones lógicas 
     # =====================
     def _bool_op(self, op, operation) -> bool:
-        return operation(self.valor, round(op, PRECISION))
+        return operation(self.valor, round(op, self.PRECISION))
         
     def __eq__(self, op):
         return self._bool_op(op, operator.eq)

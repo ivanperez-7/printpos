@@ -43,11 +43,9 @@ class App_Home(QtWidgets.QWidget):
         self.ui.tipo_usuario.setText(user.rol.capitalize())
         
         # deshabilita eventos del mouse para los textos en los botones
-        items = vars(self.ui)
-        items = [items[name] for name in items if 'label_' in name]
-        
-        for w in items:
-            w.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        for name, item in vars(self.ui).items():
+            if 'label_' in name:
+                item.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         
         # deshabilitar funciones para usuarios normales
         if user.rol != 'ADMINISTRADOR':
@@ -243,15 +241,7 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
                                 and son_similar(txt_busqueda, prod[filtro]),
                    self.all_prod)
         
-        for row, prod in enumerate(found):
-            tabla.insertRow(row)
-            
-            for col, cell in enumerate(prod):
-                if isinstance(cell, float):
-                    cell = f'{cell:,.2f}'
-                else:
-                    cell = str(cell or '')
-                tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
+        tabla.llenar(found)
         # </tabla de productos normales>
         
         # <tabla de gran formato>
@@ -263,15 +253,7 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
                                 and son_similar(txt_busqueda, prod[filtro]),
                    self.all_gran)
         
-        for row, prod in enumerate(found):
-            tabla.insertRow(row)
-            
-            for col, cell in enumerate(prod):
-                if isinstance(cell, float):
-                    cell = f'{cell:,.2f}'
-                else:
-                    cell = str(cell or '')
-                tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
+        tabla.llenar(found)
         # </tabla de gran formato>
         
         self.tabla_actual.resizeRowsToContents()
