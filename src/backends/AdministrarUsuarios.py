@@ -195,11 +195,9 @@ class Base_EditarUsuario(QtWidgets.QWidget):
         self.ui.txtUsuario.setValidator(FabricaValidadores.IdFirebird)
         
         # deshabilita eventos del mouse para los textos en los botones
-        items = vars(self.ui)
-        items = [items[name] for name in items if 'label_' in name]
-        
-        for w in items:
-            w.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        for name, item in vars(self.ui).items():
+            if 'label_' in name:
+                item.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         
         # crear eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)

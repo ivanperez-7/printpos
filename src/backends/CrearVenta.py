@@ -434,6 +434,13 @@ class App_AgregarProducto(QtWidgets.QWidget):
         self.ui.tabla_seleccionar.itemDoubleClicked.connect(self.done)
         self.ui.tabla_granformato.itemDoubleClicked.connect(self.done)
         self.ui.tabWidget.currentChanged.connect(lambda: self.tabla_actual.resizeRowsToContents())
+        self.ui.btIntercambiarProducto.clicked.connect(self.intercambiarProducto)
+        self.ui.btIntercambiarMaterial.clicked.connect(self.intercambiarMaterial)
+        
+        self.ui.txtAncho.textChanged.connect(self.medidasHandle)
+        self.ui.txtAlto.textChanged.connect(self.medidasHandle)
+        self.ui.grupoBotonesAlto.buttonClicked.connect(self.medidasHandle)
+        self.ui.grupoBotonesAncho.buttonClicked.connect(self.medidasHandle)
         
         self.ui.groupFiltro.buttonClicked.connect(
             lambda: self.update_display(self.ui.searchBar.text()))
@@ -442,10 +449,11 @@ class App_AgregarProducto(QtWidgets.QWidget):
         self.ui.txtCantidad.setValidator(FabricaValidadores.NumeroDecimal)
         self.ui.txtAlto.setValidator(FabricaValidadores.NumeroDecimal)
         self.ui.txtAncho.setValidator(FabricaValidadores.NumeroDecimal)
+        self.ui.txtAltoMaterial.setValidator(FabricaValidadores.NumeroDecimal)
+        self.ui.txtAnchoMaterial.setValidator(FabricaValidadores.NumeroDecimal)
         
         self.ui.tabla_seleccionar.configurarCabecera(lambda col: col != 1)
         self.ui.tabla_granformato.configurarCabecera(lambda col: col != 1)
-        
         self.ui.tabla_seleccionar.setSortingEnabled(True)
         self.ui.tabla_granformato.setSortingEnabled(True)
         
@@ -464,6 +472,73 @@ class App_AgregarProducto(QtWidgets.QWidget):
     @property
     def tabla_actual(self):
         return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][self.ui.tabWidget.currentIndex()]
+    
+    def medidasHandle(self):
+        """ Especificar medidas en producto. """
+        ancho = self.ui.txtAncho.text()
+        anchoMedida = 'cm' if self.ui.btAnchoCm.isChecked() else 'm'
+        
+        alto = self.ui.txtAlto.text()
+        altoMedida = 'cm' if self.ui.btAltoCm.isChecked() else 'm'
+        
+        if all([ancho, anchoMedida, alto, altoMedida]):
+            spec = f'Medidas: {ancho} {anchoMedida} por {alto} {altoMedida}. '
+            self.ui.txtNotas_2.setText(spec)
+    
+    def intercambiarDimensiones(self, alto_textbox, ancho_textbox,
+                                      bt_alto_cm, bt_ancho_cm,
+                                      bt_alto_m, bt_ancho_m):
+        alto = alto_textbox.text()
+        ancho = ancho_textbox.text()
+        bt_alto = bt_alto_cm if bt_ancho_cm.isChecked() else bt_alto_m
+        bt_ancho = bt_ancho_cm if bt_alto_cm.isChecked() else bt_ancho_m
+        
+        if alto and ancho:
+            alto_textbox.setText(ancho)
+            ancho_textbox.setText(alto)
+            bt_alto.setChecked(True)
+            bt_ancho.setChecked(True)
+            self.medidasHandle()
+
+    def intercambiarProducto(self):
+        self.intercambiarDimensiones(self.ui.txtAlto, self.ui.txtAncho,
+                                     self.ui.btAltoCm, self.ui.btAnchoCm,
+                                     self.ui.btAltoM, self.ui.btAnchoM)
+            
+    def intercambiarMaterial(self):
+        self.intercambiarDimensiones(self.ui.txtAltoMaterial, self.ui.txtAnchoMaterial,
+                                     self.ui.btAltoCm_2, self.ui.btAnchoCm_2,
+                                     self.ui.btAltoM_2, self.ui.btAnchoM_2)
+
+    def obtenerMedidasProducto(self):
+        """ Calcular medidas del producto, regresa tupla (ancho, alto). """
+        ancho_producto = self.ui.txtAncho.text()
+        div_ancho = 100 if self.ui.btAnchoCm.isChecked() else 1
+        
+        alto_producto = self.ui.txtAlto.text()
+        div_alto = 100 if self.ui.btAltoCm.isChecked() else 1
+        
+        try:
+            ancho_producto = float(ancho_producto) / div_ancho
+            alto_producto = float(alto_producto) / div_alto
+            return (ancho_producto, alto_producto)
+        except ValueError:
+            return (0., 0.)
+    
+    def obtenerMedidasMaterial(self):
+        """ Calcular medidas del material, regresa tupla (ancho, alto). """
+        ancho_material = self.ui.txtAnchoMaterial.text()
+        div_ancho_material = 100 if self.ui.btAnchoCm_2.isChecked() else 1
+        
+        alto_material = self.ui.txtAltoMaterial.text()
+        div_alto_material = 100 if self.ui.btAltoCm_2.isChecked() else 1
+        
+        try:
+            ancho_material = float(ancho_material) / div_ancho_material
+            alto_material = float(alto_material) / div_alto_material
+            return (ancho_material, alto_material)
+        except ValueError:
+            return (0., 0.)
     
     def update_display(self, txt_busqueda: str = ''):
         """ Actualiza la tabla y el contador de clientes.
@@ -518,9 +593,6 @@ class App_AgregarProducto(QtWidgets.QWidget):
         try:
             cantidad = int(float(self.ui.txtCantidad.text() or 1))
         except ValueError:
-            QtWidgets.QMessageBox.warning(
-                self, 'Atención',
-                '¡Algo anda mal! La cantidad debe ser un número.')
             return
         
         if cantidad <= 0:
@@ -553,24 +625,21 @@ class App_AgregarProducto(QtWidgets.QWidget):
         if not (selected := self.ui.tabla_granformato.selectedItems()):
             return
         
-        ancho = self.ui.txtAncho.text()
-        div_ancho = 100 if self.ui.btAnchoCm.isChecked() else 1
+        ancho_producto, alto_producto = self.obtenerMedidasProducto()
+        ancho_material, alto_material = self.obtenerMedidasMaterial()
         
-        alto = self.ui.txtAlto.text()
-        div_alto = 100 if self.ui.btAltoCm.isChecked() else 1
-        
-        try:        # determinar metros cuadrados
-            ancho = float(ancho) / div_ancho
-            alto = float(alto) / div_alto
-            cantidad = ancho * alto
-        except ValueError:
+        if not all([ancho_producto, alto_producto, ancho_material, alto_material]):
+            return
+        if ancho_producto > ancho_material or alto_producto > alto_material:
             QtWidgets.QMessageBox.warning(
                 self, 'Atención',
-                '¡Algo anda mal! Las medidas deben ser números.')
+                'Las medidas del producto sobrepasan las medidas del material.')
             return
         
-        if cantidad <= 0:
-            return
+        # si el alto del producto sobrepasa el ancho del material, quiere decir
+        # que no se pudo imprimir de forma normal; por lo tanto, cobrar sobrante.
+        if alto_producto > ancho_material:
+            ancho_producto = ancho_material
         
         # obtener información del producto
         codigo = selected[0].text()
@@ -578,12 +647,11 @@ class App_AgregarProducto(QtWidgets.QWidget):
         
         idProducto = manejador.obtenerIdProducto(codigo)
         nombre_ticket = manejador.obtenerNombreParaTicket(codigo)
-        
-        min_m2, precio = manejador.obtenerGranFormato(idProducto)
+        min_m2, precio_m2 = manejador.obtenerGranFormato(idProducto)
         
         # insertar información del producto con cantidad y especificaciones
         return ItemGranFormato(
-            idProducto, codigo, nombre_ticket, precio, 0.0, cantidad,
+            idProducto, codigo, nombre_ticket, precio_m2, 0.0, ancho_producto * alto_producto,
             self.ui.txtNotas_2.text().strip(), False, min_m2)
 
 
@@ -815,11 +883,9 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
         self.ui.btWhatsapp.clicked.connect(self.enviarWhatsApp)
         
         # deshabilita eventos del mouse para los textos en los botones
-        items = vars(self.ui)
-        items = [items[name] for name in items if 'label_' in name]
-        
-        for w in items:
-            w.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        for name, item in vars(self.ui).items():
+            if 'label_' in name:
+                item.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         
         self.show()
     
