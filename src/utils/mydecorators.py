@@ -84,7 +84,9 @@ def requiere_admin(func):
         
         Añadir parámetro nombrado `conn` al final de la función, ya que
         es devuelto por el decorador para extraer información que se requiera
-        de la conexión de administrador, por ejemplo, nombre del administrador. """
+        de la conexión de administrador, por ejemplo, nombre del administrador.
+        
+        Requiere que QWidget tenga atributo `user` (objeto Login.Usuario actual). """
     @wraps(func)
     def wrapper_decorator(*args, **kwargs):
         parent = args[0]  # QWidget (módulo actual)
