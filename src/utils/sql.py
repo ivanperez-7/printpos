@@ -1049,7 +1049,7 @@ class ManejadorVentas(DatabaseManager):
         """ Obtiene tabla de productos para las órdenes de compra:
         
             Cantidad | Producto | Especificaciones | Precio | Importe """
-        yield from self.fetchall('''
+        return self.fetchall('''
             SELECT  cantidad,
                     abreviado || IIF(duplex, ' (a doble cara)', ''),
                     especificaciones,
@@ -1099,7 +1099,7 @@ class ManejadorVentas(DatabaseManager):
             detalles de venta, terminar compra, etc. 
             
             Cantidad | Código | Especificaciones | Precio | Descuento | Importe """
-        yield from self.fetchall('''
+        return self.fetchall('''
             SELECT  cantidad,
                     codigo || IIF(duplex, ' (a doble cara)', ''),
                     especificaciones,
@@ -1178,7 +1178,7 @@ class ManejadorVentas(DatabaseManager):
     
     def obtenerPagosVenta(self, id_venta: int):
         """ Obtener listado de pagos realizados en esta venta. """
-        yield from self.fetchall('''
+        return self.fetchall('''
             SELECT  metodo,
                     monto,
                     recibido
