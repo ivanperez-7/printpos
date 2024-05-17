@@ -58,6 +58,8 @@ def clamp(value, smallest, largest):
 
 def chunkify(array: list, size: int):
     """ Divide un arreglo en subarreglos de un tamaño dado. """
+    if not isinstance(array, list):
+        array = list(array)
     return [array[x: x + size] for x in range(0, len(array), size)]
 
 
