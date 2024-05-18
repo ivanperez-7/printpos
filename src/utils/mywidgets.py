@@ -301,9 +301,9 @@ class TablaDatos(QtWidgets.QTableWidget):
     
     # ************************************* #
     def _llenar_default(self, data):
+        self.setRowCount(len(data))
+        
         for row, prod in enumerate(data):
-            self.insertRow(row)
-            
             for col, dato in enumerate(prod):
                 sort_key = None
                 if isinstance(dato, float):
@@ -318,9 +318,9 @@ class TablaDatos(QtWidgets.QTableWidget):
                 self.setItem(row, col, tableItem)
     
     def _llenar_crear_venta(self, data):
+        self.setRowCount(len(data))
+        
         for row, prod in enumerate(data):
-            self.insertRow(row)
-            
             for col, dato in enumerate(prod):
                 if isinstance(dato, float):
                     if col == 4 and not dato:
