@@ -171,9 +171,10 @@ class App_Caja(QtWidgets.QWidget):
         self.ui.lbIngresosTransferencia.setText(
             'Transferencias bancarias: ${}'.format(movimientos.totalIngresos('Transferencia')))
         
-        for row, movimiento in enumerate(movimientos.todoIngresos):
-            tabla.insertRow(row)
-            
+        data = list(movimientos.todoIngresos)
+        tabla.setRowCount(len(data))
+        
+        for row, movimiento in enumerate(data):            
             for col, dato in enumerate(movimiento):
                 if isinstance(dato, datetime):
                     cell = formatDate(dato)
@@ -205,9 +206,10 @@ class App_Caja(QtWidgets.QWidget):
         self.ui.lbEgresosTransferencia.setText(
             'Transferencias bancarias: ${}'.format(-movimientos.totalEgresos('Transferencia')))
         
-        for row, movimiento in enumerate(movimientos.todoEgresos):
-            tabla.insertRow(row)
-            
+        data = list(movimientos.todoEgresos)
+        tabla.setRowCount(len(data))
+        
+        for row, movimiento in enumerate(data):
             for col, dato in enumerate(movimiento):
                 if isinstance(dato, datetime):
                     cell = formatDate(dato)
