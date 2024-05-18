@@ -236,10 +236,12 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
         tabla = self.ui.tabla_seleccionar
         tabla.setRowCount(0)
         
-        found = self.all_prod if not txt_busqueda else \
-            filter(lambda prod: prod[filtro]
-                                and son_similar(txt_busqueda, prod[filtro]),
-                   self.all_prod)
+        if txt_busqueda:
+            found = [prod for prod in self.all_prod
+                     if prod[filtro]
+                     if son_similar(txt_busqueda, prod[filtro])]
+        else:
+            found = self.all_prod
         
         tabla.llenar(found)
         # </tabla de productos normales>
@@ -248,10 +250,12 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
         tabla = self.ui.tabla_granformato
         tabla.setRowCount(0)
         
-        found = self.all_gran if not txt_busqueda else \
-            filter(lambda prod: prod[filtro]
-                                and son_similar(txt_busqueda, prod[filtro]),
-                   self.all_gran)
+        if txt_busqueda:
+            found = [prod for prod in self.all_gran
+                     if prod[filtro]
+                     if son_similar(txt_busqueda, prod[filtro])]
+        else:
+            found = self.all_gran
         
         tabla.llenar(found)
         # </tabla de gran formato>

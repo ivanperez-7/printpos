@@ -91,21 +91,19 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
         bold = QFont()
         bold.setBold(True)
         
-        # texto introducido por el usuario
-        txt_busqueda = self.ui.searchBar.text().strip()
-        
-        found = self.all if not txt_busqueda else \
-            filter(
-                lambda c: c[self.filtro.filtro]
-                          and son_similar(txt_busqueda, c[self.filtro.filtro]),
-                self.all)
-        
-        found = filter(lambda c: c[2] if not self.ui.mostrarCheck.isChecked()
-        else True, found)
+        if txt_busqueda := self.ui.searchBar.text().strip():
+            found = [c for c in self.all
+                     if c[self.filtro.filtro]
+                     if son_similar(txt_busqueda, c[self.filtro.filtro])]
+        else:
+            found = self.all
+            
+        if not self.ui.mostrarCheck.isChecked():
+            found = [c for c in found if c[2]]
+            
+        tabla.setRowCount(len(found))
         
         for row, usuario in enumerate(found):
-            tabla.insertRow(row)
-            
             for col, dato in enumerate(usuario):
                 if isinstance(dato, datetime):
                     cell = formatDate(dato)
