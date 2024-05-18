@@ -223,7 +223,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
     def quitarIntervalo(self):
         tabla = self.ui.tabla_precios
         
-        if (idx := tabla.selectedIndexes()):
+        if idx := tabla.selectedIndexes():
             row = idx[0].row()
         else:
             row = tabla.rowCount() - 1

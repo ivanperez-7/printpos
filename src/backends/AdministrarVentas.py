@@ -93,7 +93,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         # configurar y llenar tablas
         self.ui.tabla_ventasDirectas.configurarCabecera(lambda col: col in {0, 3, 4, 5, 6, 7})
-        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in {0, 3, 4, 5, 7, 8, 10})
+        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in {0, 3, 4, 5, 7, 8})
     
     def showEvent(self, event):
         self.rescan_update()
@@ -140,10 +140,9 @@ class App_AdministrarVentas(QtWidgets.QWidget):
             TODO: en hilo separado. """
         fechaDesde = self.ui.dateDesde.date()
         fechaHasta = self.ui.dateHasta.date()
-        restrict = self.user.id if not self.user.administrador else None
         
         manejador = ManejadorVentas(self.conn)
-        self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, restrict)
+        self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, None)
         self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta)
     
     def update_display(self):
@@ -229,18 +228,19 @@ class App_AdministrarVentas(QtWidgets.QWidget):
             
             tabla.item(row, 5).setFont(bold)
             
-            estado = tabla.item(row, 6).text()
+            estado_cell = tabla.item(row, 6)
+            estado = estado_cell.text()
             
             if estado.startswith('Cancelada'):
-                tabla.item(row, 6).setBackground(QColor(ColorsEnum.ROJO))
+                estado_cell.setBackground(QColor(ColorsEnum.ROJO))
             elif estado.startswith('Entregado') or estado.startswith('Terminada'):
-                tabla.item(row, 6).setBackground(QColor(ColorsEnum.VERDE))
+                estado_cell.setBackground(QColor(ColorsEnum.VERDE))
             elif estado.startswith('Recibido'):
-                tabla.item(row, 6).setBackground(QColor(ColorsEnum.AMARILLO))
+                estado_cell.setBackground(QColor(ColorsEnum.AMARILLO))
                 
                 button_cell = QtWidgets.QPushButton(' Enviar recordatorio')
                 button_cell.setIcon(icon)
-                button_cell.setFixedWidth(180)
+                button_cell.setFlat(True)
                 button_cell.clicked.connect(self.enviarRecordatorio)
                 
                 tabla.setCellWidget(row, 10, button_cell)
@@ -469,24 +469,8 @@ class App_DetallesVenta(QtWidgets.QWidget):
         productos = manejador.obtenerTablaProductosVenta(self.id_ventas)
         
         tabla = self.ui.tabla_productos
-        tabla.setRowCount(0)
-        
-        for row, prod in enumerate(productos):
-            tabla.insertRow(row)
-            
-            for col, dato in enumerate(prod):
-                if isinstance(dato, float):
-                    if col == 4 and not dato:
-                        cell = ''
-                    else:
-                        cell = f'{dato:,.2f}'
-                else:
-                    cell = str(dato or '')
-                
-                cell = QtWidgets.QTableWidgetItem(cell)
-                tabla.setItem(row, col, cell)
-        
-        tabla.resizeRowsToContents()
+        tabla.modelo = tabla.Modelos.CREAR_VENTA
+        tabla.llenar(productos)
 
 
 @con_fondo
@@ -567,24 +551,8 @@ class App_TerminarVenta(QtWidgets.QWidget):
         productos = manejador.obtenerTablaProductosVenta(self.id_ventas)
         
         tabla = self.ui.tabla_productos
-        tabla.setRowCount(0)
-        
-        for row, prod in enumerate(productos):
-            tabla.insertRow(row)
-            
-            for col, dato in enumerate(prod):
-                if isinstance(dato, float):
-                    if col == 4 and not dato:
-                        cell = ''
-                    else:
-                        cell = f'{dato:,.2f}'
-                else:
-                    cell = str(dato or '')
-                
-                cell = QtWidgets.QTableWidgetItem(cell)
-                tabla.setItem(row, col, cell)
-        
-        tabla.resizeRowsToContents()
+        tabla.modelo = tabla.Modelos.CREAR_VENTA
+        tabla.llenar(productos)
     
     def done(self):
         """ Verifica restricciones y termina venta. """        
