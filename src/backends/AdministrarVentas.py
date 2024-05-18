@@ -49,9 +49,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         # fechas por defecto
         manejador = ManejadorVentas(self.conn)
-        
-        restrict = self.user.id if not self.user.administrador else None
-        fechaMin = manejador.obtenerFechaPrimeraVenta(restrict)
+        fechaMin = manejador.obtenerFechaPrimeraVenta(None)
         
         InterfazFechas(self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
                        self.ui.dateDesde, self.ui.dateHasta, fechaMin)
@@ -142,8 +140,8 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         fechaHasta = self.ui.dateHasta.date()
         
         manejador = ManejadorVentas(self.conn)
-        self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, None)
-        self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta)
+        self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, self.user.id)
+        self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta, None)
     
     def update_display(self):
         self.llenar_tabla_ventas()
