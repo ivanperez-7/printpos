@@ -91,23 +91,21 @@ class App_AdministrarClientes(QtWidgets.QWidget):
         bold = QFont()
         bold.setBold(True)
         
-        # texto introducido por el usuario
-        txt_busqueda = self.ui.searchBar.text().strip()
-        
         # resalta si un cliente no ha venido en _ días
         dias = int(self.ui.resaltarDias.text())
         # timestamp ahora mismo
         timestamp_now = QDate.currentDate()
         
-        found = self.all if not txt_busqueda else \
-            filter(
-                lambda c: c[self.filtro.filtro]
-                          and son_similar(txt_busqueda, c[self.filtro.filtro]),
-                self.all)
+        if txt_busqueda := self.ui.searchBar.text().strip():
+            found = [c for c in self.all
+                     if c[self.filtro.filtro]
+                     if son_similar(txt_busqueda, c[self.filtro.filtro])]
+        else:
+            found = self.all
         
-        for row, cliente in enumerate(found):
-            tabla.insertRow(row)
-            
+        tabla.setRowCount(len(found))
+        
+        for row, cliente in enumerate(found):            
             for col, dato in enumerate(cliente):
                 if isinstance(dato, datetime):
                     delta = QDate(dato).daysTo(timestamp_now)
@@ -115,8 +113,6 @@ class App_AdministrarClientes(QtWidgets.QWidget):
                 else:
                     cell = str(dato or '')
                 tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
-            # al salir del ciclo, todos los usos subsecuentes de `row` y `col`
-            # apuntan a la última columna de la tabla.
             
             tabla.item(row, 1).setFont(bold)
             
@@ -125,7 +121,8 @@ class App_AdministrarClientes(QtWidgets.QWidget):
                 
                 if ultimaVisita and ultimaVisita.daysTo(timestamp_now) >= dias:
                     color = QColor(ColorsEnum.ROJO)
-                    tabla.item(row, col).setBackground(color)
+                    tabla.item(row, 6).setBackground(color)
+        
         tabla.resizeRowsToContents()
     
     def exportarExcel(self):

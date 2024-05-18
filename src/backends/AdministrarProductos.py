@@ -73,18 +73,16 @@ class App_AdministrarProductos(QtWidgets.QWidget):
         bold = QFont()
         bold.setBold(True)
         
-        # texto introducido por el usuario
-        txt_busqueda = self.ui.searchBar.text().strip()
+        if txt_busqueda := self.ui.searchBar.text().strip():
+            found = [c for c in self.all
+                     if c[self.filtro.filtro]
+                     if son_similar(txt_busqueda, c[self.filtro.filtro])]
+        else:
+            found = self.all
         
-        found = self.all if not txt_busqueda else \
-            filter(
-                lambda c: c[self.filtro.filtro]
-                          and son_similar(txt_busqueda, c[self.filtro.filtro]),
-                self.all)
+        tabla.setRowCount(len(found))
         
         for row, item in enumerate(found):
-            tabla.insertRow(row)
-            
             for col, dato in enumerate(item):
                 if isinstance(dato, float):
                     cell = f'${dato:,.2f}'

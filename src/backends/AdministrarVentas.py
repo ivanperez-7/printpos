@@ -156,33 +156,25 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         bold = QFont()
         bold.setBold(True)
         
-        # texto introducido por el usuario
-        txt_busqueda = self.ui.searchBar.text().strip()
-        
         tabla = self.ui.tabla_ventasDirectas
         tabla.setRowCount(0)
         
         compras = self.all_directas
         
-        if txt_busqueda:
-            compras = filter(
-                lambda c: c[self.filtro.filtro]
-                          and son_similar(txt_busqueda, c[self.filtro.filtro]),
-                compras)
+        if txt_busqueda := self.ui.searchBar.text().strip():
+            compras = [c for c in compras
+                       if c[self.filtro.filtro]
+                       if son_similar(txt_busqueda, c[self.filtro.filtro])]
         
-        compras = list(compras)
         chunks = chunkify(compras, self.chunk_size) or [[]]
         
-        tabla.setProperty(  # truncar valor de la página si se sale del rango
-            'paginaActual',
-            clamp(tabla.property('paginaActual'),
-                  0, ceil(len(compras) / self.chunk_size) - 1))
+        currentPage = clamp(tabla.property('paginaActual'), 0, ceil(len(compras) / self.chunk_size) - 1)
+        tabla.setProperty('paginaActual', currentPage) # truncar valor de la página si se sale del rango
         
-        currentPage = tabla.property('paginaActual')
+        data = chunks[currentPage]
+        tabla.setRowCount(len(data))
         
-        for row, compra in enumerate(chunks[currentPage]):
-            tabla.insertRow(row)
-            
+        for row, compra in enumerate(data):
             for col, dato in enumerate(compra):
                 if isinstance(dato, datetime):
                     cell = formatDate(dato)
@@ -205,34 +197,27 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         """ Actualizar tabla de ventas sobre pedido. """
         bold = QFont()
         bold.setBold(True)
-        
-        # texto introducido por el usuario
-        txt_busqueda = self.ui.searchBar.text().strip()
+        icon = QIcon(":/img/resources/images/whatsapp.png")
         
         tabla = self.ui.tabla_pedidos
         tabla.setRowCount(0)
         
         compras = self.all_pedidos
         
-        if txt_busqueda:
-            compras = filter(
-                lambda c: c[self.filtro.filtro]
-                          and son_similar(txt_busqueda, c[self.filtro.filtro]),
-                compras)
+        if txt_busqueda := self.ui.searchBar.text().strip():
+            compras = [c for c in compras
+                       if c[self.filtro.filtro]
+                       if son_similar(txt_busqueda, c[self.filtro.filtro])]
         
-        compras = list(compras)
         chunks = chunkify(compras, self.chunk_size) or [[]]
         
-        tabla.setProperty(  # truncar valor de la página si se sale del rango
-            'paginaActual',
-            clamp(tabla.property('paginaActual'),
-                  0, ceil(len(compras) / self.chunk_size) - 1))
+        currentPage = clamp(tabla.property('paginaActual'), 0, ceil(len(compras) / self.chunk_size) - 1)
+        tabla.setProperty('paginaActual', currentPage) # truncar valor de la página si se sale del rango
         
-        currentPage = tabla.property('paginaActual')
+        data = chunks[currentPage]
+        tabla.setRowCount(len(data))
         
-        for row, compra in enumerate(chunks[currentPage]):
-            tabla.insertRow(row)
-            
+        for row, compra in enumerate(data):            
             for col, dato in enumerate(compra):
                 if isinstance(dato, datetime):
                     cell = formatDate(dato)
@@ -254,11 +239,11 @@ class App_AdministrarVentas(QtWidgets.QWidget):
                 tabla.item(row, 6).setBackground(QColor(ColorsEnum.AMARILLO))
                 
                 button_cell = QtWidgets.QPushButton(' Enviar recordatorio')
-                button_cell.setIcon(QIcon(":/img/resources/images/whatsapp.png"))
+                button_cell.setIcon(icon)
                 button_cell.setFixedWidth(180)
                 button_cell.clicked.connect(self.enviarRecordatorio)
                 
-                tabla.setCellWidget(row, col + 1, button_cell)
+                tabla.setCellWidget(row, 10, button_cell)
                 
                 # resaltar pedidos con fechas de entrega ya pasadas
                 if QDateTime.currentDateTime() > compra[4]:
