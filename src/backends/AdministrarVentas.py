@@ -138,9 +138,10 @@ class App_AdministrarVentas(QtWidgets.QWidget):
             TODO: en hilo separado. """
         fechaDesde = self.ui.dateDesde.date()
         fechaHasta = self.ui.dateHasta.date()
+        restrict = self.user.id if not self.user.administrador else None
         
         manejador = ManejadorVentas(self.conn)
-        self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, self.user.id)
+        self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, restrict)
         self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta, None)
     
     def update_display(self):
