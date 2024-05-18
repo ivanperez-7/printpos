@@ -157,9 +157,6 @@ class App_Caja(QtWidgets.QWidget):
         bold = QFont()
         bold.setBold(True)
         
-        tabla = self.ui.tabla_ingresos
-        tabla.setRowCount(0)
-        
         movimientos = self.all_movimientos
         
         self.ui.lbTotalIngresos.setText(
@@ -172,28 +169,15 @@ class App_Caja(QtWidgets.QWidget):
             'Transferencias bancarias: ${}'.format(movimientos.totalIngresos('Transferencia')))
         
         data = list(movimientos.todoIngresos)
-        tabla.setRowCount(len(data))
         
-        for row, movimiento in enumerate(data):            
-            for col, dato in enumerate(movimiento):
-                if isinstance(dato, datetime):
-                    cell = formatDate(dato)
-                elif isinstance(dato, float):
-                    cell = f'${dato:,.2f}'
-                else:
-                    cell = str(dato or '')
-                tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
-            
-            tabla.item(row, 1).setFont(bold)
-        
+        tabla = self.ui.tabla_ingresos
+        tabla.modelo = tabla.Modelos.RESALTAR_SEGUNDA
+        tabla.llenar(data)
         tabla.resizeRowsToContents()
     
     def llenar_egresos(self):
         bold = QFont()
         bold.setBold(True)
-        
-        tabla = self.ui.tabla_egresos
-        tabla.setRowCount(0)
         
         movimientos = self.all_movimientos
         
@@ -207,20 +191,10 @@ class App_Caja(QtWidgets.QWidget):
             'Transferencias bancarias: ${}'.format(-movimientos.totalEgresos('Transferencia')))
         
         data = list(movimientos.todoEgresos)
-        tabla.setRowCount(len(data))
         
-        for row, movimiento in enumerate(data):
-            for col, dato in enumerate(movimiento):
-                if isinstance(dato, datetime):
-                    cell = formatDate(dato)
-                elif isinstance(dato, float):
-                    cell = f'${dato:,.2f}'
-                else:
-                    cell = str(dato or '')
-                tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
-            
-            tabla.item(row, 1).setFont(bold)
-        
+        tabla = self.ui.tabla_egresos
+        tabla.modelo = tabla.Modelos.RESALTAR_SEGUNDA
+        tabla.llenar(data)
         tabla.resizeRowsToContents()
     
     def confirmarImprimir(self):

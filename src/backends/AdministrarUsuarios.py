@@ -85,12 +85,6 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
             self.ui.lbContador.setText(
                 f'{len(self.all)} usuarios en la base de datos.')
         
-        tabla = self.ui.tabla_usuarios
-        tabla.setRowCount(0)
-        
-        bold = QFont()
-        bold.setBold(True)
-        
         if txt_busqueda := self.ui.searchBar.text().strip():
             found = [c for c in self.all
                      if c[self.filtro.filtro]
@@ -101,18 +95,9 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
         if not self.ui.mostrarCheck.isChecked():
             found = [c for c in found if c[2]]
             
-        tabla.setRowCount(len(found))
-        
-        for row, usuario in enumerate(found):
-            for col, dato in enumerate(usuario):
-                if isinstance(dato, datetime):
-                    cell = formatDate(dato)
-                else:
-                    cell = str(dato or '')
-                tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
-            
-            tabla.item(row, 1).setFont(bold)
-        
+        tabla = self.ui.tabla_usuarios
+        tabla.modelo = tabla.Modelos.RESALTAR_SEGUNDA
+        tabla.llenar(found)
         tabla.resizeRowsToContents()
     
     # ====================================

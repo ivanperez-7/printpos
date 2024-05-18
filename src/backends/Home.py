@@ -233,9 +233,6 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
         txt_busqueda = self.ui.searchBar.text()
         
         # <tabla de productos normales>
-        tabla = self.ui.tabla_seleccionar
-        tabla.setRowCount(0)
-        
         if txt_busqueda:
             found = [prod for prod in self.all_prod
                      if prod[filtro]
@@ -243,13 +240,11 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
         else:
             found = self.all_prod
         
+        tabla = self.ui.tabla_seleccionar
         tabla.llenar(found)
         # </tabla de productos normales>
         
         # <tabla de gran formato>
-        tabla = self.ui.tabla_granformato
-        tabla.setRowCount(0)
-        
         if txt_busqueda:
             found = [prod for prod in self.all_gran
                      if prod[filtro]
@@ -257,6 +252,7 @@ class App_ConsultarPrecios(QtWidgets.QWidget):
         else:
             found = self.all_gran
         
+        tabla = self.ui.tabla_granformato
         tabla.llenar(found)
         # </tabla de gran formato>
         

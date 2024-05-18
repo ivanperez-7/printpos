@@ -204,6 +204,7 @@ class MyTableItem(QtWidgets.QTableWidgetItem):
 class TablaDatos(QtWidgets.QTableWidget):
     class Modelos(Enum):
         DEFAULT = auto()
+        RESALTAR_SEGUNDA = auto()
         CREAR_VENTA = auto()
         
     def __init__(self, parent=None):
@@ -253,9 +254,11 @@ class TablaDatos(QtWidgets.QTableWidget):
         sort = self.isSortingEnabled()
         self.setSortingEnabled(False)
         self.setRowCount(0)
+        self.setRowCount(len(data))
         
         funcs = {
             self.Modelos.DEFAULT: self._llenar_default,
+            self.Modelos.RESALTAR_SEGUNDA: self._llenar_resaltar_segunda, 
             self.Modelos.CREAR_VENTA: self._llenar_crear_venta
         }
         funcs[self.modelo](data)
@@ -301,8 +304,6 @@ class TablaDatos(QtWidgets.QTableWidget):
     
     # ************************************* #
     def _llenar_default(self, data):
-        self.setRowCount(len(data))
-        
         for row, prod in enumerate(data):
             for col, dato in enumerate(prod):
                 sort_key = None
@@ -317,9 +318,16 @@ class TablaDatos(QtWidgets.QTableWidget):
                 tableItem = MyTableItem(cell, sort_key)
                 self.setItem(row, col, tableItem)
     
-    def _llenar_crear_venta(self, data):
-        self.setRowCount(len(data))
+    def _llenar_resaltar_segunda(self, data):
+        self._llenar_default(data)
         
+        bold = QFont()
+        bold.setBold(True)
+        
+        for row in range(self.rowCount()):
+            self.item(row, 1).setFont(bold)
+    
+    def _llenar_crear_venta(self, data):
         for row, prod in enumerate(data):
             for col, dato in enumerate(prod):
                 if isinstance(dato, float):

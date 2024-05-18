@@ -547,9 +547,6 @@ class App_AgregarProducto(QtWidgets.QWidget):
         filtro = self.ui.btDescripcion.isChecked()
         
         # <tabla de productos normales>
-        tabla = self.ui.tabla_seleccionar
-        tabla.setRowCount(0)
-        
         if txt_busqueda:
             found = [prod for prod in self.all_prod
                      if prod[filtro]
@@ -557,13 +554,11 @@ class App_AgregarProducto(QtWidgets.QWidget):
         else:
             found = self.all_prod
         
+        tabla = self.ui.tabla_seleccionar
         tabla.llenar(found)
         # </tabla de productos normales>
         
-        # <tabla de gran formato>
-        tabla = self.ui.tabla_granformato
-        tabla.setRowCount(0)
-        
+        # <tabla de gran formato>    
         if txt_busqueda:
             found = [prod for prod in self.all_gran
                      if prod[filtro]
@@ -571,8 +566,10 @@ class App_AgregarProducto(QtWidgets.QWidget):
         else:
             found = self.all_gran
         
+        tabla = self.ui.tabla_granformato
         tabla.llenar(found)
         # </tabla de gran formato>
+        
         self.tabla_actual.resizeRowsToContents()
     
     def done(self):
@@ -710,9 +707,6 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
         """ Actualiza la tabla y el contador de clientes.
             Acepta una cadena de texto para la búsqueda de clientes.
             También lee de nuevo la tabla de clientes, si se desea. """
-        tabla = self.ui.tabla_seleccionar
-        tabla.setRowCount(0)
-        
         if txt_busqueda:
             found = [cliente for cliente in self.all
                      if cliente[0]
@@ -720,6 +714,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
         else:
             found = self.all
         
+        tabla = self.ui.tabla_seleccionar
         tabla.llenar(found)
         tabla.resizeRowsToContents()
     
@@ -842,7 +837,6 @@ class App_AgregarDescuento(QtWidgets.QWidget):
     def update_display(self):
         """ Insertar productos a la tabla. """
         tabla = self.ui.tabla_productos
-        tabla.setRowCount(0)
         tabla.modelo = tabla.Modelos.CREAR_VENTA
         tabla.llenar(ventaDatos)
     
