@@ -1005,9 +1005,10 @@ class ManejadorVentas(DatabaseManager):
                 AND (VP.monto IS NULL or VP.monto >= 0)
                 {restrict}
             GROUP BY
-                {clausula_group}
+                {clausula_group}, VP.fecha_hora
             ORDER BY
-                1 DESC;
+                1 DESC,
+                VP.fecha_hora DESC;
         ''', (inicio.toPython(), final.toPython()))
     
     tablaVentas = partialmethod(_tablaParcial, False)
