@@ -126,16 +126,16 @@ class ImpresoraTickets(ImpresoraPDF):
         self.printer = self.obtenerImpresoraTickets()
     
     @run_in_thread
-    def imprimirTicketCompra(self, idx):
-        """ Genera el ticket de compra a partir de un identificador en la base de datos. """
+    def imprimirTicketCompra(self, idx: int, nums: list[int] = None):
+        """ Genera el ticket de compra a partir de un identificador en la base de datos.
+            Recibe un arreglo de índices para imprimir pagos específicos. """
         assert self.printer, 'Impresora aún no inicializada.'
         # obtener datos de la compra, de la base de datos
         manejador = sql.ManejadorVentas(self.conn)
-        productos = manejador.obtenerTablaTicket(idx)
+        productos = list(manejador.obtenerTablaTicket(idx))
         
         # más datos para el ticket
         vendedor = manejador.obtenerUsuarioAsociado(idx)
-        fechaCreacion, _ = manejador.obtenerFechas(idx)
         
         # cambiar método de pago (abreviatura)
         abrev = {'Efectivo': 'EFEC',
@@ -143,9 +143,14 @@ class ImpresoraTickets(ImpresoraPDF):
                  'Tarjeta de crédito': 'TVP',
                  'Tarjeta de débito': 'TVP'}
         
-        for metodo, monto, pagado in manejador.obtenerPagosVenta(idx):
+        pagos = manejador.obtenerPagosVenta(idx)
+        
+        if nums is not None:   # determinados pagos
+            pagos = [pagos[i] for i in nums]
+        
+        for fecha, metodo, monto, pagado in pagos:
             data = generarTicketPDF(productos, vendedor, idx, monto,
-                                    pagado, abrev[metodo], fechaCreacion)
+                                    pagado, abrev[metodo], fecha)
             self.enviarAImpresora(data)
     
     @run_in_thread

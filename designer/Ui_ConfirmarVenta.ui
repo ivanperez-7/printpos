@@ -797,7 +797,7 @@
        </widget>
       </item>
       <item row="2" column="0">
-       <widget class="StackPagos" name="stackedWidget"/>
+       <widget class="StackPagos" name="stackPagos"/>
       </item>
       <item row="0" column="1" rowspan="3" alignment="Qt::AlignVCenter">
        <widget class="QFrame" name="frame_16">

@@ -92,7 +92,15 @@ class DatabaseManager:
             return None
     
     def commit(self):
-        return self._conn.commit()
+        try:
+            self._conn.commit()
+            return True
+        except Error as err:
+            if not self._handle_exceptions:
+                raise err
+            self._conn.rollback()
+            _WarningDialog(self._error_txt, err.args[0])
+            return False
     
     def obtenerVista(self, vista: str):
         """ Atajo de sentencia SELECT para obtener una vista. """
@@ -1163,6 +1171,10 @@ class ManejadorVentas(DatabaseManager):
         except (ValueError, IndexError):
             return None
     
+    def obtenerSaldoRestante(self, id_venta: int):
+        """ Residuo del importe total menos anticipos. """
+        return self.obtenerImporteTotal(id_venta) - self.obtenerAnticipo(id_venta)
+        
     def obtenerFechaPrimeraVenta(self, id_usuario: int = None):
         """ Obtener fecha de la venta más antigüa. 
             Se puede restringir a cierto usuario. """
@@ -1177,17 +1189,21 @@ class ManejadorVentas(DatabaseManager):
             return result[0]
     
     def obtenerPagosVenta(self, id_venta: int):
-        """ Obtener listado de pagos realizados en esta venta. """
-        return self.fetchall('''
-            SELECT  metodo,
+        """ Obtener listado de pagos realizados en esta venta.
+            
+            Acepta parámetro para obtener un pago específico. """
+        return self.fetchall(f'''
+            SELECT  fecha_hora,
+                    metodo,
                     monto,
                     recibido
             FROM    ventas_pagos VP
                     LEFT JOIN metodos_pago MP
-                           ON VP.id_metodo_pago = MP.id_metodo_pago
-            WHERE   id_ventas = ?;
+                        ON VP.id_metodo_pago = MP.id_metodo_pago
+            WHERE   id_ventas = ?
+            ORDER   BY fecha_hora ASC;
         ''', (id_venta,))
-    
+            
     def insertarVenta(self, params: tuple):
         """ Insertar venta nueva en la tabla ventas e intenta 
             regresar tupla con índice de venta recién insertada.
@@ -1237,7 +1253,7 @@ class ManejadorVentas(DatabaseManager):
     
     def anularPagos(self, id_venta: int, commit: bool = False):
         """ Anula pagos en tabla ventas_pagos. No hace `commit` automáticamente. """
-        for metodo, monto, recibido in self.obtenerPagosVenta(id_venta):
+        for fecha, metodo, monto, recibido in self.obtenerPagosVenta(id_venta):
             if not self.insertarPago(id_venta, metodo, -monto, 0.):
                 return False
         return True
