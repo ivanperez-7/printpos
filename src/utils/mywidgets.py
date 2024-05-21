@@ -109,7 +109,8 @@ class WidgetPago(QtWidgets.QFrame):
         
     def calcularCambio(self, para_pagar):
         """ Recalcular cambio a entregar. Notar que sólo se ejecuta
-            cuando el método de pago actual es efectivo. """
+            cuando el método de pago actual es efectivo, pues no existe
+            el concepto de cambio con dinero electrónico. """
         if self.metodoSeleccionado != 'Efectivo':
             m = Moneda.cero
         else:
@@ -135,7 +136,7 @@ class StackPagos(QtWidgets.QStackedWidget):
         super().__init__(parent)
         
         self.setMaximumHeight(139)
-        self.total = Moneda()
+        self.total = Moneda()   # monto debido
     
     def retroceder(self):
         self.setCurrentIndex(self.currentIndex() - 1)
@@ -168,12 +169,20 @@ class StackPagos(QtWidgets.QStackedWidget):
     
     @property
     def restanteEnEfectivo(self):
-        """ Residuo del total menos lo ya pagado con moneda electrónico. """
+        """ Residuo del total menos lo ya pagado con moneda electrónica. """
         return self.total - sum(wdg.montoPagado for wdg in self.widgetsPago
                                 if wdg.metodoSeleccionado != 'Efectivo')
     
     @property
     def pagosValidos(self):
+        """ Determinar que los pagos introducidos cumplan varios requisitos.
+            1. Si el monto debido es de cero, siempre aceptar. 
+            2. No puede haber pagos de cero pesos.
+            3. No puede haber más de un pago en efectivo.
+            4. Al haber uno de estos, verificar que sea necesario
+               y que lo pagado sea igual o mayor que lo debido (es decir,
+               permitir que el efectivo exceda lo necesario)
+            5. Al no haber efectivo, verificar que lo pagado sea exactamente lo debido. """
         montoPagado = sum(wdg.montoPagado for wdg in self.widgetsPago)
         if self.total == montoPagado == 0. and self.count() == 1:
             return True
@@ -363,19 +372,12 @@ class NumberEdit(QtWidgets.QLineEdit):
         self.setValidator(
             QRegularExpressionValidator(r'\d{1,15}\.?\d{0,2}'))
     
-    def bloquear(self, monto):
-        self.cantidad = monto
-        self.setReadOnly(True)
-    
-    def desbloquear(self):
-        self.setReadOnly(False)
-    
     @property
     def cantidad(self):
         try:
             return Moneda(self.text())
         except ValueError:
-            return Moneda()
+            return Moneda.cero
     
     @cantidad.setter
     def cantidad(self, val):
@@ -392,7 +394,7 @@ class LabelAdvertencia(QtWidgets.QLabel):
     def __init__(self, parent: QtWidgets.QTableWidget, msj: str):
         super().__init__(parent)
         
-        self.parent = parent
+        self.parent_ = parent
         self.msj = msj
         
         font = QFont()
@@ -409,15 +411,15 @@ class LabelAdvertencia(QtWidgets.QLabel):
         parent.model().rowsRemoved.connect(self.actualizarLabel)
     
     def relocate(self, event):
-        w_t, h_t = self.parent.width(), self.parent.height()
+        w_t, h_t = self.parent_.width(), self.parent_.height()
         pm_x = (w_t - self.width()) // 2
         pm_y = (h_t - self.height()) // 2
         
         self.move(pm_x, pm_y)
-        QtWidgets.QTableWidget.resizeEvent(self.parent, event)
+        QtWidgets.QTableWidget.resizeEvent(self.parent_, event)
     
     def actualizarLabel(self):
-        self.setText(self.msj if not self.parent.rowCount() else '')
+        self.setText(self.msj if not self.parent_.rowCount() else '')
 
 
 class WarningDialog(QtWidgets.QMessageBox):

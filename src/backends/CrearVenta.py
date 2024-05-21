@@ -1,4 +1,3 @@
-import copy
 from dataclasses import dataclass, field
 from typing import Iterator
 
@@ -224,10 +223,6 @@ class App_CrearVenta(QtWidgets.QWidget):
             lambda col: col != 2,
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
     
-    @property
-    def requiere_factura(self):
-        return self.ui.tickFacturaSi.isChecked()
-    
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
@@ -352,7 +347,7 @@ class App_CrearVenta(QtWidgets.QWidget):
                     'Por favor, seleccione un cliente y/o regístrelo.')
             return
         
-        if self.requiere_factura:
+        if self.ui.tickFacturaSi.isChecked():
             if cliente[id] == 1:
                 warning('No se puede generar una factura a nombre de "Público general".\n'
                         'Por favor, verifique que los datos del cliente sean correctos.')
@@ -382,10 +377,11 @@ class App_CrearVenta(QtWidgets.QWidget):
             return
         
         ventaDatos.id_cliente = id_cliente
-        ventaDatos.requiere_factura = self.requiere_factura
+        ventaDatos.requiere_factura = self.ui.tickFacturaSi.isChecked()
         ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
         
-        bg = DimBackground(self)
+        if ventaDatos.total > 0.:
+            bg = DimBackground(self)
         modulo = App_ConfirmarVenta(self)
     
     @requiere_admin
@@ -485,7 +481,7 @@ class App_AgregarProducto(QtWidgets.QWidget):
             spec = f'Medidas: {ancho} {anchoMedida} por {alto} {altoMedida}. '
             self.ui.txtNotas_2.setText(spec)
     
-    def intercambiarDimensiones(self, alto_textbox, ancho_textbox,
+    def _intercambiarDimensiones(self, alto_textbox, ancho_textbox,
                                       bt_alto_cm, bt_ancho_cm,
                                       bt_alto_m, bt_ancho_m):
         alto = alto_textbox.text()
@@ -501,12 +497,12 @@ class App_AgregarProducto(QtWidgets.QWidget):
             self.medidasHandle()
 
     def intercambiarProducto(self):
-        self.intercambiarDimensiones(self.ui.txtAlto, self.ui.txtAncho,
+        self._intercambiarDimensiones(self.ui.txtAlto, self.ui.txtAncho,
                                      self.ui.btAltoCm, self.ui.btAnchoCm,
                                      self.ui.btAltoM, self.ui.btAnchoM)
             
     def intercambiarMaterial(self):
-        self.intercambiarDimensiones(self.ui.txtAltoMaterial, self.ui.txtAnchoMaterial,
+        self._intercambiarDimensiones(self.ui.txtAltoMaterial, self.ui.txtAnchoMaterial,
                                      self.ui.btAltoCm_2, self.ui.btAnchoCm_2,
                                      self.ui.btAltoM_2, self.ui.btAnchoM_2)
 
@@ -825,7 +821,9 @@ class App_AgregarDescuento(QtWidgets.QWidget):
         self.show()
     
     def showEvent(self, event):
-        self.update_display()
+        tabla = self.ui.tabla_productos
+        tabla.modelo = tabla.Modelos.CREAR_VENTA
+        tabla.llenar(ventaDatos)
     
     def keyPressEvent(self, event):
         if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
@@ -834,12 +832,6 @@ class App_AgregarDescuento(QtWidgets.QWidget):
     # ================ #
     # FUNCIONES ÚTILES #
     # ================ #
-    def update_display(self):
-        """ Insertar productos a la tabla. """
-        tabla = self.ui.tabla_productos
-        tabla.modelo = tabla.Modelos.CREAR_VENTA
-        tabla.llenar(ventaDatos)
-    
     def done(self):
         """ Acepta los cambios e inserta descuento en la lista de productos. """
         selected = self.ui.tabla_productos.selectedItems()
@@ -958,11 +950,12 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
                 w.hide()
         else:
             height = 795
+        
         ventaDatos.fechaCreacion = now
         self.setFixedHeight(height)
         
         # agregar pago y seleccionar botón de método
-        wdg = self.ui.stackedWidget.agregarPago()
+        wdg = self.ui.stackPagos.agregarPago()
         
         for bt in wdg.grupoBotones.buttons():
             bt.setChecked(
@@ -988,13 +981,13 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
         self.ui.btCancelar.clicked.connect(self.abortar)
         self.ui.txtAnticipo.textChanged.connect(self.cambiarAnticipo)
         
-        self.ui.btAgregar.clicked.connect(self.ui.stackedWidget.agregarPago)
+        self.ui.btAgregar.clicked.connect(self.ui.stackPagos.agregarPago)
         self.ui.btAgregar.clicked.connect(self.modificar_contador)
-        self.ui.btQuitar.clicked.connect(self.ui.stackedWidget.quitarPago)
+        self.ui.btQuitar.clicked.connect(self.ui.stackPagos.quitarPago)
         self.ui.btQuitar.clicked.connect(self.modificar_contador)
-        self.ui.btAnterior.clicked.connect(self.ui.stackedWidget.retroceder)
+        self.ui.btAnterior.clicked.connect(self.ui.stackPagos.retroceder)
         self.ui.btAnterior.clicked.connect(self.modificar_contador)
-        self.ui.btSiguiente.clicked.connect(self.ui.stackedWidget.avanzar)
+        self.ui.btSiguiente.clicked.connect(self.ui.stackPagos.avanzar)
         self.ui.btSiguiente.clicked.connect(self.modificar_contador)
         
         # configurar tabla de productos
@@ -1003,13 +996,20 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
             lambda col: col != 2,
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         
-        self.recalcularImportes(ventaDatos)
-        self.update_display(ventaDatos)
-        self.show()
+        # llenar total y monto a pagar
+        self.ui.lbTotal.setText(str(ventaDatos.total))
+        
+        para_pagar = ventaDatos.total if ventaDatos.esVentaDirecta else ventaDatos.total / 2
+        self.ui.stackPagos.total = self.ui.txtAnticipo.cantidad = para_pagar
         
         # brincar el proceso si el pago es de cero
-        if not self.para_pagar:
+        if not para_pagar:
             self.terminarVenta()
+        else:
+            tabla = self.ui.tabla_productos
+            tabla.modelo = tabla.Modelos.CREAR_VENTA
+            tabla.llenar(ventaDatos)
+            self.show()
     
     def closeEvent(self, event):
         event.ignore()
@@ -1017,9 +1017,13 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
     # ================
     # FUNCIONES ÚTILES
     # ================
+    @property
+    def para_pagar(self):
+        return self.ui.txtAnticipo.cantidad
+    
     def modificar_contador(self):
-        self.ui.lbContador.setText('Pago {}/{}'.format(self.ui.stackedWidget.currentIndex()+1,
-                                                       self.ui.stackedWidget.count()))
+        self.ui.lbContador.setText('Pago {}/{}'.format(self.ui.stackPagos.currentIndex()+1,
+                                                       self.ui.stackPagos.count()))
         
     def registrarVenta(self) -> int:
         """ Registra datos principales de venta en DB
@@ -1037,40 +1041,7 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
         manejadorVentas.insertarDetallesVenta(id_ventas,
                                               ventas_detallado_db_parametros)
         return id_ventas
-    
-    def handleComision(self, bt: QtWidgets.QRadioButton):
-        """ Mostrar u ocultar comisión según método de pago. """
-        venta = copy.deepcopy(ventaDatos)
-        metodo = bt.text()
-        
-        if metodo.endswith('crédito'):
-            item = ItemVenta.generarItemComision(venta.total, self.COMISION_CREDITO)
-            venta.agregarProducto(item)
-        elif metodo.endswith('débito'):
-            item = ItemVenta.generarItemComision(venta.total, self.COMISION_DEBITO)
-            venta.agregarProducto(item)
-        else:
-            venta = ventaDatos      # regresar a venta original
-        
-        self.recalcularImportes(venta)
-        self.update_display(venta)
-    
-    def update_display(self, venta: Venta):
-        """ Llenar tabla de productos. """
-        tabla = self.ui.tabla_productos
-        tabla.modelo = tabla.Modelos.CREAR_VENTA
-        tabla.llenar(venta)
-    
-    def recalcularImportes(self, venta: Venta):
-        """ Calcular total de la compra y precio a pagarse ahora mismo. """
-        self.total = venta.total
-        self.para_pagar = (venta.total if venta.esVentaDirecta
-            else venta.total / 2)
-        
-        self.ui.lbTotal.setText(str(self.total))
-        self.ui.txtAnticipo.cantidad = self.para_pagar
-        self.ui.stackedWidget.total = self.para_pagar
-    
+
     def obtenerParametrosVentas(self):
         """ Parámetros para tabla ventas (datos generales). """
         return (ventaDatos.id_cliente,
@@ -1094,18 +1065,17 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
     
     def cambiarAnticipo(self):
         """ Cambiar el anticipo pagado por el cliente. """
-        self.para_pagar = self.ui.txtAnticipo.cantidad
-        self.ui.stackedWidget.total = self.para_pagar
+        self.ui.stackPagos.total = self.ui.txtAnticipo.cantidad
     
     def verificar(self):
         """ Intenta finalizar la compra o pedido, actualizando el estado
             e insertando los correspondientes movimientos en la tabla Caja. """
-        if not 0. <= self.para_pagar <= self.total:
+        if not 0. <= self.para_pagar <= ventaDatos.total:
             return
         
-        if not self.ui.stackedWidget.pagosValidos:
+        if not self.ui.stackPagos.pagosValidos:
             return
-        if not self.total / 2 <= self.para_pagar:
+        if not ventaDatos.total / 2 <= self.para_pagar:
             qm = QtWidgets.QMessageBox
             ret = qm.question(self, 'Atención',
                               'El anticipo está por debajo del 50% del total de compra.\n'
@@ -1126,10 +1096,10 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
         manejadorVentas = ManejadorVentas(self.conn)
         
         # registrar pagos en tabla ventas_pagos
-        for wdg in self.ui.stackedWidget.widgetsPago:
+        for wdg in self.ui.stackPagos.widgetsPago:
             montoAPagar = (wdg.montoPagado if wdg.metodoSeleccionado != 'Efectivo'
-                else self.ui.stackedWidget.restanteEnEfectivo)
-                
+                else self.ui.stackPagos.restanteEnEfectivo)
+            
             if not manejadorVentas.insertarPago(self.id_ventas, wdg.metodoSeleccionado,
                                                 montoAPagar, wdg.montoPagado):
                 return
