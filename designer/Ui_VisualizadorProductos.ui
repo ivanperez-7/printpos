@@ -1072,10 +1072,10 @@ background-color: rgb(255, 255, 255);</string>
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="grupoBotonesAlto"/>
   <buttongroup name="grupoBotonesAnchoMaterial"/>
+  <buttongroup name="groupFiltro"/>
   <buttongroup name="grupoBotonesAncho"/>
   <buttongroup name="grupoBotonesAltoMaterial"/>
-  <buttongroup name="groupFiltro"/>
-  <buttongroup name="grupoBotonesAlto"/>
  </buttongroups>
 </ui>

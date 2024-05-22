@@ -927,7 +927,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         wdg.metodoSeleccionado = first.ui.btMetodoGrupo.checkedButton().text()
         
         if wdg.metodoSeleccionado != 'Efectivo':
-            self.ui.lbCambio.hide()
+            self._handleCounters()
         
         # si la venta es directa, ocultar los widgets para apartados
         now = QDateTime.currentDateTime()
