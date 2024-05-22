@@ -19,10 +19,7 @@ from utils.sql import ManejadorVentas
 class App_AdministrarVentas(QtWidgets.QWidget):
     """ Backend para la ventana de administración de ventas.
         TODO:
-        -   ocultamiento de folios
-            
-        BUG: ventas con varios pagos de mismo método y misma cantidad
-             agrupa pagos de distintas fechas en tabla de pedidos. """
+        -   ocultamiento de folios """
     
     def __init__(self, parent: VentanaPrincipal):
         from ui.Ui_AdministrarVentas import Ui_AdministrarVentas
