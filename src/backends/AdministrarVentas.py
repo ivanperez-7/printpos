@@ -565,22 +565,19 @@ class Base_PagarVenta(QtWidgets.QWidget):
         else:
             self.ui.lbCambio.clear()   # ignorar cambio
         
-        if stack.count() > 1:   # varios pagos
-            res = stack.total - sum(wdg.montoPagado for wdg in stack)   # total - pagado (cualquiera)
-            
-            if res < 0.0 and (not n_efec or stack.restanteEnEfectivo <= 0.):
-                # sobra dinero y sin efectivo, o efectivo no necesario
-                style = 'color: red;'
-            else:   # recalcular restante, considerando que hay efectivo y necesario
-                res = max(Moneda.cero, res)   # por el cambio a entregar
-                style = ''
-            if stack.pagosValidos:    # todo bien
-                style = 'color: green;'
-            
-            self.ui.lbRestante.setStyleSheet(style)    
-            self.ui.lbRestante.setText(f'Restante: ${res}')
-        else:
-            self.ui.lbRestante.clear()
+        res = stack.total - sum(wdg.montoPagado for wdg in stack)   # total - pagado (cualquiera)
+        
+        if res < 0.0 and (not n_efec or stack.restanteEnEfectivo <= 0.):
+            # sobra dinero y sin efectivo, o efectivo no necesario
+            style = 'color: red;'
+        else:   # recalcular restante, considerando que hay efectivo y necesario
+            res = max(Moneda.cero, res)   # por el cambio a entregar
+            style = ''
+        if stack.pagosValidos:    # todo bien
+            style = 'color: green;'
+        
+        self.ui.lbRestante.setStyleSheet(style)    
+        self.ui.lbRestante.setText(f'Restante: ${res}')
         
         self.ui.btListo.setEnabled(stack.pagosValidos
                                    and 0. <= stack.total <= self.total)

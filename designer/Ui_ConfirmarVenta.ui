@@ -761,8 +761,20 @@
         </layout>
        </widget>
       </item>
-      <item row="0" column="0" alignment="Qt::AlignLeft">
+      <item row="0" column="0">
        <widget class="QFrame" name="frame_12">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>600</width>
+          <height>0</height>
+         </size>
+        </property>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <property name="spacing">
           <number>2</number>
@@ -789,22 +801,6 @@
             </size>
            </property>
           </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>6</width>
-             <height>0</height>
-            </size>
-           </property>
-          </spacer>
          </item>
          <item>
           <widget class="ClickableIcon" name="btAnterior">
@@ -847,22 +843,6 @@
           </widget>
          </item>
          <item>
-          <spacer name="horizontalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>6</width>
-             <height>0</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
           <widget class="ClickableIcon" name="btAgregar">
            <property name="toolTip">
             <string>Agregar pago a la venta</string>
@@ -880,6 +860,22 @@
           </widget>
          </item>
          <item>
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>35</width>
+             <height>2</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
           <widget class="QLabel" name="lbCambio">
            <property name="minimumSize">
             <size>
@@ -895,13 +891,16 @@
            <property name="text">
             <string>Cambio: $0.00</string>
            </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
           </widget>
          </item>
          <item>
           <widget class="QLabel" name="lbRestante">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="minimumSize">
             <size>
              <width>130</width>
@@ -915,9 +914,6 @@
            </property>
            <property name="text">
             <string/>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>

@@ -146,7 +146,7 @@
       </size>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(0, 170, 255)</string>
+      <string notr="true"/>
      </property>
     </widget>
    </item>
