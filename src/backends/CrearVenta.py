@@ -4,6 +4,7 @@ from typing import Iterator
 from PySide6 import QtWidgets
 from PySide6.QtCore import QDate, QDateTime, Signal, Qt
 
+from .AdministrarVentas import Base_PagarVenta
 from utils import Moneda
 from utils.mydecorators import con_fondo, requiere_admin
 from utils.myutils import *
@@ -916,31 +917,24 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
         self.close()
 
 
-class App_ConfirmarVenta(QtWidgets.QWidget):
+class App_ConfirmarVenta(Base_PagarVenta):
     """ Backend para la ventana de finalización de venta. """
-    COMISION_DEBITO = 1.98
-    COMISION_CREDITO = 3.16
-    
     def __init__(self, first: App_CrearVenta):
-        from ui.Ui_ConfirmarVenta import Ui_ConfirmarVenta
-        
         super().__init__(first)
         
-        self.ui = Ui_ConfirmarVenta()
-        self.ui.setupUi(self)
-        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
-        self.setFixedWidth(833)
+        # seleccionar método para WidgetPago
+        wdg = list(self.ui.stackPagos)[0]
+        wdg.metodoSeleccionado = first.ui.btMetodoGrupo.checkedButton().text()
         
-        # guardar conexión y usuarios como atributos
-        self.conn = first.conn
-        self.user = first.user
+        if wdg.metodoSeleccionado != 'Efectivo':
+            self.ui.lbCambio.hide()
         
         # si la venta es directa, ocultar los widgets para apartados
         now = QDateTime.currentDateTime()
         
         if ventaDatos.esVentaDirecta:
             ventaDatos.fechaEntrega = now
-            height = 759
+            self.setFixedHeight(759)
             
             for w in [self.ui.boxFechaEntrega,
                       self.ui.lbAnticipo1,
@@ -948,68 +942,22 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
                       self.ui.txtAnticipo,
                       self.ui.lbCincuenta]:
                 w.hide()
-        else:
-            height = 795
-        
-        ventaDatos.fechaCreacion = now
-        self.setFixedHeight(height)
-        
-        # agregar pago y seleccionar botón de método
-        wdg = self.ui.stackPagos.agregarPago()
-        
-        for bt in wdg.grupoBotones.buttons():
-            bt.setChecked(
-                first.ui.btMetodoGrupo.checkedButton().text() == bt.text())
-        
-        # mostrar datos del cliente, fechas, etc.
-        self.id_ventas = self.registrarVenta()
-        
-        manejadorClientes = ManejadorClientes(self.conn)
-        _, nombre, telefono, correo, *_ = manejadorClientes.obtenerCliente(ventaDatos.id_cliente)
-        
-        self.ui.txtCliente.setText(nombre)
-        self.ui.txtCorreo.setText(correo)
-        self.ui.txtTelefono.setText(telefono)
-        self.ui.txtCreacion.setText(formatDate(ventaDatos.fechaCreacion))
-        self.ui.txtEntrega.setText(formatDate(ventaDatos.fechaEntrega))
-        self.ui.lbFolio.setText(str(self.id_ventas))
-        
-        self.ui.lbCincuenta.setText(f'(${ventaDatos.total / 2})')
-        
-        # añade eventos para los botones
-        self.ui.btListo.clicked.connect(self.verificar)
-        self.ui.btCancelar.clicked.connect(self.abortar)
-        self.ui.txtAnticipo.textChanged.connect(self.cambiarAnticipo)
-        
-        self.ui.btAgregar.clicked.connect(self.ui.stackPagos.agregarPago)
-        self.ui.btAgregar.clicked.connect(self.modificar_contador)
-        self.ui.btQuitar.clicked.connect(self.ui.stackPagos.quitarPago)
-        self.ui.btQuitar.clicked.connect(self.modificar_contador)
-        self.ui.btAnterior.clicked.connect(self.ui.stackPagos.retroceder)
-        self.ui.btAnterior.clicked.connect(self.modificar_contador)
-        self.ui.btSiguiente.clicked.connect(self.ui.stackPagos.avanzar)
-        self.ui.btSiguiente.clicked.connect(self.modificar_contador)
-        
-        # configurar tabla de productos
-        self.ui.tabla_productos.quitarBordeCabecera()
-        self.ui.tabla_productos.configurarCabecera(
-            lambda col: col != 2,
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+                
+        ventaDatos.fechaCreacion = now  # tiene que ser después del if
         
         # llenar total y monto a pagar
-        self.ui.lbTotal.setText(str(ventaDatos.total))
-        
-        para_pagar = ventaDatos.total if ventaDatos.esVentaDirecta else ventaDatos.total / 2
-        self.ui.stackPagos.total = self.ui.txtAnticipo.cantidad = para_pagar
+        self.ui.lbCincuenta.setText(f'(${ventaDatos.total / 2})')
         
         # brincar el proceso si el pago es de cero
-        if not para_pagar:
+        if not ventaDatos.total:
             self.terminarVenta()
         else:
-            tabla = self.ui.tabla_productos
-            tabla.modelo = tabla.Modelos.CREAR_VENTA
-            tabla.llenar(ventaDatos)
             self.show()
+    
+    def showEvent(self, event):
+        tabla = self.ui.tabla_productos
+        tabla.modelo = tabla.Modelos.CREAR_VENTA
+        tabla.llenar(ventaDatos)
     
     def closeEvent(self, event):
         event.ignore()
@@ -1017,15 +965,18 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
     # ================
     # FUNCIONES ÚTILES
     # ================
-    @property
-    def para_pagar(self):
-        return self.ui.txtAnticipo.cantidad
+    def calcularTotal(self) -> Moneda:
+        return ventaDatos.total
     
-    def modificar_contador(self):
-        self.ui.lbContador.setText('Pago {}/{}'.format(self.ui.stackPagos.currentIndex()+1,
-                                                       self.ui.stackPagos.count()))
-        
-    def registrarVenta(self) -> int:
+    def obtenerDatosGenerales(self):
+        manejadorClientes = ManejadorClientes(self.conn)
+        _, nombreCliente, telefono, correo, *_ = manejadorClientes.obtenerCliente(ventaDatos.id_cliente)  
+        return (nombreCliente, correo, telefono, ventaDatos.fechaCreacion, ventaDatos.fechaEntrega)
+    
+    def pagoPredeterminado(self):
+        return ventaDatos.total if ventaDatos.esVentaDirecta else ventaDatos.total / 2
+    
+    def obtenerIdVenta(self) -> int:
         """ Registra datos principales de venta en DB
             y regresa folio de venta insertada. """
         manejadorVentas = ManejadorVentas(self.conn)
@@ -1063,18 +1014,9 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
                  prod.importe)
                 for prod in ventaDatos]
     
-    def cambiarAnticipo(self):
-        """ Cambiar el anticipo pagado por el cliente. """
-        self.ui.stackPagos.total = self.ui.txtAnticipo.cantidad
-    
-    def verificar(self):
+    def listo(self):
         """ Intenta finalizar la compra o pedido, actualizando el estado
             e insertando los correspondientes movimientos en la tabla Caja. """
-        if not 0. <= self.para_pagar <= ventaDatos.total:
-            return
-        
-        if not self.ui.stackPagos.pagosValidos:
-            return
         if not ventaDatos.total / 2 <= self.para_pagar:
             qm = QtWidgets.QMessageBox
             ret = qm.question(self, 'Atención',
@@ -1096,7 +1038,7 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
         manejadorVentas = ManejadorVentas(self.conn)
         
         # registrar pagos en tabla ventas_pagos
-        for wdg in self.ui.stackPagos.widgetsPago:
+        for wdg in self.ui.stackPagos:
             montoAPagar = (wdg.montoPagado if wdg.metodoSeleccionado != 'Efectivo'
                 else self.ui.stackPagos.restanteEnEfectivo)
             
@@ -1105,7 +1047,6 @@ class App_ConfirmarVenta(QtWidgets.QWidget):
                 return
         
         # cambiar el estado de la venta a 'Terminada' o 'Recibido xx.xx'
-        # y también cambiar método de pago
         estado = 'Terminada' if ventaDatos.esVentaDirecta else f'Recibido ${self.para_pagar}'
         
         if manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True):

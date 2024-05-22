@@ -9,6 +9,7 @@ from utils.mydecorators import con_fondo, requiere_admin
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
+from utils import Moneda
 from utils.pdf import ImpresoraOrdenes, ImpresoraTickets
 from utils.sql import ManejadorVentas
 
@@ -464,49 +465,52 @@ class App_DetallesVenta(QtWidgets.QWidget):
         self.show()
 
 
-@con_fondo
-class App_TerminarVenta(QtWidgets.QWidget):
-    """ Backend para la ventana para terminar una venta sobre pedido. """
-    success = Signal()
-    
-    def __init__(self, first: App_AdministrarVentas, idx):
-        from ui.Ui_TerminarVenta import Ui_TerminarVenta
+class Base_PagarVenta(QtWidgets.QWidget):
+    def __init__(self, first, idx = None):
+        from ui.Ui_ConfirmarVenta import Ui_ConfirmarVenta
         
         super().__init__(first)
         
-        self.ui = Ui_TerminarVenta()
+        self.ui = Ui_ConfirmarVenta()
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
-        self.setFixedSize(833, 759)
-        
-        self.id_ventas = idx
+        self.setFixedSize(833, 795)
         
         # guardar conexión y usuario como atributos
         self.conn = first.conn
+        self.user = first.user
         
-        manejador = ManejadorVentas(first.conn)
-        saldo = manejador.obtenerSaldoRestante(idx)
-        self.saldo = saldo
+        if idx is None:
+            self.id_ventas = self.obtenerIdVenta()
+        else:
+            self.id_ventas = idx
         
-        self.ui.stackPagos.total = self.ui.txtAbono.cantidad = saldo
-        self.ui.stackPagos.agregarPago()
+        # llenar labels y campos de texto
+        self.total = self.calcularTotal()
+        self.ui.lbTotal.setText(f'{self.total}')
         
-        nombreCliente, correo, telefono, fechaCreacion, fechaEntrega, *_ \
-            = manejador.obtenerDatosGeneralesVenta(idx)
+        nombreCliente, correo, telefono, fechaCreacion, fechaEntrega = self.obtenerDatosGenerales()
         
         self.ui.txtCliente.setText(nombreCliente)
         self.ui.txtCorreo.setText(correo)
         self.ui.txtTelefono.setText(telefono)
         self.ui.txtCreacion.setText(formatDate(fechaCreacion))
         self.ui.txtEntrega.setText(formatDate(fechaEntrega))
-        self.ui.lbFolio.setText(idx)
-        self.ui.lbSaldo.setText(str(saldo))
+        self.ui.lbFolio.setText(str(self.id_ventas))
+        
+        # configurar tabla de productos
+        self.ui.tabla_productos.quitarBordeCabecera()
+        self.ui.tabla_productos.configurarCabecera(
+            lambda col: col != 2,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         
         # eventos para widgets
-        self.ui.btListo.clicked.connect(self.done)
-        self.ui.btCancelar.clicked.connect(self.close)
-        self.ui.txtAbono.textChanged.connect(self.cambiarAnticipo)
+        self.ui.btListo.clicked.connect(self.listo)
+        self.ui.btCancelar.clicked.connect(self.abortar)
+        self.ui.txtAnticipo.textChanged.connect(self.cambiarAnticipo)
+        self.ui.stackPagos.cambioPagos.connect(self._handleCounters)
         
+        # interfaz de botones para stackPagos
         self.ui.btAgregar.clicked.connect(self.ui.stackPagos.agregarPago)
         self.ui.btAgregar.clicked.connect(self.modificar_contador)
         self.ui.btQuitar.clicked.connect(self.ui.stackPagos.quitarPago)
@@ -516,11 +520,92 @@ class App_TerminarVenta(QtWidgets.QWidget):
         self.ui.btSiguiente.clicked.connect(self.ui.stackPagos.avanzar)
         self.ui.btSiguiente.clicked.connect(self.modificar_contador)
         
-        # configurar tabla de productos
-        self.ui.tabla_productos.quitarBordeCabecera()
-        self.ui.tabla_productos.configurarCabecera(
-            lambda col: col != 2,
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.ui.stackPagos.total = self.ui.txtAnticipo.cantidad = self.pagoPredeterminado()
+        self.ui.stackPagos.agregarPago()
+    
+    ####################
+    # FUNCIONES ÚTILES #
+    ####################
+    def calcularTotal(self) -> Moneda:
+        raise NotImplementedError('CLASE BASE BROU')
+    
+    def obtenerDatosGenerales(self) -> tuple:
+        raise NotImplementedError('CLASE BASE BROU')
+    
+    def pagoPredeterminado(self) -> Moneda:
+        raise NotImplementedError('CLASE BASE BROU')
+    
+    def obtenerIdVenta(self) -> int:
+        raise NotImplementedError('CLASE BASE BROU')
+    
+    @property
+    def para_pagar(self):
+        return self.ui.txtAnticipo.cantidad
+    
+    def cambiarAnticipo(self):
+        """ Cambiar el anticipo pagado por el cliente. """
+        self.ui.stackPagos.total = self.ui.txtAnticipo.cantidad
+        self._handleCounters()
+        
+    def modificar_contador(self):
+        self.ui.lbContador.setText('Pago {}/{}'.format(self.ui.stackPagos.currentIndex()+1,
+                                                       self.ui.stackPagos.count()))
+    
+    def _handleCounters(self):
+        """ Seguir las mismas reglas de `StackPagos.pagosValidos`
+            para actualizar y colorear contadores. """
+        stack = self.ui.stackPagos
+        n_efec = [wdg.metodoSeleccionado for wdg in stack].count('Efectivo')
+        
+        if n_efec:   # hay pagos en efectivo
+            m = sum(wdg.montoPagado for wdg in stack   # pagado en efectivo
+                    if wdg.metodoSeleccionado == 'Efectivo')
+            m = max(Moneda.cero, m - stack.restanteEnEfectivo)  # pagado - restante (en efectivo)
+            self.ui.lbCambio.setText(f'Cambio: ${m}')
+        else:
+            self.ui.lbCambio.clear()   # ignorar cambio
+        
+        if stack.count() > 1:   # varios pagos
+            res = stack.total - sum(wdg.montoPagado for wdg in stack)   # total - pagado (cualquiera)
+            
+            if res < 0.0 and (not n_efec or stack.restanteEnEfectivo <= 0.):
+                # sobra dinero y sin efectivo, o efectivo no necesario
+                style = 'color: red;'
+            else:   # recalcular restante, considerando que hay efectivo y necesario
+                res = max(Moneda.cero, res)   # por el cambio a entregar
+                style = ''
+            if stack.pagosValidos:    # todo bien
+                style = 'color: green;'
+            
+            self.ui.lbRestante.setStyleSheet(style)    
+            self.ui.lbRestante.setText(f'Restante: ${res}')
+        else:
+            self.ui.lbRestante.clear()
+        
+        self.ui.btListo.setEnabled(stack.pagosValidos
+                                   and 0. <= stack.total <= self.total)
+
+    def listo(self):
+        raise NotImplementedError('CLASE BASE BROU')
+    
+    def abortar(self):
+        raise NotImplementedError('CLASE BASE BROU')
+    
+
+@con_fondo
+class App_TerminarVenta(Base_PagarVenta):
+    """ Backend para la ventana para terminar una venta sobre pedido. """
+    success = Signal()
+    
+    def __init__(self, first: App_AdministrarVentas, idx):
+        super().__init__(first, idx)
+        
+        self.ui.lbCincuenta.hide()
+        self.ui.label_17.setText('Abonar pago(s) a pedido')
+        self.ui.lbAnticipo1.setText('Abono')
+        self.ui.label_20.setText('Saldo restante')
+        self.ui.btCancelar.setText(' Regresar')
+        self.ui.btCancelar.setIcon(QIcon(':/img/resources/images/cancel.png'))
         
         self.show()
     
@@ -535,31 +620,30 @@ class App_TerminarVenta(QtWidgets.QWidget):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    @property
-    def para_pagar(self):
-        return self.ui.txtAbono.cantidad
+    def calcularTotal(self) -> Moneda:
+        manejador = ManejadorVentas(self.conn)
+        saldo = manejador.obtenerSaldoRestante(self.id_ventas)
+        return saldo
     
-    def cambiarAnticipo(self):
-        """ Cambiar el anticipo pagado por el cliente. """
-        self.ui.stackPagos.total = self.ui.txtAbono.cantidad
-        
-    def modificar_contador(self):
-        self.ui.lbContador.setText('Pago {}/{}'.format(self.ui.stackPagos.currentIndex()+1,
-                                                       self.ui.stackPagos.count()))
+    def obtenerDatosGenerales(self):
+        manejador = ManejadorVentas(self.conn)
+        nombreCliente, correo, telefono, fechaCreacion, fechaEntrega, *_ = \
+            manejador.obtenerDatosGeneralesVenta(self.id_ventas)
+        return (nombreCliente, correo, telefono, fechaCreacion, fechaEntrega)
     
-    def done(self):
+    def pagoPredeterminado(self):
+        return self.total
+    
+    def listo(self):
         """ Verifica restricciones y abona pagos a pedido.
              1. Checar que la suma de abonos no sobrepase saldo restante
              2. Insertar pagos en tabla VENTAS_PAGOS
              3. Actualizar estado (Recibido xx.xx o Entregado)"""
-        if not (0. < self.para_pagar <= self.saldo 
-                and self.ui.stackPagos.pagosValidos):
-            return
-        
         # registrar pagos en tabla ventas_pagos
         manejadorVentas = ManejadorVentas(self.conn)
         
-        for wdg in self.ui.stackPagos.widgetsPago:
+        # registrar pagos en tabla ventas_pagos
+        for wdg in self.ui.stackPagos:
             montoAPagar = (wdg.montoPagado if wdg.metodoSeleccionado != 'Efectivo'
                 else self.ui.stackPagos.restanteEnEfectivo)
             
@@ -568,7 +652,7 @@ class App_TerminarVenta(QtWidgets.QWidget):
                 return
         
         # actualizar estado de venta
-        if self.para_pagar == self.saldo:
+        if self.para_pagar == self.total:
             estado = 'Entregado por ' + manejadorVentas.usuarioActivo
             prompt = 'La venta ha sido marcada como terminada.'
         else:
@@ -582,6 +666,9 @@ class App_TerminarVenta(QtWidgets.QWidget):
         QtWidgets.QMessageBox.information(self, 'Éxito', prompt)
         
         self.success.emit()
+        self.close()
+    
+    def abortar(self):
         self.close()
 
 

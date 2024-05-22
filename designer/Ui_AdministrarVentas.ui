@@ -624,8 +624,8 @@ background-color: rgb(255, 255, 255);</string>
            </property>
            <property name="iconSize">
             <size>
-             <width>45</width>
-             <height>45</height>
+             <width>42</width>
+             <height>42</height>
             </size>
            </property>
           </widget>
@@ -637,7 +637,7 @@ background-color: rgb(255, 255, 255);</string>
            </property>
            <property name="icon">
             <iconset resource="../resources.qrc">
-             <normaloff>:/img/resources/images/cancel.png</normaloff>:/img/resources/images/cancel.png</iconset>
+             <normaloff>:/img/resources/images/trash.png</normaloff>:/img/resources/images/trash.png</iconset>
            </property>
            <property name="iconSize">
             <size>
