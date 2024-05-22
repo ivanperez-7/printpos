@@ -107,6 +107,16 @@ class WidgetPago(QtWidgets.QFrame):
         self.ui = Ui_WidgetPago()
         self.ui.setupUi(self)
         
+        self.ui.buttonGroup.buttonClicked.connect(self._handleMetodo)
+    
+    def _handleMetodo(self, bt: QtWidgets.QRadioButton):
+        wdg = [self.ui.label_25, self.ui.label_26, self.ui.lbCambio]
+        if bt.text() != 'Efectivo':
+            x = map(QtWidgets.QWidget.hide, wdg)
+        else:
+            x = map(QtWidgets.QWidget.show, wdg)
+        list(x)
+    
     def calcularCambio(self, para_pagar):
         """ Recalcular cambio a entregar. Notar que sólo se ejecuta
             cuando el método de pago actual es efectivo, pues no existe

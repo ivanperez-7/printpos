@@ -88,6 +88,9 @@
       <property name="spacing">
        <number>0</number>
       </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
       <item>
        <widget class="QFrame" name="frame_4">
         <property name="styleSheet">
@@ -204,58 +207,6 @@ background-color: rgb(255, 255, 255);</string>
               </property>
               <property name="placeholderText">
                <string>Busque venta por folio...</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QFrame" name="frame_7">
-           <property name="styleSheet">
-            <string notr="true">QFrame { border: none; }</string>
-           </property>
-           <property name="frameShape">
-            <enum>QFrame::StyledPanel</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Raised</enum>
-           </property>
-           <layout class="QHBoxLayout" name="horizontalLayout_3">
-            <property name="spacing">
-             <number>30</number>
-            </property>
-            <item>
-             <widget class="ClickableIcon" name="btTerminar">
-              <property name="toolTip">
-               <string>Terminar orden seleccionada</string>
-              </property>
-              <property name="icon">
-               <iconset resource="../resources.qrc">
-                <normaloff>:/img/resources/images/accept.png</normaloff>:/img/resources/images/accept.png</iconset>
-              </property>
-              <property name="iconSize">
-               <size>
-                <width>40</width>
-                <height>40</height>
-               </size>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="ClickableIcon" name="btCancelar">
-              <property name="toolTip">
-               <string>Marcar venta como cancelada</string>
-              </property>
-              <property name="icon">
-               <iconset resource="../resources.qrc">
-                <normaloff>:/img/resources/images/cancel.png</normaloff>:/img/resources/images/cancel.png</iconset>
-              </property>
-              <property name="iconSize">
-               <size>
-                <width>40</width>
-                <height>40</height>
-               </size>
               </property>
              </widget>
             </item>
@@ -383,6 +334,9 @@ background-color: rgb(255, 255, 255);</string>
             <property name="leftMargin">
              <number>60</number>
             </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
              <widget class="QPushButton" name="btHoy">
               <property name="minimumSize">
@@ -451,14 +405,20 @@ background-color: rgb(255, 255, 255);</string>
    </item>
    <item>
     <widget class="QFrame" name="frame_5">
-     <layout class="QHBoxLayout" name="horizontalLayout_8">
+     <layout class="QGridLayout" name="gridLayout_3">
       <property name="leftMargin">
        <number>19</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
       </property>
       <property name="rightMargin">
        <number>19</number>
       </property>
-      <item>
+      <property name="verticalSpacing">
+       <number>0</number>
+      </property>
+      <item row="1" column="0">
        <widget class="QTabWidget" name="tabWidget">
         <property name="font">
          <font>
@@ -630,6 +590,64 @@ background-color: rgb(255, 255, 255);</string>
           </item>
          </layout>
         </widget>
+       </widget>
+      </item>
+      <item row="0" column="0" alignment="Qt::AlignRight">
+       <widget class="QFrame" name="frame_7">
+        <property name="styleSheet">
+         <string notr="true">QFrame { border: none; }</string>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <property name="spacing">
+          <number>25</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="ClickableIcon" name="btTerminar">
+           <property name="toolTip">
+            <string>Abonar a orden seleccionada</string>
+           </property>
+           <property name="icon">
+            <iconset resource="../resources.qrc">
+             <normaloff>:/img/resources/images/presupuesto.png</normaloff>:/img/resources/images/presupuesto.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>45</width>
+             <height>45</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="ClickableIcon" name="btCancelar">
+           <property name="toolTip">
+            <string>Marcar venta como cancelada</string>
+           </property>
+           <property name="icon">
+            <iconset resource="../resources.qrc">
+             <normaloff>:/img/resources/images/cancel.png</normaloff>:/img/resources/images/cancel.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>40</width>
+             <height>40</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
      </layout>

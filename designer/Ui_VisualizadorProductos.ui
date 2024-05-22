@@ -467,8 +467,8 @@ background-color: rgb(255, 255, 255);</string>
                </widget>
               </widget>
              </item>
-             <item row="0" column="1" alignment="Qt::AlignLeft">
-              <widget class="QGroupBox" name="groupBox_2">
+             <item row="0" column="2" alignment="Qt::AlignLeft">
+              <widget class="QGroupBox" name="groupBoxEspecSimple">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                  <horstretch>0</horstretch>
@@ -527,6 +527,18 @@ background-color: rgb(255, 255, 255);</string>
                </property>
                <property name="text">
                 <string>Producto a doble cara</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1" rowspan="2" alignment="Qt::AlignHCenter">
+              <widget class="QLabel" name="lbTotalSimple">
+               <property name="font">
+                <font>
+                 <pointsize>18</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Total: $0.00</string>
                </property>
               </widget>
              </item>
@@ -946,8 +958,20 @@ background-color: rgb(255, 255, 255);</string>
                </layout>
               </widget>
              </item>
+             <item alignment="Qt::AlignHCenter">
+              <widget class="QLabel" name="lbTotalGran">
+               <property name="font">
+                <font>
+                 <pointsize>18</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Total: $0.00</string>
+               </property>
+              </widget>
+             </item>
              <item alignment="Qt::AlignTop">
-              <widget class="QGroupBox" name="groupBox_3">
+              <widget class="QGroupBox" name="groupBoxEspecGran">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                  <horstretch>0</horstretch>
@@ -1049,9 +1073,9 @@ background-color: rgb(255, 255, 255);</string>
  <connections/>
  <buttongroups>
   <buttongroup name="grupoBotonesAnchoMaterial"/>
-  <buttongroup name="grupoBotonesAlto"/>
   <buttongroup name="grupoBotonesAncho"/>
-  <buttongroup name="groupFiltro"/>
   <buttongroup name="grupoBotonesAltoMaterial"/>
+  <buttongroup name="groupFiltro"/>
+  <buttongroup name="grupoBotonesAlto"/>
  </buttongroups>
 </ui>
