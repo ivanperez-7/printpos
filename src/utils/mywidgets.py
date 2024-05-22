@@ -106,27 +106,6 @@ class WidgetPago(QtWidgets.QFrame):
         
         self.ui = Ui_WidgetPago()
         self.ui.setupUi(self)
-        
-        self.ui.buttonGroup.buttonClicked.connect(self._handleMetodo)
-    
-    def _handleMetodo(self, bt: QtWidgets.QRadioButton):
-        wdg = [self.ui.label_25, self.ui.label_26, self.ui.lbCambio]
-        if bt.text() != 'Efectivo':
-            x = map(QtWidgets.QWidget.hide, wdg)
-        else:
-            x = map(QtWidgets.QWidget.show, wdg)
-        list(x)
-    
-    def calcularCambio(self, para_pagar):
-        """ Recalcular cambio a entregar. Notar que sólo se ejecuta
-            cuando el método de pago actual es efectivo, pues no existe
-            el concepto de cambio con dinero electrónico. """
-        if self.metodoSeleccionado != 'Efectivo':
-            m = Moneda.cero
-        else:
-            pago = self.ui.txtPago.cantidad
-            m = max(Moneda.cero, pago - para_pagar)
-        self.ui.lbCambio.setText(str(m))
     
     @property
     def montoPagado(self):
@@ -136,12 +115,15 @@ class WidgetPago(QtWidgets.QFrame):
     def metodoSeleccionado(self):
         return self.ui.buttonGroup.checkedButton().text()
     
-    @property
-    def grupoBotones(self):
-        return self.ui.buttonGroup
+    @metodoSeleccionado.setter
+    def metodoSeleccionado(self, val):
+        for bt in self.ui.buttonGroup.buttons():
+            bt.setChecked(val == bt.text())
 
 
 class StackPagos(QtWidgets.QStackedWidget):
+    cambioPagos = Signal()
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         
@@ -157,30 +139,24 @@ class StackPagos(QtWidgets.QStackedWidget):
     def agregarPago(self):
         """ Agrega widget de pago a la lista y regresa el widget. """
         wdg = WidgetPago()
-        calcular = lambda: wdg.calcularCambio(self.restanteEnEfectivo)
-        
-        wdg.ui.txtPago.textChanged.connect(calcular)
-        wdg.grupoBotones.buttonClicked.connect(calcular)
-        self.currentChanged.connect(calcular)
+        wdg.ui.txtPago.textChanged.connect(lambda: self.cambioPagos.emit())
+        wdg.ui.buttonGroup.buttonClicked.connect(lambda: self.cambioPagos.emit())
         
         self.addWidget(wdg)
         self.setCurrentWidget(wdg)
+        self.cambioPagos.emit()
         return wdg
     
     def quitarPago(self):
         """ Quitar el widget de pago actual. """
         if self.count() > 1:
             self.removeWidget(self.currentWidget())
-    
-    @property
-    def widgetsPago(self) -> Iterator[WidgetPago]:
-        for i in range(self.count()):
-            yield self.widget(i)
+            self.cambioPagos.emit()
     
     @property
     def restanteEnEfectivo(self):
         """ Residuo del total menos lo ya pagado con moneda electrónica. """
-        return self.total - sum(wdg.montoPagado for wdg in self.widgetsPago
+        return self.total - sum(wdg.montoPagado for wdg in self
                                 if wdg.metodoSeleccionado != 'Efectivo')
     
     @property
@@ -193,11 +169,11 @@ class StackPagos(QtWidgets.QStackedWidget):
                y que lo pagado sea igual o mayor que lo debido (es decir,
                permitir que el efectivo exceda lo necesario)
             5. Al no haber efectivo, verificar que lo pagado sea exactamente lo debido. """
-        montoPagado = sum(wdg.montoPagado for wdg in self.widgetsPago)
-        if self.total == montoPagado == 0. and self.count() == 1:
+        montoPagado = sum(wdg.montoPagado for wdg in self)
+        if self.total == montoPagado == 0. and self.count() == 1: # caso especial
             return True
         
-        n_efec = [wdg.metodoSeleccionado for wdg in self.widgetsPago].count('Efectivo')
+        n_efec = [wdg.metodoSeleccionado for wdg in self].count('Efectivo')
         
         if n_efec == 0:
             sumaCorrecta = montoPagado == self.total
@@ -205,7 +181,11 @@ class StackPagos(QtWidgets.QStackedWidget):
             sumaCorrecta = self.restanteEnEfectivo > 0. and montoPagado >= self.total
         else:
             return False
-        return sumaCorrecta and all(wdg.montoPagado for wdg in self.widgetsPago)
+        return sumaCorrecta and all(wdg.montoPagado for wdg in self)
+    
+    def __iter__(self) -> Iterator[WidgetPago]:
+        for i in range(self.count()):
+            yield self.widget(i)
 
 
 class MyTableItem(QtWidgets.QTableWidgetItem):
