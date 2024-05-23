@@ -2,11 +2,12 @@ from functools import partial
 import inspect
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import QPixmap
-from PySide6.QtCore import QDate, Qt, Signal
+from PySide6.QtGui import QPixmap, QIcon
+from PySide6.QtCore import QDate, Qt
 
-from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
-from utils.myutils import Runner, son_similar
+from .CrearVenta import Base_VisualizarProductos
+from utils.mywidgets import VentanaPrincipal
+from utils import Moneda
 
 
 class App_Home(QtWidgets.QWidget):
@@ -142,162 +143,46 @@ def _create_pixmap(point: int):
 ##################################
 # VENTANA PARA CONSULTAR PRECIOS #
 ##################################
-class App_ConsultarPrecios(QtWidgets.QWidget):
+class App_ConsultarPrecios(Base_VisualizarProductos):
     """ Backend para el módulo de consultar precios.
         No se puede cerrar hasta cerrar por completo el sistema. """
-    dataChanged = Signal()  # señal para actualizar tabla en hilo principal
-    
-    def __init__(self, principal: VentanaPrincipal):
-        from ui.Ui_ConsultarPrecios import Ui_ConsultarPrecios
+    def __init__(self, first):
+        super().__init__(first, extern=True)
         
-        super().__init__()
+        self.warnings = False
         
-        self.ui = Ui_ConsultarPrecios()
-        self.ui.setupUi(self)
-        self.setFixedSize(self.size())
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)
+        self.ui.label.setText('Consultar precios')
+        self.ui.btRegresar.setCursor(Qt.CursorShape.ArrowCursor)
+        self.ui.btRegresar.setIcon(QIcon(':/img/resources/images/package.png'))
         
-        LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
-        LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
+        self.ui.btAgregar.hide()
+        self.ui.groupBoxEspecGran.hide()
+        self.ui.groupBoxEspecSimple.hide()
         
-        self.conn = principal.conn
+        # eventos para tabla de productos simples
+        self.ui.tabla_seleccionar.itemClicked.connect(self.mostrarSimple)
+        self.ui.txtCantidad.textChanged.connect(self.mostrarSimple)
+        self.ui.checkDuplex.toggled.connect(self.mostrarSimple)
         
-        # manejador de DB, en tabla productos
-        from utils.sql import ManejadorProductos
-        self.manejador = ManejadorProductos(principal.conn)
+        # eventos para tabla de gran formato
+        self.ui.tabla_granformato.itemClicked.connect(self.medidasHandle)
+        self.ui.txtAnchoMaterial.textChanged.connect(self.medidasHandle)
+        self.ui.txtAltoMaterial.textChanged.connect(self.medidasHandle)
+        # lo demás está en la superclase :p
         
-        # eventos para widgets
-        self.ui.searchBar.textChanged.connect(lambda: self.update_display(False))
-        self.ui.groupButtonFiltro.buttonClicked.connect(lambda: self.update_display(False))
-        self.ui.tabWidget.currentChanged.connect(
-            lambda: self.tabla_actual.resizeRowsToContents())
-        
-        self.ui.tabla_seleccionar.itemClicked.connect(self.calcularPrecio)
-        self.ui.txtCantidad.textChanged.connect(self.calcularPrecio)
-        self.ui.checkDuplex.toggled.connect(self.calcularPrecio)
-        
-        self.ui.tabla_granformato.itemClicked.connect(self.calcularPrecio)
-        self.ui.txtAncho.textChanged.connect(self.calcularPrecio)
-        self.ui.txtAlto.textChanged.connect(self.calcularPrecio)
-        self.ui.groupButtonAlto.buttonClicked.connect(self.calcularPrecio)
-        self.ui.groupButtonAncho.buttonClicked.connect(self.calcularPrecio)
-        
-        self.dataChanged.connect(lambda: self.update_display(True))
-        
-        self.ui.tabla_seleccionar.configurarCabecera(lambda col: col != 1)
-        self.ui.tabla_granformato.configurarCabecera(lambda col: col != 1)
-        
-        self.eventReader = Runner(self.startEvents)
-        self.eventReader.start()
         self.showMinimized()
-    
-    def showEvent(self, event):
-        self.update_display(True)
-    
-    def closeEvent(self, event):
-        if event.spontaneous():
-            event.ignore()
-        else:
-            # no recomendado generalmente para terminar hilos, sin embargo,
-            # esta vez se puede hacer así al no ser una función crítica.
-            self.eventReader.stop()
-            self.events.close()
-            event.accept()
     
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    @property
-    def tabla_actual(self):
-        return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][self.ui.tabWidget.currentIndex()]
-    
-    def startEvents(self):
-        # eventos de Firebird para escuchar cambios en tabla productos
-        self.events = self.conn.event_conduit(['cambio_productos'])
-        self.events.begin()
-        
-        while True:
-            self.events.wait()
-            self.dataChanged.emit()
-            self.events.flush()
-    
-    def update_display(self, rescan: bool = False):
-        """ Actualiza la tabla y el contador de clientes.
-            Acepta una cadena de texto para la búsqueda de clientes.
-            También lee de nuevo la tabla de clientes, si se desea. """
-        if rescan:
-            self.all_prod = self.manejador.obtenerVista('View_Productos_Simples')
-            self.all_gran = self.manejador.obtenerVista('View_Gran_Formato')
-        
-        filtro = self.ui.btDescripcion.isChecked()
-        txt_busqueda = self.ui.searchBar.text()
-        
-        # <tabla de productos normales>
-        if txt_busqueda:
-            found = [prod for prod in self.all_prod
-                     if prod[filtro]
-                     if son_similar(txt_busqueda, prod[filtro])]
+    def mostrarSimple(self):
+        if item := self.generarSimple():
+            self.ui.lbTotalSimple.setText(f'Total: ${Moneda(item.importe)}')
         else:
-            found = self.all_prod
-        
-        tabla = self.ui.tabla_seleccionar
-        tabla.llenar(found)
-        # </tabla de productos normales>
-        
-        # <tabla de gran formato>
-        if txt_busqueda:
-            found = [prod for prod in self.all_gran
-                     if prod[filtro]
-                     if son_similar(txt_busqueda, prod[filtro])]
+            self.ui.lbTotalSimple.setText('Total: ...')
+    
+    def medidasHandle(self):
+        if item := self.generarGranFormato():
+            self.ui.lbTotalGran.setText(f'Total: ${Moneda(item.importe)}')
         else:
-            found = self.all_gran
-        
-        tabla = self.ui.tabla_granformato
-        tabla.llenar(found)
-        # </tabla de gran formato>
-        
-        self.tabla_actual.resizeRowsToContents()
-    
-    def calcularPrecio(self):
-        if self.ui.tabWidget.currentIndex() == 0:
-            self.calcularSimple()
-        else:
-            self.calcularGranFormato()
-    
-    def calcularSimple(self):
-        if not (selected := self.ui.tabla_seleccionar.selectedItems()):
-            return
-        
-        idProducto = self.manejador.obtenerIdProducto(selected[0].text())
-        
-        try:
-            cantidad = float(self.ui.txtCantidad.text())
-            precio = self.manejador.obtenerPrecioSimple(idProducto, cantidad,
-                                                        self.ui.checkDuplex.isChecked())
-            
-            txt = f'Total: ${precio * cantidad:,.2f}'
-        except ValueError:
-            txt = 'Total: $0.00'
-        
-        self.ui.lbTotalSimple.setText(txt)
-    
-    def calcularGranFormato(self):
-        if not (selected := self.ui.tabla_granformato.selectedItems()):
-            return
-        
-        modificador_alto = 100 if self.ui.btAltoCm.isChecked() else 1
-        modificador_ancho = 100 if self.ui.btAnchoCm.isChecked() else 1
-        
-        idProducto = self.manejador.obtenerIdProducto(selected[0].text())
-        
-        try:
-            alto = float(self.ui.txtAlto.text()) / modificador_alto
-            ancho = float(self.ui.txtAncho.text()) / modificador_ancho
-            
-            precio = self.manejador.obtenerPrecioGranFormato(idProducto, alto, ancho)
-            
-            txt = f'Total: ${precio:,.2f}'
-        except ValueError:
-            txt = 'Total: $0.00'
-        
-        self.ui.lbTotalGranFormato.setText(txt)
+            self.ui.lbTotalGran.setText('Total: ...')

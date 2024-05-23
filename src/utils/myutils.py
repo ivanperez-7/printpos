@@ -15,7 +15,7 @@ from utils.mydecorators import run_in_thread
 
 __all__ = ['ColorsEnum', 'FabricaValidadores', 'clamp', 'chunkify',
            'daysTo', 'unidecode', 'randFile', 'son_similar', 'stringify_float',
-           'contiene_duplicados', 'formatDate','exportarXlsx', 'enviarWhatsApp']
+           'contiene_duplicados', 'formatDate','exportarXlsx', 'enviarWhatsApp', 'Runner']
 
 
 class ColorsEnum:

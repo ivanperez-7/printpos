@@ -395,42 +395,33 @@ class App_CrearVenta(QtWidgets.QWidget):
 #################################
 # VENTANAS PARA EDITAR LA VENTA #
 #################################
-@con_fondo
-class App_AgregarProducto(QtWidgets.QWidget):
-    """ Backend para la función de agregar un producto a la venta. """
-    success = Signal()
+class Base_VisualizarProductos(QtWidgets.QWidget):
+    dataChanged = Signal()  # señal para actualizar tabla en hilo principal
     
-    def __init__(self, first: App_CrearVenta):
-        from ui.Ui_AgregarProducto import Ui_AgregarProducto
+    def __init__(self, first, *, extern: bool = False):
+        from ui.Ui_VisualizadorProductos import Ui_VisualizadorProductos
         
-        super().__init__(first)
+        super().__init__(None if extern else first)
         
-        self.ui = Ui_AgregarProducto()
+        self.ui = Ui_VisualizadorProductos()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
-        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
+        
+        self.warnings = True
         
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
         LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
         
-        # guardar conexión y usuarios como atributos
+        # guardar conexión, usuario y un manejador de DB como atributos
         self.conn = first.conn
-        self.user = first.user
+        self.manejador = ManejadorProductos(self.conn)
         
-        manejador = ManejadorProductos(self.conn)
+        # eventos para widgets
+        self.ui.searchBar.textChanged.connect(lambda: self.update_display(False))
+        self.ui.groupFiltro.buttonClicked.connect(lambda: self.update_display(False))
+        self.ui.tabWidget.currentChanged.connect(
+            lambda: self.tabla_actual.resizeRowsToContents())
         
-        # llena la tabla de productos no gran formato        
-        self.all_prod = manejador.obtenerVista('View_Productos_Simples')
-        # llena la tabla de productos gran formato
-        self.all_gran = manejador.obtenerVista('View_Gran_Formato')
-        
-        # añade eventos para los botones
-        self.ui.btRegresar.clicked.connect(self.close)
-        self.ui.btAgregar.clicked.connect(self.done)
-        self.ui.searchBar.textChanged.connect(self.update_display)
-        self.ui.tabla_seleccionar.itemDoubleClicked.connect(self.done)
-        self.ui.tabla_granformato.itemDoubleClicked.connect(self.done)
-        self.ui.tabWidget.currentChanged.connect(lambda: self.tabla_actual.resizeRowsToContents())
         self.ui.btIntercambiarProducto.clicked.connect(self.intercambiarProducto)
         self.ui.btIntercambiarMaterial.clicked.connect(self.intercambiarMaterial)
         
@@ -438,9 +429,6 @@ class App_AgregarProducto(QtWidgets.QWidget):
         self.ui.txtAlto.textChanged.connect(self.medidasHandle)
         self.ui.grupoBotonesAlto.buttonClicked.connect(self.medidasHandle)
         self.ui.grupoBotonesAncho.buttonClicked.connect(self.medidasHandle)
-        
-        self.ui.groupFiltro.buttonClicked.connect(
-            lambda: self.update_display(self.ui.searchBar.text()))
         
         # validadores para datos numéricos
         self.ui.txtCantidad.setValidator(FabricaValidadores.NumeroDecimal)
@@ -454,14 +442,23 @@ class App_AgregarProducto(QtWidgets.QWidget):
         self.ui.tabla_seleccionar.setSortingEnabled(True)
         self.ui.tabla_granformato.setSortingEnabled(True)
         
-        self.show()
+        # evento para leer cambios en tabla PRODUCTOS
+        self.eventReader = Runner(self.startEvents)
+        self.eventReader.start()
+        self.dataChanged.connect(lambda: self.update_display(True))
     
     def showEvent(self, event):
-        self.update_display()
+        self.update_display(True)
     
-    def keyPressEvent(self, event):
-        if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
-            self.done()
+    def closeEvent(self, event):
+        if event.spontaneous():
+            event.ignore()
+        else:
+            # no recomendado generalmente para terminar hilos, sin embargo,
+            # esta vez se puede hacer así al no ser una función crítica.
+            self.eventReader.stop()
+            self.events.close()
+            event.accept()
     
     # ==================
     #  FUNCIONES ÚTILES
@@ -470,21 +467,22 @@ class App_AgregarProducto(QtWidgets.QWidget):
     def tabla_actual(self):
         return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][self.ui.tabWidget.currentIndex()]
     
+    def startEvents(self):
+        # eventos de Firebird para escuchar cambios en tabla productos
+        self.events = self.conn.event_conduit(['cambio_productos'])
+        self.events.begin()
+        
+        while True:
+            self.events.wait()
+            self.dataChanged.emit()
+            self.events.flush()
+    
     def medidasHandle(self):
-        """ Especificar medidas en producto. """
-        ancho = self.ui.txtAncho.text()
-        anchoMedida = 'cm' if self.ui.btAnchoCm.isChecked() else 'm'
-        
-        alto = self.ui.txtAlto.text()
-        altoMedida = 'cm' if self.ui.btAltoCm.isChecked() else 'm'
-        
-        if all([ancho, anchoMedida, alto, altoMedida]):
-            spec = f'Medidas: {ancho} {anchoMedida} por {alto} {altoMedida}. '
-            self.ui.txtNotas_2.setText(spec)
+        raise NotImplementedError('BEIS CLASSSSSSS')
     
     def _intercambiarDimensiones(self, alto_textbox, ancho_textbox,
-                                      bt_alto_cm, bt_ancho_cm,
-                                      bt_alto_m, bt_ancho_m):
+                                       bt_alto_cm, bt_ancho_cm,
+                                       bt_alto_m, bt_ancho_m):
         alto = alto_textbox.text()
         ancho = ancho_textbox.text()
         bt_alto = bt_alto_cm if bt_ancho_cm.isChecked() else bt_alto_m
@@ -499,14 +497,14 @@ class App_AgregarProducto(QtWidgets.QWidget):
 
     def intercambiarProducto(self):
         self._intercambiarDimensiones(self.ui.txtAlto, self.ui.txtAncho,
-                                     self.ui.btAltoCm, self.ui.btAnchoCm,
-                                     self.ui.btAltoM, self.ui.btAnchoM)
+                                      self.ui.btAltoCm, self.ui.btAnchoCm,
+                                      self.ui.btAltoM, self.ui.btAnchoM)
             
     def intercambiarMaterial(self):
         self._intercambiarDimensiones(self.ui.txtAltoMaterial, self.ui.txtAnchoMaterial,
-                                     self.ui.btAltoCm_2, self.ui.btAnchoCm_2,
-                                     self.ui.btAltoM_2, self.ui.btAnchoM_2)
-
+                                      self.ui.btAltoCm_2, self.ui.btAnchoCm_2,
+                                      self.ui.btAltoM_2, self.ui.btAnchoM_2)
+    
     def obtenerMedidasProducto(self):
         """ Calcular medidas del producto, regresa tupla (ancho, alto). """
         ancho_producto = self.ui.txtAncho.text()
@@ -537,54 +535,7 @@ class App_AgregarProducto(QtWidgets.QWidget):
         except ValueError:
             return (0., 0.)
     
-    def update_display(self, txt_busqueda: str = ''):
-        """ Actualiza la tabla y el contador de clientes.
-            Acepta una cadena de texto para la búsqueda de clientes.
-            También lee de nuevo la tabla de clientes, si se desea. """
-        filtro = self.ui.btDescripcion.isChecked()
-        
-        # <tabla de productos normales>
-        if txt_busqueda:
-            found = [prod for prod in self.all_prod
-                     if prod[filtro]
-                     if son_similar(txt_busqueda, prod[filtro])]
-        else:
-            found = self.all_prod
-        
-        tabla = self.ui.tabla_seleccionar
-        tabla.llenar(found)
-        # </tabla de productos normales>
-        
-        # <tabla de gran formato>    
-        if txt_busqueda:
-            found = [prod for prod in self.all_gran
-                     if prod[filtro]
-                     if son_similar(txt_busqueda, prod[filtro])]
-        else:
-            found = self.all_gran
-        
-        tabla = self.ui.tabla_granformato
-        tabla.llenar(found)
-        # </tabla de gran formato>
-        
-        self.tabla_actual.resizeRowsToContents()
-    
-    def done(self):
-        """ Determina la rutina a ejecutar basándose en la pestaña actual. """
-        current = self.ui.tabWidget.currentIndex()
-        
-        if current == 0:
-            item = self.agregarSimple()
-        elif current == 1:
-            item = self.agregarGranFormato()
-        
-        if item:
-            ventaDatos.agregarProducto(item)
-            ventaDatos.reajustarPrecios(self.conn)
-            self.success.emit()
-            self.close()
-    
-    def agregarSimple(self):
+    def generarSimple(self):
         if not (selected := self.ui.tabla_seleccionar.selectedItems()):
             return
         
@@ -607,7 +558,7 @@ class App_AgregarProducto(QtWidgets.QWidget):
         duplex = self.ui.checkDuplex.isChecked()
         precio = manejador.obtenerPrecioSimple(idProducto, cantidad, duplex)
         
-        if not precio:
+        if not precio and self.warnings:
             QtWidgets.QMessageBox.warning(
                 self, 'Atención',
                 'No existe ningún precio de este producto '
@@ -619,7 +570,7 @@ class App_AgregarProducto(QtWidgets.QWidget):
             idProducto, codigo, nombre_ticket, precio, 0.0, cantidad,
             self.ui.txtNotas.text().strip(), duplex)
     
-    def agregarGranFormato(self):
+    def generarGranFormato(self):
         if not (selected := self.ui.tabla_granformato.selectedItems()):
             return
         
@@ -628,7 +579,7 @@ class App_AgregarProducto(QtWidgets.QWidget):
         
         if not all([ancho_producto, alto_producto, ancho_material, alto_material]):
             return
-        if ancho_producto > ancho_material or alto_producto > alto_material:
+        if (ancho_producto > ancho_material or alto_producto > alto_material) and self.warnings:
             QtWidgets.QMessageBox.warning(
                 self, 'Atención',
                 'Las medidas del producto sobrepasan las medidas del material.')
@@ -651,6 +602,100 @@ class App_AgregarProducto(QtWidgets.QWidget):
         return ItemGranFormato(
             idProducto, codigo, nombre_ticket, precio_m2, 0.0, ancho_producto * alto_producto,
             self.ui.txtNotas_2.text().strip(), False, min_m2)
+    
+    def update_display(self, rescan: bool = False):
+        """ Actualiza la tabla y el contador de clientes.
+            Acepta una cadena de texto para la búsqueda de clientes.
+            También lee de nuevo la tabla de clientes, si se desea. """
+        if rescan:
+            self.all_prod = self.manejador.obtenerVista('View_Productos_Simples')
+            self.all_gran = self.manejador.obtenerVista('View_Gran_Formato')
+        
+        filtro = self.ui.btDescripcion.isChecked()
+        txt_busqueda = self.ui.searchBar.text()
+        
+        # <tabla de productos normales>
+        if txt_busqueda:
+            found = [prod for prod in self.all_prod
+                     if prod[filtro]
+                     if son_similar(txt_busqueda, prod[filtro])]
+        else:
+            found = self.all_prod
+        
+        tabla = self.ui.tabla_seleccionar
+        tabla.llenar(found)
+        # </tabla de productos normales>
+        
+        # <tabla de gran formato>
+        if txt_busqueda:
+            found = [prod for prod in self.all_gran
+                     if prod[filtro]
+                     if son_similar(txt_busqueda, prod[filtro])]
+        else:
+            found = self.all_gran
+        
+        tabla = self.ui.tabla_granformato
+        tabla.llenar(found)
+        # </tabla de gran formato>
+        
+        self.tabla_actual.resizeRowsToContents()
+
+
+@con_fondo
+class App_AgregarProducto(Base_VisualizarProductos):
+    """ Backend para la función de agregar un producto a la venta. """
+    success = Signal()
+    
+    def __init__(self, first: App_CrearVenta):
+        super().__init__(first)
+        
+        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        
+        self.ui.lbTotalGran.hide()
+        self.ui.lbTotalSimple.hide()
+        
+        # añade eventos para los botones
+        self.ui.btRegresar.clicked.connect(self.close)
+        self.ui.btAgregar.clicked.connect(self.done)
+        self.ui.tabla_seleccionar.itemDoubleClicked.connect(self.done)
+        self.ui.tabla_granformato.itemDoubleClicked.connect(self.done)
+        
+        self.show()
+        
+    def keyPressEvent(self, event):
+        if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
+            self.done()
+    
+    # ==================
+    #  FUNCIONES ÚTILES
+    # ==================
+    def medidasHandle(self):
+        """ Especificar medidas en producto. """
+        ancho = self.ui.txtAncho.text()
+        anchoMedida = 'cm' if self.ui.btAnchoCm.isChecked() else 'm'
+        
+        alto = self.ui.txtAlto.text()
+        altoMedida = 'cm' if self.ui.btAltoCm.isChecked() else 'm'
+        
+        if all([ancho, anchoMedida, alto, altoMedida]):
+            spec = f'Medidas: {ancho} {anchoMedida} por {alto} {altoMedida}. '
+            self.ui.txtNotas_2.setText(spec)
+    
+    def done(self):
+        """ Determina la rutina a ejecutar basándose en la pestaña actual. """
+        current = self.ui.tabWidget.currentIndex()
+        
+        if current == 0:
+            item = self.generarSimple()
+        elif current == 1:
+            item = self.generarGranFormato()
+        
+        if item:
+            ventaDatos.agregarProducto(item)
+            ventaDatos.reajustarPrecios(self.conn)
+            self.success.emit()
+            self.close()
 
 
 @con_fondo

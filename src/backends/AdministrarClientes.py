@@ -288,7 +288,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
     
     def ejecutarOperacion(self, params: tuple):
         """ Función a sobreescribir donde se realiza consulta SQL. """
-        pass
+        raise NotImplementedError('BEIS CLASSSSSSS')
 
 
 class App_RegistrarCliente(Base_EditarCliente):

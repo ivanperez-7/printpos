@@ -194,7 +194,7 @@ class Base_EditarUsuario(QtWidgets.QWidget):
     @property
     def cambioContrasena(self) -> bool:
         """ Cada clase tiene su manera de decidir si hay cambio de contraseña. """
-        pass
+        raise NotImplementedError('BEIS CLASSSSSSS')
     
     def editar(self):
         """ Intenta editar datos de la tabla Usuarios y
@@ -241,7 +241,7 @@ class Base_EditarUsuario(QtWidgets.QWidget):
     
     def ejecutarOperacion(self, params: tuple) -> bool:
         """ Método que insertará o modificará usuario. """
-        pass
+        raise NotImplementedError('BEIS CLASSSSSSS')
 
 
 class App_RegistrarUsuario(Base_EditarUsuario):

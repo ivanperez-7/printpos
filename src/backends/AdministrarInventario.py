@@ -299,7 +299,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
     
     def ejecutarOperacion(self, params: tuple) -> tuple:
         """ Devuelve tupla con índice del elemento registrado o editado. """
-        pass
+        raise NotImplementedError('BEIS CLASSSSSSS')
 
 
 class App_RegistrarInventario(Base_EditarInventario):
