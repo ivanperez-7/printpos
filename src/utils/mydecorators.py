@@ -107,7 +107,7 @@ def requiere_admin(func):
 ########################################
 # <DECORADOR PARA EEJCUTAR EN QTHREAD> #
 ########################################
-class Runner(QRunnable):
+class _Runner(QRunnable):
     def __init__(self, func, *args, **kwargs):
         super().__init__()
         self._func = func
@@ -121,7 +121,7 @@ def run_in_thread(func):
     """ Decorador para ejecutar alguna función dada en otro hilo. """
     @wraps(func)
     def async_func(*args, **kwargs):
-        task = Runner(func, *args, **kwargs)
+        task = _Runner(func, *args, **kwargs)
         QThreadPool.globalInstance().start(task)
     return async_func
 #########################################
@@ -130,8 +130,10 @@ def run_in_thread(func):
 
 
 def con_fondo(modulo):
-    """ Decorador para crear un fondo oscurecedor en la ventana principal. """
+    """ Decorador para crear un fondo oscurecedor en la ventana principal.
+        NOTA: Modifica método closeEvent para cerrar fondo automáticamente. """
     orig_init = modulo.__init__
+    orig_close = modulo.closeEvent
     
     def __init__(self, *args, **kwargs):
         from utils.mywidgets import DimBackground
@@ -142,8 +144,8 @@ def con_fondo(modulo):
         parent.bg = DimBackground(parent)
     
     def closeEvent(self, event):
+        orig_close(self, event)
         self.parentWidget().bg.close()
-        event.accept()
     
     modulo.__init__ = __init__
     modulo.closeEvent = closeEvent

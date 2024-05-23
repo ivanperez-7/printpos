@@ -372,7 +372,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
     
     def ejecutarOperacion(self, params: tuple) -> tuple:
         """ Devuelve tupla con índice del producto registrado o editado. """
-        pass
+        raise NotImplementedError('BEIS CLASSSSSSS')
 
 
 class App_RegistrarProducto(Base_EditarProducto):
