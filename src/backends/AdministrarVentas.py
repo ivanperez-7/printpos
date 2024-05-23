@@ -582,8 +582,30 @@ class Base_PagarVenta(QtWidgets.QWidget):
         self.ui.btListo.setEnabled(stack.pagosValidos
                                    and 0. <= stack.total <= self.total)
 
-    def listo(self):
+    def actualizarEstadoVenta(self) -> bool:
         raise NotImplementedError('CLASE BASE BROU')
+    
+    def dialogoExito(self):
+        raise NotImplementedError('CLASE BASE BROU')
+    
+    def listo(self):
+        """ Concluye la venta de la siguiente forma:
+            1. Inserta pagos en tabla ventas_pagos.
+            2. Si actualizarEstadoVenta, entonces dialogoExito. """
+        # registrar pagos en tabla ventas_pagos
+        manejadorVentas = ManejadorVentas(self.conn)
+        
+        # registrar pagos en tabla ventas_pagos
+        for wdg in self.ui.stackPagos:
+            montoAPagar = (wdg.montoPagado if wdg.metodoSeleccionado != 'Efectivo'
+                else self.ui.stackPagos.restanteEnEfectivo)
+            
+            if not manejadorVentas.insertarPago(self.id_ventas, wdg.metodoSeleccionado,
+                                                montoAPagar, wdg.montoPagado):
+                return
+        
+        if self.actualizarEstadoVenta():
+            self.dialogoExito()
     
     def abortar(self):
         raise NotImplementedError('CLASE BASE BROU')
@@ -631,37 +653,24 @@ class App_TerminarVenta(Base_PagarVenta):
     def pagoPredeterminado(self):
         return self.total
     
-    def listo(self):
-        """ Verifica restricciones y abona pagos a pedido.
-             1. Checar que la suma de abonos no sobrepase saldo restante
-             2. Insertar pagos en tabla VENTAS_PAGOS
-             3. Actualizar estado (Recibido xx.xx o Entregado)"""
-        # registrar pagos en tabla ventas_pagos
-        manejadorVentas = ManejadorVentas(self.conn)
+    def actualizarEstadoVenta(self) -> bool:
+        manejador = ManejadorVentas(self.conn)
         
-        # registrar pagos en tabla ventas_pagos
-        for wdg in self.ui.stackPagos:
-            montoAPagar = (wdg.montoPagado if wdg.metodoSeleccionado != 'Efectivo'
-                else self.ui.stackPagos.restanteEnEfectivo)
-            
-            if not manejadorVentas.insertarPago(self.id_ventas, wdg.metodoSeleccionado,
-                                                montoAPagar, wdg.montoPagado):
-                return
-        
-        # actualizar estado de venta
         if self.para_pagar == self.total:
-            estado = 'Entregado por ' + manejadorVentas.usuarioActivo
+            estado = 'Entregado por ' + manejador.usuarioActivo
+        else:
+            anticipo = manejador.obtenerAnticipo(self.id_ventas)
+            estado = f'Recibido ${anticipo + self.para_pagar}'
+        
+        return manejador.actualizarEstadoVenta(self.id_ventas, estado, commit=True)
+    
+    def dialogoExito(self):
+        if self.para_pagar == self.total:
             prompt = 'La venta ha sido marcada como terminada.'
         else:
-            anticipo = manejadorVentas.obtenerAnticipo(self.id_ventas)
-            estado = f'Recibido ${anticipo + self.para_pagar}'
             prompt = 'Pago(s) abonado(s) al pedido.'
         
-        if not manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True):
-            return
-        
         QtWidgets.QMessageBox.information(self, 'Éxito', prompt)
-        
         self.success.emit()
         self.close()
     

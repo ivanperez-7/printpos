@@ -1068,34 +1068,21 @@ class App_ConfirmarVenta(Base_PagarVenta):
                               'El anticipo está por debajo del 50% del total de compra.\n'
                               '¿Desea continuar?')
             if ret == qm.Yes:
-                self.terminarVentaAdmin()
+                self.listoAdmin()
         else:
-            self.terminarVenta()
+            super().listo()
     
     @requiere_admin
-    def terminarVentaAdmin(self, conn):
-        """ Saltar ciertas verificaciones, pero con cuenta de administrador. """
-        self.terminarVenta()
+    def listoAdmin(self, conn):
+        """ Saltar ciertas verificaciones con cuenta de administrador. """
+        super().listo()
     
-    def terminarVenta(self):
+    def actualizarEstadoVenta(self) -> bool:
         """ Tras verificar todas las condiciones, finalizar venta y
             registrarla en la base de datos. """
         manejadorVentas = ManejadorVentas(self.conn)
-        
-        # registrar pagos en tabla ventas_pagos
-        for wdg in self.ui.stackPagos:
-            montoAPagar = (wdg.montoPagado if wdg.metodoSeleccionado != 'Efectivo'
-                else self.ui.stackPagos.restanteEnEfectivo)
-            
-            if not manejadorVentas.insertarPago(self.id_ventas, wdg.metodoSeleccionado,
-                                                montoAPagar, wdg.montoPagado):
-                return
-        
-        # cambiar el estado de la venta a 'Terminada' o 'Recibido xx.xx'
         estado = 'Terminada' if ventaDatos.esVentaDirecta else f'Recibido ${self.para_pagar}'
-        
-        if manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True):
-            self.dialogoExito()
+        return manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True)
     
     def dialogoExito(self):
         qm = QtWidgets.QMessageBox
