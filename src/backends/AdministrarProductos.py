@@ -1,8 +1,8 @@
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QPixmap, QIcon
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QMutex
 
-from utils.mydecorators import con_fondo
+from utils.mydecorators import con_fondo, run_in_thread
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -12,8 +12,11 @@ from utils.sql import ManejadorInventario, ManejadorProductos
 #####################
 # VENTANA PRINCIPAL #
 #####################
+mutex = QMutex()
+
 class App_AdministrarProductos(QtWidgets.QWidget):
     """ Backend para la ventana de administración de productos. """
+    rescanned = Signal()
     
     def __init__(self, parent: VentanaPrincipal):
         from ui.Ui_AdministrarProductos import Ui_AdministrarProductos
@@ -29,6 +32,8 @@ class App_AdministrarProductos(QtWidgets.QWidget):
         self.conn = parent.conn
         self.user = parent.user
         
+        self.all = []
+        
         # añadir menú de opciones al botón para filtrar
         self.filtro = InterfazFiltro(self.ui.btFiltrar, [
             ('Código', 'código', 1),
@@ -43,13 +48,14 @@ class App_AdministrarProductos(QtWidgets.QWidget):
         self.ui.btEditar.clicked.connect(self.editarProducto)
         self.ui.btEliminar.clicked.connect(self.quitarProducto)
         self.ui.btRegresar.clicked.connect(self.goHome)
+        self.rescanned.connect(self.update_display)
         
-        self.ui.searchBar.textChanged.connect(lambda: self.update_display())
+        self.ui.searchBar.textChanged.connect(self.update_display)
         
         self.ui.tabla_productos.configurarCabecera(lambda col: col not in {1, 2, 3})
     
     def showEvent(self, event):
-        self.update_display(rescan=True)
+        self.rescan_update()
     
     def resizeEvent(self, event):
         if self.isVisible():
@@ -57,15 +63,23 @@ class App_AdministrarProductos(QtWidgets.QWidget):
     
     # ==================
     #  FUNCIONES ÚTILES
-    # ==================    
-    def update_display(self, rescan: bool = False):
+    # ==================
+    @run_in_thread
+    def rescan_update(self):
+        if not mutex.try_lock():
+            return
+        
+        self.ui.lbContador.setText('Recuperando información...')
+        
+        manejador = ManejadorProductos(self.conn)
+        self.all = manejador.obtenerTablaPrincipal() or []
+        self.rescanned.emit()
+        
+    def update_display(self):
         """ Actualiza la tabla y el contador de productos.
             Acepta una cadena de texto para la búsqueda de productos.
             También lee de nuevo la tabla de productos, si se desea. """
-        if rescan:
-            manejador = ManejadorProductos(self.conn)
-            self.all = manejador.obtenerTablaPrincipal() or []
-            self.ui.lbContador.setText(f'{len(self.all)} productos en la base de datos.')
+        self.ui.lbContador.setText(f'{len(self.all)} productos en la base de datos.')
         
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
@@ -100,22 +114,21 @@ class App_AdministrarProductos(QtWidgets.QWidget):
                 tabla.item(row, 7).setBackground(color)
         
         tabla.resizeRowsToContents()
+        mutex.unlock()
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def agregarProducto(self):
         widget = App_RegistrarProducto(self)
-        widget.success.connect(
-            lambda: self.update_display(rescan=True))
+        widget.success.connect(self.rescan_update)
     
     def editarProducto(self):
         selected = self.ui.tabla_productos.selectedItems()
         
         if selected:
             widget = App_EditarProducto(self, selected[0].text())
-            widget.success.connect(
-                lambda: self.update_display(rescan=True))
+            widget.success.connect(self.rescan_update)
     
     def quitarProducto(self):
         """ Elimina un producto de la base de datos.
@@ -147,7 +160,7 @@ class App_AdministrarProductos(QtWidgets.QWidget):
             return
         
         qm.information(self, 'Éxito', 'Se eliminó el producto seleccionado.')
-        self.update_display(rescan=True)
+        self.rescan_update()
     
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """

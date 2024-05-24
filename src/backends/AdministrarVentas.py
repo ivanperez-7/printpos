@@ -3,9 +3,9 @@ from math import ceil
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
-from PySide6.QtCore import QDateTime, QModelIndex, Qt, Signal
+from PySide6.QtCore import QDateTime, QModelIndex, Qt, Signal, QMutex
 
-from utils.mydecorators import con_fondo, requiere_admin
+from utils.mydecorators import con_fondo, requiere_admin, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -17,10 +17,13 @@ from utils.sql import ManejadorVentas
 #####################
 # VENTANA PRINCIPAL #
 #####################
+mutex = QMutex()
+
 class App_AdministrarVentas(QtWidgets.QWidget):
     """ Backend para la ventana de administración de ventas.
         TODO:
         -   ocultamiento de folios """
+    rescanned = Signal()
     
     def __init__(self, parent: VentanaPrincipal):
         from ui.Ui_AdministrarVentas import Ui_AdministrarVentas
@@ -35,6 +38,8 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         # otras variables importantes
         self.chunk_size = 50
+        self.all_directas = []
+        self.all_pedidos = []
         
         # guardar conexión y usuario como atributos
         self.conn = parent.conn
@@ -67,6 +72,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         self.ui.dateDesde.dateChanged.connect(self.rescan_update)
         self.ui.dateHasta.dateChanged.connect(self.rescan_update)
+        self.rescanned.connect(self.update_display)
         
         self.ui.tabla_ventasDirectas.doubleClicked.connect(self.detallesVenta)
         self.ui.tabla_pedidos.doubleClicked.connect(self.detallesVenta)
@@ -100,10 +106,12 @@ class App_AdministrarVentas(QtWidgets.QWidget):
     def tabla_actual(self):
         return [self.ui.tabla_ventasDirectas, self.ui.tabla_pedidos][self.ui.tabWidget.currentIndex()]
     
-    def cambiar_pestana(self, nuevo):
+    def cambiar_pestana(self, nuevo=None):
         """ Cambia el label con el contador de ventas, según la pestaña,
             y reajusta la tabla correspondiente a ella. También modifica
             los valores del navegador de páginas de la tabla. """
+        nuevo = nuevo or self.ui.tabWidget.currentIndex()
+        
         if nuevo == 0:
             label = 'ventas directas'
             num_compras = len(self.all_directas)
@@ -120,15 +128,15 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         self.tabla_actual.resizeRowsToContents()
     
-    def rescan_update(self):
+    @run_in_thread
+    def rescan_update(self, *args):  # ??? TODO: ignorar parámetros
         """ Actualiza la tabla y el contador de clientes.
             Lee de nuevo la tabla de clientes, si se desea. """
-        self.rescan_db()
-        self.update_display()
-    
-    def rescan_db(self):
-        """ Releer base de datos y almacenar en atributos.
-            TODO: en hilo separado. """
+        if not mutex.try_lock():
+            return
+        
+        self.ui.lbContador.setText('Recuperando datos...')
+        
         fechaDesde = self.ui.dateDesde.date()
         fechaHasta = self.ui.dateHasta.date()
         restrict = self.user.id if not self.user.administrador else None
@@ -136,11 +144,14 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         manejador = ManejadorVentas(self.conn)
         self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, restrict)
         self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta, None)
+        
+        self.rescanned.emit()
     
     def update_display(self):
         self.llenar_tabla_ventas()
         self.llenar_tabla_pedidos()
-        self.cambiar_pestana(self.ui.tabWidget.currentIndex())
+        self.cambiar_pestana()
+        mutex.unlock()
     
     def llenar_tabla_ventas(self):
         """ Actualizar tabla de ventas directas. """

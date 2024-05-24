@@ -1,8 +1,8 @@
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QPixmap, QIcon
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QMutex
 
-from utils.mydecorators import con_fondo
+from utils.mydecorators import con_fondo, run_in_thread
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 from utils.sql import ManejadorInventario, ManejadorProductos
@@ -11,8 +11,11 @@ from utils.sql import ManejadorInventario, ManejadorProductos
 #####################
 # VENTANA PRINCIPAL #
 #####################
+mutex = QMutex()
+
 class App_AdministrarInventario(QtWidgets.QWidget):
     """ Backend para la ventana de administración de inventario. """
+    rescanned = Signal()
     
     def __init__(self, parent: VentanaPrincipal):
         from ui.Ui_AdministrarInventario import Ui_AdministrarInventario
@@ -28,17 +31,20 @@ class App_AdministrarInventario(QtWidgets.QWidget):
         self.conn = parent.conn
         self.user = parent.user
         
+        self.all = []
+        
         # añade eventos para los botones
         self.ui.btAgregar.clicked.connect(self.agregarInventario)
         self.ui.btEditar.clicked.connect(self.editarInventario)
         self.ui.btEliminar.clicked.connect(self.quitarInventario)
         self.ui.btRegresar.clicked.connect(self.goHome)
-        self.ui.searchBar.textChanged.connect(lambda: self.update_display())
+        self.ui.searchBar.textChanged.connect(self.update_display)
+        self.rescanned.connect(self.update_display)
         
         self.ui.tabla_inventario.configurarCabecera(lambda col: col == 0)
     
     def showEvent(self, event):
-        self.update_display(rescan=True)
+        self.rescan_update()
     
     def resizeEvent(self, event):
         if self.isVisible():
@@ -47,14 +53,22 @@ class App_AdministrarInventario(QtWidgets.QWidget):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def update_display(self, rescan: bool = False):
+    @run_in_thread
+    def rescan_update(self, *args):
+        if not mutex.try_lock():
+            return
+        
+        self.ui.lbContador.setText(f'Recuperando información...')
+        
+        manejador = ManejadorInventario(self.conn)
+        self.all = manejador.obtenerTablaPrincipal()
+        self.rescanned.emit()
+    
+    def update_display(self):
         """ Actualiza la tabla y el contador de elementos.
             Acepta una cadena de texto para la búsqueda de elementos.
             También lee de nuevo la tabla de elementos, si se desea. """
-        if rescan:
-            manejador = ManejadorInventario(self.conn)
-            self.all = manejador.obtenerTablaPrincipal()
-            self.ui.lbContador.setText(f'{len(self.all)} elementos en la base de datos.')
+        self.ui.lbContador.setText(f'{len(self.all)} elementos en la base de datos.')
         
         tabla = self.ui.tabla_inventario
         tabla.setRowCount(0)
@@ -96,6 +110,7 @@ class App_AdministrarInventario(QtWidgets.QWidget):
                 tabla.item(row, 6).setBackground(color)
         
         tabla.resizeRowsToContents()
+        mutex.unlock()
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
@@ -104,20 +119,18 @@ class App_AdministrarInventario(QtWidgets.QWidget):
         idx = self.ui.tabla_inventario.selectedItems()[0].text()
         
         self.Dialog = ExistenciasWidget(self, idx)
-        self.Dialog.success.connect(lambda: self.update_display(rescan=True))
+        self.Dialog.success.connect(self.rescan_update)
     
     def agregarInventario(self):
         widget = App_RegistrarInventario(self)
-        widget.success.connect(
-            lambda: self.update_display(rescan=True))
+        widget.success.connect(self.rescan_update)
     
     def editarInventario(self):
         selected = self.ui.tabla_inventario.selectedItems()
         
         if selected:
             widget = App_EditarInventario(self, selected[0].text())
-            widget.success.connect(
-                lambda: self.update_display(rescan=True))
+            widget.success.connect(self.rescan_update)
     
     def quitarInventario(self):
         """ Elimina un material de la base de datos.
@@ -150,7 +163,7 @@ class App_AdministrarInventario(QtWidgets.QWidget):
             return
         
         qm.information(self, 'Éxito', 'Se eliminó el elemento seleccionado.')
-        self.update_display(rescan=True)
+        self.rescan_update()
     
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
