@@ -73,14 +73,14 @@ class App_AdministrarProductos(QtWidgets.QWidget):
         
         manejador = ManejadorProductos(self.conn)
         self.all = manejador.obtenerTablaPrincipal() or []
+        self.ui.lbContador.setText(f'{len(self.all)} productos en la base de datos.')
+        
         self.rescanned.emit()
         
     def update_display(self):
         """ Actualiza la tabla y el contador de productos.
             Acepta una cadena de texto para la búsqueda de productos.
             También lee de nuevo la tabla de productos, si se desea. """
-        self.ui.lbContador.setText(f'{len(self.all)} productos en la base de datos.')
-        
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
         

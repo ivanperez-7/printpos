@@ -62,14 +62,14 @@ class App_AdministrarInventario(QtWidgets.QWidget):
         
         manejador = ManejadorInventario(self.conn)
         self.all = manejador.obtenerTablaPrincipal()
+        self.ui.lbContador.setText(f'{len(self.all)} elementos en la base de datos.')
+        
         self.rescanned.emit()
     
     def update_display(self):
         """ Actualiza la tabla y el contador de elementos.
             Acepta una cadena de texto para la búsqueda de elementos.
             También lee de nuevo la tabla de elementos, si se desea. """
-        self.ui.lbContador.setText(f'{len(self.all)} elementos en la base de datos.')
-        
         tabla = self.ui.tabla_inventario
         tabla.setRowCount(0)
         
