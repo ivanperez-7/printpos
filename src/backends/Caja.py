@@ -3,10 +3,11 @@ from datetime import datetime
 from typing import overload, Iterable
 
 from PySide6 import QtWidgets
-from PySide6.QtCore import Qt, QDateTime
+from PySide6.QtCore import Qt, QDateTime, QMutex, Signal
 from PySide6.QtGui import QFont
 
 from utils import Moneda
+from utils.mydecorators import run_in_thread
 from utils.myinterfaces import InterfazFechas
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -46,10 +47,10 @@ class Caja:
     @overload
     def __init__(self, movimientos: list[Movimiento]) -> None: ...
     
-    def __init__(self, movimientos: list[tuple] | list[Movimiento]):
+    def __init__(self, movimientos: list[tuple] | list[Movimiento] = None):
         try:
             mov = movimientos[0]
-        except IndexError:
+        except (IndexError, TypeError):
             self.movimientos = []
             return
         
@@ -88,8 +89,11 @@ class Caja:
 #####################
 # VENTANA PRINCIPAL #
 #####################
+mutex = QMutex()
+
 class App_Caja(QtWidgets.QWidget):
     """ Backend para la ventana de movimientos de la caja. """
+    rescanned = Signal()
     
     def __init__(self, parent: VentanaPrincipal):
         from ui.Ui_Caja import Ui_Caja
@@ -106,6 +110,8 @@ class App_Caja(QtWidgets.QWidget):
         self.conn = parent.conn
         self.user = parent.user
         
+        self.all_movimientos = Caja()
+        
         # interfaz de widgets de fechas
         manejador = ManejadorCaja(self.conn)
         fechaMin = manejador.obtenerFechaPrimerMov()
@@ -118,15 +124,16 @@ class App_Caja(QtWidgets.QWidget):
         self.ui.btIngreso.clicked.connect(self.registrarIngreso)
         self.ui.btEgreso.clicked.connect(self.registrarEgreso)
         
-        self.ui.dateDesde.dateChanged.connect(self.update_display)
-        self.ui.dateHasta.dateChanged.connect(self.update_display)
+        self.ui.dateDesde.dateChanged.connect(self.rescan_update)
+        self.ui.dateHasta.dateChanged.connect(self.rescan_update)
         self.ui.btImprimir.clicked.connect(self.confirmarImprimir)
+        self.rescanned.connect(self.update_display)
         
         self.ui.tabla_ingresos.configurarCabecera(lambda col: col not in {0, 2})
         self.ui.tabla_egresos.configurarCabecera(lambda col: col not in {0, 2})
     
     def showEvent(self, event):
-        self.update_display()
+        self.rescan_update()
     
     def resizeEvent(self, event):
         if self.isVisible():
@@ -136,10 +143,13 @@ class App_Caja(QtWidgets.QWidget):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def update_display(self):
-        """ Actualiza las tablas de ingresos y egresos.
-
-            Relee base de datos en cualquier evento (en este caso, al mover fechas). """
+    @run_in_thread
+    def rescan_update(self, *args):
+        if not mutex.try_lock():
+            return
+        
+        self.ui.lbTotal.setText('Recuperando información...')
+        
         fechaDesde = self.ui.dateDesde.date()
         fechaHasta = self.ui.dateHasta.date()
         manejador = ManejadorCaja(self.conn)
@@ -147,11 +157,19 @@ class App_Caja(QtWidgets.QWidget):
         movimientos = manejador.obtenerMovimientos(fechaDesde, fechaHasta)
         self.all_movimientos = Caja(movimientos)
         
+        self.rescanned.emit()
+    
+    def update_display(self):
+        """ Actualiza las tablas de ingresos y egresos.
+
+            Relee base de datos en cualquier evento (en este caso, al mover fechas). """
         self.llenar_ingresos()
         self.llenar_egresos()
         
         total = self.all_movimientos.totalCorte()
         self.ui.lbTotal.setText(f'Total del corte: ${total}')
+        
+        mutex.unlock()
     
     def llenar_ingresos(self):
         bold = QFont()
@@ -216,10 +234,12 @@ class App_Caja(QtWidgets.QWidget):
     def registrarIngreso(self):
         """ Registrar ingreso en movimientos. """
         self.Dialog = Dialog_Registrar(self)
+        self.Dialog.success.connect(self.rescan_update)
     
     def registrarEgreso(self):
         """ Registrar egreso en movimientos. """
         self.Dialog = Dialog_Registrar(self, egreso=True)
+        self.Dialog.success.connect(self.rescan_update)
     
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
@@ -232,6 +252,8 @@ class App_Caja(QtWidgets.QWidget):
 #################################
 
 class Dialog_Registrar(QtWidgets.QDialog):
+    success = Signal()
+    
     def __init__(self, parent: App_Caja, egreso=False):
         from PySide6 import QtCore
         
@@ -346,7 +368,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         QtWidgets.QMessageBox.information(
             self, 'Éxito', '¡Movimiento registrado!')
         
-        self.parentWidget().update_display()
+        self.success.emit()
         self.close()
     
     @property

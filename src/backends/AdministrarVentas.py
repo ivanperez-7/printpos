@@ -135,7 +135,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         if not mutex.try_lock():
             return
         
-        self.ui.lbContador.setText('Recuperando datos...')
+        self.ui.lbContador.setText('Recuperando información...')
         
         fechaDesde = self.ui.dateDesde.date()
         fechaHasta = self.ui.dateHasta.date()
