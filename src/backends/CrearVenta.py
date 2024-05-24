@@ -607,6 +607,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         """ Lee de nuevo las tablas de productos y actualiza tablas. """
         self.all_prod = self.manejador.obtenerVista('View_Productos_Simples')
         self.all_gran = self.manejador.obtenerVista('View_Gran_Formato')
+        self.update_display()
     
     def update_display(self):
         """ Actualiza la tabla y el contador de clientes.
