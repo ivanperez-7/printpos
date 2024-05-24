@@ -398,7 +398,7 @@ class App_CrearVenta(QtWidgets.QWidget):
 class Base_VisualizarProductos(QtWidgets.QWidget):
     dataChanged = Signal()  # señal para actualizar tabla en hilo principal
     
-    def __init__(self, first, *, extern: bool = False):
+    def __init__(self, first: VentanaPrincipal, *, extern: bool = False):
         from ui.Ui_VisualizadorProductos import Ui_VisualizadorProductos
         
         super().__init__(None if extern else first)
@@ -417,8 +417,8 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         self.manejador = ManejadorProductos(self.conn)
         
         # eventos para widgets
-        self.ui.searchBar.textChanged.connect(lambda: self.update_display(False))
-        self.ui.groupFiltro.buttonClicked.connect(lambda: self.update_display(False))
+        self.ui.searchBar.textChanged.connect(self.update_display)
+        self.ui.groupFiltro.buttonClicked.connect(self.update_display)
         self.ui.tabWidget.currentChanged.connect(
             lambda: self.tabla_actual.resizeRowsToContents())
         
@@ -443,12 +443,13 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         self.ui.tabla_granformato.setSortingEnabled(True)
         
         # evento para leer cambios en tabla PRODUCTOS
-        self.eventReader = Runner(self.startEvents)
-        self.eventReader.start()
-        self.dataChanged.connect(lambda: self.update_display(True))
+        self.event_conduit = self.conn.event_conduit(['cambio_productos'])
+        self.event_reader = Runner(self.startEvents)
+        self.event_reader.start()
+        self.dataChanged.connect(self.rescan_display)
     
     def showEvent(self, event):
-        self.update_display(True)
+        self.rescan_display()
     
     def closeEvent(self, event):
         if event.spontaneous():
@@ -456,8 +457,8 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         else:
             # no recomendado generalmente para terminar hilos, sin embargo,
             # esta vez se puede hacer así al no ser una función crítica.
-            self.eventReader.stop()
-            self.events.close()
+            self.event_reader.stop()
+            self.event_conduit.close()
             event.accept()
     
     # ==================
@@ -469,13 +470,12 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
     
     def startEvents(self):
         # eventos de Firebird para escuchar cambios en tabla productos
-        self.events = self.conn.event_conduit(['cambio_productos'])
-        self.events.begin()
+        self.event_conduit.begin()
         
         while True:
-            self.events.wait()
+            self.event_conduit.wait()
             self.dataChanged.emit()
-            self.events.flush()
+            self.event_conduit.flush()
     
     def medidasHandle(self):
         raise NotImplementedError('BEIS CLASSSSSSS')
@@ -603,14 +603,14 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
             idProducto, codigo, nombre_ticket, precio_m2, 0.0, ancho_producto * alto_producto,
             self.ui.txtNotas_2.text().strip(), False, min_m2)
     
-    def update_display(self, rescan: bool = False):
+    def rescan_display(self):
+        """ Lee de nuevo las tablas de productos y actualiza tablas. """
+        self.all_prod = self.manejador.obtenerVista('View_Productos_Simples')
+        self.all_gran = self.manejador.obtenerVista('View_Gran_Formato')
+    
+    def update_display(self):
         """ Actualiza la tabla y el contador de clientes.
-            Acepta una cadena de texto para la búsqueda de clientes.
-            También lee de nuevo la tabla de clientes, si se desea. """
-        if rescan:
-            self.all_prod = self.manejador.obtenerVista('View_Productos_Simples')
-            self.all_gran = self.manejador.obtenerVista('View_Gran_Formato')
-        
+            Acepta una cadena de texto para la búsqueda de clientes. """
         filtro = self.ui.btDescripcion.isChecked()
         txt_busqueda = self.ui.searchBar.text()
         
