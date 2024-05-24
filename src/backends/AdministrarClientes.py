@@ -2,9 +2,9 @@ from datetime import datetime
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon, QPixmap, QRegularExpressionValidator
-from PySide6.QtCore import Qt, QDate, Signal
+from PySide6.QtCore import Qt, QDate, Signal, QMutex
 
-from utils.mydecorators import con_fondo
+from utils.mydecorators import con_fondo, run_in_thread
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -14,8 +14,11 @@ from utils.sql import ManejadorClientes
 #####################
 # VENTANA PRINCIPAL #
 #####################
+mutex = QMutex()
+
 class App_AdministrarClientes(QtWidgets.QWidget):
     """ Backend para la ventana de administración de clientes. """
+    rescanned = Signal()
     
     def __init__(self, parent: VentanaPrincipal):
         from ui.Ui_AdministrarClientes import Ui_AdministrarClientes
@@ -30,6 +33,8 @@ class App_AdministrarClientes(QtWidgets.QWidget):
         # guardar conexión y usuarios como atributos
         self.conn = parent.conn
         self.user = parent.user
+        
+        self.all = []
         
         # añadir menú de opciones al botón para filtrar
         self.filtro = InterfazFiltro(self.ui.btFiltrar, [
@@ -53,15 +58,16 @@ class App_AdministrarClientes(QtWidgets.QWidget):
         self.ui.btEliminar.clicked.connect(self.quitarCliente)
         self.ui.btRegresar.clicked.connect(self.goHome)
         
-        self.ui.searchBar.textChanged.connect(lambda: self.update_display())
-        self.ui.resaltarCheck.stateChanged.connect(lambda: self.update_display())
+        self.ui.searchBar.textChanged.connect(self.update_display)
+        self.ui.resaltarCheck.stateChanged.connect(self.update_display)
         self.ui.resaltarDias.textChanged.connect(self.resaltarTrigger)
         self.ui.btExportar.clicked.connect(self.exportarExcel)
+        self.rescanned.connect(self.update_display)
         
         self.ui.tabla_clientes.configurarCabecera(lambda col: col in {0, 2, 5, 6})
     
     def showEvent(self, event):
-        self.update_display(rescan=True)
+        self.rescan_update()
     
     def resizeEvent(self, event):
         if self.isVisible():
@@ -76,14 +82,22 @@ class App_AdministrarClientes(QtWidgets.QWidget):
         if self.ui.resaltarCheck.isChecked():
             self.update_display()
     
-    def update_display(self, rescan: bool = False):
+    @run_in_thread
+    def rescan_update(self, *args):
+        if not mutex.try_lock():
+            return
+        
+        self.ui.lbContador.setText('Recuperando información...')
+        
+        manejador = ManejadorClientes(self.conn)
+        self.all = manejador.obtenerTablaPrincipal()
+        self.rescanned.emit()
+    
+    def update_display(self):
         """ Actualiza la tabla y el contador de clientes.
             Acepta una cadena de texto para la búsqueda de clientes.
             También lee de nuevo la tabla de clientes, si se desea. """
-        if rescan:
-            manejador = ManejadorClientes(self.conn)
-            self.all = manejador.obtenerTablaPrincipal()
-            self.ui.lbContador.setText(f'{len(self.all)} clientes en la base de datos.')
+        self.ui.lbContador.setText(f'{len(self.all)} clientes en la base de datos.')
         
         tabla = self.ui.tabla_clientes
         tabla.setRowCount(0)
@@ -124,6 +138,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
                     tabla.item(row, 6).setBackground(color)
         
         tabla.resizeRowsToContents()
+        mutex.unlock()
     
     def exportarExcel(self):
         """ Exportar clientes a un archivo .xlsx. """
@@ -158,8 +173,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
     def insertarCliente(self):
         """ Abre ventana para registrar un cliente. """
         widget = App_RegistrarCliente(self)
-        widget.success.connect(
-            lambda: self.update_display(rescan=True))
+        widget.success.connect(self.rescan_update)
     
     def editarCliente(self):
         """ Abre ventana para editar un cliente seleccionado. """
@@ -169,8 +183,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
             return
         
         widget = App_EditarCliente(self, selected[0].text())
-        widget.success.connect(
-            lambda: self.update_display(rescan=True))
+        widget.success.connect(self.rescan_update)
     
     def quitarCliente(self):
         """ Pide confirmación para eliminar clientes de la base de datos. """
@@ -193,7 +206,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
             return
         
         qm.information(self, 'Éxito', 'Se eliminaron los clientes seleccionados.')
-        self.update_display(rescan=True)
+        self.rescan_update()
     
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
