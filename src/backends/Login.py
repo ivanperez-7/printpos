@@ -42,8 +42,6 @@ class Usuario:
 #####################
 # VENTANA PRINCIPAL #
 #####################
-mutex = QMutex()
-
 class App_Login(QtWidgets.QWidget):
     """ Backend para la pantalla de inicio de sesión. """
     validated = Signal()
@@ -58,6 +56,8 @@ class App_Login(QtWidgets.QWidget):
         self.ui = Ui_Login()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
+        
+        self.mutex = QMutex()
         
         # validador para nombre de usuario
         self.ui.inputUsuario.setValidator(FabricaValidadores.IdFirebird)
@@ -126,7 +126,7 @@ class App_Login(QtWidgets.QWidget):
     @run_in_thread
     def verificar_info(self):
         """ Verifica datos ingresados consultando la tabla Usuarios. """
-        if not mutex.try_lock():
+        if not self.mutex.try_lock():
             return
         
         # verificar que se ingresaron datos
@@ -135,7 +135,7 @@ class App_Login(QtWidgets.QWidget):
         
         if not (usuario and psswd):
             self.ui.lbEstado.clear()
-            mutex.unlock()
+            self.mutex.unlock()
             return
         
         self.ui.lbEstado.setStyleSheet('color: black;')
@@ -154,7 +154,7 @@ class App_Login(QtWidgets.QWidget):
         else:
             self.logged.emit(conn)
         finally:
-            mutex.unlock()
+            self.mutex.unlock()
     
     def crearVentanaPrincipal(self, conn):
         """ En método separado para regresar al hilo principal."""
@@ -201,6 +201,8 @@ class DialogoActivacion(QtWidgets.QWidget):
         
         super().__init__(parent)
         
+        self.mutex = QMutex()
+        
         self.ui = Ui_Activacion()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
@@ -217,7 +219,7 @@ class DialogoActivacion(QtWidgets.QWidget):
     @run_in_thread
     def accept(self):
         licencia = self.ui.lineLicencia.text().strip()
-        if not (licencia and mutex.try_lock()):
+        if not (licencia and self.mutex.try_lock()):
             return
         
         activado, error = licensing.activar_licencia(licencia)
@@ -225,7 +227,7 @@ class DialogoActivacion(QtWidgets.QWidget):
             self.success.emit()
         else:
             self.failed.emit(error)
-        mutex.unlock()
+        self.mutex.unlock()
     
     def exito_verificacion(self):
         """ En método separado para regresar al hilo principal."""

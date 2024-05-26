@@ -12,8 +12,6 @@ from utils.sql import ManejadorInventario, ManejadorProductos
 #####################
 # VENTANA PRINCIPAL #
 #####################
-mutex = QMutex()
-
 class App_AdministrarProductos(QtWidgets.QWidget):
     """ Backend para la ventana de administración de productos. """
     rescanned = Signal()
@@ -25,6 +23,8 @@ class App_AdministrarProductos(QtWidgets.QWidget):
         
         self.ui = Ui_AdministrarProductos()
         self.ui.setupUi(self)
+        
+        self.mutex = QMutex()
         
         LabelAdvertencia(self.ui.tabla_productos, '¡No se encontró ningún producto!')
         
@@ -66,7 +66,7 @@ class App_AdministrarProductos(QtWidgets.QWidget):
     # ==================
     @run_in_thread
     def rescan_update(self):
-        if not mutex.try_lock():
+        if not self.mutex.try_lock():
             return
         
         self.ui.lbContador.setText('Recuperando información...')
@@ -114,7 +114,7 @@ class App_AdministrarProductos(QtWidgets.QWidget):
                 tabla.item(row, 7).setBackground(color)
         
         tabla.resizeRowsToContents()
-        mutex.unlock()
+        self.mutex.unlock()
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES

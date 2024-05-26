@@ -89,8 +89,6 @@ class Caja:
 #####################
 # VENTANA PRINCIPAL #
 #####################
-mutex = QMutex()
-
 class App_Caja(QtWidgets.QWidget):
     """ Backend para la ventana de movimientos de la caja. """
     rescanned = Signal()
@@ -102,6 +100,8 @@ class App_Caja(QtWidgets.QWidget):
         
         self.ui = Ui_Caja()
         self.ui.setupUi(self)
+        
+        self.mutex = QMutex()
         
         LabelAdvertencia(self.ui.tabla_ingresos, '¡No se encontró ningún movimiento!')
         LabelAdvertencia(self.ui.tabla_egresos, '¡No se encontró ningún movimiento!')
@@ -145,7 +145,7 @@ class App_Caja(QtWidgets.QWidget):
     # ==================
     @run_in_thread
     def rescan_update(self, *args):
-        if not mutex.try_lock():
+        if not self.mutex.try_lock():
             return
         
         self.ui.lbTotal.setText('Recuperando información...')
@@ -169,7 +169,7 @@ class App_Caja(QtWidgets.QWidget):
         total = self.all_movimientos.totalCorte()
         self.ui.lbTotal.setText(f'Total del corte: ${total}')
         
-        mutex.unlock()
+        self.mutex.unlock()
     
     def llenar_ingresos(self):
         bold = QFont()
