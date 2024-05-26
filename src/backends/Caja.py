@@ -223,7 +223,7 @@ class App_Caja(QtWidgets.QWidget):
                           'las fechas proporcionadas.\n¿Desea continuar?')
         
         if ret == qm.Yes:
-            from utils.pdf import ImpresoraTickets
+            from pdf import ImpresoraTickets
             
             impresora = ImpresoraTickets(self)
             impresora.imprimirCorteCaja(self.all_movimientos, self.user.nombre)
