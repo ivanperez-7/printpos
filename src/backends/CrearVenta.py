@@ -72,7 +72,7 @@ class ItemGranFormato(BaseItem):
     """ Clase para un producto de tipo gran formato.
         Reimplementa métodos `importe` y `total_descuentos`. """
     min_m2: float
-    
+
     @property
     def importe(self):
         cantidad = max(self.min_m2, self.cantidad)
@@ -157,6 +157,8 @@ class Venta:
         """ Obtiene un generador con listas de productos, separadas por identificador. """
         out = dict()
         for prod in self.productos:
+            if not isinstance(prod, ItemVenta):
+                continue
             try:
                 out[prod.id].append(prod)
             except KeyError:
