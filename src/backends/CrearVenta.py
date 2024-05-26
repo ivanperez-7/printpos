@@ -1076,7 +1076,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
                  prod.precio_unit,
                  prod.descuento_unit,
                  prod.notas,
-                 prod.duplex,
+                 prod.duplex if isinstance(prod, ItemVenta) else False,
                  prod.importe)
                 for prod in ventaDatos]
     
