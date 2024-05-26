@@ -8,12 +8,12 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QImage
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 
+from .generadores import *
 from backends.Caja import Caja
 from config import INI
 from utils.mydecorators import run_in_thread
 from utils.myutils import *
 from utils.mywidgets import WarningDialog
-from utils.pdf.generadores import *
 from utils import sql
 
 

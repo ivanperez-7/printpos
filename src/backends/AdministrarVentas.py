@@ -5,12 +5,12 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
 from PySide6.QtCore import QDateTime, QModelIndex, Qt, Signal, QMutex
 
+from pdf import ImpresoraOrdenes, ImpresoraTickets
 from utils.mydecorators import con_fondo, requiere_admin, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 from utils import Moneda
-from utils.pdf import ImpresoraOrdenes, ImpresoraTickets
 from utils.sql import ManejadorVentas
 
 

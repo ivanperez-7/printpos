@@ -5,11 +5,11 @@ from PySide6 import QtWidgets
 from PySide6.QtCore import QDate, QDateTime, Signal, Qt
 
 from .AdministrarVentas import Base_PagarVenta
+from pdf import ImpresoraOrdenes, ImpresoraTickets
 from utils import Moneda
 from utils.mydecorators import con_fondo, requiere_admin
 from utils.myutils import *
 from utils.mywidgets import DimBackground, LabelAdvertencia, SpeechBubble, VentanaPrincipal
-from utils.pdf import ImpresoraOrdenes, ImpresoraTickets
 from utils.sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
 
 ##################
@@ -978,7 +978,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
         vendedor = self.first.ui.txtVendedor.text()
         
         impresora = ImpresoraTickets(self)
-        impresora.imprimirTicketPresupuesto(ventaDatos.productos, vendedor)
+        impresora.imprimirTicketPresupuesto(ventaDatos, vendedor)
         
         self.close()
 
