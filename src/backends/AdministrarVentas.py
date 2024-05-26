@@ -17,8 +17,6 @@ from utils.sql import ManejadorVentas
 #####################
 # VENTANA PRINCIPAL #
 #####################
-mutex = QMutex()
-
 class App_AdministrarVentas(QtWidgets.QWidget):
     """ Backend para la ventana de administración de ventas.
         TODO:
@@ -32,6 +30,8 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         self.ui = Ui_AdministrarVentas()
         self.ui.setupUi(self)
+        
+        self.mutex = QMutex()
         
         LabelAdvertencia(self.ui.tabla_ventasDirectas, '¡No se encontró ninguna venta!')
         LabelAdvertencia(self.ui.tabla_pedidos, '¡No se encontró ningún pedido!')
@@ -89,8 +89,8 @@ class App_AdministrarVentas(QtWidgets.QWidget):
          .paginaCambiada.connect(self.update_display))
         
         # configurar y llenar tablas
-        self.ui.tabla_ventasDirectas.configurarCabecera(lambda col: col in {0, 3, 4, 5, 6, 7})
-        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in {0, 3, 4, 5, 7, 8})
+        self.ui.tabla_ventasDirectas.configurarCabecera(lambda col: col in {0, 3, 4, 5})
+        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in {0, 1, 3, 4, 5})
     
     def showEvent(self, event):
         self.rescan_update()
@@ -132,7 +132,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
     def rescan_update(self, *args):  # ??? TODO: ignorar parámetros
         """ Actualiza la tabla y el contador de clientes.
             Lee de nuevo la tabla de clientes, si se desea. """
-        if not mutex.try_lock():
+        if not self.mutex.try_lock():
             return
         
         self.ui.lbContador.setText('Recuperando información...')
@@ -143,7 +143,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         manejador = ManejadorVentas(self.conn)
         self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, restrict)
-        self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta, None)
+        self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta)
         
         self.rescanned.emit()
     
@@ -151,7 +151,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         self.llenar_tabla_ventas()
         self.llenar_tabla_pedidos()
         self.cambiar_pestana()
-        mutex.unlock()
+        self.mutex.unlock()
     
     def llenar_tabla_ventas(self):
         """ Actualizar tabla de ventas directas. """
@@ -246,7 +246,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
                 button_cell.setFlat(True)
                 button_cell.clicked.connect(self.enviarRecordatorio)
                 
-                tabla.setCellWidget(row, 10, button_cell)
+                tabla.setCellWidget(row, 8, button_cell)
                 
                 # resaltar pedidos con fechas de entrega ya pasadas
                 if QDateTime.currentDateTime() > compra[4]:

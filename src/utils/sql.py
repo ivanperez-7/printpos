@@ -33,7 +33,7 @@ def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
 
 def _WarningDialog(*args):
     from utils.mywidgets import WarningDialog
-    wdg = WarningDialog(*args)
+    return WarningDialog(*args)
 
 
 class DatabaseManager:
@@ -1095,9 +1095,9 @@ class ManejadorVentas(DatabaseManager):
                            ON VD.id_productos = P.id_productos
             WHERE	id_ventas = ?;
         ''', (id_venta,)):
-            data = (0, '', p[abrev], p[precio], p[desc], p[cant], '', p[duplex])
+            data = (0, '', p[abrev], p[precio], p[desc], p[cant], '')
             if p[categoria] == 'S':
-                item = ItemVenta(*data)
+                item = ItemVenta(*data, p[duplex])
             else:
                 min_m2, _ = manejador.obtenerGranFormato(p[id])
                 item = ItemGranFormato(*data, min_m2)

@@ -16,7 +16,7 @@ from utils.sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
 # CLASE AUXILIAR #
 ##################
 @dataclass
-class ItemVenta:
+class BaseItem:
     """ Clase para mantener registro de un producto simple de la venta. """
     id: int  # identificador interno en la base de datos
     codigo: str  # nombre del producto
@@ -25,6 +25,21 @@ class ItemVenta:
     descuento_unit: float  # cantidad a descontar por unidad
     cantidad: int  # cantidad solicitada por el cliente
     notas: str  # especificaciones del producto
+    
+    @property
+    def importe(self):
+        """ Costo total del producto. """
+        raise NotImplementedError('BEIS CLASSSS')
+    
+    @property
+    def total_descuentos(self):
+        """ Regresa el total de descuentos (descuento * cantidad). """
+        raise NotImplementedError('BEIS CLASSSS')
+
+
+@dataclass
+class ItemVenta(BaseItem):
+    """ Clase para mantener registro de un producto simple de la venta. """
     duplex: bool  # dicta si el producto es duplex
     
     def __post_init__(self):
@@ -41,13 +56,6 @@ class ItemVenta:
         """ Regresa el total de descuentos (descuento * cantidad). """
         return self.descuento_unit * self.cantidad
     
-    @classmethod
-    def generarItemComision(cls, importe: Moneda, porcentaje: float):
-        """ Generar item de comisión por pago con tarjeta """
-        return cls(0, 'COMISION', 1., 0.,
-                   float(importe * porcentaje / 100),
-                   'COMISIÓN POR PAGO CON TARJETA', False)
-    
     def __iter__(self):
         """ Regresa iterable para alimentar las tablas de productos.
             Cantidad | Código | Especificaciones | Precio | Descuento | Importe """
@@ -60,26 +68,36 @@ class ItemVenta:
 
 
 @dataclass
-class ItemGranFormato(ItemVenta):
+class ItemGranFormato(BaseItem):
     """ Clase para un producto de tipo gran formato.
         Reimplementa métodos `importe` y `total_descuentos`. """
-    _min_m2: float
+    min_m2: float
     
     @property
     def importe(self):
-        cantidad = max(self._min_m2, self.cantidad)
+        cantidad = max(self.min_m2, self.cantidad)
         return (self.precio_unit - self.descuento_unit) * cantidad
     
     @property
     def total_descuentos(self):
-        cantidad = max(self._min_m2, self.cantidad)
+        cantidad = max(self.min_m2, self.cantidad)
         return self.descuento_unit * cantidad
+
+    def __iter__(self):
+        """ Regresa iterable para alimentar las tablas de productos.
+            Cantidad | Código | Especificaciones | Precio | Descuento | Importe """
+        yield from (self.cantidad,
+                    self.codigo,
+                    self.notas,
+                    self.precio_unit,
+                    self.descuento_unit,
+                    self.importe)
 
 
 @dataclass
 class Venta:
     """ Clase para mantener registro de una venta. """
-    productos: list[ItemVenta] = field(default_factory=list)
+    productos: list[BaseItem] = field(default_factory=list)
     fechaCreacion: QDateTime = QDateTime.currentDateTime()
     fechaEntrega: QDateTime = QDateTime(fechaCreacion)
     requiere_factura: bool = False
@@ -601,7 +619,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         # insertar información del producto con cantidad y especificaciones
         return ItemGranFormato(
             idProducto, codigo, nombre_ticket, precio_m2, 0.0, ancho_producto * alto_producto,
-            self.ui.txtNotas_2.text().strip(), False, min_m2)
+            self.ui.txtNotas_2.text().strip(), min_m2)
     
     def rescan_display(self):
         """ Lee de nuevo las tablas de productos y actualiza tablas. """

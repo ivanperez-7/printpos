@@ -14,8 +14,6 @@ from utils.sql import ManejadorClientes
 #####################
 # VENTANA PRINCIPAL #
 #####################
-mutex = QMutex()
-
 class App_AdministrarClientes(QtWidgets.QWidget):
     """ Backend para la ventana de administración de clientes. """
     rescanned = Signal()
@@ -27,6 +25,8 @@ class App_AdministrarClientes(QtWidgets.QWidget):
         
         self.ui = Ui_AdministrarClientes()
         self.ui.setupUi(self)
+        
+        self.mutex = QMutex()
         
         LabelAdvertencia(self.ui.tabla_clientes, '¡No se encontró ningún cliente!')
         
@@ -84,7 +84,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
     
     @run_in_thread
     def rescan_update(self, *args):
-        if not mutex.try_lock():
+        if not self.mutex.try_lock():
             return
         
         self.ui.lbContador.setText('Recuperando información...')
@@ -138,7 +138,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
                     tabla.item(row, 6).setBackground(color)
         
         tabla.resizeRowsToContents()
-        mutex.unlock()
+        self.mutex.unlock()
     
     def exportarExcel(self):
         """ Exportar clientes a un archivo .xlsx. """
