@@ -972,7 +972,7 @@ class ManejadorVentas(DatabaseManager):
         col_fecha_entrega = 'fecha_hora_entrega,' if fecha_entrega else ''
         clausula_where = 'fecha_hora_entrega {} fecha_hora_creacion'.format(
             '!=' if fecha_entrega else '=')
-        clausula_group = '1, 2, 3, 4, 5, 7, 8, 9, 10' if fecha_entrega else '1, 2, 3, 4, 6, 7, 8, 9'
+        clausula_group = '1, 2, 3, 4, 5, 7, 8' if fecha_entrega else '1, 2, 3, 4, 6, 7'
         
         return self.fetchall(f'''
             SELECT
@@ -983,15 +983,9 @@ class ManejadorVentas(DatabaseManager):
                 {col_fecha_entrega}
                 SUM(importe)         AS total,
                 estado,
-                VP.monto,
-                metodo,
                 comentarios
             FROM
                 ventas V
-                LEFT JOIN ventas_pagos VP
-                    ON VP.id_ventas = V.id_ventas
-                LEFT JOIN metodos_pago MP
-                    ON VP.id_metodo_pago = MP.id_metodo_pago
                 LEFT JOIN usuarios U
                     ON V.id_usuarios = U.id_usuarios
                 LEFT JOIN clientes C
@@ -1002,13 +996,11 @@ class ManejadorVentas(DatabaseManager):
                 {clausula_where}
                 AND (CAST(fecha_hora_creacion AS DATE) BETWEEN ? AND ?
                      OR estado LIKE 'Recibido%')
-                AND (VP.monto IS NULL or VP.monto >= 0)
                 {restrict}
             GROUP BY
-                {clausula_group}, VP.fecha_hora
+                {clausula_group}
             ORDER BY
-                1 DESC,
-                VP.fecha_hora DESC;
+                1 DESC;
         ''', (inicio.toPython(), final.toPython()))
     
     tablaVentas = partialmethod(_tablaParcial, False)
