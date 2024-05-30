@@ -1,7 +1,7 @@
 """ Módulo con manejadores para tablas en la base de datos. """
 from datetime import datetime
 from functools import partial, partialmethod
-from typing import overload
+from typing import Callable, overload
 
 import fdb
 from PySide6.QtCore import QDate
@@ -58,8 +58,8 @@ class DatabaseManager:
         
         self.execute = partial(self._partial_execute, crsr.execute)
         self.executemany = partial(self._partial_execute, crsr.executemany)
-        self.fetchall = partial(self._partial_fetch, crsr.fetchall)
-        self.fetchone = partial(self._partial_fetch, crsr.fetchone)
+        self.fetchall: partial[list] = partial(self._partial_fetch, crsr.fetchall)
+        self.fetchone: partial[tuple] = partial(self._partial_fetch, crsr.fetchone)
     
     def _partial_execute(self, func, query: str, parameters=None, commit=False):
         try:
@@ -1071,7 +1071,7 @@ class ManejadorVentas(DatabaseManager):
             necesita calcular el total de descuento para los tickets. """
         from backends.CrearVenta import ItemVenta, ItemGranFormato
         
-        id, abrev, precio, desc, cant, duplex, categoria = range(7)
+        id_, abrev, precio, desc, cant, duplex, categoria = range(7)
         manejador = ManejadorProductos(self._conn)
         
         for p in self.fetchall('''
@@ -1091,7 +1091,7 @@ class ManejadorVentas(DatabaseManager):
             if p[categoria] == 'S':
                 item = ItemVenta(*data, p[duplex])
             else:
-                min_m2, _ = manejador.obtenerGranFormato(p[id])
+                min_m2, _ = manejador.obtenerGranFormato(p[id_])
                 item = ItemGranFormato(*data, min_m2)
             yield item
     
@@ -1124,7 +1124,7 @@ class ManejadorVentas(DatabaseManager):
             WHERE   id_ventas = ?;
         ''', (id_venta,))
     
-    def obtenerUsuarioAsociado(self, id_venta: int):
+    def obtenerVendedorAsociado(self, id_venta: int):
         """ Obtener nombre de vendedor asociado a la venta. """
         result = self.fetchone('''
             SELECT	U.nombre

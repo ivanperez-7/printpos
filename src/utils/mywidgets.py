@@ -1,6 +1,8 @@
 """ Módulo con widgets personalizados varios. """
 from datetime import datetime
 from enum import Enum, auto
+import glob
+import os
 from typing import Callable, Iterator
 
 from PySide6 import QtWidgets
@@ -48,6 +50,9 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         """ En eventos específicos, restringimos el cerrado del sistema. """
         from backends.CrearVenta import App_CrearVenta
+        
+        for j in glob.glob('*.jpg'):
+            os.remove(j)
         
         en_venta = isinstance(self.centralWidget(), App_CrearVenta)
         
@@ -183,9 +188,15 @@ class StackPagos(QtWidgets.QStackedWidget):
             return False
         return sumaCorrecta and all(wdg.montoPagado for wdg in self)
     
+    def __len__(self):
+        return self.count()
+    
     def __iter__(self) -> Iterator[WidgetPago]:
         for i in range(self.count()):
             yield self.widget(i)
+    
+    def __getitem__(self, i: int) -> WidgetPago:
+        return self.widget(i)
 
 
 class MyTableItem(QtWidgets.QTableWidgetItem):
@@ -250,6 +261,9 @@ class TablaDatos(QtWidgets.QTableWidget):
         self.horizontalHeader().setMinimumSectionSize(50)
     
     def llenar(self, data):
+        if not isinstance(data, list):
+            data = list(data)
+        
         sort = self.isSortingEnabled()
         self.setSortingEnabled(False)
         self.setRowCount(0)

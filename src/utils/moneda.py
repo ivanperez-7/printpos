@@ -62,20 +62,25 @@ class Moneda(metaclass=useless):
     # =========================
     #  Operaciones aritméticas 
     # =========================
-    def __add__(self, op):
-        return self.__class__(self.valor + op)
+    def _arit_op(self, other, operation) -> 'Moneda':
+        if isinstance(other, Moneda):
+            other = other.valor
+        return self.__class__(operation(self.valor, other))
+        
+    def __add__(self, other):
+        return self._arit_op(other, operator.add)
     
-    def __sub__(self, op):
-        return self.__class__(self.valor - op)
+    def __sub__(self, other):
+        return self._arit_op(other, operator.sub)
     
-    def __rsub__(self, op):
-        return -self.__sub__(op)
+    def __rsub__(self, other):
+        return -self.__sub__(other)
     
-    def __mul__(self, op):
-        return self.__class__(self.valor * op)
+    def __mul__(self, other):
+        return self._arit_op(other, operator.mul)
     
-    def __truediv__(self, op):
-        return self.__class__(self.valor / op)
+    def __truediv__(self, other):
+        return self._arit_op(other, operator.truediv)
     
     __radd__ = __add__
     __rmul__ = __mul__
@@ -83,23 +88,23 @@ class Moneda(metaclass=useless):
     # =====================
     #  Operaciones lógicas 
     # =====================
-    def _bool_op(self, op, operation) -> bool:
-        return operation(self.valor, round(op, self.PRECISION))
+    def _bool_op(self, other, operation) -> bool:
+        return operation(self.valor, round(other, self.PRECISION))
         
-    def __eq__(self, op):
-        return self._bool_op(op, operator.eq)
+    def __eq__(self, other):
+        return self._bool_op(other, operator.eq)
     
-    def __ne__(self, op):
-        return self._bool_op(op, operator.ne)
+    def __ne__(self, other):
+        return self._bool_op(other, operator.ne)
     
-    def __lt__(self, op):
-        return self._bool_op(op, operator.lt)
+    def __lt__(self, other):
+        return self._bool_op(other, operator.lt)
     
-    def __le__(self, op):
-        return self._bool_op(op, operator.le)
+    def __le__(self, other):
+        return self._bool_op(other, operator.le)
     
-    def __gt__(self, op):
-        return self._bool_op(op, operator.gt)
+    def __gt__(self, other):
+        return self._bool_op(other, operator.gt)
     
-    def __ge__(self, op):
-        return self._bool_op(op, operator.ge)
+    def __ge__(self, other):
+        return self._bool_op(other, operator.ge)

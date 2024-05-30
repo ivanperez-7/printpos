@@ -90,7 +90,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         # configurar y llenar tablas
         self.ui.tabla_ventasDirectas.configurarCabecera(lambda col: col in {0, 3, 4, 5})
-        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in {0, 1, 3, 4, 5})
+        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in {0, 3, 4, 5, 6})
     
     def showEvent(self, event):
         self.rescan_update()
@@ -187,6 +187,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
                 tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
             
             tabla.item(row, 4).setFont(bold)
+            tabla.item(row, 5).setTextAlignment(Qt.AlignCenter)
             
             estado = tabla.item(row, 5).text()
             
@@ -230,6 +231,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
                 tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
             
             tabla.item(row, 5).setFont(bold)
+            tabla.item(row, 6).setTextAlignment(Qt.AlignCenter)
             
             estado_cell = tabla.item(row, 6)
             estado = estado_cell.text()
@@ -422,8 +424,7 @@ class App_DetallesVenta(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window) 
         
         # total de la venta, anticipo y saldo
-        conn = first.conn
-        manejador = ManejadorVentas(conn)
+        manejador = ManejadorVentas(first.conn)
         
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
@@ -519,20 +520,24 @@ class Base_PagarVenta(QtWidgets.QWidget):
         self.ui.btListo.clicked.connect(self.listo)
         self.ui.btCancelar.clicked.connect(self.abortar)
         self.ui.txtAnticipo.textChanged.connect(self.cambiarAnticipo)
-        self.ui.stackPagos.cambioPagos.connect(self._handleCounters)
+        self.stackPagos.cambioPagos.connect(self._handleCounters)
         
         # interfaz de botones para stackPagos
-        self.ui.btAgregar.clicked.connect(self.ui.stackPagos.agregarPago)
+        self.ui.btAgregar.clicked.connect(self.stackPagos.agregarPago)
         self.ui.btAgregar.clicked.connect(self.modificar_contador)
-        self.ui.btQuitar.clicked.connect(self.ui.stackPagos.quitarPago)
+        self.ui.btQuitar.clicked.connect(self.stackPagos.quitarPago)
         self.ui.btQuitar.clicked.connect(self.modificar_contador)
-        self.ui.btAnterior.clicked.connect(self.ui.stackPagos.retroceder)
+        self.ui.btAnterior.clicked.connect(self.stackPagos.retroceder)
         self.ui.btAnterior.clicked.connect(self.modificar_contador)
-        self.ui.btSiguiente.clicked.connect(self.ui.stackPagos.avanzar)
+        self.ui.btSiguiente.clicked.connect(self.stackPagos.avanzar)
         self.ui.btSiguiente.clicked.connect(self.modificar_contador)
         
-        self.ui.stackPagos.total = self.ui.txtAnticipo.cantidad = self.pagoPredeterminado()
-        self.ui.stackPagos.agregarPago()
+        self.stackPagos.total = self.ui.txtAnticipo.cantidad = self.pagoPredeterminado()
+        self.stackPagos.agregarPago()
+    
+    @property
+    def stackPagos(self): 
+        return self.ui.stackPagos
     
     ####################
     # FUNCIONES ÚTILES #
@@ -555,17 +560,17 @@ class Base_PagarVenta(QtWidgets.QWidget):
     
     def cambiarAnticipo(self):
         """ Cambiar el anticipo pagado por el cliente. """
-        self.ui.stackPagos.total = self.ui.txtAnticipo.cantidad
+        self.stackPagos.total = self.ui.txtAnticipo.cantidad
         self._handleCounters()
         
     def modificar_contador(self):
-        self.ui.lbContador.setText('Pago {}/{}'.format(self.ui.stackPagos.currentIndex()+1,
-                                                       self.ui.stackPagos.count()))
+        self.ui.lbContador.setText('Pago {}/{}'.format(self.stackPagos.currentIndex()+1,
+                                                       self.stackPagos.count()))
     
     def _handleCounters(self):
         """ Seguir las mismas reglas de `StackPagos.pagosValidos`
             para actualizar y colorear contadores. """
-        stack = self.ui.stackPagos
+        stack = self.stackPagos
         n_efec = [wdg.metodoSeleccionado for wdg in stack].count('Efectivo')
         
         if n_efec:   # hay pagos en efectivo
@@ -607,9 +612,9 @@ class Base_PagarVenta(QtWidgets.QWidget):
         manejadorVentas = ManejadorVentas(self.conn)
         
         # registrar pagos en tabla ventas_pagos
-        for wdg in self.ui.stackPagos:
+        for wdg in self.stackPagos:
             montoAPagar = (wdg.montoPagado if wdg.metodoSeleccionado != 'Efectivo'
-                else self.ui.stackPagos.restanteEnEfectivo)
+                else self.stackPagos.restanteEnEfectivo)
             
             if not manejadorVentas.insertarPago(self.id_ventas, wdg.metodoSeleccionado,
                                                 montoAPagar, wdg.montoPagado):
@@ -681,7 +686,14 @@ class App_TerminarVenta(Base_PagarVenta):
         else:
             prompt = 'Pago(s) abonado(s) al pedido.'
         
-        QtWidgets.QMessageBox.information(self, 'Éxito', prompt)
+        qm = QtWidgets.QMessageBox
+        ret = qm.question(self, 'Éxito', prompt + '\n¿Desea imprimir los tickets de los pagos?')
+        
+        if ret == qm.Yes:
+            slais = slice(-self.ui.stackPagos.count(), None)
+            impresora = ImpresoraTickets(self)
+            impresora.imprimirTicketCompra(self.id_ventas, slais)
+            
         self.success.emit()
         self.close()
     
@@ -698,13 +710,13 @@ class App_ImprimirTickets(QtWidgets.QWidget):
         
         super().__init__(first)
         
-        self.conn = first.conn
-        self.idVenta = idVenta
-        
         self.ui = Ui_ImprimirTickets()
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         self.setFixedSize(self.size())
+        
+        self.conn = first.conn
+        self.idVenta = idVenta
         
         self.ui.btRegresar.clicked.connect(self.close)
         self.ui.btMarcar.clicked.connect(self.marcarTodo)

@@ -9,7 +9,7 @@ from PySide6.QtGui import QFont
 from utils import Moneda
 from utils.mydecorators import run_in_thread
 from utils.myinterfaces import InterfazFechas
-from utils.myutils import *
+from utils.myutils import FabricaValidadores
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 from utils.sql import ManejadorCaja, ManejadorMetodosPago
 
@@ -63,12 +63,12 @@ class Caja:
     
     @property
     def todoIngresos(self):
-        """ Regresa lista de movimientos que son ingresos. """
+        """ Regresa objeto `filter` de movimientos que son ingresos. """
         return filter(lambda m: m.esIngreso, self.movimientos)
     
     @property
     def todoEgresos(self):
-        """ Regresa lista de movimientos que son egresos. """
+        """ Regresa objeto `filter` de movimientos que son egresos. """
         return filter(lambda m: not m.esIngreso, self.movimientos)
     
     def _total(self, _iter: Iterable[Movimiento], metodo: str = None):
@@ -126,7 +126,7 @@ class App_Caja(QtWidgets.QWidget):
         
         self.ui.dateDesde.dateChanged.connect(self.rescan_update)
         self.ui.dateHasta.dateChanged.connect(self.rescan_update)
-        self.ui.btImprimir.clicked.connect(self.confirmarImprimir)
+        self.ui.btImprimir.clicked.connect(self.confirmar_imprimir)
         self.rescanned.connect(self.update_display)
         
         self.ui.tabla_ingresos.configurarCabecera(lambda col: col not in {0, 2})
@@ -163,12 +163,11 @@ class App_Caja(QtWidgets.QWidget):
         """ Actualiza las tablas de ingresos y egresos.
 
             Relee base de datos en cualquier evento (en este caso, al mover fechas). """
-        self.llenar_ingresos()
-        self.llenar_egresos()
-        
         total = self.all_movimientos.totalCorte()
         self.ui.lbTotal.setText(f'Total del corte: ${total}')
         
+        self.llenar_ingresos()
+        self.llenar_egresos()
         self.mutex.unlock()
     
     def llenar_ingresos(self):
@@ -186,11 +185,9 @@ class App_Caja(QtWidgets.QWidget):
         self.ui.lbIngresosTransferencia.setText(
             'Transferencias bancarias: ${}'.format(movimientos.totalIngresos('Transferencia')))
         
-        data = list(movimientos.todoIngresos)
-        
         tabla = self.ui.tabla_ingresos
         tabla.modelo = tabla.Modelos.RESALTAR_SEGUNDA
-        tabla.llenar(data)
+        tabla.llenar(movimientos.todoIngresos)
         tabla.resizeRowsToContents()
     
     def llenar_egresos(self):
@@ -208,14 +205,12 @@ class App_Caja(QtWidgets.QWidget):
         self.ui.lbEgresosTransferencia.setText(
             'Transferencias bancarias: ${}'.format(-movimientos.totalEgresos('Transferencia')))
         
-        data = list(movimientos.todoEgresos)
-        
         tabla = self.ui.tabla_egresos
         tabla.modelo = tabla.Modelos.RESALTAR_SEGUNDA
-        tabla.llenar(data)
+        tabla.llenar(movimientos.todoEgresos)
         tabla.resizeRowsToContents()
     
-    def confirmarImprimir(self):
+    def confirmar_imprimir(self):
         """ Ventana de confirmación para imprimir corte. """
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',

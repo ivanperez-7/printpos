@@ -604,11 +604,11 @@ background-color: rgb(255, 255, 255);</string>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_5">
-             <property name="spacing">
+            <layout class="QGridLayout" name="gridLayout_2">
+             <property name="horizontalSpacing">
               <number>25</number>
              </property>
-             <item>
+             <item row="0" column="0">
               <widget class="QGroupBox" name="groupBox_4">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -780,7 +780,7 @@ background-color: rgb(255, 255, 255);</string>
                </layout>
               </widget>
              </item>
-             <item>
+             <item row="0" column="1">
               <widget class="QGroupBox" name="groupBox_5">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -955,7 +955,7 @@ background-color: rgb(255, 255, 255);</string>
                </layout>
               </widget>
              </item>
-             <item alignment="Qt::AlignHCenter">
+             <item row="0" column="2">
               <widget class="QLabel" name="lbTotalGran">
                <property name="font">
                 <font>
@@ -967,7 +967,7 @@ background-color: rgb(255, 255, 255);</string>
                </property>
               </widget>
              </item>
-             <item alignment="Qt::AlignTop">
+             <item row="0" column="3">
               <widget class="QGroupBox" name="groupBoxEspecGran">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -1069,10 +1069,10 @@ background-color: rgb(255, 255, 255);</string>
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="grupoBotonesAlto"/>
-  <buttongroup name="grupoBotonesAnchoMaterial"/>
-  <buttongroup name="groupFiltro"/>
   <buttongroup name="grupoBotonesAncho"/>
   <buttongroup name="grupoBotonesAltoMaterial"/>
+  <buttongroup name="grupoBotonesAlto"/>
+  <buttongroup name="groupFiltro"/>
+  <buttongroup name="grupoBotonesAnchoMaterial"/>
  </buttongroups>
 </ui>

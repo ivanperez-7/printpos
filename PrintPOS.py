@@ -4,8 +4,6 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTranslator
 from PySide6.QtGui import QPalette, Qt
 
-from backends.Login import App_Login
-
 
 class PrintPOS(QApplication):
     """ Subclase de QApplication que configura varios elementos como corresponde.
@@ -22,6 +20,7 @@ class PrintPOS(QApplication):
     
     def iniciar(self):
         """ Crea ventana de iniciar sesión e invoca método exec(). """
+        from backends.Login import App_Login
         login = App_Login()
         return self.exec()
     
@@ -54,8 +53,10 @@ class PrintPOS(QApplication):
         return 'QApplication afitriona de PrintPOS.'
 
 
-if qApp is None:
+if QApplication.instance() is None:
     app = PrintPOS()
+else:
+    app = QApplication.instance()
 
 
 if __name__ == '__main__':

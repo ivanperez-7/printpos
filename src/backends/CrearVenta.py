@@ -333,8 +333,7 @@ class App_CrearVenta(QtWidgets.QWidget):
         ventaDatos.reajustarPrecios(self.conn)
         self.colorearActualizar()
     
-    @requiere_admin
-    def agregarDescuento(self, conn):
+    def agregarDescuento(self):
         """ Abre ventana para agregar un descuento a la orden si el cliente es especial. """
         modulo = App_AgregarDescuento(self)
         modulo.success.connect(
@@ -605,11 +604,6 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
                 'Las medidas del producto sobrepasan las medidas del material.')
             return
         
-        # si el alto del producto sobrepasa el ancho del material, quiere decir
-        # que no se pudo imprimir de forma normal; por lo tanto, cobrar sobrante.
-        if alto_producto > ancho_material:
-            ancho_producto = ancho_material
-        
         # obtener información del producto
         codigo = selected[0].text()
         manejador = ManejadorProductos(self.conn)
@@ -618,9 +612,19 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         nombre_ticket = manejador.obtenerNombreParaTicket(codigo)
         min_m2, precio_m2 = manejador.obtenerGranFormato(idProducto)
         
+        # si el alto del producto sobrepasa el ancho del material, quiere decir
+        # que no se pudo imprimir de forma normal; por lo tanto, cobrar sobrante.
+        desc_unit = 0.
+        
+        if alto_producto > ancho_material:
+            #sobrante_ancho = ancho_material - ancho_producto
+            #descuento_sobre_total = manejador.obtenerDescuentoSobrante(idProducto, sobrante_ancho)
+            #desc_unit = precio_m2 * descuento_sobre_total
+            ancho_producto = ancho_material
+        
         # insertar información del producto con cantidad y especificaciones
         return ItemGranFormato(
-            idProducto, codigo, nombre_ticket, precio_m2, 0.0, ancho_producto * alto_producto,
+            idProducto, codigo, nombre_ticket, precio_m2, desc_unit, ancho_producto * alto_producto,
             self.ui.txtNotas_2.text().strip(), min_m2)
     
     def rescan_display(self):
@@ -866,6 +870,9 @@ class App_AgregarDescuento(QtWidgets.QWidget):
         
         super().__init__(first)
         
+        self.conn = first.conn
+        self.user = first.user
+        
         self.ui = Ui_AgregarDescuento()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
@@ -899,21 +906,18 @@ class App_AgregarDescuento(QtWidgets.QWidget):
     # ================ #
     # FUNCIONES ÚTILES #
     # ================ #
-    def done(self):
+    @requiere_admin
+    def done(self, conn):
         """ Acepta los cambios e inserta descuento en la lista de productos. """
-        selected = self.ui.tabla_productos.selectedItems()
-        
-        if not selected:
+        if not (selected := self.ui.tabla_productos.selectedItems()):
             return
-        
-        prod = ventaDatos[selected[0].row()]
         
         try:
+            prod = ventaDatos[selected[0].row()]
             nuevo_precio = float(self.ui.txtPrecio.text())
+            prod.descuento_unit = clamp(prod.precio_unit - nuevo_precio, 0., prod.precio_unit)
         except ValueError:
             return
-        
-        prod.descuento_unit = clamp(prod.precio_unit - nuevo_precio, 0., prod.precio_unit)
         
         self.success.emit()
         self.close()
@@ -989,7 +993,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         super().__init__(first)
         
         # seleccionar método para WidgetPago
-        wdg = list(self.ui.stackPagos)[0]
+        wdg = self.stackPagos[0]
         wdg.metodoSeleccionado = first.ui.btMetodoGrupo.checkedButton().text()
         
         if wdg.metodoSeleccionado != 'Efectivo':
@@ -1016,7 +1020,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         
         # brincar el proceso si el pago es de cero
         if not ventaDatos.total:
-            self.terminarVenta()
+            self.listo()
         else:
             self.show()
     

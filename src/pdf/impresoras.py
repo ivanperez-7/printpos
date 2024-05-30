@@ -12,7 +12,7 @@ from .generadores import *
 from backends.Caja import Caja
 from config import INI
 from utils.mydecorators import run_in_thread
-from utils.myutils import *
+from utils.myutils import randFile
 from utils.mywidgets import WarningDialog
 from utils import sql
 
@@ -29,9 +29,8 @@ class ImpresoraPDF:
         printer = QPrinter(QPrinter.HighResolution)
         
         dialog = QPrintDialog(printer, parent)
-        opts = QPrintDialog.PrintDialogOption
-        dialog.setOption(opts.PrintToFile, False)
-        dialog.setOption(opts.PrintPageRange, False)
+        dialog.setOption(QPrintDialog.PrintToFile, False)
+        dialog.setOption(QPrintDialog.PrintPageRange, False)
         
         if dialog.exec() != QPrintDialog.Accepted:
             return None
@@ -42,6 +41,7 @@ class ImpresoraPDF:
     def obtenerImpresoraTickets():
         """ Lee impresora de tickets en archivo config. En hilo principal. """
         pInfo = QPrinterInfo.printerInfo(INI.IMPRESORA)
+        
         if not pInfo.printerName():
             WarningDialog(f'¡No se encontró la impresora {INI.IMPRESORA}!')
             return None
@@ -126,7 +126,7 @@ class ImpresoraTickets(ImpresoraPDF):
         self.printer = self.obtenerImpresoraTickets()
     
     @run_in_thread
-    def imprimirTicketCompra(self, idx: int, nums: list[int] = None):
+    def imprimirTicketCompra(self, idx: int, nums: list[int] | slice = None):
         """ Genera el ticket de compra a partir de un identificador en la base de datos.
             Recibe un arreglo de índices para imprimir pagos específicos. """
         assert self.printer, 'Impresora aún no inicializada.'
@@ -135,7 +135,7 @@ class ImpresoraTickets(ImpresoraPDF):
         productos = list(manejador.obtenerTablaTicket(idx))
         
         # más datos para el ticket
-        vendedor = manejador.obtenerUsuarioAsociado(idx)
+        vendedor = manejador.obtenerVendedorAsociado(idx)
         
         # cambiar método de pago (abreviatura)
         abrev = {'Efectivo': 'EFEC',
@@ -145,8 +145,10 @@ class ImpresoraTickets(ImpresoraPDF):
         
         pagos = manejador.obtenerPagosVenta(idx)
         
-        if nums is not None:   # determinados pagos
+        if isinstance(nums, list):
             pagos = [pagos[i] for i in nums]
+        elif isinstance(nums, slice):
+            pagos = pagos[nums]
         
         for fecha, metodo, monto, pagado in pagos:
             data = generarTicketPDF(productos, vendedor, idx, monto,

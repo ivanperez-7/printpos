@@ -10,6 +10,8 @@ from utils.mydecorators import run_in_thread
 from utils.myutils import FabricaValidadores
 from utils import sql
 
+from PrintPOS import app
+
 
 ##################
 # CLASE AUXILIAR #
@@ -71,7 +73,7 @@ class App_Login(QtWidgets.QWidget):
         self.show()
         self.ui.inputUsuario.setFocus()
         
-        if not qApp.licencia_validada:
+        if not app.licencia_validada:
             self.validar_licencia()
         else:
             self.exito_verificacion()
@@ -94,7 +96,7 @@ class App_Login(QtWidgets.QWidget):
             self.failure.emit(error)
         
         self.ui.lbEstado.clear()
-        qApp.licencia_validada = activado
+        app.licencia_validada = activado
     
     def exito_verificacion(self):
         """ En método separado para regresar al hilo principal."""

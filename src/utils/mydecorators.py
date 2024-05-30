@@ -80,13 +80,14 @@ class Dialog_ObtenerAdmin(QDialog):
 
 def requiere_admin(func):
     """ Decorador para solicitar contraseña de administrador
-        antes de ejecutar alguna función dada.
+        antes de ejecutar alguna función envuelta.
         
-        Añadir parámetro nombrado `conn` al final de la función, ya que
+        Añadir parámetro nombrado `conn` al final de la función envuelta, ya que
         es devuelto por el decorador para extraer información que se requiera
         de la conexión de administrador, por ejemplo, nombre del administrador.
         
-        Requiere que QWidget tenga atributo `user` (objeto Login.Usuario actual). """
+        Requiere que QWidget tenga atributo `user` (objeto Login.Usuario actual)
+        y atributo `conn` (objeto sql.Connection actual). """
     @wraps(func)
     def wrapper_decorator(*args, **kwargs):
         parent = args[0]  # QWidget (módulo actual)
