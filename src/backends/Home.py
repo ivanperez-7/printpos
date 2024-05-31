@@ -85,7 +85,7 @@ class App_Home(QtWidgets.QWidget):
             self.ui.btUsuarios: App_AdministrarUsuarios,
             self.ui.btReportes: App_Reportes,
             self.ui.btAjustes: App_Ajustes,
-            self.ui.btSalir: self.exitApp
+            self.ui.btSalir: lambda: self.parentWidget().close()
         }
 
         # connect buttons to their corresponding functions or classes
@@ -112,9 +112,6 @@ class App_Home(QtWidgets.QWidget):
         parent: VentanaPrincipal = self.parentWidget()  # QMainWindow
         new = modulo(parent)
         parent.setCentralWidget(new)
-    
-    def exitApp(self):
-        self.parentWidget().close()
 
 
 def _create_pixmap(point: int):
@@ -150,7 +147,7 @@ class App_ConsultarPrecios(Base_VisualizarProductos):
         super().__init__(first, extern=True)
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowMinimizeButtonHint)
         self.setWindowTitle('Consultar precios')
-        self.setWindowIcon(QIcon('icon.ico'))
+        self.setWindowIcon(QIcon(':img/icon.ico'))
         
         self.warnings = False
         

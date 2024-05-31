@@ -325,7 +325,7 @@ class App_RegistrarInventario(Base_EditarInventario):
         
         self.ui.lbTitulo.setText('Registrar elemento')
         self.ui.btAceptar.setText(' Registrar elemento')
-        self.ui.btAceptar.setIcon(QIcon(QPixmap(':/img/resources/images/plus.png')))
+        self.ui.btAceptar.setIcon(QIcon(':/img/resources/images/plus.png'))
     
     ####################
     # FUNCIONES ÚTILES #

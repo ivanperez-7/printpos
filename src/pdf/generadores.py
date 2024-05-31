@@ -15,7 +15,7 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
 from PyPDF2 import PdfReader, PdfWriter
-from PySide6.QtCore import QDateTime
+from PySide6.QtCore import QDateTime, QFile, QIODevice
 
 from backends.Caja import Caja
 from config import INI
@@ -220,10 +220,19 @@ def generarTicketPDF(productos: list, vendedor: str, folio: int = 0,
     
     calle, fracc = INI.DIRECCION_SUCURSAL
     telefono = INI.TELEFONO
+    
+    # convertir imagen en .qrc a imagen normal
+    loggg = QFile(':img/resources/images/logo.png')
+    if not loggg.open(QIODevice.ReadOnly):
+        raise RuntimeError('cant open logo.png pls check')
+    baits = io.BytesIO(loggg.readAll().data())
+    
+    t = 0.017   # dimensiones del logo
+    w, h = (3479*t, 1845*t)
     # </contenido del PDF>
     
     elements = [
-        Image('resources/images/logo.png', width=50*mm, height=26.4*mm),
+        Image(baits, width=w*mm, height=h*mm),
         Spacer(1, 6),
         
         Paragraph(calle, styles['Center']),

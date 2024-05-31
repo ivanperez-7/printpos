@@ -315,7 +315,7 @@ class App_RegistrarCliente(Base_EditarCliente):
         
         self.ui.lbTitulo.setText('Registrar cliente')
         self.ui.btRegistrar.setText(' Registrar cliente')
-        self.ui.btRegistrar.setIcon(QIcon(QPixmap(':/img/resources/images/plus.png')))
+        self.ui.btRegistrar.setIcon(QIcon(':/img/resources/images/plus.png'))
         
         self.agregarDatosPorDefecto(nombre, celular, correo)
     

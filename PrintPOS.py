@@ -27,16 +27,15 @@ class PrintPOS(QApplication):
     def configurarPaleta(self):
         """ Configura paleta y estilo de la aplicación. """
         palette = self.palette()
-        CR = QPalette.ColorRole
         
-        palette.setColor(CR.Window, Qt.white)  # color de ventana -> gris claro
-        palette.setColor(CR.WindowText, Qt.black)  # texto de ventana -> negro
-        palette.setColor(CR.Base, Qt.white)  # color base -> blanco
-        palette.setColor(CR.AlternateBase, Qt.white)  # color alternativo base -> blanco
-        palette.setColor(CR.Text, Qt.black)  # color de texto -> negro
-        palette.setColor(CR.Button, Qt.white)  # botones -> blanco
-        palette.setColor(CR.ButtonText, Qt.black)  # texto de botones -> negro
-        palette.setColor(CR.PlaceholderText, 0x808080)  # texto placeholder -> gris
+        palette.setColor(QPalette.Window, Qt.white)  # color de ventana -> gris claro
+        palette.setColor(QPalette.WindowText, Qt.black)  # texto de ventana -> negro
+        palette.setColor(QPalette.Base, Qt.white)  # color base -> blanco
+        palette.setColor(QPalette.AlternateBase, Qt.white)  # color alternativo base -> blanco
+        palette.setColor(QPalette.Text, Qt.black)  # color de texto -> negro
+        palette.setColor(QPalette.Button, Qt.white)  # botones -> blanco
+        palette.setColor(QPalette.ButtonText, Qt.black)  # texto de botones -> negro
+        palette.setColor(QPalette.PlaceholderText, 0x808080)  # texto placeholder -> gris
         
         self.setPalette(palette)
     
