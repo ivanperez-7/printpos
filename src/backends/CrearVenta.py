@@ -137,17 +137,15 @@ class Venta:
         manejador = ManejadorProductos(conn)
         
         for productos in self._obtenerGruposProductos():
-            productosNormal = sum(p.cantidad for p in productos if not p.duplex)
-            productosDuplex = sum(p.cantidad for p in productos if p.duplex)
-            
-            precioNormal = manejador.obtenerPrecioSimple(
-                productos[0].id, productosNormal + productosDuplex, False)
-            
-            if precioNormal is None:
+            if len(productos) <= 1:
                 continue
             
-            precioDuplex = manejador.obtenerPrecioSimple(
-                productos[0].id, productosDuplex, True)
+            id_prod = productos[0].id
+            cantidad = sum(p.cantidad for p in productos)
+            cantidadDuplex = sum(p.cantidad for p in productos if p.duplex)
+            
+            precioNormal = manejador.obtenerPrecioSimple(id_prod, cantidad, False)
+            precioDuplex = manejador.obtenerPrecioSimple(id_prod, cantidadDuplex, True)
             nuevoPrecio = min(precioNormal, precioDuplex or precioNormal)
             
             for p in productos:

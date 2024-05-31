@@ -398,7 +398,7 @@ class App_RegistrarProducto(Base_EditarProducto):
         
         self.ui.lbTitulo.setText('Registrar producto')
         self.ui.btAceptar.setText(' Registrar producto')
-        self.ui.btAceptar.setIcon(QIcon(QPixmap(':/img/resources/images/plus.png')))
+        self.ui.btAceptar.setIcon(QIcon(':/img/resources/images/plus.png'))
     
     def ejecutarOperacion(self, params):
         manejador = ManejadorProductos(self.conn, self.MENSAJE_ERROR)
