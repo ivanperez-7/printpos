@@ -1,8 +1,8 @@
 from PySide6 import QtWidgets
-from PySide6.QtGui import QFont, QColor, QPixmap, QIcon
+from PySide6.QtGui import QFont, QColor, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
-from utils.mydecorators import con_fondo, run_in_thread
+from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -124,9 +124,7 @@ class App_AdministrarProductos(QtWidgets.QWidget):
         widget.success.connect(self.rescan_update)
     
     def editarProducto(self):
-        selected = self.ui.tabla_productos.selectedItems()
-        
-        if selected:
+        if selected := self.ui.tabla_productos.selectedItems():
             widget = App_EditarProducto(self, selected[0].text())
             widget.success.connect(self.rescan_update)
     
@@ -139,11 +137,9 @@ class App_AdministrarProductos(QtWidgets.QWidget):
             return
         
         qm = QtWidgets.QMessageBox
-        
         manejador = ManejadorProductos(self.conn, '¡No se pudo eliminar el producto!')
-        result = manejador.obtenerRelacionVentas(id_productos)
         
-        if result:
+        if manejador.obtenerRelacionVentas(id_productos):
             qm.warning(self, 'Atención',
                        'No se puede eliminar este producto debido '
                        'a que hay ventas que lo incluyen.')
@@ -153,14 +149,10 @@ class App_AdministrarProductos(QtWidgets.QWidget):
         ret = qm.question(self, 'Atención',
                           'El producto seleccionado se eliminará de la base de datos. '
                           '¿Desea continuar?')
-        if ret != qm.Yes:
-            return
         
-        if not manejador.eliminarProducto(id_productos):
-            return
-        
-        qm.information(self, 'Éxito', 'Se eliminó el producto seleccionado.')
-        self.rescan_update()
+        if ret == qm.Yes and manejador.eliminarProducto(id_productos):
+            qm.information(self, 'Éxito', 'Se eliminó el producto seleccionado.')
+            self.rescan_update()
     
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
@@ -171,7 +163,7 @@ class App_AdministrarProductos(QtWidgets.QWidget):
 #################################
 # VENTANAS USADAS POR EL MÓDULO #
 #################################
-@con_fondo
+@fondo_oscuro
 class Base_EditarProducto(QtWidgets.QWidget):
     """ Backend para la ventana para editar un producto de la base de datos. """
     MENSAJE_EXITO: str
@@ -339,8 +331,6 @@ class Base_EditarProducto(QtWidgets.QWidget):
     
     def done(self):
         """ Función donde se registrará o actualizará producto. """
-        qm = QtWidgets.QMessageBox
-        
         #### obtención de parámetros ####
         productos_db_parametros = self.obtenerParametrosProductos()
         PUI_db_parametros = self.obtenerParametrosProdUtilizaInv()
@@ -364,11 +354,11 @@ class Base_EditarProducto(QtWidgets.QWidget):
         manejador = ManejadorProductos(self.conn, self.MENSAJE_ERROR)
         
         # transacción principal, se checa si cada operación fue exitosa
-        if not manejador.eliminarProdUtilizaInv(idx):
-            return
-        if not manejador.insertarProdUtilizaInv(idx, PUI_db_parametros):
-            return
-        if not manejador.eliminarPrecios(idx):
+        if not (
+            manejador.eliminarProdUtilizaInv(idx)
+            and manejador.insertarProdUtilizaInv(idx, PUI_db_parametros)
+            and manejador.eliminarPrecios(idx)
+        ):
             return
         
         if self.categoriaActual == 'S':
@@ -376,12 +366,10 @@ class Base_EditarProducto(QtWidgets.QWidget):
         else:
             result = manejador.insertarProductoGranFormato(idx, precios_db_parametros)
         
-        if not result:
-            return
-        
-        qm.information(self, 'Éxito', self.MENSAJE_EXITO)
-        self.success.emit()
-        self.close()
+        if result:
+            QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)
+            self.success.emit()
+            self.close()
     
     def ejecutarOperacion(self, params: tuple) -> tuple:
         """ Devuelve tupla con índice del producto registrado o editado. """
@@ -413,6 +401,8 @@ class App_EditarProducto(Base_EditarProducto):
     def __init__(self, first: App_AdministrarProductos, idx: int):
         super().__init__(first)
         
+        self.idx = idx  # id del elemento a editar
+        
         manejador = ManejadorProductos(self.conn)
         
         _, codigo, descripcion, abreviado, categoria \
@@ -439,12 +429,8 @@ class App_EditarProducto(Base_EditarProducto):
             self.ui.txtPrecio.setText(f'{precio:,.2f}')
         
         # agregar elementos de la segunda página
-        utiliza_inventario = manejador.obtenerUtilizaInventario(idx)
-        
-        for nombre, cantidad in utiliza_inventario:
+        for nombre, cantidad in manejador.obtenerUtilizaInventario(idx):
             self.agregarProductoALista(nombre, cantidad)
-        
-        self.idx = idx  # id del elemento a editar
     
     def ejecutarOperacion(self, params):
         manejador = ManejadorProductos(self.conn, self.MENSAJE_ERROR)

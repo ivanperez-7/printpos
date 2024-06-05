@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QMessageBox, QDialog
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
 
-__all__ = ['requiere_admin', 'run_in_thread', 'con_fondo']
+__all__ = ['requiere_admin', 'run_in_thread', 'fondo_oscuro']
 
 
 ##############################################
@@ -130,7 +130,7 @@ def run_in_thread(func):
 #########################################
 
 
-def con_fondo(modulo):
+def fondo_oscuro(modulo):
     """ Decorador para crear un fondo oscurecedor en la ventana principal.
         NOTA: Modifica método closeEvent para cerrar fondo automáticamente. """
     orig_init = modulo.__init__

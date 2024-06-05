@@ -10,7 +10,7 @@ from PySide6.QtGui import *
 from PySide6.QtCore import *
 
 from backends.Login import App_Login, Usuario
-from utils.myutils import unidecode, formatDate
+from utils.myutils import unidecode, formatDate, ColorsEnum
 from utils import Moneda, Moneda, sql
 
 
@@ -20,24 +20,22 @@ __all__ = ['VentanaPrincipal', 'DimBackground', 'WidgetPago',
 
 alternate_bg = QColor(225, 225, 225)
 
+
 class VentanaPrincipal(QtWidgets.QMainWindow):
     def __init__(self, conn: sql.Connection):
         super().__init__()
         
         self.resize(1540, 800)
         self.setWindowTitle('PrintPOS')
+        self.setWindowIcon(QIcon(':img/icon.ico'))
         
         self.conn = conn
         self.user = Usuario.generarUsuarioActivo(conn)
         
-        icon = QIcon()
-        icon.addFile(':img/icon.ico', QSize(), QIcon.Normal, QIcon.Off)
-        self.setWindowIcon(icon)
-        
         from backends.Home import App_ConsultarPrecios
         self.consultarPrecios = App_ConsultarPrecios(self)
-        self.goHome()
         
+        self.goHome()
         self.show()
     
     def goHome(self):
@@ -50,19 +48,17 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         """ En eventos específicos, restringimos el cerrado del sistema. """
         from backends.CrearVenta import App_CrearVenta
-        
-        for j in glob.glob('*.jpg'):
-            os.remove(j)
-        
         en_venta = isinstance(self.centralWidget(), App_CrearVenta)
         
         if en_venta and not self.user.administrador:
             event.ignore()
-        else:
-            self.conn.close()
-            self.consultarPrecios.close()
-            event.accept()
-            login = App_Login()
+            return
+        
+        for j in glob.glob('*.jpg'):
+            os.remove(j)
+        self.conn.close()
+        self.consultarPrecios.close()
+        login = App_Login()
 
 
 class ClickableIcon(QtWidgets.QPushButton):
@@ -216,6 +212,8 @@ class TablaDatos(QtWidgets.QTableWidget):
         DEFAULT = auto()
         RESALTAR_SEGUNDA = auto()
         CREAR_VENTA = auto()
+        TABLA_VENTAS_DIRECTAS = auto()
+        TABLA_PEDIDOS = auto()
         
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -272,7 +270,9 @@ class TablaDatos(QtWidgets.QTableWidget):
         funcs = {
             self.Modelos.DEFAULT: self._llenar_default,
             self.Modelos.RESALTAR_SEGUNDA: self._llenar_resaltar_segunda, 
-            self.Modelos.CREAR_VENTA: self._llenar_crear_venta
+            self.Modelos.CREAR_VENTA: self._llenar_crear_venta,
+            self.Modelos.TABLA_VENTAS_DIRECTAS: self._llenar_tabla_ventas_directas,
+            self.Modelos.TABLA_PEDIDOS: self._llenar_tabla_pedidos
         }
         funcs[self.modelo](data)
         
@@ -359,6 +359,68 @@ class TablaDatos(QtWidgets.QTableWidget):
                 
                 self.setItem(row, col, tableItem)
         self.resizeRowsToContents()
+    
+    def _llenar_tabla_ventas_directas(self, data):
+        bold = QFont()
+        bold.setBold(True)
+        
+        for row, compra in enumerate(data):
+            for col, dato in enumerate(compra):
+                if isinstance(dato, datetime):
+                    cell = formatDate(dato)
+                elif isinstance(dato, float):
+                    cell = f'${dato:,.2f}'
+                else:
+                    cell = str(dato or '')
+                self.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
+            
+            self.item(row, 4).setFont(bold)
+            self.item(row, 5).setTextAlignment(Qt.AlignCenter)
+            
+            estado = self.item(row, 5).text()
+            
+            if estado.startswith('Cancelada'):
+                self.item(row, 5).setBackground(QColor(ColorsEnum.ROJO))
+            elif estado.startswith('Terminada'):
+                self.item(row, 5).setBackground(QColor(ColorsEnum.VERDE))
+    
+    def _llenar_tabla_pedidos(self, data):
+        bold = QFont()
+        bold.setBold(True)
+        icon = QIcon(":/img/resources/images/whatsapp.png")
+        
+        for row, compra in enumerate(data):
+            for col, dato in enumerate(compra):
+                if isinstance(dato, datetime):
+                    cell = formatDate(dato)
+                elif isinstance(dato, float):
+                    cell = f'${dato:,.2f}'
+                else:
+                    cell = str(dato or '')
+                self.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
+            
+            self.item(row, 5).setFont(bold)
+            self.item(row, 6).setTextAlignment(Qt.AlignCenter)
+            
+            estado_cell = self.item(row, 6)
+            estado = estado_cell.text()
+            
+            if estado.startswith('Cancelada'):
+                estado_cell.setBackground(QColor(ColorsEnum.ROJO))
+            elif estado.startswith('Entregado') or estado.startswith('Terminada'):
+                estado_cell.setBackground(QColor(ColorsEnum.VERDE))
+            elif estado.startswith('Recibido'):
+                estado_cell.setBackground(QColor(ColorsEnum.AMARILLO))
+                
+                button_cell = QtWidgets.QPushButton(' Enviar recordatorio')
+                button_cell.setIcon(icon)
+                button_cell.setFlat(True)
+                
+                self.setCellWidget(row, 8, button_cell)
+                
+                # resaltar pedidos con fechas de entrega ya pasadas
+                if QDateTime.currentDateTime() > compra[4]:
+                    self.item(row, 4).setBackground(QColor(ColorsEnum.ROJO))
 
 
 class NumberEdit(QtWidgets.QLineEdit):
@@ -432,11 +494,8 @@ class WarningDialog(QtWidgets.QMessageBox):
     def __init__(self, body: str, error: str = None):
         super().__init__()
         
-        icon = QIcon()
-        icon.addFile(':img/icon.ico', QSize(), QIcon.Normal, QIcon.Off)
-        self.setWindowIcon(icon)
-        
         self.setWindowTitle('Atención')
+        self.setWindowIcon(QIcon(':img/icon.ico'))
         self.setIcon(QtWidgets.QMessageBox.Icon.Warning)
         self.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
         self.setText(body)

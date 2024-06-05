@@ -1,12 +1,12 @@
-from datetime import datetime
 from math import ceil
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import QFont, QColor, QIcon
-from PySide6.QtCore import QDateTime, QModelIndex, Qt, Signal, QMutex
+from PySide6.QtWidgets import QMessageBox as qm
+from PySide6.QtGui import QFont, QIcon
+from PySide6.QtCore import QModelIndex, Qt, Signal, QMutex
 
 from pdf import ImpresoraOrdenes, ImpresoraTickets
-from utils.mydecorators import con_fondo, requiere_admin, run_in_thread
+from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -139,7 +139,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         fechaDesde = self.ui.dateDesde.date()
         fechaHasta = self.ui.dateHasta.date()
-        restrict = self.user.id if not self.user.administrador else None
+        restrict = self.user.id if self.user.rol != 'ADMINISTRADOR' else None
         
         manejador = ManejadorVentas(self.conn)
         self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, restrict)
@@ -155,12 +155,6 @@ class App_AdministrarVentas(QtWidgets.QWidget):
     
     def llenar_tabla_ventas(self):
         """ Actualizar tabla de ventas directas. """
-        bold = QFont()
-        bold.setBold(True)
-        
-        tabla = self.ui.tabla_ventasDirectas
-        tabla.setRowCount(0)
-        
         compras = self.all_directas
         
         if txt_busqueda := self.ui.searchBar.text().strip():
@@ -170,41 +164,17 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         chunks = chunkify(compras, self.chunk_size) or [[]]
         
+        tabla = self.ui.tabla_ventasDirectas
         currentPage = clamp(tabla.property('paginaActual'), 0, ceil(len(compras) / self.chunk_size) - 1)
         tabla.setProperty('paginaActual', currentPage) # truncar valor de la página si se sale del rango
         
         data = chunks[currentPage]
-        tabla.setRowCount(len(data))
         
-        for row, compra in enumerate(data):
-            for col, dato in enumerate(compra):
-                if isinstance(dato, datetime):
-                    cell = formatDate(dato)
-                elif isinstance(dato, float):
-                    cell = f'${dato:,.2f}'
-                else:
-                    cell = str(dato or '')
-                tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
-            
-            tabla.item(row, 4).setFont(bold)
-            tabla.item(row, 5).setTextAlignment(Qt.AlignCenter)
-            
-            estado = tabla.item(row, 5).text()
-            
-            if estado.startswith('Cancelada'):
-                tabla.item(row, 5).setBackground(QColor(ColorsEnum.ROJO))
-            elif estado.startswith('Terminada'):
-                tabla.item(row, 5).setBackground(QColor(ColorsEnum.VERDE))
+        tabla.modelo = tabla.Modelos.TABLA_VENTAS_DIRECTAS
+        tabla.llenar(data)
     
     def llenar_tabla_pedidos(self):
         """ Actualizar tabla de ventas sobre pedido. """
-        bold = QFont()
-        bold.setBold(True)
-        icon = QIcon(":/img/resources/images/whatsapp.png")
-        
-        tabla = self.ui.tabla_pedidos
-        tabla.setRowCount(0)
-        
         compras = self.all_pedidos
         
         if txt_busqueda := self.ui.searchBar.text().strip():
@@ -214,51 +184,23 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         
         chunks = chunkify(compras, self.chunk_size) or [[]]
         
+        tabla = self.ui.tabla_pedidos
         currentPage = clamp(tabla.property('paginaActual'), 0, ceil(len(compras) / self.chunk_size) - 1)
         tabla.setProperty('paginaActual', currentPage) # truncar valor de la página si se sale del rango
         
         data = chunks[currentPage]
-        tabla.setRowCount(len(data))
         
-        for row, compra in enumerate(data):            
-            for col, dato in enumerate(compra):
-                if isinstance(dato, datetime):
-                    cell = formatDate(dato)
-                elif isinstance(dato, float):
-                    cell = f'${dato:,.2f}'
-                else:
-                    cell = str(dato or '')
-                tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
-            
-            tabla.item(row, 5).setFont(bold)
-            tabla.item(row, 6).setTextAlignment(Qt.AlignCenter)
-            
-            estado_cell = tabla.item(row, 6)
-            estado = estado_cell.text()
-            
-            if estado.startswith('Cancelada'):
-                estado_cell.setBackground(QColor(ColorsEnum.ROJO))
-            elif estado.startswith('Entregado') or estado.startswith('Terminada'):
-                estado_cell.setBackground(QColor(ColorsEnum.VERDE))
-            elif estado.startswith('Recibido'):
-                estado_cell.setBackground(QColor(ColorsEnum.AMARILLO))
-                
-                button_cell = QtWidgets.QPushButton(' Enviar recordatorio')
-                button_cell.setIcon(icon)
-                button_cell.setFlat(True)
-                button_cell.clicked.connect(self.enviarRecordatorio)
-                
-                tabla.setCellWidget(row, 8, button_cell)
-                
-                # resaltar pedidos con fechas de entrega ya pasadas
-                if QDateTime.currentDateTime() > compra[4]:
-                    tabla.item(row, 4).setBackground(QColor(ColorsEnum.ROJO))
+        tabla.modelo = tabla.Modelos.TABLA_PEDIDOS
+        tabla.llenar(data)
+        
+        for r in range(tabla.rowCount()):
+            if bt := tabla.cellWidget(r,8):
+                bt.clicked.connect(self.enviarRecordatorio)
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def enviarRecordatorio(self):
-        qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           '¿Desea enviarle un recordatorio al cliente sobre '
                           'este pedido?')
@@ -299,7 +241,6 @@ class App_AdministrarVentas(QtWidgets.QWidget):
             widget.success.connect(self.rescan_update)
             return
         
-        qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           'Este pedido no tiene saldo restante. '
                           '¿Desea marcar la venta como terminada?')
@@ -307,13 +248,10 @@ class App_AdministrarVentas(QtWidgets.QWidget):
             return
         
         # terminar venta directamente, al no tener saldo restante
-        man = ManejadorVentas(self.conn)
-        if not manejador.actualizarEstadoVenta(idVenta, 'Entregado por ' + man.usuarioActivo,
-                                               commit=True):
-            return
-        
-        qm.information(self, 'Éxito', 'Se marcó como terminada la venta seleccionada.')
-        self.rescan_update()
+        if manejador.actualizarEstadoVenta(idVenta, 'Entregado por ' + manejador.usuarioActivo,
+                                           commit=True):
+            qm.information(self, 'Éxito', 'Se marcó como terminada la venta seleccionada.')
+            self.rescan_update()
     
     def cancelarVenta(self):
         """ Pide confirmación para marcar como cancelada una venta. """
@@ -325,7 +263,6 @@ class App_AdministrarVentas(QtWidgets.QWidget):
             return
         
         # abrir pregunta
-        qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           'La venta seleccionada se marcará como cancelada.\n'
                           'Esta operación no se puede deshacer. ¿Desea continuar?')
@@ -335,21 +272,17 @@ class App_AdministrarVentas(QtWidgets.QWidget):
     @requiere_admin
     def _cancelarVenta(self, idVenta, conn):
         # preguntar por devolución y manejar tabla ventas_pagos como corresponde
-        qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Devolución de dinero',
                           '¿Desea registrar la devolución de los pagos realizados en esta venta?')
         
         manejador = ManejadorVentas(conn)
         estado = 'Cancelada por ' + manejador.usuarioActivo
         
-        if ret == qm.Yes:
-            if not manejador.anularPagos(idVenta):
-                return
-        if not manejador.actualizarEstadoVenta(idVenta, estado, commit=True):
+        if ret == qm.Yes and not manejador.anularPagos(idVenta):
             return
-        
-        qm.information(self, 'Éxito', 'Se marcó como cancelada la venta seleccionada.')
-        self.rescan_update()
+        if manejador.actualizarEstadoVenta(idVenta, estado, commit=True):
+            qm.information(self, 'Éxito', 'Se marcó como cancelada la venta seleccionada.')
+            self.rescan_update()
     
     def detallesVenta(self, idxs: QModelIndex):
         """ Abre ventana que muestra los detalles de una venta seleccionada. """
@@ -373,7 +306,6 @@ class App_AdministrarVentas(QtWidgets.QWidget):
             return
         
         # abrir pregunta
-        qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           'Se imprimirá el ticket de compra de la venta '
                           f'con folio {idVenta}. ¿Desea continuar?')
@@ -384,15 +316,13 @@ class App_AdministrarVentas(QtWidgets.QWidget):
     
     def imprimirOrden(self):
         """ Imprime orden de compra de un pedido dado el folio de esta. """
-        selected = self.tabla_actual.selectedItems()
-        
-        if not selected or not selected[6].text().startswith('Recibido'):
+        if not (selected := self.tabla_actual.selectedItems()) \
+            or not selected[6].text().startswith('Recibido'):
             return
         
         idVenta = selected[0].text()
         
         # abrir pregunta
-        qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           'Se imprimirá la orden de compra de la venta '
                           f'con folio {idVenta}. ¿Desea continuar?')
@@ -410,7 +340,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
 #################################
 # VENTANAS USADAS POR EL MÓDULO #
 #################################
-@con_fondo
+@fondo_oscuro
 class App_DetallesVenta(QtWidgets.QWidget):
     """ Backend para la ventana que muestra los detalles de una venta. """
     
@@ -627,7 +557,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
         raise NotImplementedError('CLASE BASE BROU')
     
 
-@con_fondo
+@fondo_oscuro
 class App_TerminarVenta(Base_PagarVenta):
     """ Backend para la ventana para terminar una venta sobre pedido. """
     success = Signal()
@@ -686,7 +616,6 @@ class App_TerminarVenta(Base_PagarVenta):
         else:
             prompt = 'Pago(s) abonado(s) al pedido.'
         
-        qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Éxito', prompt + '\n¿Desea imprimir los tickets de los pagos?')
         
         if ret == qm.Yes:
@@ -701,7 +630,7 @@ class App_TerminarVenta(Base_PagarVenta):
         self.close()
 
 
-@con_fondo
+@fondo_oscuro
 class App_ImprimirTickets(QtWidgets.QWidget):
     """ Backend para seleccionar tickets a imprimir de una venta/pedido. """
     

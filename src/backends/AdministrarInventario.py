@@ -2,7 +2,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QPixmap, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
-from utils.mydecorators import con_fondo, run_in_thread
+from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
 from utils.sql import ManejadorInventario, ManejadorProductos
@@ -126,9 +126,7 @@ class App_AdministrarInventario(QtWidgets.QWidget):
         widget.success.connect(self.rescan_update)
     
     def editarInventario(self):
-        selected = self.ui.tabla_inventario.selectedItems()
-        
-        if selected:
+        if selected := self.ui.tabla_inventario.selectedItems():
             widget = App_EditarInventario(self, selected[0].text())
             widget.success.connect(self.rescan_update)
     
@@ -159,11 +157,9 @@ class App_AdministrarInventario(QtWidgets.QWidget):
         if ret != qm.Yes:
             return
         
-        if not manejador.eliminarElemento(id_inventario):
-            return
-        
-        qm.information(self, 'Éxito', 'Se eliminó el elemento seleccionado.')
-        self.rescan_update()
+        if manejador.eliminarElemento(id_inventario):
+            qm.information(self, 'Éxito', 'Se eliminó el elemento seleccionado.')
+            self.rescan_update()
     
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
@@ -174,7 +170,7 @@ class App_AdministrarInventario(QtWidgets.QWidget):
 #################################
 # VENTANAS USADAS POR EL MÓDULO #
 #################################
-@con_fondo
+@fondo_oscuro
 class Base_EditarInventario(QtWidgets.QWidget):
     """ Clase base para módulo de registrar o modificar elemento. """
     MENSAJE_EXITO: str
@@ -283,8 +279,6 @@ class Base_EditarInventario(QtWidgets.QWidget):
     
     def done(self):
         """ Función donde se registrará o actualizará elemento del inventario. """
-        qm = QtWidgets.QMessageBox
-        
         #### obtención de parámetros ####
         inventario_db_parametros = self.obtenerParametrosInventario()
         PUI_db_parametros = self.obtenerParametrosProdUtilizaInv()
@@ -301,14 +295,13 @@ class Base_EditarInventario(QtWidgets.QWidget):
         manejador = ManejadorInventario(self.conn, self.MENSAJE_ERROR)
         
         # transacción principal, se checa si cada operación fue exitosa
-        if not manejador.eliminarProdUtilizaInv(idx):
-            return
-        if not manejador.insertarProdUtilizaInv(idx, PUI_db_parametros):
-            return
-        
-        qm.information(self, 'Éxito', self.MENSAJE_EXITO)
-        self.success.emit()
-        self.close()
+        if (
+            manejador.eliminarProdUtilizaInv(idx)
+            and manejador.insertarProdUtilizaInv(idx, PUI_db_parametros)
+        ):
+            QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)
+            self.success.emit()
+            self.close()
     
     def ejecutarOperacion(self, params: tuple) -> tuple:
         """ Devuelve tupla con índice del elemento registrado o editado. """
@@ -489,12 +482,8 @@ class ExistenciasWidget(QtWidgets.QDialog):
             return 0.
     
     def accept(self):
-        if not (num_lotes := self.cantidadLotes):
+        if not self.cantidadLotes:
             return
-        
-        manejador = ManejadorInventario(self.conn)
-        if not manejador.agregarLotes(self.idx, num_lotes):
-            return
-        
-        self.success.emit()
-        self.close()
+        if ManejadorInventario(self.conn).agregarLotes(self.idx, self.cantidadLotes):
+            self.success.emit()
+            self.close()

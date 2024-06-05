@@ -100,16 +100,15 @@ class App_Home(QtWidgets.QWidget):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def iniciarVenta(self):
-        from .CrearVenta import App_CrearVenta
-        
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Iniciar venta',
                           '¿Desea iniciar una nueva venta?')
         if ret == qm.Yes:
+            from .CrearVenta import App_CrearVenta
             self.crearVentana(App_CrearVenta)
     
     def crearVentana(self, modulo):
-        parent: VentanaPrincipal = self.parentWidget()  # QMainWindow
+        parent = self.parentWidget()  # QMainWindow
         new = modulo(parent)
         parent.setCentralWidget(new)
 

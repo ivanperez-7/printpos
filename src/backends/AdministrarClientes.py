@@ -4,7 +4,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon, QPixmap, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QDate, Signal, QMutex
 
-from utils.mydecorators import con_fondo, run_in_thread
+from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -177,9 +177,8 @@ class App_AdministrarClientes(QtWidgets.QWidget):
     
     def editarCliente(self):
         """ Abre ventana para editar un cliente seleccionado. """
-        selected = self.ui.tabla_clientes.selectedItems()
-        
-        if not selected or selected[0].text() == '1':
+        if not (selected := self.ui.tabla_clientes.selectedItems()) \
+            or selected[0].text() == '1':
             return
         
         widget = App_EditarCliente(self, selected[0].text())
@@ -187,26 +186,21 @@ class App_AdministrarClientes(QtWidgets.QWidget):
     
     def quitarCliente(self):
         """ Pide confirmación para eliminar clientes de la base de datos. """
-        selected = self.ui.tabla_clientes.selectedItems()
-        
-        if not selected or selected[0].text() == '1':
+        if not (selected := self.ui.tabla_clientes.selectedItems()) \
+            or selected[0].text() == '1':
             return
         
         # abrir pregunta
         qm = QtWidgets.QMessageBox
+        manejador = ManejadorClientes(self.conn, '¡No se pudo eliminar el cliente!')
+        
         ret = qm.question(self, 'Atención',
                           'Los clientes seleccionados se eliminarán de la base de datos. '
                           '¿Desea continuar?')
-        if ret != qm.Yes:
-            return
         
-        manejador = ManejadorClientes(self.conn, '¡No se pudo eliminar el cliente!')
-        
-        if not manejador.eliminarCliente(selected[0].text()):
-            return
-        
-        qm.information(self, 'Éxito', 'Se eliminaron los clientes seleccionados.')
-        self.rescan_update()
+        if ret == qm.Yes and manejador.eliminarCliente(selected[0].text()):
+            qm.information(self, 'Éxito', 'Se eliminaron los clientes seleccionados.')
+            self.rescan_update()
     
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
@@ -217,7 +211,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
 #################################
 # VENTANAS PARA EDITAR CLIENTES #
 #################################
-@con_fondo
+@fondo_oscuro
 class Base_EditarCliente(QtWidgets.QWidget):
     """ Clase base para registrar o editar cliente. """
     MENSAJE_EXITO: str
@@ -288,16 +282,13 @@ class Base_EditarCliente(QtWidgets.QWidget):
                                            self.ui.txtDescuentos.toPlainText()
                                        ))
         
-        if not self.ejecutarOperacion(clientes_db_parametros):
-            return
-        
-        QtWidgets.QMessageBox.information(
-            self, 'Éxito', self.MENSAJE_EXITO)
-        
-        self.success.emit(self.ui.txtNombre.text(),
-                          self.numeroTelefono,
-                          self.ui.txtCorreo.text())
-        self.close()
+        if self.ejecutarOperacion(clientes_db_parametros):
+            QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)
+            
+            self.success.emit(self.ui.txtNombre.text(),
+                            self.numeroTelefono,
+                            self.ui.txtCorreo.text())
+            self.close()
     
     def ejecutarOperacion(self, params: tuple):
         """ Función a sobreescribir donde se realiza consulta SQL. """
