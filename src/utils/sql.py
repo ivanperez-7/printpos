@@ -1,7 +1,7 @@
 """ Módulo con manejadores para tablas en la base de datos. """
 from datetime import datetime
 from functools import partial, partialmethod
-from typing import Callable, overload
+from typing import overload
 
 import fdb
 from PySide6.QtCore import QDate
@@ -48,7 +48,7 @@ class DatabaseManager:
                        error_txt: str = None,
                        *, handle_exceptions: bool = True):
         if not isinstance(conn, Connection):
-            raise Error("Tipo de conexión a DB no válido.")
+            raise Error("Conexión a DB no válida.")
         
         self._conn = conn
         self._error_txt = error_txt or '¡Acceso fallido a base de datos!'
@@ -1003,9 +1003,9 @@ class ManejadorVentas(DatabaseManager):
                 1 DESC;
         ''', (inicio.toPython(), final.toPython()))
     
-    tablaVentas = partialmethod(_tablaParcial, False)
-
-    tablaPedidos = partialmethod(_tablaParcial, True)
+    tablaVentas = partialmethod(_tablaParcial, False) # <- fecha_entrega
+    
+    tablaPedidos = partialmethod(_tablaParcial, True) # <- fecha_entrega
     
     def obtenerFechas(self, id_venta: int):
         """ Obtener fechas de creación y entrega de la venta dada. """
@@ -1298,7 +1298,7 @@ class ManejadorUsuarios(DatabaseManager):
                     LEFT JOIN Ventas AS V
                            ON U.id_usuarios = V.id_usuarios
             GROUP   BY 1, 2, 3
-            ORDER   BY U.nombre ASC;
+            ORDER   BY UPPER(U.nombre) ASC;
         ''')
     
     def obtenerUsuario(self, usuario: str):
@@ -1309,14 +1309,11 @@ class ManejadorUsuarios(DatabaseManager):
             WHERE   usuario = ?;
         ''', (usuario,))
     
-    def crearUsuarioServidor(self, usuario: str, psswd: str, esAdmin: bool):
-        """ Registrar usuario en servidor Firebird. Otorgar permisos
-            de administrar usuarios, si se desea.
+    def crearUsuarioServidor(self, usuario: str, psswd: str):
+        """ Registrar usuario en servidor Firebird.
             
             No hace commit. """
-        admin_role = 'GRANT ADMIN ROLE' if esAdmin else ''
-        
-        return self.execute(f"CREATE USER {usuario} PASSWORD '{psswd}' {admin_role};")
+        return self.execute(f"CREATE USER {usuario} PASSWORD '{psswd}';")
     
     def insertarUsuario(self, params: tuple):
         """ Insertar nuevo usuario en tabla de Usuarios. No hace commit. """
@@ -1341,8 +1338,7 @@ class ManejadorUsuarios(DatabaseManager):
         ''', (*params, usuario))
     
     def eliminarUsuario(self, usuario: str):
-        """ Dar de baja usuario del sistema. Se eliminan los permisos
-            y se elimina del servidor Firebird. 
+        """ Dar de baja usuario del sistema y eliminar del servidor Firebird. 
             
             Hace commit automáticamente. """
         if not self.execute('''
@@ -1367,14 +1363,19 @@ class ManejadorUsuarios(DatabaseManager):
         
             Hace commit automáticamente, al ser última operación 
             del proceso de creación/modificación. """
-        return self.execute(f'GRANT ADMINISTRADOR, VENDEDOR TO {usuario} WITH ADMIN OPTION;',
-                            commit=True)
+        if self.execute(f'GRANT ADMINISTRADOR, VENDEDOR TO {usuario} WITH ADMIN OPTION;'):
+            return self.execute(f'ALTER USER {usuario} GRANT ADMIN ROLE;', commit=True)
+        else:
+            return False
     
     def retirarRoles(self, usuario: str):
         """ Retirar roles VENDEDOR, ADMINISTRADOR del usuario. 
         
             No hace commit. """
-        return self.execute(f'REVOKE ADMINISTRADOR, VENDEDOR FROM {usuario};')
+        if self.execute(f'REVOKE ADMINISTRADOR, VENDEDOR FROM {usuario};'):
+            return self.execute(f'ALTER USER {usuario} REVOKE ADMIN ROLE;')
+        else:
+            return False
     
     def cambiarPsswd(self, usuario: str, psswd: str):
         """ Cambiar contraseña del usuario. No hace commit. """

@@ -1,11 +1,9 @@
-from datetime import datetime
-
 from PySide6 import QtWidgets
-from PySide6.QtGui import QFont, QPixmap
+from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, Signal
 
 from utils.sql import ManejadorUsuarios
-from utils.mydecorators import con_fondo
+from utils.mydecorators import fondo_oscuro
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
@@ -20,13 +18,8 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
         TODO:
             - mecanismo de reseteo de contraseña (sin permisos de admin)
             - registros de acciones: inicios de sesión, modificación de ajustes y usuarios, acciones en general
-            - personalización: foto de perfil y colores del UI 
-            
-        BUG:
-            - cambiar de ADMIN a VENDEDOR debe quitar GRANT ADMIN ROLE en Firebird
-            - cambiar de VENDEDOR a ADMIN, debe dar ADMIN ROLE
-            - al crear usuario ADMIN, no se puede cambiar su propio rol
-            - reincorporar usuarios dados de baja """
+            - personalización: foto de perfil y colores del UI
+            -- resucitar usuarios que han sido dados de baja """
     
     def __init__(self, parent: VentanaPrincipal):
         from ui.Ui_AdministrarUsuarios import Ui_AdministrarUsuarios
@@ -58,7 +51,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
         self.ui.btRegresar.clicked.connect(self.goHome)
         
         self.ui.searchBar.textChanged.connect(lambda: self.update_display())
-        self.ui.mostrarCheck.stateChanged.connect(self.mostrarTrigger)
+        self.ui.mostrarCheck.stateChanged.connect(lambda: self.update_display())
         
         self.ui.tabla_usuarios.configurarCabecera(lambda col: col in {0, 2})
     
@@ -72,9 +65,6 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def mostrarTrigger(self, state):
-        self.update_display(rescan=True)
-    
     def update_display(self, rescan: bool = False):
         """ Actualiza la tabla y el contador de usuarios.
             Acepta una cadena de texto para la búsqueda de usuarios.
@@ -82,8 +72,6 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
         if rescan:
             manejador = ManejadorUsuarios(self.conn)
             self.all = manejador.obtenerTablaPrincipal()
-            self.ui.lbContador.setText(
-                f'{len(self.all)} usuarios en la base de datos.')
         
         if txt_busqueda := self.ui.searchBar.text().strip():
             found = [c for c in self.all
@@ -91,10 +79,12 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
                      if son_similar(txt_busqueda, c[self.filtro.filtro])]
         else:
             found = self.all
-            
         if not self.ui.mostrarCheck.isChecked():
             found = [c for c in found if c[2]]
             
+        self.ui.lbContador.setText(
+            f'{len(found)} usuarios en la base de datos.')
+        
         tabla = self.ui.tabla_usuarios
         tabla.modelo = tabla.Modelos.RESALTAR_SEGUNDA
         tabla.llenar(found)
@@ -111,37 +101,31 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
     
     def editarUsuario(self):
         """ Abre ventana para editar un usuario seleccionado. """
-        selected = self.ui.tabla_usuarios.selectedItems()
-        
-        if selected:
+        if selected := self.ui.tabla_usuarios.selectedItems():
             widget = App_EditarUsuario(self, selected[0].text())
             widget.success.connect(
                 lambda: self.update_display(rescan=True))
     
     def quitarUsuario(self):
         """ Pide confirmación para eliminar usuarios de la base de datos. """
-        selected = self.ui.tabla_usuarios.selectedItems()
-        
-        if not selected:
+        if (
+            not (selected := self.ui.tabla_usuarios.selectedItems())
+            or (usuario := selected[0].text()) in ['SYSDBA', self.user.usuario]
+            or not selected[2].text()
+        ):
             return
         
         # abrir pregunta
         qm = QtWidgets.QMessageBox
+        manejador = ManejadorUsuarios(self.conn)
+        
         ret = qm.question(self, 'Atención',
                           'Los usuarios seleccionados se darán '
                           'de baja del sistema. ¿Desea continuar?')
-        if ret != qm.Yes:
-            return
         
-        usuario = selected[0].text()
-        
-        # crea un cuadro que notifica el resultado de la operación
-        manejador = ManejadorUsuarios(self.conn)
-        if not manejador.eliminarUsuario(usuario):
-            return
-        
-        qm.information(self, 'Éxito', 'Se dieron de baja los usuarios seleccionados.')
-        self.update_display(rescan=True)
+        if ret == qm.Yes and manejador.eliminarUsuario(usuario):
+            qm.information(self, 'Éxito', 'Se dieron de baja los usuarios seleccionados.')
+            self.update_display(rescan=True)
     
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
@@ -152,7 +136,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
 #################################
 # VENTANAS PARA EDITAR USUARIOS #
 #################################
-@con_fondo
+@fondo_oscuro
 class Base_EditarUsuario(QtWidgets.QWidget):
     """ Clase base para la ventana de registrar o editar usuario. """
     MENSAJE_EXITO: str
@@ -230,14 +214,10 @@ class Base_EditarUsuario(QtWidgets.QWidget):
         else:
             result = manejador.otorgarRolVendedor(usuario)
         
-        if not result:
-            return
-        
-        QtWidgets.QMessageBox.information(
-            self, 'Éxito', self.MENSAJE_EXITO)
-        
-        self.success.emit()
-        self.close()
+        if result:
+            QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)
+            self.success.emit()
+            self.close()
     
     def ejecutarOperacion(self, params: tuple) -> bool:
         """ Método que insertará o modificará usuario. """
@@ -270,14 +250,11 @@ class App_RegistrarUsuario(Base_EditarUsuario):
     
     def ejecutarOperacion(self, params):
         manejador = ManejadorUsuarios(self.conn)
-        if not manejador.insertarUsuario(params):
-            return False
-        
-        usuario, _, permisos = params
+        usuario = params[0]
         psswd = self.ui.txtPsswd.text()
-        admin_role = (permisos == 'Administrador')
         
-        return manejador.crearUsuarioServidor(usuario, psswd, admin_role)
+        return (manejador.insertarUsuario(params)
+                and manejador.crearUsuarioServidor(usuario, psswd))
 
 
 class App_EditarUsuario(Base_EditarUsuario):
@@ -288,18 +265,19 @@ class App_EditarUsuario(Base_EditarUsuario):
     def __init__(self, first: App_AdministrarUsuarios, usuario: str):
         super().__init__(first)
         
-        manejador = ManejadorUsuarios(self.conn)
+        self.usuario = usuario  # usuario a editar
         
+        manejador = ManejadorUsuarios(self.conn)
         id, usuario, nombre, permisos, *_ = manejador.obtenerUsuario(usuario)
         
+        if usuario in ['SYSDBA', self.user.usuario]:
+            self.ui.boxPermisos.setEnabled(False)
         self.ui.txtUsuario.setText(usuario)
         self.ui.txtNombre.setText(nombre)
         self.ui.boxPermisos.setCurrentText(permisos)
         self.ui.txtUsuario.setReadOnly(True)
         
         self.ui.cambiarPsswd.toggled.connect(self.cambiarTrigger)
-        
-        self.usuario = usuario  # usuario a editar
     
     # ==================
     #  FUNCIONES ÚTILES
@@ -316,12 +294,12 @@ class App_EditarUsuario(Base_EditarUsuario):
     
     def ejecutarOperacion(self, params):
         manejador = ManejadorUsuarios(self.conn)
+        psswd = self.ui.txtPsswd.text()
+        
         if not manejador.actualizarUsuario(self.usuario, params):
             return False
-        
-        if self.cambioContrasena:
-            if not manejador.cambiarPsswd(self.usuario,
-                                          self.ui.txtPsswd.text()):
-                return False
-        
-        return manejador.retirarRoles(self.usuario)
+        if self.cambioContrasena and not manejador.cambiarPsswd(self.usuario, psswd):
+            return False
+        if self.ui.boxPermisos.isEnabled():
+            return manejador.retirarRoles(self.usuario)
+        return True

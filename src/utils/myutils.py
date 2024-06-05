@@ -5,6 +5,7 @@ from urllib.parse import quote
 import webbrowser as web
 import uuid
 
+import Levenshtein
 from openpyxl import Workbook
 from openpyxl.styles import Font
 from PySide6.QtCore import QDateTime, QThread, QLocale
@@ -108,16 +109,12 @@ def randFile(ext: str):
     return uuid.uuid4().hex + '.' + ext
 
 
-def son_similar(str1: str, str2: str):
+def son_similar(obj1, obj2):
     """ Determina si dos cadenas son similares o no. """
-    # convertir, por si acaso
-    str1 = str(str1)
-    str2 = str(str2)
+    str1_clean = unidecode(re.sub(r'\W+', ' ', str(obj1)))
+    str2_clean = unidecode(re.sub(r'\W+', ' ', str(obj2)))
     
-    str1_clean = unidecode(re.sub(r'\W+', ' ', str1))
-    str2_clean = unidecode(re.sub(r'\W+', ' ', str2))
-    
-    return str1_clean in str2_clean
+    return Levenshtein.jaro_winkler(str1_clean, str2_clean) >= 0.8 or str1_clean in str2_clean
 
 
 def contiene_duplicados(lista: list):

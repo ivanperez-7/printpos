@@ -2,12 +2,13 @@ from dataclasses import dataclass, field
 from typing import Iterator
 
 from PySide6 import QtWidgets
+from PySide6.QtWidgets import QMessageBox as qm
 from PySide6.QtCore import QDate, QDateTime, Signal, Qt
 
 from .AdministrarVentas import Base_PagarVenta
 from pdf import ImpresoraOrdenes, ImpresoraTickets
 from utils import Moneda
-from utils.mydecorators import con_fondo, requiere_admin
+from utils.mydecorators import fondo_oscuro, requiere_admin
 from utils.myutils import *
 from utils.mywidgets import DimBackground, LabelAdvertencia, SpeechBubble, VentanaPrincipal
 from utils.sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
@@ -209,6 +210,7 @@ class App_CrearVenta(QtWidgets.QWidget):
         self.ui.txtVendedor.setText(self.user.nombre)
         self.ui.lbFecha.setText(formatDate(ventaDatos.fechaEntrega))
         self.ui.btDeshacer.setVisible(False)
+        self.ui.btDescuentosCliente.hide()
         
         # crear eventos para los botones
         self.ui.btCalendario.clicked.connect(self.cambiarFechaEntrega)
@@ -226,15 +228,12 @@ class App_CrearVenta(QtWidgets.QWidget):
         self.ui.tabla_productos.itemChanged.connect(self.item_changed)
         self.ui.btRegistrar.clicked.connect(self.insertarCliente)
         self.ui.btSeleccionar.clicked.connect(lambda: App_SeleccionarCliente(self))
-        self.ui.btDescuento.clicked.connect(
-            lambda: self.agregarDescuento() if not ventaDatos.ventaVacia else None)
+        self.ui.btDescuento.clicked.connect(self.agregarDescuento)
         self.ui.btDescuentosCliente.clicked.connect(self.dialogoDescuentos.alternarDescuentos)
         self.ui.btDeshacer.clicked.connect(self.deshacerFechaEntrega)
         self.ui.btCotizacion.clicked.connect(
             lambda: App_EnviarCotizacion(self) if not ventaDatos.ventaVacia else None)
         self.ui.btListo.clicked.connect(self.confirmarVenta)
-        
-        self.ui.btDescuentosCliente.hide()
         
         self.ui.tabla_productos.quitarBordeCabecera()
         self.ui.tabla_productos.cambiarColorCabecera(Qt.black)
@@ -274,17 +273,14 @@ class App_CrearVenta(QtWidgets.QWidget):
         tabla.llenar(ventaDatos)
         
         # <calcular precios y mostrar>
-        preciosConIVA = ventaDatos.total
-        preciosSinIVA = preciosConIVA / 1.16
-        
-        self.ui.lbTotal.setText(str(preciosConIVA))
-        self.ui.lbSubtotal.setText(str(preciosSinIVA))
-        self.ui.lbImpuestos.setText(str(preciosConIVA - preciosSinIVA))
+        self.ui.lbTotal.setText(str(ventaDatos.total))
+        self.ui.lbSubtotal.setText(str(subtotal := ventaDatos.total/1.16))
+        self.ui.lbImpuestos.setText(str(ventaDatos.total-subtotal))
         self.ui.lbDescuento.setText(str(ventaDatos.total_descuentos))
         # </calcular precios y mostrar>
         
-        self.ui.txtNumProds.setText(f'{len(ventaDatos)} producto'
-                                     + ('s' if len(ventaDatos) != 1 else ''))
+        self.ui.txtNumProds.setText(f'{(l := len(ventaDatos))} producto'
+                                     + ('s' if l != 1 else ''))
     
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
@@ -311,12 +307,9 @@ class App_CrearVenta(QtWidgets.QWidget):
     
     def quitarProducto(self):
         """ Pide confirmación para eliminar un producto de la tabla. """
-        selected = {i.row() for i in self.ui.tabla_productos.selectedIndexes()}
-        
-        if not selected:
+        if not (selected := {i.row() for i in self.ui.tabla_productos.selectedIndexes()}):
             return
         
-        qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           '¿Desea descartar de la venta los productos seleccionados?')
         if ret == qm.Yes:
@@ -333,14 +326,15 @@ class App_CrearVenta(QtWidgets.QWidget):
     
     def agregarDescuento(self):
         """ Abre ventana para agregar un descuento a la orden si el cliente es especial. """
-        modulo = App_AgregarDescuento(self)
-        modulo.success.connect(
-            lambda: (self.ui.btSeleccionar.setEnabled(False),
-                     self.ui.txtCliente.setReadOnly(True),
-                     self.ui.txtCorreo.setReadOnly(True),
-                     self.ui.txtTelefono.setReadOnly(True),
-                     self.colorearActualizar())
-        )
+        if not ventaDatos.ventaVacia:
+            modulo = App_AgregarDescuento(self)
+            modulo.success.connect(
+                lambda: (self.ui.btSeleccionar.setEnabled(False),
+                        self.ui.txtCliente.setReadOnly(True),
+                        self.ui.txtCorreo.setReadOnly(True),
+                        self.ui.txtTelefono.setReadOnly(True),
+                        self.colorearActualizar())
+            )
     
     def verificarCliente(self):
         # se confirma si existe el cliente en la base de datos
@@ -387,7 +381,6 @@ class App_CrearVenta(QtWidgets.QWidget):
         if ventaDatos.ventaVacia or (id_cliente := self.verificarCliente()) is None:
             return
         
-        qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Concluir venta',
                           'Verifique todos los datos ingresados.\n'
                           '¿Desea concluir la venta?')
@@ -664,7 +657,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         self.tabla_actual.resizeRowsToContents()
 
 
-@con_fondo
+@fondo_oscuro
 class App_AgregarProducto(Base_VisualizarProductos):
     """ Backend para la función de agregar un producto a la venta. """
     success = Signal()
@@ -721,7 +714,7 @@ class App_AgregarProducto(Base_VisualizarProductos):
             self.close()
 
 
-@con_fondo
+@fondo_oscuro
 class App_SeleccionarCliente(QtWidgets.QWidget):
     """ Backend para la función de seleccionar un cliente de la base de datos. """
     
@@ -785,9 +778,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
     
     def done(self):
         """ Modifica datos de cliente en la ventana principal (CrearVenta). """
-        selected = self.ui.tabla_seleccionar.selectedItems()
-        
-        if not selected:
+        if not (selected := self.ui.tabla_seleccionar.selectedItems()):
             return
         
         # recuérdese que Clientes(Nombre, Teléfono, Correo, Dirección, RFC)
@@ -812,7 +803,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
         self.close()
 
 
-@con_fondo
+@fondo_oscuro
 class App_FechaEntrega(QtWidgets.QWidget):
     """ Backend para la función de cambiar fecha de entrega. """
     success = Signal()
@@ -858,7 +849,7 @@ class App_FechaEntrega(QtWidgets.QWidget):
         self.close()
 
 
-@con_fondo
+@fondo_oscuro
 class App_AgregarDescuento(QtWidgets.QWidget):
     """ Backend para agregar descuento a la orden. """
     success = Signal()
@@ -921,7 +912,7 @@ class App_AgregarDescuento(QtWidgets.QWidget):
         self.close()
 
 
-@con_fondo
+@fondo_oscuro
 class App_EnviarCotizacion(QtWidgets.QWidget):
     """ Backend para agregar descuento a la orden. """
     
@@ -1086,7 +1077,6 @@ class App_ConfirmarVenta(Base_PagarVenta):
         """ Intenta finalizar la compra o pedido, actualizando el estado
             e insertando los correspondientes movimientos en la tabla Caja. """
         if not ventaDatos.total / 2 <= self.para_pagar:
-            qm = QtWidgets.QMessageBox
             ret = qm.question(self, 'Atención',
                               'El anticipo está por debajo del 50% del total de compra.\n'
                               '¿Desea continuar?')
@@ -1108,8 +1098,6 @@ class App_ConfirmarVenta(Base_PagarVenta):
         return manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True)
     
     def dialogoExito(self):
-        qm = QtWidgets.QMessageBox
-        
         if not ventaDatos.esVentaDirecta:
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
             
@@ -1126,8 +1114,6 @@ class App_ConfirmarVenta(Base_PagarVenta):
     
     def abortar(self):
         """ Función para abortar la venta y actualizar estado a 'Cancelada'. """
-        qm = QtWidgets.QMessageBox
-        
         ret = qm.question(self, 'Atención',
                           '¿Desea cancelar la venta? Esta acción no puede deshacerse.')
         if ret == qm.Yes:
