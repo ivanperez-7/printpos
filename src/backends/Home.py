@@ -6,8 +6,8 @@ from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtCore import QDate, Qt
 
 from .CrearVenta import Base_VisualizarProductos
-from utils.mywidgets import VentanaPrincipal
 from utils import Moneda
+from utils.mywidgets import VentanaPrincipal
 
 
 class App_Home(QtWidgets.QWidget):

@@ -6,9 +6,9 @@ from PySide6.QtCore import Qt, QMutex, Signal
 
 from config import INI
 import licensing
+from utils import sql
 from utils.mydecorators import run_in_thread
 from utils.myutils import FabricaValidadores
-from utils import sql
 
 from PrintPOS import app
 
@@ -25,6 +25,9 @@ class Usuario:
     permisos: str = 'Vendedor'
     foto_perfil: bytes = None
     rol: str = 'Vendedor'
+    
+    def __post_init__(self):
+        self.rol = self.rol.upper()
     
     @property
     def administrador(self):
@@ -48,7 +51,9 @@ class App_Login(QtWidgets.QWidget):
     """ Backend para la pantalla de inicio de sesión. """
     validated = Signal()
     failure = Signal(licensing.Errores)
+    
     logged = Signal(sql.Connection)
+    warning = Signal(str)
     
     def __init__(self):
         from ui.Ui_Login import Ui_Login
@@ -65,6 +70,7 @@ class App_Login(QtWidgets.QWidget):
         self.ui.inputUsuario.setValidator(FabricaValidadores.IdFirebird)
         
         self.logged.connect(self.crearVentanaPrincipal)
+        self.warning.connect(self.crearWarningDialog)
         self.validated.connect(self.exito_verificacion)
         self.failure.connect(self.error_verificacion)
         
@@ -134,6 +140,7 @@ class App_Login(QtWidgets.QWidget):
         # verificar que se ingresaron datos
         usuario = self.ui.inputUsuario.text().upper()
         psswd = self.ui.inputContrasenia.text()
+        rol = self.ui.groupRol.checkedButton().text()
         
         if not (usuario and psswd):
             self.ui.lbEstado.clear()
@@ -143,20 +150,26 @@ class App_Login(QtWidgets.QWidget):
         self.ui.lbEstado.setStyleSheet('color: black;')
         self.ui.lbEstado.setText('Conectando a la base de datos...')
         
-        rol = self.ui.groupRol.checkedButton().text()
-        conn = sql.conectar_db(usuario, psswd, rol)
-        
         try:
+            conn = sql.conectar_db(usuario, psswd, rol)
             manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
             manejador.obtenerUsuario(usuario)
         except sql.Error as err:
-            print(err.args[0])
-            self.ui.lbEstado.setStyleSheet('color: red;')
-            self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
+            txt, sqlcode, gdscode = err.args
+            if gdscode in [335544472, 335544352]:
+                self.ui.lbEstado.setStyleSheet('color: red;')
+                self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
+            else:
+                self.warning.emit(txt)
+                self.ui.lbEstado.clear()
         else:
             self.logged.emit(conn)
         finally:
             self.mutex.unlock()
+    
+    def crearWarningDialog(self, txt):
+        from utils.mywidgets import WarningDialog
+        wdg = WarningDialog('No se pudo acceder al servidor.', txt)
     
     def crearVentanaPrincipal(self, conn):
         """ En método separado para regresar al hilo principal."""

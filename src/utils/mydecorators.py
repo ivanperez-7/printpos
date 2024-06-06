@@ -65,8 +65,8 @@ class Dialog_ObtenerAdmin(QDialog):
         if not (usuario and psswd):
             return
         
-        conn = sql.conectar_db(usuario, psswd, 'ADMINISTRADOR')
         try:
+            conn = sql.conectar_db(usuario, psswd, 'ADMINISTRADOR')
             manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
             manejador.obtenerUsuario(usuario)
         except sql.Error:

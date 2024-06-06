@@ -21,16 +21,16 @@ install:
 		--standalone \
 		--disable-console \
 		--enable-plugin=pyside6 \
-		--include-package-data=resources \
-		--include-data-files=config.ini=config.ini \
-		--include-data-files=icon.ico=icon.ico \
 		--nofollow-import-to=unittest \
 		--nofollow-import-to=tkinter \
+		--nofollow-import-to=pyreadline3 \
 		--force-stderr-spec=%PROGRAM_BASE%.err.txt \
 		--force-stdout-spec=%PROGRAM_BASE%.out.txt \
 		--windows-icon-from-ico=icon.ico \
 		--assume-yes-for-downloads \
 		--remove-output
+#		--include-package-data=resources
+#		--include-data-files=config.ini=config.ini
 
 pip_reinstall:
 	pip --require-virtualenv freeze > installed.txt

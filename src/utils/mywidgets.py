@@ -10,8 +10,8 @@ from PySide6.QtGui import *
 from PySide6.QtCore import *
 
 from backends.Login import App_Login, Usuario
+from utils import Moneda, sql
 from utils.myutils import unidecode, formatDate, ColorsEnum
-from utils import Moneda, Moneda, sql
 
 
 __all__ = ['VentanaPrincipal', 'DimBackground', 'WidgetPago', 
