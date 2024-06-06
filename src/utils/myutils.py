@@ -5,7 +5,6 @@ from urllib.parse import quote
 import webbrowser as web
 import uuid
 
-import Levenshtein
 from openpyxl import Workbook
 from openpyxl.styles import Font
 from PySide6.QtCore import QDateTime, QThread, QLocale
@@ -16,7 +15,7 @@ from utils.mydecorators import run_in_thread
 
 __all__ = ['ColorsEnum', 'FabricaValidadores', 'clamp', 'chunkify',
            'daysTo', 'unidecode', 'randFile', 'son_similar', 'stringify_float',
-           'contiene_duplicados', 'formatDate','exportarXlsx', 'enviarWhatsApp', 'Runner']
+           'formatDate','exportarXlsx', 'enviarWhatsApp', 'Runner']
 
 
 class ColorsEnum:
@@ -30,7 +29,7 @@ class FabricaValidadores:
     """ Clase para generar validadores de expresiones regulares
         (`QRegularExpressionValidator`) para widgets. """
     IdFirebird = QRegularExpressionValidator(r'[a-zA-Z0-9_$]+')
-    NumeroDecimal = QRegularExpressionValidator(r'\d*\.?\d*')
+    NumeroDecimal = QRegularExpressionValidator(r'(\d*\.\d+|\d+\.\d*|\d+)')
 
 
 class Runner(QThread):
@@ -114,12 +113,7 @@ def son_similar(obj1, obj2):
     str1_clean = unidecode(re.sub(r'\W+', ' ', str(obj1)))
     str2_clean = unidecode(re.sub(r'\W+', ' ', str(obj2)))
     
-    return Levenshtein.jaro_winkler(str1_clean, str2_clean) >= 0.8 or str1_clean in str2_clean
-
-
-def contiene_duplicados(lista: list):
-    """ Regresa `True` si la lista dada contiene elementos duplicados. """
-    return len(lista) != len(set(lista))
+    return str1_clean in str2_clean
 
 
 def formatDate(date = None):

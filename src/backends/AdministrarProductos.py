@@ -193,7 +193,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
         
         # eventos para botones
         self.ui.btAceptar.clicked.connect(self.done)
-        self.ui.btAgregar.clicked.connect(lambda: self.agregarProductoALista())
+        self.ui.btAgregar.clicked.connect(self.agregarProductoALista)
         
         self.ui.btAgregarIntervalo.clicked.connect(
             lambda: self.agregarIntervalo(row=self.ui.tabla_precios.rowCount()))
@@ -287,7 +287,6 @@ class Base_EditarProducto(QtWidgets.QWidget):
                 return None
             
             id_inventario, = manejador.obtenerIdInventario(nombre)
-            
             PUI_db_parametros.append((id_inventario, cantidad))
         
         return PUI_db_parametros

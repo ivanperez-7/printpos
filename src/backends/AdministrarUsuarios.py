@@ -18,8 +18,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
         TODO:
             - mecanismo de reseteo de contraseña (sin permisos de admin)
             - registros de acciones: inicios de sesión, modificación de ajustes y usuarios, acciones en general
-            - personalización: foto de perfil y colores del UI
-            -- resucitar usuarios que han sido dados de baja """
+            - personalización: foto de perfil y colores del UI """
     
     def __init__(self, parent: VentanaPrincipal):
         from ui.Ui_AdministrarUsuarios import Ui_AdministrarUsuarios
@@ -204,7 +203,7 @@ class Base_EditarUsuario(QtWidgets.QWidget):
             permisos
         ))
         
-        if not self.ejecutarOperacion(usuarios_db_parametros):
+        if not self.insertar_o_modificar(usuarios_db_parametros):
             return
         
         manejador = ManejadorUsuarios(self.conn)
@@ -219,7 +218,7 @@ class Base_EditarUsuario(QtWidgets.QWidget):
             self.success.emit()
             self.close()
     
-    def ejecutarOperacion(self, params: tuple) -> bool:
+    def insertar_o_modificar(self, params: tuple) -> bool:
         """ Método que insertará o modificará usuario. """
         raise NotImplementedError('BEIS CLASSSSSSS')
 
@@ -248,7 +247,8 @@ class App_RegistrarUsuario(Base_EditarUsuario):
         """ Siempre hay cambio de contraseña. """
         return True
     
-    def ejecutarOperacion(self, params):
+    def insertar_o_modificar(self, params):
+        """ Insertar en DB y crear en Firebird. """
         manejador = ManejadorUsuarios(self.conn)
         usuario = params[0]
         psswd = self.ui.txtPsswd.text()
@@ -262,14 +262,19 @@ class App_EditarUsuario(Base_EditarUsuario):
     MENSAJE_EXITO = '¡Se editó el usuario!'
     MENSAJE_ERROR = '¡No se pudo editar el usuario!'
     
-    def __init__(self, first: App_AdministrarUsuarios, usuario: str):
+    def __init__(self, first: App_AdministrarUsuarios, usuario_: str):
         super().__init__(first)
         
-        self.usuario = usuario  # usuario a editar
-        
         manejador = ManejadorUsuarios(self.conn)
-        id, usuario, nombre, permisos, *_ = manejador.obtenerUsuario(usuario)
+        id, usuario, nombre, permisos, *_ = manejador.obtenerUsuario(usuario_)
         
+        self.usuario = usuario  # usuario a editar
+        self.permisos = permisos
+        
+        if not permisos:    # usuario existente pero dado de baja
+            self.ui.cambiarPsswd.setChecked(True)
+            self.ui.cambiarPsswd.setEnabled(False)
+            self.cambiarTrigger(True)
         if usuario in ['SYSDBA', self.user.usuario]:
             self.ui.boxPermisos.setEnabled(False)
         self.ui.txtUsuario.setText(usuario)
@@ -284,22 +289,34 @@ class App_EditarUsuario(Base_EditarUsuario):
     # ==================
     @property
     def cambioContrasena(self):
-        """ Hay cambio de contraseña si se solicita. """
-        return self.ui.cambiarPsswd.isChecked()
+        """ Hay cambio de contraseña si se solicita o si el usuario
+            no tiene permisos en la DB (fue dado de baja). """
+        return self.ui.cambiarPsswd.isChecked() or not self.permisos
     
     def cambiarTrigger(self, state):
         """ Indica si se desea cambiar la contraseña en la operación. """
         self.ui.groupPsswd.setEnabled(state)
         self.ui.groupPsswdConf.setEnabled(state)
     
-    def ejecutarOperacion(self, params):
+    def insertar_o_modificar(self, params):
+        """ Modifica datos del usuario y cambia contraseña y/o permisos.
+            1. Actualiza usuario en tabla usuarios
+            2. Al haberse dado de baja, intenta crear usuario
+            3. Si no, y si se desea, cambiar contraseña en servidor Firebird
+            4. Si se desea, retirar roles ADMINISTRADOR y VENDEDOR para cambiar de rol """
         manejador = ManejadorUsuarios(self.conn)
         psswd = self.ui.txtPsswd.text()
         
-        if not manejador.actualizarUsuario(self.usuario, params):
-            return False
-        if self.cambioContrasena and not manejador.cambiarPsswd(self.usuario, psswd):
-            return False
+        actualizarUsuario = lambda: manejador.actualizarUsuario(self.usuario, params)
+        actualizarFirebird = lambda: True  # crear usuario o actualizar contraseña
+        retirarRoles = lambda: True
+        
+        if not self.permisos:
+            actualizarFirebird = lambda: manejador.crearUsuarioServidor(self.usuario, psswd)
+        elif self.ui.cambiarPsswd.isChecked():
+            actualizarFirebird = lambda: manejador.cambiarPsswd(self.usuario, psswd)
+        
         if self.ui.boxPermisos.isEnabled():
-            return manejador.retirarRoles(self.usuario)
-        return True
+            retirarRoles = lambda: manejador.retirarRoles(self.usuario)
+            
+        return actualizarUsuario() and actualizarFirebird() and retirarRoles()

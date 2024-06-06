@@ -6,11 +6,11 @@ from PySide6.QtGui import QFont, QIcon
 from PySide6.QtCore import QModelIndex, Qt, Signal, QMutex
 
 from pdf import ImpresoraOrdenes, ImpresoraTickets
+from utils import Moneda
 from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
-from utils import Moneda
 from utils.sql import ManejadorVentas
 
 
@@ -300,8 +300,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         idVenta = selected[0].text()
         man = ManejadorVentas(self.conn)
         
-        pagos = man.obtenerPagosVenta(idVenta)
-        if len(pagos) > 1:
+        if len(pagos := man.obtenerPagosVenta(idVenta)) > 1:
             wdg = App_ImprimirTickets(self, pagos, idVenta)
             return
         

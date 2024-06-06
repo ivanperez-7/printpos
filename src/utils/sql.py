@@ -17,7 +17,7 @@ Error = fdb.Error
 
 def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
     """ Crea conexión a base de datos y regresa objeto Connection.
-        Regresa `None` al ocurrir un error. """
+        Levanta sql.Error, por lo que siempre se debe usar en un bloque `try-except`. """
     try:
         return fdb.connect(
             dsn='{}/3050:PrintPOS.fdb'.format(INI.NOMBRE_SERVIDOR),
@@ -27,8 +27,8 @@ def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
             role=rol)
     except Error as err:
         txt, sqlcode, gdscode = err.args
-        print('\n{}'.format(sqlcode), gdscode, '\n'+txt)
-        return None
+        print('\nconectar_db() {\n', sqlcode, gdscode, '\n'+txt+'\n}')
+        raise err
 
 
 def _WarningDialog(*args):
@@ -48,13 +48,14 @@ class DatabaseManager:
                        error_txt: str = None,
                        *, handle_exceptions: bool = True):
         if not isinstance(conn, Connection):
-            raise Error("Conexión a DB no válida.")
+            raise RuntimeError("Conexión a DB no válida.")
         
         self._conn = conn
         self._error_txt = error_txt or '¡Acceso fallido a base de datos!'
         self._handle_exceptions = handle_exceptions
         
         crsr: Cursor = conn.cursor()
+        self._crsr = crsr
         
         self.execute = partial(self._partial_execute, crsr.execute)
         self.executemany = partial(self._partial_execute, crsr.executemany)
@@ -63,45 +64,31 @@ class DatabaseManager:
     
     def _partial_execute(self, func, query: str, parameters=None, commit=False):
         try:
-            if parameters is None:
-                func(query)
-            else:
-                func(query, parameters)
+            func(query, parameters)
             if commit:
                 self._conn.commit()
             return True
         except Error as err:
-            if not self._handle_exceptions:
-                raise err
-            self._conn.rollback()
-            _WarningDialog(self._error_txt, err.args[0])
+            self.__handle_err(err)   # <- levanta sql.Error si se solicita
             return False
     
     def _partial_fetch(self, func, query: str, parameters=None):
         try:
-            if parameters is None:
-                self.execute(query)
-            else:
-                self.execute(query, parameters)
+            self._crsr.execute(query, parameters)
             return func()
         except Error as err:
-            if not self._handle_exceptions:
-                raise err
-            self._conn.rollback()
-            _WarningDialog(self._error_txt, err.args[0])
+            self.__handle_err(err)    # <- levanta sql.Error si se solicita
             return None
     
-    def commit(self):
-        try:
-            self._conn.commit()
-            return True
-        except Error as err:
-            if not self._handle_exceptions:
-                raise err
-            self._conn.rollback()
-            _WarningDialog(self._error_txt, err.args[0])
-            return False
-    
+    def __handle_err(self, err: Error):
+        txt, sqlcode, gdscode = err.args
+        print('\n'+self.__class__.__name__, '{\n', sqlcode, gdscode, '\n'+txt+'\n}')
+        
+        if not self._handle_exceptions:
+            raise err
+        self._conn.rollback()
+        _WarningDialog(self._error_txt, txt)
+
     def obtenerVista(self, vista: str):
         """ Atajo de sentencia SELECT para obtener una vista. """
         return self.fetchall(f'SELECT * FROM {vista};')
@@ -1348,7 +1335,7 @@ class ManejadorUsuarios(DatabaseManager):
         ''', (usuario,), commit=False):
             return False
         
-        return self.execute(f'DROP USER {usuario};', commit=True)
+        return self.retirarRoles(usuario) and self.execute(f'DROP USER {usuario};', commit=True)
     
     def otorgarRolVendedor(self, usuario: str):
         """ Otorgar rol de vendedor en servidor Firebird.
@@ -1369,7 +1356,8 @@ class ManejadorUsuarios(DatabaseManager):
             return False
     
     def retirarRoles(self, usuario: str):
-        """ Retirar roles VENDEDOR, ADMINISTRADOR del usuario. 
+        """ Retirar roles VENDEDOR, ADMINISTRADOR del usuario.
+            Aparentemente no regresa error si el usuario no existe.
         
             No hace commit. """
         if self.execute(f'REVOKE ADMINISTRADOR, VENDEDOR FROM {usuario};'):
@@ -1378,5 +1366,8 @@ class ManejadorUsuarios(DatabaseManager):
             return False
     
     def cambiarPsswd(self, usuario: str, psswd: str):
-        """ Cambiar contraseña del usuario. No hace commit. """
+        """ Cambiar contraseña del usuario. 
+            Regresa error durante commit si el usuario no existe.
+            
+            No hace commit. """
         return self.execute(f"ALTER USER {usuario} PASSWORD '{psswd}';")
