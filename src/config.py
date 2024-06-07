@@ -24,6 +24,19 @@ FERNET_KEY = base64.urlsafe_b64encode(
 _INIParser = ConfigParser(inline_comment_prefixes=';')
 filename = 'config.ini'
 
+if not os.path.exists(filename):       # crear archivo config.ini si no existe
+    temp = ConfigParser()
+    temp.add_section('RED')
+    temp.add_section('SUCURSAL')
+    temp.set('RED', 'nombre_servidor', '127.0.0.1')
+    temp.set('RED', 'impresora', '')
+    temp.set('SUCURSAL', 'calle_1', '')
+    temp.set('SUCURSAL', 'calle_2', '')
+    temp.set('SUCURSAL', 'telefono', '')
+    
+    with open(filename, 'w+', encoding='utf8') as configfile:
+        temp.write(configfile)
+
 class _INIManager:
     def __init__(self):
         _INIParser.read(filename, encoding='UTF8')
@@ -50,7 +63,7 @@ class _INIManager:
     @property
     def DIRECCION_SUCURSAL(self):
         """ Calles y fracc. de la sucursal. Regresa una cadena por cada dato. """
-        return self.P1, self.P2
+        return self.CALLE_1, self.CALLE_2
 
 INI = _INIManager()
 """ Manejador para el archivo `config.ini`.

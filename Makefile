@@ -30,7 +30,6 @@ install:
 		--assume-yes-for-downloads \
 		--remove-output
 #		--include-package-data=resources
-#		--include-data-files=config.ini=config.ini
 
 pip_reinstall:
 	pip --require-virtualenv freeze > installed.txt

@@ -27,12 +27,19 @@ class App_Ajustes(QtWidgets.QWidget):
         self.ui.boxImpresoras.addItems(QtPrintSupport.QPrinterInfo.availablePrinterNames())
         self.ui.boxImpresoras.setCurrentText(INI.IMPRESORA)
         
+        self.ui.txtCalle1.setText(INI.CALLE_1)
+        self.ui.txtCalle2.setText(INI.CALLE_2)
+        self.ui.txtTelefono.setText(INI.TELEFONO)
+        
         # crear eventos para los botones
         self.ui.btRegresar.clicked.connect(self.goHome)
     
     def goHome(self, _):
         """ Cierra la ventana y regresa a Home. """
         INI.IMPRESORA = self.ui.boxImpresoras.currentText()
+        INI.CALLE_1 = self.ui.txtCalle1.text()
+        INI.CALLE_2 = self.ui.txtCalle2.text()
+        INI.TELEFONO = self.ui.txtTelefono.text()
         INI.guardar()
         
         parent = self.parentWidget()
