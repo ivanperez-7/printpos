@@ -86,7 +86,6 @@ class ImpresoraOrdenes(ImpresoraPDF):
     def __init__(self, parent: QWidget) -> None: ...
     
     def __init__(self, arg):
-        super().__init__()
         if isinstance(arg, sql.Connection):
             self.conn = arg
             self.parent = None
@@ -94,6 +93,7 @@ class ImpresoraOrdenes(ImpresoraPDF):
             self.conn = arg.conn
             self.parent = arg
         else:
+            self.printer: QPrinter = None
             raise ValueError('Argumentos inválidos: ninguna implementación.')
         self.printer = self.escogerImpresora(self.parent)
     
@@ -116,12 +116,12 @@ class ImpresoraTickets(ImpresoraPDF):
     def __init__(self, parent: QWidget) -> None: ...
     
     def __init__(self, arg):
-        super().__init__()
         if isinstance(arg, sql.Connection):
             self.conn = arg
         elif isinstance(arg, QWidget):
             self.conn = arg.conn
         else:
+            self.printer: QPrinter = None
             raise ValueError('Argumentos inválidos: ninguna implementación.')
         self.printer = self.obtenerImpresoraTickets()
     

@@ -24,23 +24,17 @@ FERNET_KEY = base64.urlsafe_b64encode(
 _INIParser = ConfigParser(inline_comment_prefixes=';')
 filename = 'config.ini'
 
-if not os.path.exists(filename):       # crear archivo config.ini si no existe
-    temp = ConfigParser()
-    temp.add_section('RED')
-    temp.add_section('SUCURSAL')
-    temp.set('RED', 'nombre_servidor', '127.0.0.1')
-    temp.set('RED', 'impresora', '')
-    temp.set('SUCURSAL', 'calle_1', '')
-    temp.set('SUCURSAL', 'calle_2', '')
-    temp.set('SUCURSAL', 'telefono', '')
-    
-    with open(filename, 'w+', encoding='utf8') as configfile:
-        temp.write(configfile)
-
 class _INIManager:
     def __init__(self):
-        _INIParser.read(filename, encoding='UTF8')
-
+        if not _INIParser.read(filename, encoding='utf8'):
+            _INIParser.add_section('RED')
+            _INIParser.add_section('SUCURSAL')
+            _INIParser.set('RED', 'nombre_servidor', '127.0.0.1')
+            _INIParser.set('RED', 'impresora', '')
+            _INIParser.set('SUCURSAL', 'calle_1', '')
+            _INIParser.set('SUCURSAL', 'calle_2', '')
+            _INIParser.set('SUCURSAL', 'telefono', '')
+        
         for section in _INIParser.sections():
             for option in _INIParser.options(section):
                 self._create_property(section, option)
@@ -48,12 +42,12 @@ class _INIManager:
     def guardar(self):
         with open(filename, 'w+', encoding='utf8') as configfile:
             _INIParser.write(configfile)
+        _INIParser.read(filename, encoding='utf8')
     
     def _create_property(self, section, option):
         def getter(self):
-            _INIParser.read(filename, encoding='UTF8')
             return _INIParser.get(section, option)
-
+        
         def setter(self, value):
             _INIParser.set(section, option, value)
         
