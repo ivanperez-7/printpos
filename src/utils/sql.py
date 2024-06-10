@@ -47,8 +47,7 @@ class DatabaseManager:
     def __init__(self, conn: Connection,
                        error_txt: str = None,
                        *, handle_exceptions: bool = True):
-        if not isinstance(conn, Connection):
-            raise RuntimeError("Conexión a DB no válida.")
+        assert isinstance(conn, Connection), "Conexión a DB no válida."
         
         self._conn = conn
         self._error_txt = error_txt or '¡Acceso fallido a base de datos!'
@@ -1328,14 +1327,13 @@ class ManejadorUsuarios(DatabaseManager):
         """ Dar de baja usuario del sistema y eliminar del servidor Firebird. 
             
             Hace commit automáticamente. """
-        if not self.execute('''
-            UPDATE  Usuarios
-            SET     permisos = NULL
-            WHERE   usuario = ?;
-        ''', (usuario,), commit=False):
-            return False
-        
-        return self.retirarRoles(usuario) and self.execute(f'DROP USER {usuario};', commit=True)
+        return (
+            self.execute('''UPDATE  Usuarios
+                            SET     permisos = NULL
+                            WHERE   usuario = ?;''', (usuario,))
+            and self.retirarRoles(usuario) 
+            and self.execute(f'DROP USER {usuario};', commit=True)
+        )
     
     def otorgarRolVendedor(self, usuario: str):
         """ Otorgar rol de vendedor en servidor Firebird.
@@ -1350,20 +1348,20 @@ class ManejadorUsuarios(DatabaseManager):
         
             Hace commit automáticamente, al ser última operación 
             del proceso de creación/modificación. """
-        if self.execute(f'GRANT ADMINISTRADOR, VENDEDOR TO {usuario} WITH ADMIN OPTION;'):
-            return self.execute(f'ALTER USER {usuario} GRANT ADMIN ROLE;', commit=True)
-        else:
-            return False
+        return (
+            self.execute(f'GRANT ADMINISTRADOR, VENDEDOR TO {usuario} WITH ADMIN OPTION;')
+            and self.execute(f'ALTER USER {usuario} GRANT ADMIN ROLE;', commit=True)
+        )
     
     def retirarRoles(self, usuario: str):
         """ Retirar roles VENDEDOR, ADMINISTRADOR del usuario.
             Aparentemente no regresa error si el usuario no existe.
         
             No hace commit. """
-        if self.execute(f'REVOKE ADMINISTRADOR, VENDEDOR FROM {usuario};'):
-            return self.execute(f'ALTER USER {usuario} REVOKE ADMIN ROLE;')
-        else:
-            return False
+        return (
+            self.execute(f'REVOKE ADMINISTRADOR, VENDEDOR FROM {usuario};')
+            and self.execute(f'ALTER USER {usuario} REVOKE ADMIN ROLE;')
+        )
     
     def cambiarPsswd(self, usuario: str, psswd: str):
         """ Cambiar contraseña del usuario. 

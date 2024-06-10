@@ -223,8 +223,7 @@ def generarTicketPDF(productos: list, vendedor: str, folio: int = 0,
     
     # convertir imagen en .qrc a imagen normal
     loggg = QFile(':img/resources/images/logo.png')
-    if not loggg.open(QIODevice.ReadOnly):
-        raise RuntimeError('cant open logo.png pls check')
+    assert loggg.open(QIODevice.ReadOnly), 'cant open logo.png pls check'
     baits = io.BytesIO(loggg.readAll().data())
     
     t = 0.017   # dimensiones del logo
