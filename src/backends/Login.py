@@ -128,6 +128,7 @@ class App_Login(QtWidgets.QWidget):
         wdg = DialogoActivacion(self)
         wdg.success.connect(lambda: (self.ui.btIngresar.clicked.disconnect(),
                                      self.exito_verificacion()))
+        
         if error == licensing.Errores.LICENCIA_NO_VALIDA:
             wdg.ui.label.setText('¡Su licencia ha expirado!')
     
@@ -194,8 +195,8 @@ class AjustesDB(QtWidgets.QWidget):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         
-        self.ui.lineNombre.setText(socket.gethostname())
-        self.ui.lineDireccion.setText(socket.gethostbyname(socket.gethostname()))
+        self.ui.lineNombre.setText(hn := socket.gethostname())
+        self.ui.lineDireccion.setText(socket.gethostbyname(hn))
         self.ui.lineNombreServ.setText(INI.NOMBRE_SERVIDOR)
         
         self.ui.btAceptar.clicked.connect(self.done)
@@ -251,7 +252,7 @@ class DialogoActivacion(QtWidgets.QWidget):
         self.close()
         QtWidgets.QMessageBox.information(
             self, 'Licencia activada', 
-            '¡Muchas gracias por adquirir PrintPOS! '
+            '¡Muchas gracias por adquirir PrintPOS!\n'
             'Su licencia ha sido activada con éxito.'
         )
     

@@ -10,8 +10,48 @@ class useless(type):
         return cls(0.)
 
 class Moneda(metaclass=useless):
-    """ Clase para manejar cantidades monetarias
-        con un máximo de dos números decimales. """
+    r"""
+    Clase `Moneda` para manejar cantidades monetarias de forma segura 
+    con dos números decimales, eliminando errores de redondeo.
+
+    Uso
+    +++
+
+    Crear un objeto Moneda:
+
+    >>> importe = Moneda()
+    
+    Se puede sumar, restar, multiplicar o dividir con cualquier
+    tipo de dato que se pueda convertir a `float`.
+    
+    >>> importe += 50.499999912378923
+    >>> importe
+    Moneda: 50.50 MXN
+    >>> importe / 3
+    Moneda: 16.83 MXN
+    >>> importe + Moneda('$153.93')
+    Moneda: 204.43 MXN
+    
+    Para recuperar valor en tipo flotante, simplemente usar float.
+    >>> float(importe)
+    50.5
+    
+    Su valor booleano es verdadero si la cantidad monetaria es mayor que cero.
+    >>> if importe:
+    ...     print('ayo!')
+    ayo!
+    
+    Soporta métodos de comparación entre cantidades numéricas y objetos de tipo Moneda.
+    >>> importe > 100
+    False
+    >>> importe == 50.5
+    True
+    
+    Provee método `sum` para sumar iterador en objeto Moneda.
+    >>> total = Moneda.sum(x for x in [1,6,1,7,3,4])
+    >>> total
+    Moneda: 22.00 MXN
+    """
     PRECISION = 2
     
     def __init__(self, inicial = None):
