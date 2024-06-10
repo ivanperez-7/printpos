@@ -161,7 +161,8 @@ class App_Login(QtWidgets.QWidget):
                 self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
             else:
                 self.warning.emit(txt)
-                self.ui.lbEstado.clear()
+        except Exception as err:    # arrojado por fdb al no encontrarse librería Firebird
+            self.warning.emit(str(err))
         else:
             self.logged.emit(conn)
         finally:
@@ -169,6 +170,7 @@ class App_Login(QtWidgets.QWidget):
     
     def crearWarningDialog(self, txt):
         from utils.mywidgets import WarningDialog
+        self.ui.lbEstado.clear()
         wdg = WarningDialog('No se pudo acceder al servidor.', txt)
     
     def crearVentanaPrincipal(self, conn):
