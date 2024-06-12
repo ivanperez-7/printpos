@@ -275,9 +275,9 @@ class App_CrearVenta(QtWidgets.QWidget):
         tabla.llenar(ventaDatos)
 
         # <calcular precios y mostrar>
-        self.ui.lbTotal.setText(str(ventaDatos.total))
-        self.ui.lbSubtotal.setText(str(subtotal := ventaDatos.total / 1.16))
-        self.ui.lbImpuestos.setText(str(ventaDatos.total - subtotal))
+        self.ui.lbTotal.setText(str(total := ventaDatos.total))
+        self.ui.lbSubtotal.setText(str(subtotal := total / 1.16))
+        self.ui.lbImpuestos.setText(str(total - subtotal))
         self.ui.lbDescuento.setText(str(ventaDatos.total_descuentos))
         # </calcular precios y mostrar>
 
