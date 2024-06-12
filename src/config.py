@@ -6,7 +6,6 @@ import os
 
 import machineid
 
-
 ############################
 # VARIABLES PARA LICENCIAS #
 ############################
@@ -17,12 +16,12 @@ INSTANCE_NAME = machineid.id().split('-')[-1]
 FERNET_KEY = base64.urlsafe_b64encode(
     bytes(machineid.hashed_id('PrintPOS'), 'utf-8')[-32:])
 
-
 #################################
 # VARIABLES PARA ACCEDER A .INI #
 #################################
 _INIParser = ConfigParser(inline_comment_prefixes=';')
 filename = 'config.ini'
+
 
 class _INIManager:
     def __init__(self):
@@ -34,30 +33,31 @@ class _INIManager:
             _INIParser.set('SUCURSAL', 'calle_1', '')
             _INIParser.set('SUCURSAL', 'calle_2', '')
             _INIParser.set('SUCURSAL', 'telefono', '')
-        
+
         for section in _INIParser.sections():
             for option in _INIParser.options(section):
                 self._create_property(section, option)
-    
+
     def guardar(self):
         with open(filename, 'w+', encoding='utf8') as configfile:
             _INIParser.write(configfile)
         _INIParser.read(filename, encoding='utf8')
-    
+
     def _create_property(self, section, option):
         def getter(self):
             return _INIParser.get(section, option)
-        
+
         def setter(self, value):
             _INIParser.set(section, option, value)
-        
+
         setattr(self.__class__, option.upper(), property(getter, setter))
         setattr(self, option.upper(), getter(self))
-    
+
     @property
     def DIRECCION_SUCURSAL(self):
         """ Calles y fracc. de la sucursal. Regresa una cadena por cada dato. """
         return self.CALLE_1, self.CALLE_2
+
 
 INI = _INIManager()
 """ Manejador para el archivo `config.ini`.
