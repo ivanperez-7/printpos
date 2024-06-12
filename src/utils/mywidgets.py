@@ -13,9 +13,8 @@ from backends.Login import App_Login, Usuario
 from utils import Moneda, sql
 from utils.myutils import unidecode, formatDate, ColorsEnum
 
-
-__all__ = ['VentanaPrincipal', 'DimBackground', 'WidgetPago', 
-           'StackPagos', 'TablaDatos', 'NumberEdit', 'LabelAdvertencia', 
+__all__ = ['VentanaPrincipal', 'DimBackground', 'WidgetPago',
+           'StackPagos', 'TablaDatos', 'NumberEdit', 'LabelAdvertencia',
            'WarningDialog', 'SpeechBubble', 'ListaNotificaciones']
 
 alternate_bg = QColor(225, 225, 225)
@@ -24,36 +23,36 @@ alternate_bg = QColor(225, 225, 225)
 class VentanaPrincipal(QtWidgets.QMainWindow):
     def __init__(self, conn: sql.Connection):
         super().__init__()
-        
+
         self.resize(1540, 800)
         self.setWindowTitle('PrintPOS')
         self.setWindowIcon(QIcon(':img/icon.ico'))
-        
+
         self.conn = conn
         self.user = Usuario.generarUsuarioActivo(conn)
-        
+
         from backends.Home import App_ConsultarPrecios
         self.consultarPrecios = App_ConsultarPrecios(self)
-        
+
         self.goHome()
         self.show()
-    
+
     def goHome(self):
         """ Regresar al menú principal.
             Crea módulo Home y establece como widget principal. """
         from backends.Home import App_Home
         new = App_Home(self)
         self.setCentralWidget(new)
-    
+
     def closeEvent(self, event):
         """ En eventos específicos, restringimos el cerrado del sistema. """
         from backends.CrearVenta import App_CrearVenta
         en_venta = isinstance(self.centralWidget(), App_CrearVenta)
-        
+
         if en_venta and not self.user.administrador:
             event.ignore()
             return
-        
+
         for j in glob.glob('*.jpg'):
             os.remove(j)
         self.conn.close()
@@ -63,10 +62,10 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
 
 class ClickableIcon(QtWidgets.QPushButton):
     """ QPushButton con un stylesheet apropiado para eliminar bordes. """
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
-        
+
         self.setStyleSheet('''
             /* Normal state */
             QPushButton {
@@ -90,10 +89,10 @@ class ClickableIcon(QtWidgets.QPushButton):
 
 class DimBackground(QtWidgets.QFrame):
     """ Crea un QFrame que ocupa la ventana entera, para poner énfasis en las ventanas nuevas. """
-    
+
     def __init__(self, window: QtWidgets.QWidget):
         super().__init__(window)
-        
+
         self.setFixedSize(window.size())
         self.setStyleSheet('background: rgba(64, 64, 64, 64);')
         self.show()
@@ -102,20 +101,20 @@ class DimBackground(QtWidgets.QFrame):
 class WidgetPago(QtWidgets.QFrame):
     def __init__(self, parent=None):
         from ui.Ui_WidgetPago import Ui_WidgetPago
-        
+
         super().__init__(parent)
-        
+
         self.ui = Ui_WidgetPago()
         self.ui.setupUi(self)
-    
+
     @property
     def montoPagado(self):
         return self.ui.txtPago.cantidad
-    
+
     @property
     def metodoSeleccionado(self):
         return self.ui.buttonGroup.checkedButton().text()
-    
+
     @metodoSeleccionado.setter
     def metodoSeleccionado(self, val):
         for bt in self.ui.buttonGroup.buttons():
@@ -124,42 +123,42 @@ class WidgetPago(QtWidgets.QFrame):
 
 class StackPagos(QtWidgets.QStackedWidget):
     cambioPagos = Signal()
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
-        
+
         self.setMaximumHeight(139)
-        self.total = Moneda()   # monto debido
-    
+        self.total = Moneda()  # monto debido
+
     def retroceder(self):
         self.setCurrentIndex(self.currentIndex() - 1)
-    
+
     def avanzar(self):
         self.setCurrentIndex(self.currentIndex() + 1)
-    
+
     def agregarPago(self):
         """ Agrega widget de pago a la lista y regresa el widget. """
         wdg = WidgetPago()
         wdg.ui.txtPago.textChanged.connect(lambda: self.cambioPagos.emit())
         wdg.ui.buttonGroup.buttonClicked.connect(lambda: self.cambioPagos.emit())
-        
+
         self.addWidget(wdg)
         self.setCurrentWidget(wdg)
         self.cambioPagos.emit()
         return wdg
-    
+
     def quitarPago(self):
         """ Quitar el widget de pago actual. """
         if self.count() > 1:
             self.removeWidget(self.currentWidget())
             self.cambioPagos.emit()
-    
+
     @property
     def restanteEnEfectivo(self):
         """ Residuo del total menos lo ya pagado con moneda electrónica. """
         return self.total - sum(wdg.montoPagado for wdg in self
                                 if wdg.metodoSeleccionado != 'Efectivo')
-    
+
     @property
     def pagosValidos(self):
         """ Determinar que los pagos introducidos cumplan varios requisitos.
@@ -171,11 +170,11 @@ class StackPagos(QtWidgets.QStackedWidget):
                permitir que el efectivo exceda lo necesario)
             5. Al no haber efectivo, verificar que lo pagado sea exactamente lo debido. """
         montoPagado = sum(wdg.montoPagado for wdg in self)
-        if self.total == montoPagado == 0. and self.count() == 1: # caso especial
+        if self.total == montoPagado == 0. and self.count() == 1:  # caso especial
             return True
-        
+
         n_efec = [wdg.metodoSeleccionado for wdg in self].count('Efectivo')
-        
+
         if n_efec == 0:
             sumaCorrecta = montoPagado == self.total
         elif n_efec == 1:
@@ -183,14 +182,14 @@ class StackPagos(QtWidgets.QStackedWidget):
         else:
             return False
         return sumaCorrecta and all(wdg.montoPagado for wdg in self)
-    
+
     def __len__(self):
         return self.count()
-    
+
     def __iter__(self) -> Iterator[WidgetPago]:
         for i in range(self.count()):
             yield self.widget(i)
-    
+
     def __getitem__(self, i: int) -> WidgetPago:
         return self.widget(i)
 
@@ -214,12 +213,12 @@ class TablaDatos(QtWidgets.QTableWidget):
         CREAR_VENTA = auto()
         TABLA_VENTAS_DIRECTAS = auto()
         TABLA_PEDIDOS = auto()
-        
+
     def __init__(self, parent=None):
         super().__init__(parent)
-        
+
         self.modelo = self.Modelos.DEFAULT
-        
+
         self.setStyleSheet("""
             QHeaderView::section {
                 font: bold 10pt;
@@ -244,7 +243,7 @@ class TablaDatos(QtWidgets.QTableWidget):
                 selection-background-color: rgb(85, 85, 255);
                 selection-color: rgb(255, 255, 255);
             }
-        """%alternate_bg.name())
+        """ % alternate_bg.name())
         font = QFont()
         font.setPointSize(10)
         self.setFont(font)
@@ -257,43 +256,43 @@ class TablaDatos(QtWidgets.QTableWidget):
         self.setWordWrap(True)
         self.verticalHeader().hide()
         self.horizontalHeader().setMinimumSectionSize(50)
-    
+
     def llenar(self, data):
         if not isinstance(data, list):
             data = list(data)
-        
+
         sort = self.isSortingEnabled()
         self.setSortingEnabled(False)
         self.setRowCount(0)
         self.setRowCount(len(data))
-        
+
         funcs = {
             self.Modelos.DEFAULT: self._llenar_default,
-            self.Modelos.RESALTAR_SEGUNDA: self._llenar_resaltar_segunda, 
+            self.Modelos.RESALTAR_SEGUNDA: self._llenar_resaltar_segunda,
             self.Modelos.CREAR_VENTA: self._llenar_crear_venta,
             self.Modelos.TABLA_VENTAS_DIRECTAS: self._llenar_tabla_ventas_directas,
             self.Modelos.TABLA_PEDIDOS: self._llenar_tabla_pedidos
         }
         funcs[self.modelo](data)
-        
+
         self.setSortingEnabled(sort)
-    
+
     def tamanoCabecera(self, pt: int):
         qs = self.styleSheet()
-        header = 'QHeaderView::section {font: bold %dpt;}'%pt
+        header = 'QHeaderView::section {font: bold %dpt;}' % pt
         self.setStyleSheet(qs + header)
-    
+
     def quitarBordeCabecera(self):
         qs = self.styleSheet()
         borde = 'QHeaderView::section {border: 0px;}'
         self.setStyleSheet(qs + borde)
-    
+
     def cambiarColorCabecera(self, color):
         qs = self.styleSheet()
         color = QColor(color)
         color_qs = 'QHeaderView::section {{ background-color: {} }};'.format(color.name())
         self.setStyleSheet(qs + color_qs)
-    
+
     def configurarCabecera(self, resize_cols: Callable[[int], bool] = None,
                            align_flags=None):
         """ Configurar tamaño de cabeceras de tabla. En particular, 
@@ -301,20 +300,20 @@ class TablaDatos(QtWidgets.QTableWidget):
             
             También se añaden banderas de alineación, si se desea. """
         header = self.horizontalHeader()
-        
+
         if not resize_cols:
             resize_cols = lambda _: True
         if align_flags:
             header.setDefaultAlignment(align_flags)
-        
+
         for col in range(self.columnCount()):
             if resize_cols(col):
                 mode = QtWidgets.QHeaderView.ResizeMode.ResizeToContents
             else:
                 mode = QtWidgets.QHeaderView.ResizeMode.Stretch
-            
+
             header.setSectionResizeMode(col, mode)
-    
+
     # ************************************* #
     def _llenar_default(self, data):
         for row, prod in enumerate(data):
@@ -330,16 +329,16 @@ class TablaDatos(QtWidgets.QTableWidget):
                     cell = str(dato or '')
                 tableItem = MyTableItem(cell, sort_key)
                 self.setItem(row, col, tableItem)
-    
+
     def _llenar_resaltar_segunda(self, data):
         self._llenar_default(data)
-        
+
         bold = QFont()
         bold.setBold(True)
-        
+
         for row in range(self.rowCount()):
             self.item(row, 1).setFont(bold)
-    
+
     def _llenar_crear_venta(self, data):
         for row, prod in enumerate(data):
             for col, dato in enumerate(prod):
@@ -350,20 +349,20 @@ class TablaDatos(QtWidgets.QTableWidget):
                         cell = f'{dato:,.2f}'
                 else:
                     cell = str(dato or '')
-                
+
                 tableItem = MyTableItem(cell)
                 flags = tableItem.flags()
                 if col != 2:
                     flags &= ~Qt.ItemFlag.ItemIsEditable
                 tableItem.setFlags(flags)
-                
+
                 self.setItem(row, col, tableItem)
         self.resizeRowsToContents()
-    
+
     def _llenar_tabla_ventas_directas(self, data):
         bold = QFont()
         bold.setBold(True)
-        
+
         for row, compra in enumerate(data):
             for col, dato in enumerate(compra):
                 if isinstance(dato, datetime):
@@ -373,22 +372,22 @@ class TablaDatos(QtWidgets.QTableWidget):
                 else:
                     cell = str(dato or '')
                 self.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
-            
+
             self.item(row, 4).setFont(bold)
             self.item(row, 5).setTextAlignment(Qt.AlignCenter)
-            
+
             estado = self.item(row, 5).text()
-            
+
             if estado.startswith('Cancelada'):
                 self.item(row, 5).setBackground(QColor(ColorsEnum.ROJO))
             elif estado.startswith('Terminada'):
                 self.item(row, 5).setBackground(QColor(ColorsEnum.VERDE))
-    
+
     def _llenar_tabla_pedidos(self, data):
         bold = QFont()
         bold.setBold(True)
         icon = QIcon(":/img/resources/images/whatsapp.png")
-        
+
         for row, compra in enumerate(data):
             for col, dato in enumerate(compra):
                 if isinstance(dato, datetime):
@@ -398,26 +397,26 @@ class TablaDatos(QtWidgets.QTableWidget):
                 else:
                     cell = str(dato or '')
                 self.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
-            
+
             self.item(row, 5).setFont(bold)
             self.item(row, 6).setTextAlignment(Qt.AlignCenter)
-            
+
             estado_cell = self.item(row, 6)
             estado = estado_cell.text()
-            
+
             if estado.startswith('Cancelada'):
                 estado_cell.setBackground(QColor(ColorsEnum.ROJO))
             elif estado.startswith('Entregado') or estado.startswith('Terminada'):
                 estado_cell.setBackground(QColor(ColorsEnum.VERDE))
             elif estado.startswith('Recibido'):
                 estado_cell.setBackground(QColor(ColorsEnum.AMARILLO))
-                
+
                 button_cell = QtWidgets.QPushButton(' Enviar recordatorio')
                 button_cell.setIcon(icon)
                 button_cell.setFlat(True)
-                
+
                 self.setCellWidget(row, 8, button_cell)
-                
+
                 # resaltar pedidos con fechas de entrega ya pasadas
                 if QDateTime.currentDateTime() > compra[4]:
                     self.item(row, 4).setBackground(QColor(ColorsEnum.ROJO))
@@ -425,26 +424,26 @@ class TablaDatos(QtWidgets.QTableWidget):
 
 class NumberEdit(QtWidgets.QLineEdit):
     """ Widget QLineEdit para manejar cantidad monetarias de forma más fácil. """
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
-        
+
         font = QFont()
         font.setPointSize(14)
         self.setFont(font)
         self.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-        
+
         # validadores para datos numéricos
         self.setValidator(
             QRegularExpressionValidator(r'\d{1,15}\.?\d{0,2}'))
-    
+
     @property
     def cantidad(self):
         try:
             return Moneda(self.text())
         except ValueError:
             return Moneda.cero
-    
+
     @cantidad.setter
     def cantidad(self, val):
         self.setText(f'{Moneda(val)}')
@@ -456,44 +455,44 @@ class LabelAdvertencia(QtWidgets.QLabel):
         Añade método `resizeEvent` al padre para posicionar el label en el centro.
         
         Añade método al padre para actualizar el texto, que verifica si hay items o no en la tabla. """
-    
+
     def __init__(self, parent: QtWidgets.QTableWidget, msj: str):
         super().__init__(parent)
-        
+
         self.parent_ = parent
         self.msj = msj
-        
+
         font = QFont()
         font.setPointSize(14)
         self.setMinimumSize(282, 52)
         self.setFont(font)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        
+
         self.actualizarLabel()
-        
+
         parent.resizeEvent = self.relocate
         parent.model().rowsInserted.connect(self.actualizarLabel)
         parent.model().rowsRemoved.connect(self.actualizarLabel)
-    
+
     def relocate(self, event):
         w_t, h_t = self.parent_.width(), self.parent_.height()
         pm_x = (w_t - self.width()) // 2
         pm_y = (h_t - self.height()) // 2
-        
+
         self.move(pm_x, pm_y)
         QtWidgets.QTableWidget.resizeEvent(self.parent_, event)
-    
+
     def actualizarLabel(self):
         self.setText(self.msj if not self.parent_.rowCount() else '')
 
 
 class WarningDialog(QtWidgets.QMessageBox):
     """ Crea un widget simple con un ícono de advertencia. """
-    
+
     def __init__(self, body: str, error: str = None):
         super().__init__()
-        
+
         self.setWindowTitle('Atención')
         self.setWindowIcon(QIcon(':img/icon.ico'))
         self.setIcon(QtWidgets.QMessageBox.Icon.Warning)
@@ -507,15 +506,15 @@ class WarningDialog(QtWidgets.QMessageBox):
 class SpeechBubble(QtWidgets.QWidget):
     hiddenGeom = QRect(610, 28, 0, 165)
     shownGeom = QRect(610, 28, 345, 165)
-    
-    def __init__(self, parent, txt = ''):
+
+    def __init__(self, parent, txt=''):
         super().__init__(parent)
-        
+
         self.setGeometry(self.shownGeom)
-        
+
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(17, 17, 17, 17)
-        
+
         self.text_browser = QtWidgets.QTextBrowser()
         self.text_browser.setStyleSheet('''
             QTextBrowser { 
@@ -555,36 +554,36 @@ class SpeechBubble(QtWidgets.QWidget):
         self.text_browser.setLineWrapMode(QtWidgets.QTextBrowser.LineWrapMode.FixedPixelWidth)
         self.text_browser.setLineWrapColumnOrWidth(295)
         self.text_browser.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        
+
         layout.addWidget(self.text_browser)
-    
+
     def setText(self, txt):
         self.text_browser.setPlainText(txt)
-    
+
     def paintEvent(self, event):
         painter_path = QPainterPath()
-        
+
         # Draw the speech bubble background with added padding
         bubble_rect = self.rect().adjusted(10, 10, -10, -10)
         painter_path.addRoundedRect(bubble_rect, 10, 10)
-        
+
         # Draw the triangle at the top middle
         triangle_path = QPolygon()
         triangle_center = bubble_rect.center().y()
         triangle_path << QPoint(bubble_rect.left(), triangle_center - 10)
         triangle_path << QPoint(bubble_rect.left(), triangle_center + 10)
         triangle_path << QPoint(bubble_rect.left() - 10, triangle_center)
-        
+
         painter_path.addPolygon(triangle_path)
-        
+
         # Set the painter properties
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(Qt.GlobalColor.white)
-        
+
         painter.drawPath(painter_path.simplified())
-    
+
     def alternarDescuentos(self):
         """ Se llama a esta función al hacer click en la foto de perfil
         del usuario. Anima el tamaño de la caja de notificaciones. """
@@ -611,10 +610,10 @@ class SpeechBubble(QtWidgets.QWidget):
 class ListaNotificaciones(QtWidgets.QListWidget):
     hiddenGeom = QRect(0, 0, 400, 0)
     shownGeom = QRect(0, 0, 400, 120)
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
-        
+
         self.setStyleSheet('''
             QListWidget {
                 alternate-background-color: %s;
@@ -625,35 +624,35 @@ class ListaNotificaciones(QtWidgets.QListWidget):
             QFrame {
                 border: 2px solid;
             }
-        '''%alternate_bg.name())
-    
+        ''' % alternate_bg.name())
+
     def agregarNotificaciones(self, conn, user):
         """ Llena la caja de notificaciones. """
         from utils.sql import ManejadorInventario, ManejadorVentas
-        
+
         items = []
         manejador = ManejadorVentas(conn)
-        
+
         numPendientes, = manejador.obtenerNumPendientes(user.id)
-        
+
         if numPendientes:
             items.append(f'Tiene {numPendientes} pedidos pendientes.')
-        
+
         manejador = ManejadorInventario(conn)
-        
+
         for nombre, stock, minimo in manejador.obtenerInventarioFaltante():
             items.append(
                 f'¡Hay que surtir el material {nombre}! ' +
                 f'Faltan {minimo - stock} lotes para cubrir el mínimo.'
             )
         items = items or ['¡No hay nuevas notificaciones!']
-        
+
         for item in items:
             self.addItem(item)
-    
+
     def alternarNotificaciones(self):
         """ Se llama a esta función al hacer click en la foto de perfil
-            del usuario. Anima el tamaño de la caja de notificaciones. """        
+            del usuario. Anima el tamaño de la caja de notificaciones. """
         if not self.isVisible():
             # Create an animation to gradually change the height of the widget
             self.setVisible(True)
@@ -672,7 +671,7 @@ class ListaNotificaciones(QtWidgets.QListWidget):
             self.hide_animation.setEasingCurve(QEasingCurve.InSine)
             self.hide_animation.finished.connect(lambda: self.setVisible(False))
             self.hide_animation.start()
-    
+
     @property
     def sinNotificaciones(self):
         return self.item(0).text().startswith('¡No hay nuevas')

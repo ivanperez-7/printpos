@@ -148,6 +148,7 @@ class Injector(object):
     def __repr__(self):
         return '<injector>'
 
+
 injector = Injector()
 "Import this and provide your implementations"
 
@@ -193,6 +194,7 @@ def _inject(_injectable_type, **dependencies):
         cls = _with_meta(_injectable_type, cls)
         setattr(cls, '__dependencies__', dependencies)
         return cls
+
     return annotate
 
 
@@ -228,5 +230,6 @@ def named(name, iface):
     "Request a named implementation of a dependency"
     return Named('%s<%s>' % (iface.__name__, name), (object,),
                  {'iface': iface, 'name': name})
+
 
 __all__ = ['injector', 'inject', 'singleton', 'named']

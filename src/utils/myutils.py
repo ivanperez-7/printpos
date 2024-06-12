@@ -12,10 +12,9 @@ from PySide6.QtGui import QRegularExpressionValidator
 
 from utils.mydecorators import run_in_thread
 
-
 __all__ = ['ColorsEnum', 'FabricaValidadores', 'clamp', 'chunkify',
            'daysTo', 'unidecode', 'randFile', 'son_similar', 'stringify_float',
-           'formatDate','exportarXlsx', 'enviarWhatsApp', 'Runner']
+           'formatDate', 'exportarXlsx', 'enviarWhatsApp', 'Runner']
 
 
 class ColorsEnum:
@@ -35,16 +34,16 @@ class FabricaValidadores:
 class Runner(QThread):
     """ Clase derivada de QThread para manejar manualmente cuándo un hilo comienza y termina.
         Para manejo automático, usar decorador `run_in_thread`. """
-    
+
     def __init__(self, target, *args, **kwargs):
         super().__init__()
         self._target = target
         self._args = args
         self._kwargs = kwargs
-    
+
     def run(self):
         self._target(*self._args, **self._kwargs)
-    
+
     def stop(self):
         """ Llama a métodos `terminate` y luego `wait`. """
         self.terminate()
@@ -112,11 +111,11 @@ def son_similar(obj1, obj2):
     """ Determina si dos cadenas son similares o no. """
     str1_clean = unidecode(re.sub(r'\W+', ' ', str(obj1)))
     str2_clean = unidecode(re.sub(r'\W+', ' ', str(obj2)))
-    
+
     return str1_clean in str2_clean
 
 
-def formatDate(date = None):
+def formatDate(date=None):
     """ Da formato en texto a un dato QDateTime o datetime de Python.
         Ejemplo: 08 de febrero 2023, 4:56 p. m. """
     if date is None:
@@ -133,18 +132,18 @@ def exportarXlsx(rutaArchivo, titulos, datos):
         columnas, y una lista de tuplas con los datos principales. """
     wb = Workbook()
     ws = wb.active
-    
+
     # títulos de las columnas
     ws.append(titulos)
-    
+
     # agregar columnas con información
     for row in datos:
         ws.append(row)
-    
+
     # cambiar fuente (agregar negritas)
     for cell in ws['1']:
         cell.font = Font(bold=True)
-    
+
     wb.save(rutaArchivo)
 
 

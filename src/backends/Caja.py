@@ -25,11 +25,11 @@ class Movimiento:
     descripcion: str
     metodo: str
     usuario: str
-    
+
     @property
     def esIngreso(self):
         return self.monto > 0
-    
+
     def __iter__(self):
         """ Alimenta las tablas principales:
         
@@ -41,47 +41,50 @@ class Movimiento:
 class Caja:
     """ Clase para manejar todos los movimientos en caja. """
     movimientos: list[Movimiento]
-    
+
     @overload
-    def __init__(self, movimientos: list[tuple]) -> None: ...
+    def __init__(self, movimientos: list[tuple]) -> None:
+        ...
+
     @overload
-    def __init__(self, movimientos: list[Movimiento]) -> None: ...
-    
+    def __init__(self, movimientos: list[Movimiento]) -> None:
+        ...
+
     def __init__(self, movimientos: list[tuple] | list[Movimiento] = None):
         try:
             mov = movimientos[0]
         except (IndexError, TypeError):
             self.movimientos = []
             return
-        
+
         if isinstance(mov, Movimiento):
             self.movimientos = movimientos
         elif isinstance(mov, tuple):
             self.movimientos = [Movimiento(*m) for m in movimientos]
         else:
             raise TypeError('Lista debe ser de tuplas o Movimiento.')
-    
+
     @property
     def todoIngresos(self):
         """ Regresa objeto `filter` de movimientos que son ingresos. """
         return filter(lambda m: m.esIngreso, self.movimientos)
-    
+
     @property
     def todoEgresos(self):
         """ Regresa objeto `filter` de movimientos que son egresos. """
         return filter(lambda m: not m.esIngreso, self.movimientos)
-    
+
     def _total(self, _iter: Iterable[Movimiento], metodo: str = None):
         if metodo:
             _iter = filter(lambda m: m.metodo.startswith(metodo), _iter)
         return Moneda.sum(m.monto for m in _iter)
-    
+
     def totalIngresos(self, metodo: str = None):
         return self._total(self.todoIngresos, metodo)
-    
+
     def totalEgresos(self, metodo: str = None):
         return self._total(self.todoEgresos, metodo)
-    
+
     def totalCorte(self, metodo: str = None):
         return self._total(self.movimientos, metodo)
 
@@ -92,54 +95,54 @@ class Caja:
 class App_Caja(QtWidgets.QWidget):
     """ Backend para la ventana de movimientos de la caja. """
     rescanned = Signal()
-    
+
     def __init__(self, parent: VentanaPrincipal):
         from ui.Ui_Caja import Ui_Caja
-        
+
         super().__init__()
-        
+
         self.ui = Ui_Caja()
         self.ui.setupUi(self)
-        
+
         self.mutex = QMutex()
-        
+
         LabelAdvertencia(self.ui.tabla_ingresos, '¡No se encontró ningún movimiento!')
         LabelAdvertencia(self.ui.tabla_egresos, '¡No se encontró ningún movimiento!')
-        
+
         # guardar conexión y usuario como atributos
         self.conn = parent.conn
         self.user = parent.user
-        
+
         self.all_movimientos = Caja()
-        
+
         # interfaz de widgets de fechas
         manejador = ManejadorCaja(self.conn)
         fechaMin = manejador.obtenerFechaPrimerMov()
-        
+
         InterfazFechas(self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
                        self.ui.dateDesde, self.ui.dateHasta, fechaMin)
-        
+
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.goHome)
         self.ui.btIngreso.clicked.connect(self.registrarIngreso)
         self.ui.btEgreso.clicked.connect(self.registrarEgreso)
-        
+
         self.ui.dateDesde.dateChanged.connect(self.rescan_update)
         self.ui.dateHasta.dateChanged.connect(self.rescan_update)
         self.ui.btImprimir.clicked.connect(self.confirmar_imprimir)
         self.rescanned.connect(self.update_display)
-        
+
         self.ui.tabla_ingresos.configurarCabecera(lambda col: col not in {0, 2})
         self.ui.tabla_egresos.configurarCabecera(lambda col: col not in {0, 2})
-    
+
     def showEvent(self, event):
         self.rescan_update()
-    
+
     def resizeEvent(self, event):
         if self.isVisible():
             self.ui.tabla_egresos.resizeRowsToContents()
             self.ui.tabla_ingresos.resizeRowsToContents()
-    
+
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
@@ -147,35 +150,35 @@ class App_Caja(QtWidgets.QWidget):
     def rescan_update(self, *args):
         if not self.mutex.try_lock():
             return
-        
+
         self.ui.lbTotal.setText('Recuperando información...')
-        
+
         fechaDesde = self.ui.dateDesde.date()
         fechaHasta = self.ui.dateHasta.date()
         manejador = ManejadorCaja(self.conn)
-        
+
         movimientos = manejador.obtenerMovimientos(fechaDesde, fechaHasta)
         self.all_movimientos = Caja(movimientos)
-        
+
         self.rescanned.emit()
-    
+
     def update_display(self):
         """ Actualiza las tablas de ingresos y egresos.
 
             Relee base de datos en cualquier evento (en este caso, al mover fechas). """
         total = self.all_movimientos.totalCorte()
         self.ui.lbTotal.setText(f'Total del corte: ${total}')
-        
+
         self.llenar_ingresos()
         self.llenar_egresos()
         self.mutex.unlock()
-    
+
     def llenar_ingresos(self):
         bold = QFont()
         bold.setBold(True)
-        
+
         movimientos = self.all_movimientos
-        
+
         self.ui.lbTotalIngresos.setText(
             'Total de ingresos: ${}'.format(movimientos.totalIngresos()))
         self.ui.lbIngresosEfectivo.setText(
@@ -184,18 +187,18 @@ class App_Caja(QtWidgets.QWidget):
             'Tarjeta de crédito/débito: ${}'.format(movimientos.totalIngresos('Tarjeta')))
         self.ui.lbIngresosTransferencia.setText(
             'Transferencias bancarias: ${}'.format(movimientos.totalIngresos('Transferencia')))
-        
+
         tabla = self.ui.tabla_ingresos
         tabla.modelo = tabla.Modelos.RESALTAR_SEGUNDA
         tabla.llenar(movimientos.todoIngresos)
         tabla.resizeRowsToContents()
-    
+
     def llenar_egresos(self):
         bold = QFont()
         bold.setBold(True)
-        
+
         movimientos = self.all_movimientos
-        
+
         self.ui.lbTotalEgresos.setText(
             'Total de egresos: ${}'.format(-movimientos.totalEgresos()))
         self.ui.lbEgresosEfectivo.setText(
@@ -204,25 +207,25 @@ class App_Caja(QtWidgets.QWidget):
             'Tarjeta de crédito/débito: ${}'.format(-movimientos.totalEgresos('Tarjeta')))
         self.ui.lbEgresosTransferencia.setText(
             'Transferencias bancarias: ${}'.format(-movimientos.totalEgresos('Transferencia')))
-        
+
         tabla = self.ui.tabla_egresos
         tabla.modelo = tabla.Modelos.RESALTAR_SEGUNDA
         tabla.llenar(movimientos.todoEgresos)
         tabla.resizeRowsToContents()
-    
+
     def confirmar_imprimir(self):
         """ Ventana de confirmación para imprimir corte. """
         qm = QtWidgets.QMessageBox
         ret = qm.question(self, 'Atención',
                           'Se procederá a imprimir el corte de caja entre '
                           'las fechas proporcionadas.\n¿Desea continuar?')
-        
+
         if ret == qm.Yes:
             from pdf import ImpresoraTickets
-            
+
             impresora = ImpresoraTickets(self)
             impresora.imprimirCorteCaja(self.all_movimientos, self.user.nombre)
-    
+
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
@@ -230,12 +233,12 @@ class App_Caja(QtWidgets.QWidget):
         """ Registrar ingreso en movimientos. """
         self.Dialog = Dialog_Registrar(self)
         self.Dialog.success.connect(self.rescan_update)
-    
+
     def registrarEgreso(self):
         """ Registrar egreso en movimientos. """
         self.Dialog = Dialog_Registrar(self, egreso=True)
         self.Dialog.success.connect(self.rescan_update)
-    
+
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
         parent: VentanaPrincipal = self.parentWidget()
@@ -248,19 +251,19 @@ class App_Caja(QtWidgets.QWidget):
 
 class Dialog_Registrar(QtWidgets.QDialog):
     success = Signal()
-    
+
     def __init__(self, parent: App_Caja, egreso=False):
         from PySide6 import QtCore
-        
+
         super().__init__(parent)
-        
+
         self.egreso = egreso  # es egreso o no
         self.conn = parent.conn
         self.user = parent.user
-        
+
         ttl = 'Registrar ' + ('egreso' if egreso else 'ingreso')
         self.setWindowTitle(ttl)
-        
+
         self.setFixedSize(480, 160)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setModal(True)
@@ -327,26 +330,26 @@ class Dialog_Registrar(QtWidgets.QDialog):
         buttonBox.setCenterButtons(True)
         buttonBox.setObjectName("buttonBox")
         formLayout.setWidget(3, QtWidgets.QFormLayout.SpanningRole, buttonBox)
-        
+
         buttonBox.accepted.connect(self.accept)  # type: ignore
         buttonBox.rejected.connect(self.reject)  # type: ignore
         QtCore.QMetaObject.connectSlotsByName(self)
-        
+
         # guardar algunos widgets como atributos
         self.txtCantidad = txtCantidad
         self.groupMetodo = groupMetodo
         self.txtMotivo = txtMotivo
-        
+
         # validadores para datos numéricos
         txtCantidad.setValidator(
             FabricaValidadores.NumeroDecimal)
-        
+
         self.show()
-    
+
     def accept(self):
         if self.monto == 0 or not self.motivo:
             return
-        
+
         id_metodo = ManejadorMetodosPago(self.conn).obtenerIdMetodo(self.metodo)
         caja_db_parametros = (
             QDateTime.currentDateTime().toPython(),
@@ -355,28 +358,28 @@ class Dialog_Registrar(QtWidgets.QDialog):
             id_metodo,
             self.user.id
         )
-        
+
         manejador = ManejadorCaja(self.conn, '¡No se pudo registrar el movimiento!')
-        
+
         if manejador.insertarMovimiento(caja_db_parametros):
             QtWidgets.QMessageBox.information(self, 'Éxito', '¡Movimiento registrado!')
             self.success.emit()
             self.close()
-    
+
     @property
     def monto(self):
         try:
             return float(self.txtCantidad.text()) * (-1 if self.egreso else 1)
         except ValueError:
             return 0.
-    
+
     @property
     def metodo(self):
         out = self.groupMetodo.checkedButton().text()
         if out == 'Transferencia':
             out += ' bancaria'
         return out
-    
+
     @property
     def motivo(self):
         return self.txtMotivo.text()
