@@ -9,7 +9,6 @@ from PySide6.QtGui import QPainter, QImage
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 
 from .generadores import *
-from backends.Caja import Caja
 from config import INI
 from utils import sql
 from utils.mydecorators import run_in_thread
@@ -170,7 +169,7 @@ class ImpresoraTickets(ImpresoraPDF):
         self.enviarAImpresora(data)
 
     @run_in_thread
-    def imprimirCorteCaja(self, caja: Caja, responsable: str):
+    def imprimirCorteCaja(self, caja, responsable: str):
         """ Genera un ticket para el presupuesto de una compra. """
         assert self.printer, 'Impresora aún no inicializada.'
 

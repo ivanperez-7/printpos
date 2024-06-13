@@ -278,7 +278,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         manejador = ManejadorVentas(conn)
         estado = 'Cancelada por ' + manejador.usuarioActivo
 
-        if ret == qm.Yes and not manejador.anularPagos(idVenta):
+        if ret == qm.Yes and not manejador.anularPagos(idVenta, self.user.id):
             return
         if manejador.actualizarEstadoVenta(idVenta, estado, commit=True):
             qm.information(self, 'Éxito', 'Se marcó como cancelada la venta seleccionada.')
@@ -416,6 +416,8 @@ class Base_PagarVenta(QtWidgets.QWidget):
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         self.setFixedSize(833, 795)
+        
+        self.stackPagos = self.ui.stackPagos
 
         # guardar conexión y usuario como atributos
         self.conn = first.conn
@@ -463,10 +465,6 @@ class Base_PagarVenta(QtWidgets.QWidget):
 
         self.stackPagos.total = self.ui.txtAnticipo.cantidad = self.pagoPredeterminado()
         self.stackPagos.agregarPago()
-
-    @property
-    def stackPagos(self):
-        return self.ui.stackPagos
 
     ####################
     # FUNCIONES ÚTILES #
@@ -537,7 +535,6 @@ class Base_PagarVenta(QtWidgets.QWidget):
         """ Concluye la venta de la siguiente forma:
             1. Inserta pagos en tabla ventas_pagos.
             2. Si actualizarEstadoVenta, entonces dialogoExito. """
-        # registrar pagos en tabla ventas_pagos
         manejadorVentas = ManejadorVentas(self.conn)
 
         # registrar pagos en tabla ventas_pagos
@@ -546,7 +543,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
                            else self.stackPagos.restanteEnEfectivo)
 
             if not manejadorVentas.insertarPago(self.id_ventas, wdg.metodoSeleccionado,
-                                                montoAPagar, wdg.montoPagado):
+                                                montoAPagar, wdg.montoPagado, self.user.id):
                 return
 
         if self.actualizarEstadoVenta():

@@ -229,7 +229,8 @@ class App_CrearVenta(QtWidgets.QWidget):
 
         self.ui.tabla_productos.itemChanged.connect(self.item_changed)
         self.ui.btRegistrar.clicked.connect(self.insertarCliente)
-        self.ui.btSeleccionar.clicked.connect(lambda: App_SeleccionarCliente(self))
+        self.ui.btSeleccionar.clicked.connect(
+            lambda: App_SeleccionarCliente(self).success.connect(self.seleccionarCliente))
         self.ui.btDescuento.clicked.connect(self.agregarDescuento)
         self.ui.btDescuentosCliente.clicked.connect(self.dialogoDescuentos.alternarDescuentos)
         self.ui.btDeshacer.clicked.connect(self.deshacerFechaEntrega)
@@ -298,6 +299,22 @@ class App_CrearVenta(QtWidgets.QWidget):
             correo=self.ui.txtCorreo.text()
         )
         modulo.success.connect(self.establecerCliente)
+    
+    def seleccionarCliente(self, selected: list[QtWidgets.QTableWidgetItem]):
+        # recuérdese que Clientes(Nombre, Teléfono, Correo, Dirección, RFC)
+        self.establecerCliente(
+            nombre := selected[0].text(),
+            telefono := selected[1].text(),
+            selected[2].text())
+
+        # checar si el cliente es especial
+        manejador = ManejadorClientes(self.conn)
+        especial, descuentos = manejador.obtenerDescuentosCliente(nombre, telefono)
+        self.ui.btDescuentosCliente.setVisible(especial)
+
+        if descuentos is None or not (txt := descuentos.strip()):
+            txt = 'El cliente aún no tiene descuentos.'
+        self.dialogoDescuentos.setText(txt)
 
     def cambiarFechaEntrega(self):
         modulo = App_FechaEntrega(self)
@@ -719,6 +736,7 @@ class App_AgregarProducto(Base_VisualizarProductos):
 @fondo_oscuro
 class App_SeleccionarCliente(QtWidgets.QWidget):
     """ Backend para la función de seleccionar un cliente de la base de datos. """
+    success = Signal(list)
 
     def __init__(self, first: App_CrearVenta):
         from ui.Ui_SeleccionarCliente import Ui_SeleccionarCliente
@@ -731,9 +749,6 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún cliente!')
-
-        # otras variables importantes
-        self.first = first
 
         # guardar conexión y usuarios como atributos
         self.conn = first.conn
@@ -780,29 +795,9 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
 
     def done(self):
         """ Modifica datos de cliente en la ventana principal (CrearVenta). """
-        if not (selected := self.ui.tabla_seleccionar.selectedItems()):
-            return
-
-        # recuérdese que Clientes(Nombre, Teléfono, Correo, Dirección, RFC)
-        nombre = selected[0].text()
-        telefono = selected[1].text()
-        correo = selected[2].text()
-
-        self.first.establecerCliente(nombre, telefono, correo)
-
-        # checar si el cliente es especial
-        manejador = ManejadorClientes(self.conn)
-
-        especial, descuentos = manejador.obtenerDescuentosCliente(nombre, telefono)
-        self.first.ui.btDescuentosCliente.setVisible(especial)
-
-        if descuentos:
-            txt = descuentos.strip() or 'El cliente aún no tiene descuentos.'
-        else:
-            txt = 'El cliente aún no tiene descuentos.'
-        self.first.dialogoDescuentos.setText(txt)
-
-        self.close()
+        if selected := self.ui.tabla_seleccionar.selectedItems():
+            self.success.emit(selected)
+            self.close()
 
 
 @fondo_oscuro

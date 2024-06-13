@@ -1221,7 +1221,7 @@ class ManejadorVentas(DatabaseManager):
         ''', params, commit=True)
 
     def insertarPago(self, id_ventas: int, metodo: str,
-                     monto: Moneda, recibido: Moneda,
+                     monto: Moneda, recibido: Moneda, id_usuarios: int,
                      commit: bool = False):
         """ Inserta pago de venta a tabla ventas_pagos.
         
@@ -1230,17 +1230,15 @@ class ManejadorVentas(DatabaseManager):
 
         return self.execute('''
             INSERT INTO ventas_pagos (
-                id_ventas, id_metodo_pago, fecha_hora, monto, recibido
+                id_ventas, id_metodo_pago, fecha_hora, monto, recibido, id_usuarios
             )
-            VALUES (?,?,?,?,?);
-        ''', (id_ventas, id_metodo, datetime.now(), monto, recibido), commit=commit)
+            VALUES (?,?,?,?,?,?);
+        ''', (id_ventas, id_metodo, datetime.now(), monto, recibido, id_usuarios), commit=commit)
 
-    def anularPagos(self, id_venta: int, commit: bool = False):
+    def anularPagos(self, id_venta: int, id_usuarios: int, commit: bool = False):
         """ Anula pagos en tabla ventas_pagos. No hace `commit` automáticamente. """
-        for fecha, metodo, monto, recibido in self.obtenerPagosVenta(id_venta):
-            if not self.insertarPago(id_venta, metodo, -monto, 0.):
-                return False
-        return True
+        return all(self.insertarPago(id_venta, metodo, -monto, 0., id_usuarios)
+                   for fecha, metodo, monto, recibido in self.obtenerPagosVenta(id_venta))
 
     def actualizarEstadoVenta(self, id_ventas: int, estado: str, commit: bool = False):
         """ Actualiza estado de venta a parámetro.
