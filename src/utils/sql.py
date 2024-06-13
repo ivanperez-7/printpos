@@ -1115,18 +1115,6 @@ class ManejadorVentas(DatabaseManager):
             WHERE   id_ventas = ?;
         ''', (id_venta,))
 
-    def obtenerVendedorAsociado(self, id_venta: int):
-        """ Obtener nombre de vendedor asociado a la venta. """
-        result = self.fetchone('''
-            SELECT	U.nombre
-            FROM	Ventas AS V
-                    LEFT JOIN Usuarios AS U
-                           ON V.id_usuarios = U.id_usuarios
-            WHERE	V.id_ventas = ?;
-        ''', (id_venta,))
-        if result:
-            return result[0]
-
     def obtenerImporteTotal(self, id_venta: int) -> Moneda:
         """ Obtiene el importe total de una venta. """
         result = self.fetchone('''
@@ -1180,10 +1168,13 @@ class ManejadorVentas(DatabaseManager):
             SELECT  fecha_hora,
                     metodo,
                     monto,
-                    recibido
+                    recibido,
+                    nombre
             FROM    ventas_pagos VP
                     LEFT JOIN metodos_pago MP
                         ON VP.id_metodo_pago = MP.id_metodo_pago
+                    LEFT JOIN usuarios U
+                        ON VP.id_usuarios = U.id_usuarios
             WHERE   id_ventas = ?
             ORDER   BY fecha_hora ASC;
         ''', (id_venta,))

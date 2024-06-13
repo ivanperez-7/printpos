@@ -651,7 +651,7 @@ class App_ImprimirTickets(QtWidgets.QWidget):
         font = QFont()
         font.setPointSize(12)
 
-        for i, (fecha, metodo, monto, _) in enumerate(pagos):
+        for i, (fecha, metodo, monto, r, v) in enumerate(pagos):
             txt = f'  Pago {i + 1}: ${monto:.2f}, {metodo.lower()} ({formatDate(fecha)})'
             checkbox = QtWidgets.QCheckBox(txt)
             checkbox.setFont(font)

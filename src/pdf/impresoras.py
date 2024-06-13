@@ -139,9 +139,6 @@ class ImpresoraTickets(ImpresoraPDF):
         manejador = sql.ManejadorVentas(self.conn)
         productos = list(manejador.obtenerTablaTicket(idx))
 
-        # más datos para el ticket
-        vendedor = manejador.obtenerVendedorAsociado(idx)
-
         # cambiar método de pago (abreviatura)
         abrev = {'Efectivo': 'EFEC',
                  'Transferencia bancaria': 'TRF',
@@ -155,7 +152,7 @@ class ImpresoraTickets(ImpresoraPDF):
         elif isinstance(nums, slice):
             pagos = pagos[nums]
 
-        for fecha, metodo, monto, pagado in pagos:
+        for fecha, metodo, monto, pagado, vendedor in pagos:
             data = generarTicketPDF(productos, vendedor, idx, monto,
                                     pagado, abrev[metodo], fecha)
             self.enviarAImpresora(data)
