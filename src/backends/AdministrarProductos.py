@@ -72,7 +72,7 @@ class App_AdministrarProductos(QtWidgets.QWidget):
         self.ui.lbContador.setText('Recuperando información...')
 
         manejador = ManejadorProductos(self.conn)
-        self.all = manejador.obtenerTablaPrincipal() or []
+        self.all = manejador.obtenerVista('view_all_productos') or []
         self.ui.lbContador.setText(f'{len(self.all)} productos en la base de datos.')
 
         self.rescanned.emit()

@@ -70,7 +70,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
             También lee de nuevo la tabla de usuarios, si se desea. """
         if rescan:
             manejador = ManejadorUsuarios(self.conn)
-            self.all = manejador.obtenerTablaPrincipal()
+            self.all = manejador.obtenerVista('view_all_usuarios')
 
         if txt_busqueda := self.ui.searchBar.text().strip():
             found = [c for c in self.all

@@ -90,7 +90,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
         self.ui.lbContador.setText('Recuperando información...')
 
         manejador = ManejadorClientes(self.conn)
-        self.all = manejador.obtenerTablaPrincipal()
+        self.all = manejador.obtenerVista('view_all_clientes')
         self.ui.lbContador.setText(f'{len(self.all)} clientes en la base de datos.')
 
         self.rescanned.emit()

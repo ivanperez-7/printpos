@@ -427,6 +427,8 @@ class Base_PagarVenta(QtWidgets.QWidget):
             self.id_ventas = self.obtenerIdVenta()
         else:
             self.id_ventas = idx
+        
+        assert self.id_ventas is not None
 
         # llenar labels y campos de texto
         self.total = self.calcularTotal()
