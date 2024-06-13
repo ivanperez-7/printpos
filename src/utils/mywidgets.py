@@ -21,7 +21,7 @@ alternate_bg = QColor(225, 225, 225)
 
 
 class VentanaPrincipal(QtWidgets.QMainWindow):
-    def __init__(self, conn: sql.Connection):
+    def __init__(self, conn: sql.Connection, user: Usuario):
         super().__init__()
 
         self.resize(1540, 800)
@@ -29,7 +29,7 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
         self.setWindowIcon(QIcon(':img/icon.ico'))
 
         self.conn = conn
-        self.user = Usuario.generarUsuarioActivo(conn)
+        self.user = user
 
         from backends.Home import App_ConsultarPrecios
         self.consultarPrecios = App_ConsultarPrecios(self)
@@ -628,17 +628,15 @@ class ListaNotificaciones(QtWidgets.QListWidget):
 
     def agregarNotificaciones(self, conn, user):
         """ Llena la caja de notificaciones. """
-        from utils.sql import ManejadorInventario, ManejadorVentas
-
         items = []
-        manejador = ManejadorVentas(conn)
+        manejador = sql.ManejadorVentas(conn)
 
         numPendientes, = manejador.obtenerNumPendientes(user.id)
 
         if numPendientes:
             items.append(f'Tiene {numPendientes} pedidos pendientes.')
 
-        manejador = ManejadorInventario(conn)
+        manejador = sql.ManejadorInventario(conn)
 
         for nombre, stock, minimo in manejador.obtenerInventarioFaltante():
             items.append(

@@ -177,8 +177,9 @@ class App_Login(QtWidgets.QWidget):
     def crearVentanaPrincipal(self, conn):
         """ En método separado para regresar al hilo principal."""
         from utils.mywidgets import VentanaPrincipal
+        user = Usuario.generarUsuarioActivo(conn)
+        self.mainWindow = VentanaPrincipal(conn, user)
         self.close()
-        self.mainWindow = VentanaPrincipal(conn)
 
 
 ########################

@@ -148,13 +148,11 @@ def fondo_oscuro(modulo):
         from utils.mywidgets import DimBackground
 
         orig_init(self, *args, **kwargs)
-
-        parent = args[0]  # QMainWindow, parent widget
-        parent.bg = DimBackground(parent)
+        self.bg = DimBackground(args[0]) # args[0] = widget padre (módulo actual)
 
     def closeEvent(self, event):
         orig_close(self, event)
-        self.parentWidget().bg.close()
+        self.bg.close()
 
     modulo.__init__ = __init__
     modulo.closeEvent = closeEvent
