@@ -157,23 +157,6 @@ class ManejadorCaja(DatabaseManager):
 class ManejadorClientes(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Clientes. """
 
-    def obtenerTablaPrincipal(self):
-        """ Sentencia para alimentar la tabla principal de clientes. """
-        return self.fetchall('''
-            SELECT  C.id_clientes,
-                    nombre,
-                    telefono,
-                    correo,
-                    direccion,
-                    RFC,
-                    MAX(fecha_hora_creacion) AS ultimaVenta
-            FROM    Clientes AS C
-                    LEFT JOIN Ventas AS V
-                           ON C.id_clientes = V.id_clientes
-            GROUP   BY 1, 2, 3, 4, 5, 6
-            ORDER   BY C.id_clientes;
-        ''')
-
     @overload
     def obtenerCliente(self, id_cliente) -> tuple:
         ...
@@ -397,48 +380,6 @@ class ManejadorMetodosPago(DatabaseManager):
 
 class ManejadorProductos(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Inventario. """
-
-    def obtenerTablaPrincipal(self):
-        """ Sentencia para alimentar tabla principal de productos. """
-        return self.fetchall('''
-            WITH costo_produccion AS (
-                SELECT
-                    P.id_productos,
-                    COALESCE(SUM(PUI.utiliza_inventario * I.precio_unidad), 0.0) AS costo
-                FROM
-                    Productos AS P
-                    LEFT JOIN productos_utiliza_inventario AS PUI
-                        ON P.id_productos = PUI.id_productos
-                    LEFT JOIN inventario AS I
-                        ON PUI.id_inventario = I.id_inventario
-                GROUP BY
-                    1
-                ORDER BY
-                    1 ASC
-            )
-
-            SELECT
-                P.id_productos,
-                P.codigo,
-                P.descripcion 
-                    || IIF(desde > 1, ', desde ' || ROUND(desde, 1) || ' unidades ', '')
-                    || IIF(P_Inv.duplex, '[PRECIO DUPLEX]', '')                 AS descripcion,
-                P.abreviado,
-                COALESCE(P_gran.precio_m2, P_Inv.precio_con_iva)                AS precio_con_iva, 
-                COALESCE(P_gran.precio_m2, P_Inv.precio_con_iva) / 1.16         AS precio_sin_iva,
-                C_Prod.costo,
-                COALESCE(P_gran.precio_m2, P_Inv.precio_con_iva) - C_Prod.costo AS utilidad
-            FROM
-                productos AS P
-                LEFT JOIN productos_intervalos AS P_Inv
-                    ON P_Inv.id_productos = P.id_productos
-                LEFT JOIN productos_gran_formato AS P_gran
-                    ON P.id_productos = P_gran.id_productos
-                JOIN costo_produccion AS C_Prod
-                    ON P.id_productos = C_Prod.id_productos
-            ORDER BY
-                1, desde ASC;
-        ''')
 
     def obtenerProducto(self, id_productos: int):
         """ Obtener todas las columnas de un producto. """
@@ -1266,20 +1207,6 @@ class ManejadorVentas(DatabaseManager):
 
 class ManejadorUsuarios(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Usuarios. """
-
-    def obtenerTablaPrincipal(self):
-        """ Obtener tabla principal para el módulo de administrar usuarios. """
-        return self.fetchall('''
-            SELECT  usuario,
-                    nombre,
-                    permisos,
-                    MAX(fecha_hora_creacion) AS ultimaVenta
-            FROM    Usuarios AS U
-                    LEFT JOIN Ventas AS V
-                           ON U.id_usuarios = V.id_usuarios
-            GROUP   BY 1, 2, 3
-            ORDER   BY UPPER(U.nombre) ASC;
-        ''')
 
     def obtenerUsuario(self, usuario: str):
         """ Obtener tupla de usuario dado el identificador de usuario. """

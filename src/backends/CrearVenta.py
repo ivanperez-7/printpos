@@ -756,7 +756,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
 
         # llena la tabla con todos los clientes existentes
         manejador = ManejadorClientes(self.conn)
-        self.all = [datos for (_, *datos) in manejador.obtenerTablaPrincipal()]
+        self.all = [datos for (_, *datos) in manejador.obtenerVista('view_all_clientes')]
 
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)
