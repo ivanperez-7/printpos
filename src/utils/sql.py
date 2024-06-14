@@ -158,7 +158,7 @@ class ManejadorClientes(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Clientes. """
 
     @overload
-    def obtenerCliente(self, id_cliente) -> tuple:
+    def obtenerCliente(self, id_cliente: int) -> tuple:
         ...
 
     @overload
@@ -167,7 +167,7 @@ class ManejadorClientes(DatabaseManager):
 
     def obtenerCliente(self, *args):
         """ Obtener todos los datos de un cliente. """
-        if len(args) == 2 and all(isinstance(arg, str) for arg in args):
+        if len(args) == 2:
             query = ''' SELECT  * 
                         FROM    Clientes 
                         WHERE   nombre = ? 
@@ -177,7 +177,7 @@ class ManejadorClientes(DatabaseManager):
                         FROM    Clientes 
                         WHERE   id_clientes = ?; '''
         else:
-            raise ValueError('Argumentos inválidos: ninguna implementación.')
+            raise ValueError('Argumentos inválidos: esperado (id_cliente,) o (nombre, teléfono).')
         return self.fetchone(query, args)
 
     @overload
@@ -188,21 +188,21 @@ class ManejadorClientes(DatabaseManager):
     def obtenerDescuentosCliente(self, nombre: str, telefono: str) -> tuple:
         ...
 
-    def obtenerDescuentosCliente(self, *args, **kwargs):
+    def obtenerDescuentosCliente(self, *args):
         """ Obtener booleano de cliente especial y cadena de descuentos. """
-        if len(args) == 2 and all(isinstance(arg, str) for arg in args):
+        if len(args) == 2:
             query = ''' SELECT  cliente_especial,
                                 descuentos
                         FROM    Clientes
                         WHERE   nombre = ?
                                 AND telefono = ?; '''
-        elif len(args) == 1 and isinstance(args[0], int):
+        elif len(args) == 1:
             query = ''' SELECT  cliente_especial,
                                 descuentos
                         FROM    Clientes
                         WHERE   id_clientes = ?; '''
         else:
-            raise ValueError('Argumentos inválidos: ninguna implementación.')
+            raise ValueError('Argumentos inválidos: esperado (id_cliente,) o (nombre, teléfono).')
         return self.fetchone(query, args)
 
     def insertarCliente(self, datosCliente: tuple):
@@ -1170,7 +1170,7 @@ class ManejadorVentas(DatabaseManager):
     def anularPagos(self, id_venta: int, id_usuarios: int, commit: bool = False):
         """ Anula pagos en tabla ventas_pagos. No hace `commit` automáticamente. """
         return all(self.insertarPago(id_venta, metodo, -monto, 0., id_usuarios)
-                   for fecha, metodo, monto, recibido in self.obtenerPagosVenta(id_venta))
+                   for fecha, metodo, monto, recibido, v in self.obtenerPagosVenta(id_venta))
 
     def actualizarEstadoVenta(self, id_ventas: int, estado: str, commit: bool = False):
         """ Actualiza estado de venta a parámetro.
@@ -1181,28 +1181,6 @@ class ManejadorVentas(DatabaseManager):
             SET     estado = ?
             WHERE   id_ventas = ?;
         ''', (estado, id_ventas), commit=commit)
-
-    def agregarComision(self, id_ventas: int, importe: float, commit: bool = False):
-        """ Agregar producto de comisión por pago con tarjeta a venta.
-        
-            No hace `commit`, a menos que se indique lo contrario. """
-        if importe <= 0.:
-            return True
-
-        manejador = ManejadorProductos(self._conn)
-        id_producto = manejador.obtenerIdProducto('COMISION')
-
-        params = (id_ventas, id_producto, importe,
-                  1., 0., 'COMISIÓN POR PAGO CON TARJETA', False)
-
-        return self.execute('''
-            INSERT INTO Ventas_Detallado (
-                id_ventas, id_productos, cantidad, precio, 
-                descuento, especificaciones, duplex
-            ) 
-            VALUES 
-                (?,?,?,?,?,?,?);
-        ''', params, commit=commit)
 
 
 class ManejadorUsuarios(DatabaseManager):

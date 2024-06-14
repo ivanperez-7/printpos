@@ -1,6 +1,5 @@
 """ Provee clases para enviar documentos PDF, en bytes, a impresoras. """
 import io
-from typing import overload
 
 import fitz
 from PySide6.QtWidgets import QWidget
@@ -19,36 +18,18 @@ from utils.mywidgets import WarningDialog
 class ImpresoraPDF:
     """ Clase general para manejar impresoras y enviar archivos a estas. """
 
-    def __init__(self):
-        self.printer: QPrinter = None
+    def __init__(self, conn: sql.Connection = None, parent: QWidget = None):
+        self.conn = conn
+        self.parent = parent
+        self.printer = self.obtenerImpresora()
 
-    @staticmethod
-    def escogerImpresora(parent: QWidget = None):
-        """ Diálogo para escoger impresora. En hilo principal. """
-        printer = QPrinter(QPrinter.HighResolution)
-
-        dialog = QPrintDialog(printer, parent)
-        dialog.setOption(QPrintDialog.PrintToFile, False)
-        dialog.setOption(QPrintDialog.PrintPageRange, False)
-
-        if dialog.exec() != QPrintDialog.Accepted:
-            return None
-        else:
-            return printer
-
-    @staticmethod
-    def obtenerImpresoraTickets():
-        """ Lee impresora de tickets en archivo config. En hilo principal. """
-        pInfo = QPrinterInfo.printerInfo(INI.IMPRESORA)
-
-        if not pInfo.printerName():
-            WarningDialog(f'¡No se encontró la impresora {INI.IMPRESORA}!')
-            return None
-        else:
-            return QPrinter(pInfo, QPrinter.HighResolution)
+    def obtenerImpresora(self):
+        return None
 
     def enviarAImpresora(self, data: io.BytesIO):
         """ Convertir PDF a imagen y mandar a impresora. """
+        assert self.printer, 'Impresora aún no inicializada.'
+
         doc = fitz.open(stream=data)
         painter = QPainter()
 
@@ -79,30 +60,21 @@ class ImpresoraOrdenes(ImpresoraPDF):
     """ Impresora para órdenes de compra. 
         Siempre crea diálogo para escoger impresora. """
 
-    @overload
-    def __init__(self, conn: sql.Connection) -> None:
-        ...
+    def obtenerImpresora(self):
+        """ Diálogo para escoger impresora. En hilo principal. """
+        printer = QPrinter(QPrinter.HighResolution)
 
-    @overload
-    def __init__(self, parent: QWidget) -> None:
-        ...
+        dialog = QPrintDialog(printer, self.parent)
+        dialog.setOption(QPrintDialog.PrintToFile, False)
+        dialog.setOption(QPrintDialog.PrintPageRange, False)
 
-    def __init__(self, arg):
-        if isinstance(arg, sql.Connection):
-            self.conn = arg
-            self.parent = None
-        elif isinstance(arg, QWidget):
-            self.conn = arg.conn
-            self.parent = arg
+        if dialog.exec() != QPrintDialog.Accepted:
+            return None
         else:
-            self.printer: QPrinter = None
-            raise ValueError('Argumentos inválidos: ninguna implementación.')
-        self.printer = self.escogerImpresora(self.parent)
+            return printer
 
     @run_in_thread
     def imprimirOrdenCompra(self, idx: int):
-        assert self.printer, 'Impresora aún no inicializada.'
-
         manejador = sql.ManejadorVentas(self.conn)
         data = generarOrdenCompra(manejador, idx)
         self.enviarAImpresora(data)
@@ -112,29 +84,20 @@ class ImpresoraTickets(ImpresoraPDF):
     """ Impresora para tickets. 
         Intenta leer impresora por defecto del archivo config. """
 
-    @overload
-    def __init__(self, conn: sql.Connection) -> None:
-        ...
+    def obtenerImpresora(self):
+        """ Lee impresora de tickets en archivo config. En hilo principal. """
+        pInfo = QPrinterInfo.printerInfo(INI.IMPRESORA)
 
-    @overload
-    def __init__(self, parent: QWidget) -> None:
-        ...
-
-    def __init__(self, arg):
-        if isinstance(arg, sql.Connection):
-            self.conn = arg
-        elif isinstance(arg, QWidget):
-            self.conn = arg.conn
+        if not pInfo.printerName():
+            WarningDialog(f'¡No se encontró la impresora {INI.IMPRESORA}!')
+            return None
         else:
-            self.printer: QPrinter = None
-            raise ValueError('Argumentos inválidos: ninguna implementación.')
-        self.printer = self.obtenerImpresoraTickets()
+            return QPrinter(pInfo, QPrinter.HighResolution)
 
     @run_in_thread
     def imprimirTicketCompra(self, idx: int, nums: list[int] | slice = None):
         """ Genera el ticket de compra a partir de un identificador en la base de datos.
             Recibe un arreglo de índices para imprimir pagos específicos. """
-        assert self.printer, 'Impresora aún no inicializada.'
         # obtener datos de la compra, de la base de datos
         manejador = sql.ManejadorVentas(self.conn)
         productos = list(manejador.obtenerTablaTicket(idx))
@@ -160,15 +123,11 @@ class ImpresoraTickets(ImpresoraPDF):
     @run_in_thread
     def imprimirTicketPresupuesto(self, productos: list, vendedor: str):
         """ Genera un ticket para el presupuesto de una compra. """
-        assert self.printer, 'Impresora aún no inicializada.'
-
         data = generarTicketPDF(productos, vendedor)
         self.enviarAImpresora(data)
 
     @run_in_thread
     def imprimirCorteCaja(self, caja, responsable: str):
         """ Genera un ticket para el presupuesto de una compra. """
-        assert self.printer, 'Impresora aún no inicializada.'
-
         data = generarCortePDF(caja, responsable)
         self.enviarAImpresora(data)

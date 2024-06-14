@@ -310,7 +310,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
                           f'con folio {idVenta}. ¿Desea continuar?')
 
         if ret == qm.Yes:
-            impresora = ImpresoraTickets(self)
+            impresora = ImpresoraTickets(self.conn)
             impresora.imprimirTicketCompra(idVenta)
 
     def imprimirOrden(self):
@@ -327,7 +327,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
                           f'con folio {idVenta}. ¿Desea continuar?')
 
         if ret == qm.Yes:
-            impresora = ImpresoraOrdenes(self)
+            impresora = ImpresoraOrdenes(self.conn, self)
             impresora.imprimirOrdenCompra(idVenta)
 
     def goHome(self):
@@ -618,7 +618,7 @@ class App_TerminarVenta(Base_PagarVenta):
 
         if ret == qm.Yes:
             slais = slice(-self.ui.stackPagos.count(), None)
-            impresora = ImpresoraTickets(self)
+            impresora = ImpresoraTickets(self.conn)
             impresora.imprimirTicketCompra(self.id_ventas, slais)
 
         self.success.emit()
