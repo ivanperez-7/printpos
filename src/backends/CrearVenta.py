@@ -945,7 +945,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
                 item.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         self.show()
-    
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self.close()
@@ -969,7 +969,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
                 ''
             ])
 
-        mensaje.append('*Total a pagar: $' + self.first.ui.lbTotal.text() + '*')
+        mensaje.append(f'*Total a pagar: ${ventaDatos.total}*')
         mensaje = '\n'.join(mensaje)
         celular = self.first.ui.txtTelefono.text()
 

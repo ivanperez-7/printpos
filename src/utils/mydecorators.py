@@ -14,45 +14,41 @@ class Dialog_ObtenerAdmin(QDialog):
     success = Signal(object)
 
     def __init__(self, parent=None):  # código GUI
-        from PySide6 import QtCore, QtGui, QtWidgets
+        from PySide6 import QtCore, QtWidgets
 
         super().__init__(parent)
 
-        self.resize(370, 116)
-        self.setFixedSize(QtCore.QSize(370, 116))
-        self.setWindowTitle("Atención")
-        self.setWindowModality(QtCore.Qt.ApplicationModal)
-        self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+        self.resize(400, 120)
+        self.setWindowTitle("Requiere administrador")
         self.formLayout = QtWidgets.QFormLayout(self)
-        self.formLayout.setHorizontalSpacing(15)
-        self.formLayout.setVerticalSpacing(6)
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        self.label = QtWidgets.QLabel("Esta acción requiere de una cuenta de administrador.", self)
-        self.label.setFont(font)
+        self.formLayout.setObjectName(u"formLayout")
+        self.label = QtWidgets.QLabel(self)
+        self.label.setObjectName(u"label")
+        self.label.setText("Esta acción requiere de una cuenta de administrador.")
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.SpanningRole, self.label)
-        self.label_2 = QtWidgets.QLabel("Usuario:", self)
-        self.label_2.setFont(font)
+        self.label_2 = QtWidgets.QLabel(self)
+        self.label_2.setObjectName(u"label_2")
+        self.label_2.setText("Usuario:")
         self.formLayout.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.label_2)
         self.txtUsuario = QtWidgets.QLineEdit(self)
-        self.txtUsuario.setFont(font)
+        self.txtUsuario.setObjectName(u"txtUsuario")
         self.formLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.txtUsuario)
-        self.label_3 = QtWidgets.QLabel("Contraseña:", self)
-        self.label_3.setFont(font)
+        self.label_3 = QtWidgets.QLabel(self)
+        self.label_3.setObjectName(u"label_3")
+        self.label_3.setText("Contraseña:")
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.label_3)
         self.txtPsswd = QtWidgets.QLineEdit(self)
-        self.txtPsswd.setFont(font)
-        self.txtPsswd.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.txtPsswd.setObjectName(u"txtPsswd")
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.txtPsswd)
         self.buttonBox = QtWidgets.QDialogButtonBox(self)
-        self.buttonBox.setFont(font)
+        self.buttonBox.setObjectName(u"buttonBox")
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
         self.buttonBox.setCenterButtons(True)
         self.formLayout.setWidget(3, QtWidgets.QFormLayout.SpanningRole, self.buttonBox)
 
-        self.buttonBox.accepted.connect(self.accept)  # type: ignore
-        self.buttonBox.rejected.connect(self.reject)  # type: ignore
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
         QtCore.QMetaObject.connectSlotsByName(self)
 
     def accept(self):
@@ -63,7 +59,6 @@ class Dialog_ObtenerAdmin(QDialog):
 
         if not (usuario and psswd):
             return
-
         try:
             conn = sql.conectar_db(usuario, psswd, 'ADMINISTRADOR')
             manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
