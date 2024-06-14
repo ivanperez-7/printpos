@@ -701,6 +701,8 @@ class App_AgregarProducto(Base_VisualizarProductos):
     def keyPressEvent(self, event):
         if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
             self.done()
+        elif event.key() == Qt.Key_Escape:
+            self.close()
 
     # ==================
     #  FUNCIONES ÚTILES
@@ -774,6 +776,8 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
     def keyPressEvent(self, event):
         if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
             self.done()
+        elif event.key() == Qt.Key_Escape:
+            self.close()
 
     # ==================
     #  FUNCIONES ÚTILES
@@ -833,6 +837,8 @@ class App_FechaEntrega(QtWidgets.QWidget):
     def keyPressEvent(self, event):
         if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
             self.done()
+        elif event.key() == Qt.Key_Escape:
+            self.close()
 
     def done(self):
         """ Acepta los cambios y modifica la fecha seleccionada 
@@ -888,6 +894,8 @@ class App_AgregarDescuento(QtWidgets.QWidget):
     def keyPressEvent(self, event):
         if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
             self.done()
+        elif event.key() == Qt.Key_Escape:
+            self.close()
 
     # ================ #
     # FUNCIONES ÚTILES #
@@ -937,6 +945,10 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
                 item.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         self.show()
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.close()
 
     # ================ #
     # FUNCIONES ÚTILES #

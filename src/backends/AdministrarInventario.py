@@ -207,6 +207,10 @@ class Base_EditarInventario(QtWidgets.QWidget):
 
         self.show()
 
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.close()
+
     ####################
     # FUNCIONES ÚTILES #
     ####################
