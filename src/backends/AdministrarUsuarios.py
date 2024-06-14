@@ -170,6 +170,10 @@ class Base_EditarUsuario(QtWidgets.QWidget):
         self.ui.btRegistrar.clicked.connect(self.editar)
 
         self.show()
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.close()
 
     # ==================
     #  FUNCIONES ÚTILES

@@ -249,6 +249,10 @@ class Base_EditarCliente(QtWidgets.QWidget):
             self.ui.txtDescuentos.setEnabled(False)
 
         self.show()
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.close()
 
     ####################
     # FUNCIONES ÚTILES #

@@ -404,6 +404,10 @@ class App_DetallesVenta(QtWidgets.QWidget):
         tabla.llenar(productos)
 
         self.show()
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.close()
 
 
 class Base_PagarVenta(QtWidgets.QWidget):
@@ -571,6 +575,10 @@ class App_TerminarVenta(Base_PagarVenta):
         self.ui.btCancelar.setIcon(QIcon(':/img/resources/images/cancel.png'))
 
         self.show()
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.close()
 
     def showEvent(self, event):
         manejador = ManejadorVentas(self.conn)
@@ -662,6 +670,10 @@ class App_ImprimirTickets(QtWidgets.QWidget):
             self.ui.layoutScroll.addWidget(checkbox, 0, Qt.AlignTop)
 
         self.show()
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.close()
 
     def checkboxes(self) -> list[QtWidgets.QCheckBox]:
         return self.ui.scrollAreaWidgetContents.children()[1:]
