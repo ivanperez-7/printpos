@@ -967,7 +967,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
     def imprimirTicket(self):
         vendedor = self.first.ui.txtVendedor.text()
 
-        impresora = ImpresoraTickets(self)
+        impresora = ImpresoraTickets(self.conn)
         impresora.imprimirTicketPresupuesto(ventaDatos, vendedor)
 
         self.close()
@@ -1099,14 +1099,14 @@ class App_ConfirmarVenta(Base_PagarVenta):
         if not ventaDatos.esVentaDirecta:
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
 
-            impresora = ImpresoraOrdenes(self)
+            impresora = ImpresoraOrdenes(self.conn, self)
             impresora.imprimirOrdenCompra(self.id_ventas)
         else:
             ret = qm.question(self, 'Éxito',
                               'Venta terminada. ¡Recuerde ofrecer el ticket de compra! '
                               '¿Desea imprimirlo?')
             if ret == qm.Yes:
-                impresora = ImpresoraTickets(self)
+                impresora = ImpresoraTickets(self.conn)
                 impresora.imprimirTicketCompra(self.id_ventas)
         self.goHome()
 

@@ -51,11 +51,13 @@ class Caja:
         ...
 
     def __init__(self, movimientos: list[tuple] | list[Movimiento] = None):
-        try:
-            mov = movimientos[0]
-        except (IndexError, TypeError):
+        if movimientos is not None and not isinstance(movimientos, list):
+            raise TypeError('Esperada lista de tuplas o Movimiento.')
+        if not movimientos:
             self.movimientos = []
             return
+
+        mov = movimientos[0]
 
         if isinstance(mov, Movimiento):
             self.movimientos = movimientos
@@ -223,7 +225,7 @@ class App_Caja(QtWidgets.QWidget):
         if ret == qm.Yes:
             from pdf import ImpresoraTickets
 
-            impresora = ImpresoraTickets(self)
+            impresora = ImpresoraTickets(self.conn)
             impresora.imprimirCorteCaja(self.all_movimientos, self.user.nombre)
 
     # ====================================
