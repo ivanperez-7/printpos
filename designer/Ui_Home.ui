@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1366</width>
-    <height>842</height>
+    <height>832</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
@@ -292,18 +292,15 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <property name="styleSheet">
-      <string notr="true">QFrame {border: none}</string>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
      <layout class="QGridLayout" name="gridLayout_2">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
       <property name="spacing">
-       <number>40</number>
+       <number>30</number>
       </property>
       <item row="0" column="0" alignment="Qt::AlignHCenter|Qt::AlignVCenter">
        <widget class="QFrame" name="frameCrearVenta">
@@ -1227,7 +1224,6 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../resources.qrc"/>
   <include location="../resources.qrc"/>
  </resources>
  <connections/>

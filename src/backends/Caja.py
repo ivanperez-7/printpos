@@ -11,7 +11,7 @@ from utils.mydecorators import run_in_thread
 from utils.myinterfaces import InterfazFechas
 from utils.myutils import FabricaValidadores
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
-from utils.sql import ManejadorCaja, ManejadorMetodosPago
+from sql import ManejadorCaja, ManejadorMetodosPago
 
 
 ##################

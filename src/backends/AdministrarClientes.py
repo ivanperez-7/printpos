@@ -8,7 +8,7 @@ from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
-from utils.sql import ManejadorClientes
+from sql import ManejadorClientes
 
 
 #####################

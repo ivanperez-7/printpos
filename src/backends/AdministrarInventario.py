@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt, Signal, QMutex
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
-from utils.sql import ManejadorInventario, ManejadorProductos
+from sql import ManejadorInventario, ManejadorProductos
 
 
 #####################

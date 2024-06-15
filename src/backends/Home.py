@@ -145,6 +145,7 @@ class App_ConsultarPrecios(Base_VisualizarProductos):
 
     def __init__(self, first):
         super().__init__(first, extern=True)
+
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowMinimizeButtonHint)
         self.setWindowTitle('Consultar precios')
         self.setWindowIcon(QIcon(':img/icon.ico'))

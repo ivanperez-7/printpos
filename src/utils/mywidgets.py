@@ -10,7 +10,8 @@ from PySide6.QtGui import *
 from PySide6.QtCore import *
 
 from backends.Login import App_Login, Usuario
-from utils import Moneda, sql
+import sql
+from utils import Moneda
 from utils.myutils import unidecode, formatDate, ColorsEnum
 
 __all__ = ['VentanaPrincipal', 'DimBackground', 'WidgetPago',
@@ -24,7 +25,7 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
     def __init__(self, conn: sql.Connection, user: Usuario):
         super().__init__()
 
-        self.resize(1540, 800)
+        self.resize(1500, 800)
         self.setWindowTitle('PrintPOS')
         self.setWindowIcon(QIcon(':img/icon.ico'))
 
@@ -47,9 +48,8 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         """ En eventos específicos, restringimos el cerrado del sistema. """
         from backends.CrearVenta import App_CrearVenta
-        en_venta = isinstance(self.centralWidget(), App_CrearVenta)
 
-        if en_venta and not self.user.administrador:
+        if isinstance(self.centralWidget(), App_CrearVenta) and not self.user.administrador:
             event.ignore()
             return
 
@@ -371,7 +371,7 @@ class TablaDatos(QtWidgets.QTableWidget):
                     cell = f'${dato:,.2f}'
                 else:
                     cell = str(dato or '')
-                self.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
+                self.setItem(row, col, MyTableItem(cell))
 
             self.item(row, 4).setFont(bold)
             self.item(row, 5).setTextAlignment(Qt.AlignCenter)
@@ -396,7 +396,7 @@ class TablaDatos(QtWidgets.QTableWidget):
                     cell = f'${dato:,.2f}'
                 else:
                     cell = str(dato or '')
-                self.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
+                self.setItem(row, col, MyTableItem(cell))
 
             self.item(row, 5).setFont(bold)
             self.item(row, 6).setTextAlignment(Qt.AlignCenter)

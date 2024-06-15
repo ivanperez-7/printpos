@@ -11,7 +11,7 @@ from utils import Moneda
 from utils.mydecorators import fondo_oscuro, requiere_admin
 from utils.myutils import *
 from utils.mywidgets import DimBackground, LabelAdvertencia, SpeechBubble, VentanaPrincipal
-from utils.sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
+from sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
 
 
 ##################
@@ -472,7 +472,6 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         self.ui.tabla_granformato.setSortingEnabled(True)
 
         # evento para leer cambios en tabla PRODUCTOS
-        self.event_conduit = self.conn.event_conduit(['cambio_productos'])
         self.event_reader = Runner(self.startEvents)
         self.event_reader.start()
         self.dataChanged.connect(self.rescan_display)
@@ -487,7 +486,6 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
             # no recomendado generalmente para terminar hilos, sin embargo,
             # esta vez se puede hacer así al no ser una función crítica.
             self.event_reader.stop()
-            self.event_conduit.close()
             event.accept()
 
     # ==================
@@ -499,6 +497,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
     def startEvents(self):
         # eventos de Firebird para escuchar cambios en tabla productos
+        self.event_conduit = self.conn.event_conduit(['cambio_productos'])
         self.event_conduit.begin()
 
         while True:
@@ -752,13 +751,9 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
 
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún cliente!')
 
-        # guardar conexión y usuarios como atributos
-        self.conn = first.conn
-        self.user = first.user
-
         # llena la tabla con todos los clientes existentes
-        manejador = ManejadorClientes(self.conn)
-        self.all = [datos for (_, *datos) in manejador.obtenerVista('view_all_clientes')]
+        manejador = ManejadorClientes(first.conn)
+        self.all = [datos[1:] for datos in manejador.obtenerVista('view_all_clientes')]
 
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)
@@ -788,7 +783,6 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
             También lee de nuevo la tabla de clientes, si se desea. """
         if txt_busqueda:
             found = [cliente for cliente in self.all
-                     if cliente[0]
                      if son_similar(txt_busqueda, cliente[0])]
         else:
             found = self.all
@@ -903,15 +897,14 @@ class App_AgregarDescuento(QtWidgets.QWidget):
     @requiere_admin
     def done(self, conn):
         """ Acepta los cambios e inserta descuento en la lista de productos. """
-        if not (selected := self.ui.tabla_productos.selectedItems()):
+        try:
+            row = self.ui.tabla_productos.selectedItems()[0].row()
+            nuevo_precio = float(self.ui.txtPrecio.text())
+        except (IndexError, ValueError):
             return
 
-        try:
-            prod = ventaDatos[selected[0].row()]
-            nuevo_precio = float(self.ui.txtPrecio.text())
-            prod.descuento_unit = clamp(prod.precio_unit - nuevo_precio, 0., prod.precio_unit)
-        except ValueError:
-            return
+        prod = ventaDatos[row]
+        prod.descuento_unit = clamp(prod.precio_unit - nuevo_precio, 0., prod.precio_unit)
 
         self.success.emit()
         self.close()

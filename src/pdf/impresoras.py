@@ -9,7 +9,7 @@ from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 
 from .generadores import *
 from config import INI
-from utils import sql
+import sql
 from utils.mydecorators import run_in_thread
 from utils.myutils import randFile
 from utils.mywidgets import WarningDialog

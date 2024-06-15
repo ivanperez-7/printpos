@@ -506,31 +506,7 @@
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
         </property>
-        <layout class="QGridLayout" name="gridLayout_7">
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item row="0" column="0">
-          <widget class="QLabel" name="txtNumProds">
-           <property name="font">
-            <font>
-             <pointsize>13</pointsize>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QLabel {
-	padding-left: 2px;
-	padding-bottom: -5px;
-}</string>
-           </property>
-           <property name="text">
-            <string>0 productos</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
-           </property>
-          </widget>
-         </item>
+        <layout class="QGridLayout" name="gridLayout_2">
          <item row="0" column="1" alignment="Qt::AlignRight">
           <widget class="QFrame" name="frame_11">
            <property name="sizePolicy">
@@ -589,89 +565,31 @@
            </layout>
           </widget>
          </item>
-         <item row="1" column="0" colspan="2">
-          <widget class="QFrame" name="frame_12">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
+         <item row="0" column="0">
+          <widget class="QLabel" name="txtNumProds">
+           <property name="font">
+            <font>
+             <pointsize>13</pointsize>
+            </font>
            </property>
-           <property name="minimumSize">
-            <size>
-             <width>788</width>
-             <height>180</height>
-            </size>
+           <property name="styleSheet">
+            <string notr="true">QLabel {
+	padding-left: 2px;
+	padding-bottom: -5px;
+}</string>
            </property>
-           <property name="frameShape">
-            <enum>QFrame::NoFrame</enum>
+           <property name="text">
+            <string>0 productos</string>
            </property>
-           <layout class="QHBoxLayout" name="horizontalLayout_8">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <property name="leftMargin">
-             <number>2</number>
-            </property>
-            <property name="topMargin">
-             <number>2</number>
-            </property>
-            <property name="rightMargin">
-             <number>2</number>
-            </property>
-            <property name="bottomMargin">
-             <number>10</number>
-            </property>
-            <item>
-             <widget class="TablaDatos" name="tabla_productos">
-              <property name="editTriggers">
-               <set>QAbstractItemView::DoubleClicked</set>
-              </property>
-              <property name="selectionMode">
-               <enum>QAbstractItemView::ExtendedSelection</enum>
-              </property>
-              <attribute name="horizontalHeaderMinimumSectionSize">
-               <number>80</number>
-              </attribute>
-              <column>
-               <property name="text">
-                <string>Cantidad</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>Producto</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>Especificaciones</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>Precio</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>Descuento</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>Importe</string>
-               </property>
-              </column>
-             </widget>
-            </item>
-           </layout>
+           <property name="alignment">
+            <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+           </property>
           </widget>
          </item>
-         <item row="2" column="0" colspan="2">
-          <widget class="QFrame" name="frame_13">
+         <item row="3" column="0" colspan="2">
+          <widget class="QPlainTextEdit" name="txtComentarios">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+            <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
@@ -679,61 +597,84 @@
            <property name="minimumSize">
             <size>
              <width>0</width>
-             <height>55</height>
+             <height>61</height>
             </size>
            </property>
-           <property name="frameShape">
-            <enum>QFrame::NoFrame</enum>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>61</height>
+            </size>
            </property>
-           <layout class="QHBoxLayout" name="horizontalLayout_7">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QPlainTextEdit" name="txtComentarios">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>51</height>
-               </size>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>51</height>
-               </size>
-              </property>
-              <property name="font">
-               <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
-               </font>
-              </property>
-              <property name="placeholderText">
-               <string>Agregue comentarios adicionales aquí...</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
+           <property name="font">
+            <font>
+             <family>Segoe UI</family>
+             <pointsize>11</pointsize>
+            </font>
+           </property>
+           <property name="placeholderText">
+            <string>Agregue comentarios adicionales aquí...</string>
+           </property>
           </widget>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <widget class="TablaDatos" name="tabla_productos">
+           <property name="editTriggers">
+            <set>QAbstractItemView::DoubleClicked</set>
+           </property>
+           <property name="selectionMode">
+            <enum>QAbstractItemView::ExtendedSelection</enum>
+           </property>
+           <attribute name="horizontalHeaderMinimumSectionSize">
+            <number>80</number>
+           </attribute>
+           <column>
+            <property name="text">
+             <string>Cantidad</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Producto</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Especificaciones</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Precio</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Descuento</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Importe</string>
+            </property>
+           </column>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Minimum</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>10</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </widget>
@@ -743,169 +684,133 @@
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
         </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <property name="spacing">
-          <number>0</number>
-         </property>
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>9</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
+        <layout class="QHBoxLayout" name="horizontalLayout">
          <item alignment="Qt::AlignLeft">
-          <widget class="QFrame" name="frame_14">
-           <property name="frameShape">
-            <enum>QFrame::NoFrame</enum>
+          <widget class="QGroupBox" name="groupBox">
+           <property name="minimumSize">
+            <size>
+             <width>231</width>
+             <height>61</height>
+            </size>
            </property>
-           <layout class="QGridLayout" name="gridLayout_2">
-            <item row="0" column="0">
-             <widget class="QGroupBox" name="groupBox">
-              <property name="minimumSize">
-               <size>
-                <width>231</width>
-                <height>61</height>
-               </size>
-              </property>
-              <property name="font">
-               <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
-               </font>
-              </property>
-              <property name="title">
-               <string>Vendedor</string>
-              </property>
-              <widget class="QLineEdit" name="txtVendedor">
-               <property name="geometry">
-                <rect>
-                 <x>10</x>
-                 <y>30</y>
-                 <width>191</width>
-                 <height>20</height>
-                </rect>
-               </property>
-               <property name="font">
-                <font>
-                 <family>Segoe UI</family>
-                 <pointsize>11</pointsize>
-                </font>
-               </property>
-               <property name="text">
-                <string>default</string>
-               </property>
-               <property name="readOnly">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </widget>
-            </item>
-           </layout>
+           <property name="font">
+            <font>
+             <family>Segoe UI</family>
+             <pointsize>11</pointsize>
+            </font>
+           </property>
+           <property name="title">
+            <string>Vendedor</string>
+           </property>
+           <widget class="QLineEdit" name="txtVendedor">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>30</y>
+              <width>191</width>
+              <height>20</height>
+             </rect>
+            </property>
+            <property name="font">
+             <font>
+              <family>Segoe UI</family>
+              <pointsize>11</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>default</string>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
           </widget>
          </item>
          <item alignment="Qt::AlignRight">
-          <widget class="QFrame" name="frame_15">
-           <property name="frameShape">
-            <enum>QFrame::NoFrame</enum>
+          <widget class="QGroupBox" name="boxFactura">
+           <property name="minimumSize">
+            <size>
+             <width>142</width>
+             <height>61</height>
+            </size>
            </property>
-           <layout class="QGridLayout" name="gridLayout_3">
-            <property name="horizontalSpacing">
-             <number>30</number>
+           <property name="font">
+            <font>
+             <family>Segoe UI</family>
+             <pointsize>11</pointsize>
+            </font>
+           </property>
+           <property name="title">
+            <string>Requiere factura</string>
+           </property>
+           <property name="flat">
+            <bool>false</bool>
+           </property>
+           <property name="checkable">
+            <bool>false</bool>
+           </property>
+           <widget class="QCheckBox" name="tickFacturaSi">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>30</y>
+              <width>70</width>
+              <height>17</height>
+             </rect>
             </property>
-            <item row="0" column="0">
-             <widget class="QGroupBox" name="boxFactura">
-              <property name="minimumSize">
-               <size>
-                <width>142</width>
-                <height>61</height>
-               </size>
-              </property>
-              <property name="font">
-               <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
-               </font>
-              </property>
-              <property name="title">
-               <string>Requiere factura</string>
-              </property>
-              <property name="flat">
-               <bool>false</bool>
-              </property>
-              <property name="checkable">
-               <bool>false</bool>
-              </property>
-              <widget class="QCheckBox" name="tickFacturaSi">
-               <property name="geometry">
-                <rect>
-                 <x>10</x>
-                 <y>30</y>
-                 <width>70</width>
-                 <height>17</height>
-                </rect>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>70</width>
-                 <height>17</height>
-                </size>
-               </property>
-               <property name="font">
-                <font>
-                 <family>Segoe UI</family>
-                 <pointsize>11</pointsize>
-                </font>
-               </property>
-               <property name="text">
-                <string notr="true">Sí</string>
-               </property>
-               <property name="checked">
-                <bool>false</bool>
-               </property>
-               <property name="autoExclusive">
-                <bool>true</bool>
-               </property>
-              </widget>
-              <widget class="QCheckBox" name="tickFacturaNo">
-               <property name="geometry">
-                <rect>
-                 <x>80</x>
-                 <y>30</y>
-                 <width>70</width>
-                 <height>17</height>
-                </rect>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>70</width>
-                 <height>17</height>
-                </size>
-               </property>
-               <property name="font">
-                <font>
-                 <family>Segoe UI</family>
-                 <pointsize>11</pointsize>
-                </font>
-               </property>
-               <property name="text">
-                <string notr="true">No</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-               <property name="autoExclusive">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </widget>
-            </item>
-           </layout>
+            <property name="minimumSize">
+             <size>
+              <width>70</width>
+              <height>17</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>Segoe UI</family>
+              <pointsize>11</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string notr="true">Sí</string>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+            <property name="autoExclusive">
+             <bool>true</bool>
+            </property>
+           </widget>
+           <widget class="QCheckBox" name="tickFacturaNo">
+            <property name="geometry">
+             <rect>
+              <x>80</x>
+              <y>30</y>
+              <width>70</width>
+              <height>17</height>
+             </rect>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>70</width>
+              <height>17</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>Segoe UI</family>
+              <pointsize>11</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string notr="true">No</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+            <property name="autoExclusive">
+             <bool>true</bool>
+            </property>
+           </widget>
           </widget>
          </item>
         </layout>
