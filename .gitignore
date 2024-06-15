@@ -1,7 +1,7 @@
 # cache de Python
 **/__pycache__/
 # archivos .py de UI compilados
-src/ui/*
+src/ui/
 # módulos instalados por pip
 Lib/
 # scripts del entorno virtual

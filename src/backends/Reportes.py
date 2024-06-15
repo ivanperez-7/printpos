@@ -9,7 +9,7 @@ from PySide6.QtGui import QPainter, QPen
 from utils.myinterfaces import InterfazFechasReportes
 from utils.mywidgets import VentanaPrincipal
 from utils.myutils import stringify_float
-from utils.sql import ManejadorReportes, ManejadorVentas
+from sql import ManejadorReportes, ManejadorVentas
 
 
 class App_Reportes(QtWidgets.QWidget):

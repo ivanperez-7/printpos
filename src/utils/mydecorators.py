@@ -4,8 +4,28 @@ from functools import wraps
 from PySide6.QtWidgets import QMessageBox, QDialog
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
-__all__ = ['requiere_admin', 'run_in_thread', 'fondo_oscuro']
+__all__ = ['requiere_admin', 'run_in_thread', 'fondo_oscuro', 'function_details']
 
+
+def function_details(func): 
+    # argument names of the called function 
+    argnames = func.__code__.co_varnames[:func.__code__.co_argcount] 
+    # function name of the called function 
+    fname = func.__name__ 
+
+    def inner_func(*args, **kwargs): 
+        print(fname, "(", end = "") 
+        # printing the function arguments 
+        print(', '.join( '% s = % r' % entry 
+                        for entry in zip(argnames, args[:len(argnames)])), end = ", ") 
+        # printing the variable length Arguments 
+        print("args =", list(args[len(argnames):]), end = ", ") 
+        # printing the variable length keyword arguments
+        print("kwargs =", kwargs, end = "")
+        print(")")
+        return func(*args, **kwargs)
+
+    return inner_func 
 
 ##############################################
 # <DECORADOR PARA SOLICITAR CUENTA DE ADMIN> #
@@ -18,8 +38,9 @@ class Dialog_ObtenerAdmin(QDialog):
 
         super().__init__(parent)
 
-        self.resize(400, 120)
+        self.setFixedSize(380, 120)
         self.setWindowTitle("Requiere administrador")
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.formLayout = QtWidgets.QFormLayout(self)
         self.formLayout.setObjectName(u"formLayout")
         self.label = QtWidgets.QLabel(self)
@@ -39,6 +60,7 @@ class Dialog_ObtenerAdmin(QDialog):
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.label_3)
         self.txtPsswd = QtWidgets.QLineEdit(self)
         self.txtPsswd.setObjectName(u"txtPsswd")
+        self.txtPsswd.setEchoMode(QtWidgets.QLineEdit.Password)
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.txtPsswd)
         self.buttonBox = QtWidgets.QDialogButtonBox(self)
         self.buttonBox.setObjectName(u"buttonBox")
@@ -52,7 +74,7 @@ class Dialog_ObtenerAdmin(QDialog):
         QtCore.QMetaObject.connectSlotsByName(self)
 
     def accept(self):
-        from utils import sql
+        import sql
 
         usuario = self.txtUsuario.text().upper()
         psswd = self.txtPsswd.text()

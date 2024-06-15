@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QMutex, Signal
 
 from config import INI
 import licensing
-from utils import sql
+import sql
 from utils.mydecorators import run_in_thread
 from utils.myutils import FabricaValidadores
 

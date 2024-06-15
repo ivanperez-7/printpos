@@ -11,7 +11,7 @@ from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
-from utils.sql import ManejadorVentas
+from sql import ManejadorVentas
 
 
 #####################

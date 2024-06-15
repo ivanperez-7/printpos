@@ -12,6 +12,7 @@ from utils import Moneda
 Connection = fdb.Connection
 Cursor = fdb.Cursor
 Error = fdb.Error
+DatabaseError = fdb.DatabaseError
 
 
 def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
@@ -94,26 +95,23 @@ class DatabaseManager:
     @property
     def usuarioActivo(self) -> str:
         """ Obtiene nombre del usuario de la conexión activa. """
-        result = self.fetchone('''
+        if result := self.fetchone('''
             SELECT  nombre
             FROM    usuarios
             WHERE   usuario = ?;
-        ''', (self.identificadorUsuarioActivo,))
-        if result:
+        ''', (self.identificadorUsuarioActivo,)):
             return result[0]
 
     @property
     def identificadorUsuarioActivo(self) -> str:
         """ Obtiene identificador de usuario de la conexión activa. """
-        result = self.fetchone('SELECT USER FROM RDB$DATABASE;')
-        if result:
+        if result := self.fetchone('SELECT USER FROM RDB$DATABASE;'):
             return result[0]
 
     @property
     def rolActivo(self) -> str:
         """ Obtiene rol de la conexión activa. """
-        result = self.fetchone('SELECT CURRENT_ROLE FROM RDB$DATABASE;')
-        if result:
+        if result := self.fetchone('SELECT CURRENT_ROLE FROM RDB$DATABASE;'):
             return result[0]
 
 
@@ -136,8 +134,7 @@ class ManejadorCaja(DatabaseManager):
 
     def obtenerFechaPrimerMov(self):
         """ Obtener fecha del movimiento más antiguo. """
-        result = self.fetchone('SELECT MIN(fecha_hora) FROM movimientos_caja;')
-        if result:
+        if result := self.fetchone('SELECT MIN(fecha_hora) FROM movimientos_caja;'):
             return result[0]
 
     def insertarMovimiento(self, params: tuple, commit: bool = True):
@@ -371,10 +368,11 @@ class ManejadorMetodosPago(DatabaseManager):
 
     def obtenerIdMetodo(self, metodo: str):
         """ Obtener ID del método de pago dado su nombre. """
-        result = self.fetchone(''' SELECT  id_metodo_pago 
-                                   FROM    metodos_pago 
-                                   WHERE   metodo = ?; ''', (metodo,))
-        if result:
+        if result := self.fetchone('''
+            SELECT  id_metodo_pago 
+            FROM    metodos_pago 
+            WHERE   metodo = ?;
+        ''', (metodo,)):
             return result[0]
 
 
@@ -395,22 +393,20 @@ class ManejadorProductos(DatabaseManager):
 
     def obtenerIdProducto(self, codigo: str):
         """ Obtener id_producto dado código de un producto. """
-        result = self.fetchone('''
+        if result := self.fetchone('''
             SELECT  id_productos
             FROM    Productos 
             WHERE   codigo = ?;
-        ''', (codigo,))
-        if result:
+        ''', (codigo,)):
             return result[0]
 
     def obtenerNombreParaTicket(self, codigo: str):
         """ Obtener nombre para mostrar en ticket dado código de un producto. """
-        result = self.fetchone('''
+        if result := self.fetchone('''
             SELECT  abreviado
             FROM    Productos 
             WHERE   codigo = ?;
-        ''', (codigo,))
-        if result:
+        ''', (codigo,)):
             return result[0]
 
     def obtenerRelacionVentas(self, id_productos: int):
@@ -434,42 +430,37 @@ class ManejadorProductos(DatabaseManager):
 
     def obtenerPrecioSimple(self, id_productos: int, cantidad: int, duplex: bool):
         """ Obtener precio de producto categoría simple. """
-        restrict = 'AND duplex' if duplex else ''
+        with_duplex = 'AND duplex' if duplex else ''
 
-        result = self.fetchone(f'''
+        if result := self.fetchone(f'''
             SELECT * FROM (
-                SELECT  FIRST 1 precio_con_iva
-                FROM    Productos_Intervalos
+                SELECT  FIRST 1
+                        precio_con_iva
+                FROM    productos_intervalos
                 WHERE   id_productos = ?
                         AND desde <= ?
-                        {restrict}
+                        {with_duplex}
                 ORDER   BY desde DESC)
             UNION ALL
             SELECT * FROM (
-                SELECT  FIRST 1 precio_con_iva
-                FROM    Productos_Intervalos
+                SELECT  FIRST 1
+                        precio_con_iva
+                FROM    productos_intervalos
                 WHERE   id_productos = ?
                         AND desde <= ?
                 ORDER   BY desde DESC)
-        ''', (id_productos, cantidad) * 2)
-
-        try:
-            return result[0]
-        except TypeError:
-            return None
+        ''', (id_productos, cantidad) * 2):
+            return min(result)
+        return None
 
     def obtenerPrecioGranFormato(self, id_productos: int, ancho: float, alto: float):
         """ Obtener precio de producto gran formato.
 
             Verifica si las medidas caen dentro del mínimo. Si no, regresa precio normal. """
-        result = self.obtenerGranFormato(id_productos)
-        if not result:
-            return None
-
-        min_m2, precio_m2 = result
-        cantidad = ancho * alto
-
-        return cantidad * precio_m2 if cantidad >= min_m2 else precio_m2
+        if result := self.obtenerGranFormato(id_productos):
+            min_m2, precio_m2 = result
+            cantidad = ancho * alto
+            return cantidad * precio_m2 if cantidad >= min_m2 else precio_m2
 
     def obtenerGranFormato(self, id_productos: int):
         """ Obtener mínimo de metros cuadrados y precio de metro cuadrado
@@ -1058,16 +1049,13 @@ class ManejadorVentas(DatabaseManager):
 
     def obtenerImporteTotal(self, id_venta: int) -> Moneda:
         """ Obtiene el importe total de una venta. """
-        result = self.fetchone('''
+        if result := self.fetchone('''
             SELECT  SUM(importe)
             FROM    Ventas_Detallado
             WHERE   id_ventas = ?;
-        ''', (id_venta,))
-
-        try:
-            return Moneda(result[0])
-        except ValueError:
-            return None
+        ''', (id_venta,)):
+            total = result[0]  # float o None
+            return Moneda(total) if total is not None else total
 
     def obtenerAnticipo(self, id_venta: int) -> Moneda:
         """ Obtiene el anticipo recibido de una orden pendiente.
@@ -1079,9 +1067,9 @@ class ManejadorVentas(DatabaseManager):
         ''', (id_venta,))
 
         try:
-            estado = result[0]
+            estado = result[0]    # str o None
             return Moneda(estado.split()[1])
-        except (ValueError, IndexError):
+        except (AttributeError, IndexError, ValueError):
             return None
 
     def obtenerSaldoRestante(self, id_venta: int):
@@ -1093,12 +1081,7 @@ class ManejadorVentas(DatabaseManager):
             Se puede restringir a cierto usuario. """
         restrict = f'WHERE id_usuarios = {id_usuario}' if id_usuario else ''
 
-        result = self.fetchone(f'''
-            SELECT  MIN(fecha_hora_creacion) 
-            FROM    Ventas
-            {restrict};
-        ''')
-        if result:
+        if result := self.fetchone(f'SELECT MIN(fecha_hora_creacion) FROM Ventas {restrict};'):
             return result[0]
 
     def obtenerPagosVenta(self, id_venta: int):

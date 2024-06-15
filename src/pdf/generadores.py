@@ -21,7 +21,7 @@ from backends.Caja import Caja
 from config import INI
 from utils import Moneda
 from utils.myutils import *
-from utils.sql import ManejadorVentas
+from sql import ManejadorVentas
 
 __all__ = ['generarOrdenCompra', 'generarTicketPDF', 'generarCortePDF']
 
