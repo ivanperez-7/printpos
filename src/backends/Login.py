@@ -37,7 +37,7 @@ class Usuario:
     @classmethod
     def generarUsuarioActivo(cls, conn: sql.Connection):
         """ Genera clase Usuario dada una conexión válida a la DB. """
-        manejador = sql.ManejadorUsuarios(conn)
+        manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
         usuario = manejador.identificadorUsuarioActivo
         result = manejador.obtenerUsuario(usuario)
 
@@ -52,7 +52,7 @@ class App_Login(QtWidgets.QWidget):
     validated = Signal()
     failure = Signal(licensing.Errores)
 
-    logged = Signal(sql.Connection)
+    logged = Signal(sql.Connection, Usuario)
     warning = Signal(str)
 
     def __init__(self):
@@ -153,8 +153,7 @@ class App_Login(QtWidgets.QWidget):
 
         try:
             conn = sql.conectar_db(usuario, psswd, rol)
-            manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
-            manejador.obtenerUsuario(usuario)
+            user = Usuario.generarUsuarioActivo(conn)
         except sql.Error as err:
             txt, sqlcode, gdscode = err.args
             if gdscode in [335544472, 335544352]:
@@ -165,7 +164,7 @@ class App_Login(QtWidgets.QWidget):
         except Exception as err:  # arrojado por fdb al no encontrarse librería Firebird
             self.warning.emit(str(err))
         else:
-            self.logged.emit(conn)
+            self.logged.emit(conn, user)
         finally:
             self.mutex.unlock()
 
@@ -174,10 +173,9 @@ class App_Login(QtWidgets.QWidget):
         self.ui.lbEstado.clear()
         wdg = WarningDialog('No se pudo acceder al servidor.', txt)
 
-    def crearVentanaPrincipal(self, conn):
+    def crearVentanaPrincipal(self, conn, user):
         """ En método separado para regresar al hilo principal."""
         from utils.mywidgets import VentanaPrincipal
-        user = Usuario.generarUsuarioActivo(conn)
         self.mainWindow = VentanaPrincipal(conn, user)
         self.close()
 

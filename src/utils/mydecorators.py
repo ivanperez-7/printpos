@@ -27,6 +27,7 @@ def function_details(func):
 
     return inner_func 
 
+
 ##############################################
 # <DECORADOR PARA SOLICITAR CUENTA DE ADMIN> #
 ##############################################
