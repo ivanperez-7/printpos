@@ -36,16 +36,13 @@ class App_AdministrarClientes(QtWidgets.QWidget):
         self.all = []
 
         # añadir menú de opciones al botón para filtrar
-        self.filtro = InterfazFiltro(self.ui.btFiltrar, [
-            ('Nombre', 'nombre', 1),
-            ('Teléfono', 'teléfono', 2),
-            ('Correo', 'correo', 3),
-            ('Dirección', 'dirección', 4),
-            ('RFC', 'RFC', 5)
-        ])
-        self.filtro.filtroCambiado.connect(
-            lambda txt: (self.ui.searchBar.setPlaceholderText(f'Busque cliente por {txt}...'),
-                         self.update_display()))
+        self.filtro = InterfazFiltro(self.ui.btFiltrar, self.ui.searchBar,
+            [('Nombre', 1),
+             ('Teléfono', 2),
+             ('Correo', 3),
+             ('Dirección', 4),
+             ('RFC', 5)])
+        self.filtro.cambiado.connect(self.update_display)
 
         # restringir botón de eliminar cliente
         if not self.user.rol == 'ADMINISTRADOR':
@@ -111,8 +108,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
 
         if txt_busqueda := self.ui.searchBar.text().strip():
             found = [c for c in self.all
-                     if c[self.filtro.filtro]
-                     if son_similar(txt_busqueda, c[self.filtro.filtro])]
+                     if son_similar(txt_busqueda, c[self.filtro.idx])]
         else:
             found = self.all
 

@@ -169,9 +169,6 @@ background-color: rgb(255, 255, 255);</string>
            <property name="frame">
             <bool>false</bool>
            </property>
-           <property name="placeholderText">
-            <string>Busque venta por folio...</string>
-           </property>
           </widget>
          </item>
         </layout>

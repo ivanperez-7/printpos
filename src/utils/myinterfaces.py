@@ -184,33 +184,37 @@ class InterfazFechasReportes(QObject):
 
 class InterfazFiltro(QObject):
     """ Interfaz para manejar filtros de búsqueda.
-    
+
         Recibe un widget QToolButton y una lista de opciones:
         nombre de opción, texto en placeholder e índice de columna asociada. """
-    filtroCambiado = Signal(str)
+    cambiado = Signal()
+    idx: int
 
-    def __init__(self, button: QToolButton, options: list[tuple]):
-        super().__init__(button)
+    def __init__(self, button: QToolButton, search_bar: QLineEdit, options: list[tuple]):
+        super().__init__(search_bar)
 
-        popup = QMenu(button)
+        self.search_bar = search_bar
 
         # primera opción y acción por defecto
-        nombre, placeholder, idx = options[0]
+        popup = QMenu(button)
+        nombre, idx = options[0]
 
-        default = popup.addAction(
-            nombre, lambda p=placeholder, i=idx: self.cambiar_filtro(p, i))
-        button.clicked.connect(lambda p=placeholder, i=idx: self.cambiar_filtro(p, i))
-
+        call = lambda n=nombre, i=idx: self.cambiar_filtro(n, i)
+        default = popup.addAction(nombre, call)
+        button.clicked.connect(call)
         popup.setDefaultAction(default)
-        self.filtro = idx
+
+        self.idx = idx
+        search_bar.setPlaceholderText(f'Buscar por {nombre.lower()}...')
 
         # resto de acciones
-        for nombre, placeholder, idx in options[1:]:
-            popup.addAction(
-                nombre, lambda p=placeholder, i=idx: self.cambiar_filtro(p, i))
+        for nombre, idx in options[1:]:
+            popup.addAction(nombre, lambda n=nombre, i=idx: self.cambiar_filtro(n, i))
 
         button.setMenu(popup)
 
-    def cambiar_filtro(self, placeholder: str, idx: int):
-        self.filtro = idx
-        self.filtroCambiado.emit(placeholder)
+    def cambiar_filtro(self, nombre: str, idx: int):
+        self.idx = idx
+        self.search_bar.setPlaceholderText(
+            f'Buscar por {nombre.lower() if nombre != "RFC" else nombre}...')
+        self.cambiado.emit()
