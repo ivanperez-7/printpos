@@ -18,7 +18,7 @@ __all__ = ['VentanaPrincipal', 'DimBackground', 'WidgetPago',
            'WarningDialog', 'SpeechBubble', 'ListaNotificaciones']
 
 
-class VentanaPrincipal(HasConnUser):
+class VentanaPrincipal(QtWidgets.QMainWindow, HasConnUser):
     def __init__(self, conn, user):
         super().__init__()
 
