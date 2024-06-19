@@ -6,25 +6,23 @@ from PySide6.QtCharts import *
 from PySide6.QtCore import Qt, QDate, QModelIndex
 from PySide6.QtGui import QPainter, QPen
 
-from utils.myinterfaces import InterfazFechasReportes
-from utils.mywidgets import VentanaPrincipal
-from utils.myutils import stringify_float
 from sql import ManejadorReportes, ManejadorVentas
+from utils.myinterfaces import InterfazFechasReportes
+from utils.myutils import stringify_float
 
 
 class App_Reportes(QtWidgets.QWidget):
     """ Backend para la ventana de reportes varios. """
 
-    def __init__(self, parent: VentanaPrincipal):
+    def __init__(self, conn, user):
         from ui.Ui_Reportes import Ui_Reportes
 
         super().__init__()
-
         self.ui = Ui_Reportes()
         self.ui.setupUi(self)
 
-        self.conn = parent.conn
-        self.user = parent.user
+        self.conn = conn
+        self.user = user
 
         for tbl in [self.ui.tableWidget,
                     self.ui.tableWidget_2,
@@ -137,8 +135,7 @@ class App_Reportes(QtWidgets.QWidget):
         tabla.clicked.connect(handle)
 
     def goHome(self):
-        parent: VentanaPrincipal = self.parentWidget()
-        parent.goHome()
+        self.parentWidget().goHome()
 
 
 #########################################

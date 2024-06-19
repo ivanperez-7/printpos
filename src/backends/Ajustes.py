@@ -3,7 +3,6 @@ from PySide6.QtCore import QDate, QDateTime, QModelIndex, QRegularExpression, Qt
 from PySide6 import QtPrintSupport
 
 from config import INI
-from utils.mywidgets import VentanaPrincipal
 
 
 #####################
@@ -13,16 +12,15 @@ from utils.mywidgets import VentanaPrincipal
 class App_Ajustes(QtWidgets.QWidget):
     """ Backend para la ventana de administración de ventas. """
 
-    def __init__(self, parent: VentanaPrincipal):
+    def __init__(self, conn, user):
         from ui.Ui_Ajustes import Ui_Ajustes
 
         super().__init__()
-
         self.ui = Ui_Ajustes()
         self.ui.setupUi(self)
 
-        self.conn = parent.conn
-        self.user = parent.user
+        self.conn = conn
+        self.user = user
 
         self.ui.boxImpresoras.addItems(QtPrintSupport.QPrinterInfo.availablePrinterNames())
         self.ui.boxImpresoras.setCurrentText(INI.IMPRESORA)
@@ -42,5 +40,4 @@ class App_Ajustes(QtWidgets.QWidget):
         INI.TELEFONO = self.ui.txtTelefono.text()
         INI.guardar()
 
-        parent = self.parentWidget()
-        parent.goHome()
+        self.parentWidget().goHome()

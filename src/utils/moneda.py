@@ -3,15 +3,15 @@ import operator
 import re
 
 
-class useless(type):
+class _useless(type):
     """ Para habilitar `Moneda.cero`. """
 
     @property
-    def cero(cls):
+    def cero(cls) -> 'Moneda':
         return cls(0.)
 
 
-class Moneda(metaclass=useless):
+class Moneda(metaclass=_useless):
     r"""
     Clase `Moneda` para manejar cantidades monetarias de forma segura 
     con dos números decimales, eliminando errores de redondeo.
@@ -50,7 +50,7 @@ class Moneda(metaclass=useless):
     True
     
     Provee método `sum` para sumar iterador en objeto Moneda.
-    >>> total = Moneda.sum(x for x in [1,6,1,7,3,4])
+    >>> total = Moneda.sum((1,6,1,7,3,4))
     >>> total
     Moneda: 22.00 MXN
     """

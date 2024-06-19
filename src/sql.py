@@ -1,18 +1,21 @@
 """ Módulo con manejadores para tablas en la base de datos. """
 from datetime import datetime
-from functools import partial, partialmethod
+from functools import partial
 from typing import overload
 
 import fdb
+
 from PySide6.QtCore import QDate
 
 from config import INI
 from utils import Moneda
+from utils.mywidgets import WarningDialog
+from utils.mydataclasses import ItemVenta, ItemGranFormato
 
 Connection = fdb.Connection
+ServiceConnection = fdb.services.Connection
 Cursor = fdb.Cursor
 Error = fdb.Error
-DatabaseError = fdb.DatabaseError
 
 
 def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
@@ -31,9 +34,15 @@ def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
         raise err
 
 
-def _WarningDialog(*args):
-    from utils.mywidgets import WarningDialog
-    return WarningDialog(*args)
+def conectar_services(usuario: str, psswd: str) -> ServiceConnection:
+    """ Crea conexión de servicios a servidor y regresa objeto ServiceConnection.
+        Regresa None si esta conexión no fue posible. """
+    try:
+        return fdb.services.connect(INI.NOMBRE_SERVIDOR, usuario, psswd)
+    except Error as err:
+        txt, sqlcode, gdscode = err.args
+        print('conectar_services() {\n', sqlcode, gdscode, '\n' + txt + '\n}')
+        return None
 
 
 class DatabaseManager:
@@ -86,25 +95,35 @@ class DatabaseManager:
         if not self._handle_exceptions:
             raise err
         self._conn.rollback()
-        _WarningDialog(self._error_txt, txt)
+        WarningDialog(self._error_txt, txt)
 
     def obtenerVista(self, vista: str):
         """ Atajo de sentencia SELECT para obtener una vista. """
         return self.fetchall(f'SELECT * FROM {vista};')
 
     @property
-    def usuarioActivo(self) -> str:
-        """ Obtiene nombre del usuario de la conexión activa. """
+    def nombreUsuarioActivo(self) -> str:
+        """ Obtiene nombre/apellido del usuario de la conexión activa. """
         if result := self.fetchone('''
             SELECT  nombre
             FROM    usuarios
             WHERE   usuario = ?;
-        ''', (self.identificadorUsuarioActivo,)):
+        ''', (self.usuarioActivo,)):
             return result[0]
 
     @property
-    def identificadorUsuarioActivo(self) -> str:
-        """ Obtiene identificador de usuario de la conexión activa. """
+    def idUsuarioActivo(self) -> int:
+        """ Obtiene identificador numérico de la conexión activa, de la tabla Usuarios. """
+        if result := self.fetchone('''
+            SELECT  id_usuarios
+            FROM    usuarios 
+            WHERE   usuario = ?;
+        ''', (self.usuarioActivo,)):
+            return result[0]
+
+    @property
+    def usuarioActivo(self) -> str:
+        """ Obtiene usuario (username) de la conexión activa. """
         if result := self.fetchone('SELECT USER FROM RDB$DATABASE;'):
             return result[0]
 
@@ -886,49 +905,53 @@ class ManejadorReportes(DatabaseManager):
 
 class ManejadorVentas(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Ventas. """
+    query_all_ventas = '''
+        SELECT
+            V.id_ventas,
+            U.nombre             AS nombre_vendedor,
+            C.nombre             AS nombre_cliente,
+            fecha_hora_creacion,
+            {col_fecha_entrega}
+            SUM(VD.importe)      AS total,
+            estado,
+            comentarios
+        FROM
+            ventas V
+            LEFT JOIN usuarios U
+                ON V.id_usuarios = U.id_usuarios
+            LEFT JOIN clientes C
+                ON V.id_clientes = C.id_clientes
+            LEFT JOIN ventas_detallado VD
+                ON V.id_ventas = VD.id_ventas
+        WHERE
+            fecha_hora_entrega {fecha_where} fecha_hora_creacion
+            AND (CAST(fecha_hora_creacion AS DATE) BETWEEN ? AND ?
+                 OR estado LIKE 'Recibido%')
+            {restrict_user}
+        GROUP BY
+            {clausula_group}
+        ORDER BY
+            1 DESC;
+    '''
 
-    def _tablaParcial(self, fecha_entrega: bool,
-                      inicio: QDate = QDate.currentDate(),
-                      final: QDate = QDate.currentDate(),
-                      restrict: int = None):
-        restrict = f'AND U.id_usuarios = {restrict}' if restrict else ''
-        col_fecha_entrega = 'fecha_hora_entrega,' if fecha_entrega else ''
-        clausula_where = 'fecha_hora_entrega {} fecha_hora_creacion'.format(
-            '!=' if fecha_entrega else '=')
-        clausula_group = '1, 2, 3, 4, 5, 7, 8' if fecha_entrega else '1, 2, 3, 4, 6, 7'
-
-        return self.fetchall(f'''
-            SELECT
-                V.id_ventas,
-                U.nombre             AS nombre_vendedor,
-                C.nombre             AS nombre_cliente,
-                fecha_hora_creacion,
-                {col_fecha_entrega}
-                SUM(importe)         AS total,
-                estado,
-                comentarios
-            FROM
-                ventas V
-                LEFT JOIN usuarios U
-                    ON V.id_usuarios = U.id_usuarios
-                LEFT JOIN clientes C
-                    ON V.id_clientes = C.id_clientes
-                LEFT JOIN ventas_detallado VD
-                    ON V.id_ventas = VD.id_ventas
-			WHERE
-                {clausula_where}
-                AND (CAST(fecha_hora_creacion AS DATE) BETWEEN ? AND ?
-                     OR estado LIKE 'Recibido%')
-                {restrict}
-            GROUP BY
-                {clausula_group}
-            ORDER BY
-                1 DESC;
-        ''', (inicio.toPython(), final.toPython()))
-
-    tablaVentas = partialmethod(_tablaParcial, False)  # <- fecha_entrega
-
-    tablaPedidos = partialmethod(_tablaParcial, True)  # <- fecha_entrega
+    def tablaVentas(self, inicio: QDate = QDate(1900, 1, 1),
+                          final: QDate = QDate.currentDate(),
+                          restrict: int = None):
+        query = self.query_all_ventas.format(
+            col_fecha_entrega='',
+            fecha_where='=',
+            restrict_user=f'AND U.id_usuarios = {restrict}' if restrict else '',
+            clausula_group='1, 2, 3, 4, 6, 7')
+        return self.fetchall(query, (inicio.toPython(), final.toPython()))
+    
+    def tablaPedidos(self, inicio: QDate = QDate(1900, 1, 1),
+                           final: QDate = QDate.currentDate()):
+        query = self.query_all_ventas.format(
+            col_fecha_entrega='fecha_hora_entrega,',
+            fecha_where='!=',
+            restrict_user='',
+            clausula_group='1, 2, 3, 4, 5, 7, 8')
+        return self.fetchall(query, (inicio.toPython(), final.toPython()))
 
     def obtenerFechas(self, id_venta: int):
         """ Obtener fechas de creación y entrega de la venta dada. """
@@ -992,8 +1015,6 @@ class ManejadorVentas(DatabaseManager):
             
             Es el único método que regresa objetos ItemVenta ya que se
             necesita calcular el total de descuento para los tickets. """
-        from backends.CrearVenta import ItemVenta, ItemGranFormato
-
         id_, abrev, precio, desc, cant, duplex, categoria = range(7)
         manejador = ManejadorProductos(self._conn)
 
@@ -1085,9 +1106,8 @@ class ManejadorVentas(DatabaseManager):
             return result[0]
 
     def obtenerPagosVenta(self, id_venta: int):
-        """ Obtener listado de pagos realizados en esta venta.
-            
-            Acepta parámetro para obtener un pago específico. """
+        """ Obtener listado de pagos realizados en esta venta: 
+            fecha_hora, metodo, monto, recibido, nombre_vendedor. """
         return self.fetchall(f'''
             SELECT  fecha_hora,
                     metodo,
@@ -1103,13 +1123,13 @@ class ManejadorVentas(DatabaseManager):
             ORDER   BY fecha_hora ASC;
         ''', (id_venta,))
 
-    def insertarVenta(self, params: tuple):
+    def insertarVenta(self, params: tuple) -> int:
         """ Insertar venta nueva en la tabla ventas e intenta 
             regresar tupla con índice de venta recién insertada.
             
             No hace commit. """
-        return self.fetchone('''
-            INSERT INTO Ventas (
+        if result := self.fetchone('''
+            INSERT INTO ventas (
                 id_clientes, id_usuarios, fecha_hora_creacion, 
                 fecha_hora_entrega, comentarios,
                 requiere_factura, estado
@@ -1118,7 +1138,8 @@ class ManejadorVentas(DatabaseManager):
                 (?,?,?,?,?,?,?)
             RETURNING
                 id_ventas;
-        ''', params)
+        ''', params):
+            return result[0]
 
     def insertarDetallesVenta(self, id_ventas: int, params: list[tuple]):
         """ Insertar detalles de venta en tabla ventas_detallado e intenta 
@@ -1128,15 +1149,16 @@ class ManejadorVentas(DatabaseManager):
         params = [(id_ventas,) + param for param in params]
 
         return self.executemany('''
-            INSERT INTO Ventas_Detallado (
+            INSERT INTO ventas_detallado (
                 id_ventas, id_productos, cantidad, precio, 
                 descuento, especificaciones, duplex, importe
             ) 
-            VALUES (?,?,?,?,?,?,?,?);
+            VALUES
+                (?,?,?,?,?,?,?,?);
         ''', params, commit=True)
 
     def insertarPago(self, id_ventas: int, metodo: str,
-                     monto: Moneda, recibido: Moneda, id_usuarios: int,
+                     monto: Moneda, recibido: Moneda | None, id_usuarios: int,
                      commit: bool = False):
         """ Inserta pago de venta a tabla ventas_pagos.
         
@@ -1152,7 +1174,7 @@ class ManejadorVentas(DatabaseManager):
 
     def anularPagos(self, id_venta: int, id_usuarios: int, commit: bool = False):
         """ Anula pagos en tabla ventas_pagos. No hace `commit` automáticamente. """
-        return all(self.insertarPago(id_venta, metodo, -monto, 0., id_usuarios)
+        return all(self.insertarPago(id_venta, metodo, -monto, None, id_usuarios)
                    for fecha, metodo, monto, recibido, v in self.obtenerPagosVenta(id_venta))
 
     def actualizarEstadoVenta(self, id_ventas: int, estado: str, commit: bool = False):
@@ -1160,7 +1182,7 @@ class ManejadorVentas(DatabaseManager):
         
             No hace `commit`, a menos que se indique lo contrario. """
         return self.execute('''
-            UPDATE  Ventas
+            UPDATE  ventas
             SET     estado = ?
             WHERE   id_ventas = ?;
         ''', (estado, id_ventas), commit=commit)

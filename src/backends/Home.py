@@ -2,27 +2,33 @@ from functools import partial
 import inspect
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import QPixmap, QIcon
-from PySide6.QtCore import QDate, Qt
+from PySide6.QtGui import QPixmap, QColor
+from PySide6.QtCore import QDate, Qt, QRect, QPropertyAnimation, QEasingCurve
 
-from .CrearVenta import Base_VisualizarProductos
-from utils import Moneda
-from utils.mywidgets import VentanaPrincipal
+from .AdministrarVentas import App_AdministrarVentas
+from .AdministrarInventario import App_AdministrarInventario
+from .AdministrarProductos import App_AdministrarProductos
+from .AdministrarClientes import App_AdministrarClientes
+from .AdministrarUsuarios import App_AdministrarUsuarios
+from .Ajustes import App_Ajustes
+from .Caja import App_Caja
+from .CrearVenta import App_CrearVenta
+from .Reportes import App_Reportes
+import sql
 
 
 class App_Home(QtWidgets.QWidget):
     """ Backend para la pantalla principal. """
 
-    def __init__(self, parent: VentanaPrincipal):
+    def __init__(self, conn, user):
         from ui.Ui_Home import Ui_Home
 
         super().__init__()
-
         self.ui = Ui_Home()
         self.ui.setupUi(self)
 
-        user = parent.user
-        conn = parent.conn
+        self.conn = conn
+        self.user = user
 
         # foto de perfil del usuario
         if user.foto_perfil:
@@ -59,36 +65,24 @@ class App_Home(QtWidgets.QWidget):
 
         if not self.ui.listaNotificaciones.sinNotificaciones:
             lab = QtWidgets.QLabel(self.ui.frame_5)
-            lab.setPixmap(_create_pixmap(self.ui.listaNotificaciones.count()))
+            lab.setPixmap(self._create_pixmap(self.ui.listaNotificaciones.count()))
             lab.setGeometry(392, 5, 26, 26)
 
-        self.conectar_botones()
-
-    def conectar_botones(self):
-        from .AdministrarVentas import App_AdministrarVentas
-        from .AdministrarInventario import App_AdministrarInventario
-        from .AdministrarProductos import App_AdministrarProductos
-        from .AdministrarClientes import App_AdministrarClientes
-        from .AdministrarUsuarios import App_AdministrarUsuarios
-        from .Ajustes import App_Ajustes
-        from .Caja import App_Caja
-        from .Reportes import App_Reportes
-
-        # create a dictionary to map buttons to their corresponding classes
+        # mapeo de botones con sus acciones
         button_class_mapping = {
-            self.ui.btCrearVenta: self.iniciarVenta,
-            self.ui.btProductos: App_AdministrarProductos,
-            self.ui.btInventario: App_AdministrarInventario,
-            self.ui.btVentas: App_AdministrarVentas,
-            self.ui.btCaja: App_Caja,
             self.ui.btClientes: App_AdministrarClientes,
+            self.ui.btInventario: App_AdministrarInventario,
+            self.ui.btProductos: App_AdministrarProductos,
             self.ui.btUsuarios: App_AdministrarUsuarios,
-            self.ui.btReportes: App_Reportes,
+            self.ui.btVentas: App_AdministrarVentas,
             self.ui.btAjustes: App_Ajustes,
+            self.ui.btCaja: App_Caja,
+            self.ui.btCrearVenta: self.iniciarVenta,
+            self.ui.btReportes: App_Reportes,
             self.ui.btSalir: lambda: self.parentWidget().close()
         }
 
-        # connect buttons to their corresponding functions or classes
+        # conectar botones con acciones
         for button, action in button_class_mapping.items():
             if inspect.isclass(action):
                 handle = partial(self.crearVentana, action)
@@ -104,86 +98,101 @@ class App_Home(QtWidgets.QWidget):
         ret = qm.question(self, 'Iniciar venta',
                           '¿Desea iniciar una nueva venta?')
         if ret == qm.Yes:
-            from .CrearVenta import App_CrearVenta
             self.crearVentana(App_CrearVenta)
 
     def crearVentana(self, modulo):
-        parent = self.parentWidget()  # QMainWindow
-        new = modulo(parent)
-        parent.setCentralWidget(new)
+        new = modulo(self.conn, self.user)
+        self.parentWidget().setCentralWidget(new)
+
+    def _create_pixmap(self, point: int):
+        from PySide6 import QtCore, QtGui
+
+        rect = QtCore.QRect(QtCore.QPoint(), 23 * QtCore.QSize(1, 1))
+        pixmap = QtGui.QPixmap(rect.size())
+        rect.adjust(1, 1, -1, -1)
+        pixmap.fill(QtCore.Qt.transparent)
+        painter = QtGui.QPainter(pixmap)
+        painter.setRenderHints(
+            QtGui.QPainter.Antialiasing | QtGui.QPainter.TextAntialiasing
+        )
+
+        pen = painter.pen()
+        pen.setColor(QtCore.Qt.white)
+        painter.setPen(QtCore.Qt.NoPen)
+        painter.setBrush(QtGui.QBrush(QtGui.QColor(250, 62, 62)))
+        painter.drawEllipse(rect)
+        painter.setPen(pen)
+        painter.drawText(rect, QtCore.Qt.AlignCenter, str(point))
+        painter.end()
+        return pixmap
 
 
-def _create_pixmap(point: int):
-    from PySide6 import QtCore, QtGui
+########################
+# WIDGET PERSONALIZADO #
+########################
+class ListaNotificaciones(QtWidgets.QListWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-    rect = QtCore.QRect(QtCore.QPoint(), 23 * QtCore.QSize(1, 1))
-    pixmap = QtGui.QPixmap(rect.size())
-    rect.adjust(1, 1, -1, -1)
-    pixmap.fill(QtCore.Qt.transparent)
-    painter = QtGui.QPainter(pixmap)
-    painter.setRenderHints(
-        QtGui.QPainter.Antialiasing | QtGui.QPainter.TextAntialiasing
-    )
+        self.setStyleSheet('''
+            QListWidget {
+                alternate-background-color: %s;
+            }
+            QListWidget::item { 
+                margin: 5px;
+            }
+            QFrame {
+                border: 2px solid;
+            }
+        ''' % QColor(225, 225, 225).name())
 
-    pen = painter.pen()
-    pen.setColor(QtCore.Qt.white)
-    painter.setPen(QtCore.Qt.NoPen)
-    painter.setBrush(QtGui.QBrush(QtGui.QColor(250, 62, 62)))
-    painter.drawEllipse(rect)
-    painter.setPen(pen)
-    painter.drawText(rect, QtCore.Qt.AlignCenter, str(point))
-    painter.end()
-    return pixmap
+    def agregarNotificaciones(self, conn, user):
+        """ Llena la caja de notificaciones. """
+        items = []
+        manejador = sql.ManejadorVentas(conn)
 
+        numPendientes, = manejador.obtenerNumPendientes(user.id)
 
-##################################
-# VENTANA PARA CONSULTAR PRECIOS #
-##################################
-class App_ConsultarPrecios(Base_VisualizarProductos):
-    """ Backend para el módulo de consultar precios.
-        No se puede cerrar hasta cerrar por completo el sistema. """
+        if numPendientes:
+            items.append(f'Tiene {numPendientes} pedidos pendientes.')
 
-    def __init__(self, first):
-        super().__init__(first, extern=True)
+        manejador = sql.ManejadorInventario(conn)
 
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowMinimizeButtonHint)
-        self.setWindowTitle('Consultar precios')
-        self.setWindowIcon(QIcon(':img/icon.ico'))
+        for nombre, stock, minimo in manejador.obtenerInventarioFaltante():
+            items.append(
+                f'¡Hay que surtir el material {nombre}! ' +
+                f'Faltan {minimo - stock} lotes para cubrir el mínimo.'
+            )
+        items = items or ['¡No hay nuevas notificaciones!']
 
-        self.warnings = False
+        for item in items:
+            self.addItem(item)
 
-        self.ui.label.setText('Consultar precios')
-        self.ui.btRegresar.setCursor(Qt.CursorShape.ArrowCursor)
-        self.ui.btRegresar.setIcon(QIcon(':/img/resources/images/package.png'))
-
-        self.ui.btAgregar.hide()
-        self.ui.groupBoxEspecGran.hide()
-        self.ui.groupBoxEspecSimple.hide()
-
-        # eventos para tabla de productos simples
-        self.ui.tabla_seleccionar.itemClicked.connect(self.mostrarSimple)
-        self.ui.txtCantidad.textChanged.connect(self.mostrarSimple)
-        self.ui.checkDuplex.toggled.connect(self.mostrarSimple)
-
-        # eventos para tabla de gran formato
-        self.ui.tabla_granformato.itemClicked.connect(self.medidasHandle)
-        self.ui.txtAnchoMaterial.textChanged.connect(self.medidasHandle)
-        self.ui.txtAltoMaterial.textChanged.connect(self.medidasHandle)
-        # lo demás está en la superclase :p
-
-        self.showMinimized()
-
-    # ==================
-    #  FUNCIONES ÚTILES
-    # ==================
-    def mostrarSimple(self):
-        if item := self.generarSimple():
-            self.ui.lbTotalSimple.setText(f'Total: ${Moneda(item.importe)}')
+    def alternarNotificaciones(self):
+        """ Se llama a esta función al hacer click en la foto de perfil
+            del usuario. Anima el tamaño de la caja de notificaciones. """
+        hiddenGeom = QRect(0, 0, 400, 0)
+        shownGeom = QRect(0, 0, 400, 120)
+        
+        if not self.isVisible():
+            # Create an animation to gradually change the height of the widget
+            self.setVisible(True)
+            self.show_animation = QPropertyAnimation(self, b'geometry')
+            self.show_animation.setDuration(200)
+            self.show_animation.setStartValue(hiddenGeom)
+            self.show_animation.setEndValue(shownGeom)
+            self.show_animation.setEasingCurve(QEasingCurve.OutSine)
+            self.show_animation.start()
         else:
-            self.ui.lbTotalSimple.setText('Total: ...')
+            # Hide the widget
+            self.hide_animation = QPropertyAnimation(self, b'geometry')
+            self.hide_animation.setDuration(200)
+            self.hide_animation.setStartValue(shownGeom)
+            self.hide_animation.setEndValue(hiddenGeom)
+            self.hide_animation.setEasingCurve(QEasingCurve.InSine)
+            self.hide_animation.finished.connect(lambda: self.setVisible(False))
+            self.hide_animation.start()
 
-    def medidasHandle(self):
-        if item := self.generarGranFormato():
-            self.ui.lbTotalGran.setText(f'Total: ${Moneda(item.importe)}')
-        else:
-            self.ui.lbTotalGran.setText('Total: ...')
+    @property
+    def sinNotificaciones(self):
+        return self.item(0).text().startswith('¡No hay nuevas')

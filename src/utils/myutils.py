@@ -10,8 +10,6 @@ from openpyxl.styles import Font
 from PySide6.QtCore import QDateTime, QThread, QLocale
 from PySide6.QtGui import QRegularExpressionValidator
 
-from utils.mydecorators import run_in_thread
-
 __all__ = ['ColorsEnum', 'FabricaValidadores', 'clamp', 'chunkify',
            'daysTo', 'unidecode', 'randFile', 'son_similar', 'stringify_float',
            'formatDate', 'exportarXlsx', 'enviarWhatsApp', 'Runner']
@@ -125,7 +123,6 @@ def formatDate(date=None):
     return unicodedata.normalize('NFKD', formatted)
 
 
-@run_in_thread
 def exportarXlsx(rutaArchivo, titulos, datos):
     """ Exporta una lista de tuplas a un archivo MS Excel, con extensión xlsx.
         Requiere el nombre del archivo, una lista con los títulos para las

@@ -9,20 +9,16 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import *
 from PySide6.QtCore import *
 
-from backends.Login import App_Login, Usuario
-import sql
-from utils import Moneda
-from utils.myutils import unidecode, formatDate, ColorsEnum
+from . import Moneda
+from .myutils import unidecode, formatDate, ColorsEnum
 
 __all__ = ['VentanaPrincipal', 'DimBackground', 'WidgetPago',
            'StackPagos', 'TablaDatos', 'NumberEdit', 'LabelAdvertencia',
            'WarningDialog', 'SpeechBubble', 'ListaNotificaciones']
 
-alternate_bg = QColor(225, 225, 225)
-
 
 class VentanaPrincipal(QtWidgets.QMainWindow):
-    def __init__(self, conn: sql.Connection, user: Usuario):
+    def __init__(self, conn, user):
         super().__init__()
 
         self.resize(1500, 800)
@@ -32,8 +28,8 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
         self.conn = conn
         self.user = user
 
-        from backends.Home import App_ConsultarPrecios
-        self.consultarPrecios = App_ConsultarPrecios(self)
+        from backends.AdministrarProductos import App_ConsultarPrecios
+        self.consultarPrecios = App_ConsultarPrecios(self, conn)
 
         self.goHome()
         self.show()
@@ -42,12 +38,14 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
         """ Regresar al menú principal.
             Crea módulo Home y establece como widget principal. """
         from backends.Home import App_Home
-        new = App_Home(self)
+
+        new = App_Home(self.conn, self.user)
         self.setCentralWidget(new)
 
     def closeEvent(self, event):
         """ En eventos específicos, restringimos el cerrado del sistema. """
         from backends.CrearVenta import App_CrearVenta
+        from backends.Login import App_Login
 
         if isinstance(self.centralWidget(), App_CrearVenta) and not self.user.administrador:
             event.ignore()
@@ -162,17 +160,17 @@ class StackPagos(QtWidgets.QStackedWidget):
     @property
     def pagosValidos(self):
         """ Determinar que los pagos introducidos cumplan varios requisitos.
-            1. Si el monto debido es de cero, siempre aceptar. 
+            1. Si el monto debido es de cero, nunca aceptar. 
             2. No puede haber pagos de cero pesos.
             3. No puede haber más de un pago en efectivo.
             4. Al haber uno de estos, verificar que sea necesario
                y que lo pagado sea igual o mayor que lo debido (es decir,
                permitir que el efectivo exceda lo necesario)
             5. Al no haber efectivo, verificar que lo pagado sea exactamente lo debido. """
-        montoPagado = sum(wdg.montoPagado for wdg in self)
-        if self.total == montoPagado == 0. and self.count() == 1:  # caso especial
-            return True
+        if not self.total:
+            return False
 
+        montoPagado = sum(wdg.montoPagado for wdg in self)
         n_efec = [wdg.metodoSeleccionado for wdg in self].count('Efectivo')
 
         if n_efec == 0:
@@ -243,7 +241,7 @@ class TablaDatos(QtWidgets.QTableWidget):
                 selection-background-color: rgb(85, 85, 255);
                 selection-color: rgb(255, 255, 255);
             }
-        """ % alternate_bg.name())
+        """ % QColor(225, 225, 225).name())
         font = QFont()
         font.setPointSize(10)
         self.setFont(font)
@@ -605,71 +603,3 @@ class SpeechBubble(QtWidgets.QWidget):
             self.hide_animation.setEasingCurve(QEasingCurve.InSine)
             self.hide_animation.finished.connect(lambda: self.setVisible(False))
             self.hide_animation.start()
-
-
-class ListaNotificaciones(QtWidgets.QListWidget):
-    hiddenGeom = QRect(0, 0, 400, 0)
-    shownGeom = QRect(0, 0, 400, 120)
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-        self.setStyleSheet('''
-            QListWidget {
-                alternate-background-color: %s;
-            }
-            QListWidget::item { 
-                margin: 5px;
-            }
-            QFrame {
-                border: 2px solid;
-            }
-        ''' % alternate_bg.name())
-
-    def agregarNotificaciones(self, conn, user):
-        """ Llena la caja de notificaciones. """
-        items = []
-        manejador = sql.ManejadorVentas(conn)
-
-        numPendientes, = manejador.obtenerNumPendientes(user.id)
-
-        if numPendientes:
-            items.append(f'Tiene {numPendientes} pedidos pendientes.')
-
-        manejador = sql.ManejadorInventario(conn)
-
-        for nombre, stock, minimo in manejador.obtenerInventarioFaltante():
-            items.append(
-                f'¡Hay que surtir el material {nombre}! ' +
-                f'Faltan {minimo - stock} lotes para cubrir el mínimo.'
-            )
-        items = items or ['¡No hay nuevas notificaciones!']
-
-        for item in items:
-            self.addItem(item)
-
-    def alternarNotificaciones(self):
-        """ Se llama a esta función al hacer click en la foto de perfil
-            del usuario. Anima el tamaño de la caja de notificaciones. """
-        if not self.isVisible():
-            # Create an animation to gradually change the height of the widget
-            self.setVisible(True)
-            self.show_animation = QPropertyAnimation(self, b'geometry')
-            self.show_animation.setDuration(200)
-            self.show_animation.setStartValue(self.hiddenGeom)
-            self.show_animation.setEndValue(self.shownGeom)
-            self.show_animation.setEasingCurve(QEasingCurve.OutSine)
-            self.show_animation.start()
-        else:
-            # Hide the widget
-            self.hide_animation = QPropertyAnimation(self, b'geometry')
-            self.hide_animation.setDuration(200)
-            self.hide_animation.setStartValue(self.shownGeom)
-            self.hide_animation.setEndValue(self.hiddenGeom)
-            self.hide_animation.setEasingCurve(QEasingCurve.InSine)
-            self.hide_animation.finished.connect(lambda: self.setVisible(False))
-            self.hide_animation.start()
-
-    @property
-    def sinNotificaciones(self):
-        return self.item(0).text().startswith('¡No hay nuevas')

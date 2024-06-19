@@ -2,10 +2,10 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QPixmap, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
+from sql import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myutils import *
-from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
-from sql import ManejadorInventario, ManejadorProductos
+from utils.mywidgets import LabelAdvertencia
 
 
 #####################
@@ -15,11 +15,10 @@ class App_AdministrarInventario(QtWidgets.QWidget):
     """ Backend para la ventana de administración de inventario. """
     rescanned = Signal()
 
-    def __init__(self, parent: VentanaPrincipal):
+    def __init__(self, conn, user):
         from ui.Ui_AdministrarInventario import Ui_AdministrarInventario
 
         super().__init__()
-
         self.ui = Ui_AdministrarInventario()
         self.ui.setupUi(self)
 
@@ -28,8 +27,8 @@ class App_AdministrarInventario(QtWidgets.QWidget):
         LabelAdvertencia(self.ui.tabla_inventario, '¡No se encontró ningún elemento!')
 
         # guardar conexión y usuarios como atributos
-        self.conn = parent.conn
-        self.user = parent.user
+        self.conn = conn
+        self.user = user
 
         self.all = []
 
@@ -118,16 +117,16 @@ class App_AdministrarInventario(QtWidgets.QWidget):
     def surtirExistencias(self):
         idx = self.ui.tabla_inventario.selectedItems()[0].text()
 
-        self.Dialog = ExistenciasWidget(self, idx)
+        self.Dialog = ExistenciasWidget(self, self.conn, idx)
         self.Dialog.success.connect(self.rescan_update)
 
     def agregarInventario(self):
-        widget = App_RegistrarInventario(self)
+        widget = App_RegistrarInventario(self, self.conn)
         widget.success.connect(self.rescan_update)
 
     def editarInventario(self):
         if selected := self.ui.tabla_inventario.selectedItems():
-            widget = App_EditarInventario(self, selected[0].text())
+            widget = App_EditarInventario(self, self.conn, selected[0].text())
             widget.success.connect(self.rescan_update)
 
     def quitarInventario(self):
@@ -163,8 +162,7 @@ class App_AdministrarInventario(QtWidgets.QWidget):
 
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
-        parent: VentanaPrincipal = self.parentWidget()
-        parent.goHome()
+        self.parentWidget().goHome()
 
 
 #################################
@@ -178,19 +176,18 @@ class Base_EditarInventario(QtWidgets.QWidget):
 
     success = Signal()
 
-    def __init__(self, first: App_AdministrarInventario):
+    def __init__(self, parent, conn):
         from ui.Ui_EditarInventario import Ui_EditarInventario
 
-        super().__init__(first)
+        super().__init__(parent)
 
         self.ui = Ui_EditarInventario()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
-        # guardar conexión y usuarios como atributos
-        self.conn = first.conn
-        self.user = first.user
+        # guardar conexión como atributo
+        self.conn = conn
 
         # validadores para datos numéricos
         validador = FabricaValidadores.NumeroDecimal
@@ -218,23 +215,14 @@ class Base_EditarInventario(QtWidgets.QWidget):
         # crear widget y agregar a la lista
         nuevo = WidgetProducto()
 
-        # evento para eliminar la entrada
-        nuevo.btEliminar.clicked.connect(
-            lambda: (self.ui.layoutScroll.removeWidget(nuevo),
-                     nuevo.setParent(None)))
-
-        # validador para datos numéricos
-        validador = FabricaValidadores.NumeroDecimal
-        nuevo.txtProductoUtiliza.setValidator(validador)
-
         # llenar caja de opciones con productos
         manejador = ManejadorProductos(self.conn)
         codigos = manejador.obtenerListaCodigos()
         nuevo.boxProducto.addItems([codigo for codigo, in codigos])
 
         # modificar valores a los de la base de datos
-        nuevo.boxProducto.setCurrentText(codigo)
-        nuevo.txtProductoUtiliza.setText(str(cantidad))
+        nuevo.productoSeleccionado = codigo
+        nuevo.cantidadProducto = cantidad
 
         self.ui.layoutScroll.addWidget(nuevo)
 
@@ -259,24 +247,15 @@ class Base_EditarInventario(QtWidgets.QWidget):
         """ Parámetros para la tabla productos_utiliza_inventario. """
         productos: list[WidgetProducto] = self.ui.scrollAreaLista.children()[1:]
 
-        try:
-            productos = [(p.productoSeleccionado, float(p.cantidadProducto))
-                         for p in productos]
-        except ValueError:
-            QtWidgets.QMessageBox.warning(
-                self, 'Atención',
-                '¡Verifique que los datos numéricos sean correctos!')
-            return None
-
         PUI_db_parametros = []
         manejador = ManejadorProductos(self.conn)
 
-        for codigo, cantidad in productos:
+        for wdg in productos:
+            codigo, cantidad = wdg.productoSeleccionado, wdg.cantidadProducto
             if not codigo or cantidad < 1:
                 return None
 
             idProducto = manejador.obtenerIdProducto(codigo)
-
             PUI_db_parametros.append((idProducto, cantidad))
 
         return PUI_db_parametros
@@ -291,7 +270,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
             return
 
         # ejecuta internamente un fetchone, por lo que se desempaca luego
-        result = self.ejecutarOperacion(inventario_db_parametros)
+        result = self.insertar_o_modificar(inventario_db_parametros)
         if not result:
             return
 
@@ -307,7 +286,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
             self.success.emit()
             self.close()
 
-    def ejecutarOperacion(self, params: tuple) -> tuple:
+    def insertar_o_modificar(self, inventario_db_parametros: tuple) -> tuple:
         """ Devuelve tupla con índice del elemento registrado o editado. """
         raise NotImplementedError('BEIS CLASSSSSSS')
 
@@ -317,8 +296,8 @@ class App_RegistrarInventario(Base_EditarInventario):
     MENSAJE_EXITO = '¡Se registró el elemento!'
     MENSAJE_ERROR = '¡No se pudo registrar el elemento!'
 
-    def __init__(self, first: App_AdministrarInventario):
-        super().__init__(first)
+    def __init__(self, parent, conn):
+        super().__init__(parent, conn)
 
         self.ui.lbTitulo.setText('Registrar elemento')
         self.ui.btAceptar.setText(' Registrar elemento')
@@ -327,9 +306,9 @@ class App_RegistrarInventario(Base_EditarInventario):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def ejecutarOperacion(self, params):
+    def insertar_o_modificar(self, inventario_db_parametros):
         manejador = ManejadorInventario(self.conn, self.MENSAJE_ERROR)
-        return manejador.insertarElemento(params)
+        return manejador.insertarElemento(inventario_db_parametros)
 
 
 class App_EditarInventario(Base_EditarInventario):
@@ -337,8 +316,8 @@ class App_EditarInventario(Base_EditarInventario):
     MENSAJE_EXITO = '¡Se editó el elemento!'
     MENSAJE_ERROR = '¡No se pudo editar el elemento!'
 
-    def __init__(self, first: App_AdministrarInventario, idx: int = None):
-        super().__init__(first)
+    def __init__(self, parent, conn, idx: int = None):
+        super().__init__(parent, conn)
 
         self.idx = idx  # id del elemento a editar
 
@@ -349,7 +328,7 @@ class App_EditarInventario(Base_EditarInventario):
             = manejador.obtenerInformacionPrincipal(idx)
 
         self.ui.txtNombre.setText(nombre)
-        self.ui.txtTamano.setText(f'{tamano:,.2f}')
+        self.ui.txtTamano.setText(f'{tamano:.2f}')
         self.ui.txtPrecioCompra.setText(f'{precio:.2f}')
         self.ui.txtExistencia.setText(f'{existencia:.2f}')
         self.ui.txtMinimo.setText(f'{minimo:.2f}')
@@ -363,9 +342,9 @@ class App_EditarInventario(Base_EditarInventario):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def ejecutarOperacion(self, params):
+    def insertar_o_modificar(self, inventario_db_parametros):
         manejador = ManejadorInventario(self.conn, self.MENSAJE_ERROR)
-        return manejador.editarElemento(self.idx, params)
+        return manejador.editarElemento(self.idx, inventario_db_parametros)
 
 
 #########################################
@@ -373,75 +352,48 @@ class App_EditarInventario(Base_EditarInventario):
 #########################################
 class WidgetProducto(QtWidgets.QWidget):
     def __init__(self):
-        from PySide6 import QtCore, QtWidgets, QtGui
+        from ui.Ui_WidgetElemento import Ui_WidgetElemento
 
         super().__init__()
+        self.ui = Ui_WidgetElemento()
+        self.ui.setupUi(self)
+        self.setMinimumSize(self.size())
 
-        self.resize(390, 70)
-        self.setMinimumSize(390, 70)
-        boxProducto = QtWidgets.QComboBox(self)
-        boxProducto.setGeometry(QtCore.QRect(35, 10, 271, 22))
-        boxProducto.setMinimumSize(QtCore.QSize(271, 22))
-        font = QFont()
-        font.setPointSize(14)
-        font.setPointSize(11)
-        boxProducto.setFont(font)
-        lbContador = QtWidgets.QLabel(self)
-        lbContador.setGeometry(QtCore.QRect(5, 10, 21, 21))
-        lbContador.setMinimumSize(QtCore.QSize(21, 21))
-        lbContador.setPixmap(QtGui.QPixmap(":/img/resources/images/package_2.png"))
-        lbContador.setScaledContents(True)
+        self.ui.label.setPixmap(QPixmap(":/img/resources/images/package_2.png"))
 
-        btEliminar = QtWidgets.QPushButton(self)
-        btEliminar.setGeometry(QtCore.QRect(343, 12, 35, 35))
-        btEliminar.setCursor(QtGui.QCursor(Qt.PointingHandCursor))
-        btEliminar.setStyleSheet("QPushButton {\n"
-                                 "        background-color: transparent;\n"
-                                 "        border: none;\n"
-                                 "        padding: 0px;\n"
-                                 "    }")
-        icon = QIcon()
-        icon.addFile(":/img/resources/images/cancel.png", QtCore.QSize(), QIcon.Normal, QIcon.Off)
-        btEliminar.setIcon(icon)
-        btEliminar.setIconSize(QtCore.QSize(35, 35))
-        btEliminar.setFlat(True)
-
-        label = QtWidgets.QLabel(self)
-        label.setGeometry(QtCore.QRect(35, 40, 271, 21))
-        label.setMinimumSize(QtCore.QSize(271, 21))
-        label.setFont(font)
-        label.setText("utiliza           unidades de este elemento.")
-        txtProductoUtiliza = QtWidgets.QLineEdit(self)
-        txtProductoUtiliza.setGeometry(QtCore.QRect(77, 40, 41, 20))
-        txtProductoUtiliza.setMinimumSize(QtCore.QSize(41, 20))
-        txtProductoUtiliza.setFont(font)
-        QtCore.QMetaObject.connectSlotsByName(self)
+        self.ui.btEliminar.clicked.connect(lambda: self.setParent(None))
 
         # guardar widgets importantes como atributos
-        self.boxProducto = boxProducto
-        self.btEliminar = btEliminar
-        self.txtProductoUtiliza = txtProductoUtiliza
+        self.boxProducto = self.ui.boxElemento
 
     @property
     def productoSeleccionado(self):
-        return self.boxProducto.currentText()
-
+        return self.ui.boxElemento.currentText()
+    
+    @productoSeleccionado.setter
+    def productoSeleccionado(self, val: str):
+        self.ui.boxElemento.setCurrentText(val)
+        
     @property
     def cantidadProducto(self):
-        return self.txtProductoUtiliza.text()
+        return self.ui.boxProductoUtiliza.value()
+    
+    @cantidadProducto.setter
+    def cantidadProducto(self, val: int):
+        self.ui.boxProductoUtiliza.setValue(val)
 
 
 class ExistenciasWidget(QtWidgets.QDialog):
     success = Signal()
 
-    def __init__(self, first: App_AdministrarInventario, idx):
+    def __init__(self, parent, conn, idx):
         from PySide6 import QtCore
 
-        super().__init__(parent=first)
-        self.conn = first.conn
+        super().__init__(parent)
+        self.conn = conn
         self.idx = idx
 
-        self.resize(354, 84)
+        self.resize(340, 80)
         self.setWindowTitle("Surtir existencias")
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setModal(True)
@@ -450,8 +402,7 @@ class ExistenciasWidget(QtWidgets.QDialog):
         gridLayout.setContentsMargins(-1, -1, -1, 9)
         label = QtWidgets.QLabel(self)
         font = QFont()
-        font.setPointSize(14)
-        font.setPointSize(10)
+        font.setPointSize(9)
         label.setFont(font)
         label.setText("Suministrar ")
         gridLayout.addWidget(label, 0, 0, 1, 1)

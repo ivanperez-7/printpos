@@ -1,178 +1,17 @@
-from dataclasses import dataclass, field
-from typing import Iterator
-
 from PySide6 import QtWidgets
 from PySide6.QtWidgets import QMessageBox as qm
 from PySide6.QtCore import QDate, QDateTime, Signal, Qt
 
+from .AdministrarClientes import App_RegistrarCliente, App_EditarCliente
 from .AdministrarVentas import Base_PagarVenta
+from .AdministrarProductos import Base_VisualizarProductos
 from pdf import ImpresoraOrdenes, ImpresoraTickets
+from sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
 from utils import Moneda
+from utils.mydataclasses import Venta
 from utils.mydecorators import fondo_oscuro, requiere_admin
 from utils.myutils import *
-from utils.mywidgets import DimBackground, LabelAdvertencia, SpeechBubble, VentanaPrincipal
-from sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
-
-
-##################
-# CLASE AUXILIAR #
-##################
-@dataclass
-class BaseItem:
-    """ Clase para mantener registro de un producto simple de la venta. """
-    id: int  # identificador interno en la base de datos
-    codigo: str  # nombre del producto
-    nombre_ticket: str  # nombre para mostrar en tickets y órdenes
-    precio_unit: float  # precio por unidad
-    descuento_unit: float  # cantidad a descontar por unidad
-    cantidad: int  # cantidad solicitada por el cliente
-    notas: str  # especificaciones del producto
-
-    @property
-    def importe(self):
-        """ Costo total del producto. """
-        raise NotImplementedError('BEIS CLASSSS')
-
-    @property
-    def total_descuentos(self):
-        """ Regresa el total de descuentos (descuento * cantidad). """
-        raise NotImplementedError('BEIS CLASSSS')
-
-
-@dataclass
-class ItemVenta(BaseItem):
-    """ Clase para mantener registro de un producto simple de la venta. """
-    duplex: bool  # dicta si el producto es duplex
-
-    def __post_init__(self):
-        if self.duplex:
-            self.nombre_ticket += ' (a doble cara)'
-
-    @property
-    def importe(self):
-        """ Costo total del producto. """
-        return (self.precio_unit - self.descuento_unit) * self.cantidad
-
-    @property
-    def total_descuentos(self):
-        """ Regresa el total de descuentos (descuento * cantidad). """
-        return self.descuento_unit * self.cantidad
-
-    def __iter__(self):
-        """ Regresa iterable para alimentar las tablas de productos.
-            Cantidad | Código | Especificaciones | Precio | Descuento | Importe """
-        yield from (self.cantidad,
-                    self.codigo + (' (a doble cara)' if self.duplex else ''),
-                    self.notas,
-                    self.precio_unit,
-                    self.descuento_unit,
-                    self.importe)
-
-
-@dataclass
-class ItemGranFormato(BaseItem):
-    """ Clase para un producto de tipo gran formato.
-        Reimplementa métodos `importe` y `total_descuentos`. """
-    min_m2: float
-
-    @property
-    def importe(self):
-        cantidad = max(self.min_m2, self.cantidad)
-        return (self.precio_unit - self.descuento_unit) * cantidad
-
-    @property
-    def total_descuentos(self):
-        cantidad = max(self.min_m2, self.cantidad)
-        return self.descuento_unit * cantidad
-
-    def __iter__(self):
-        """ Regresa iterable para alimentar las tablas de productos.
-            Cantidad | Código | Especificaciones | Precio | Descuento | Importe """
-        yield from (self.cantidad,
-                    self.codigo,
-                    self.notas,
-                    self.precio_unit,
-                    self.descuento_unit,
-                    self.importe)
-
-
-@dataclass
-class Venta:
-    """ Clase para mantener registro de una venta. """
-    productos: list[BaseItem] = field(default_factory=list)
-    fechaCreacion: QDateTime = QDateTime.currentDateTime()
-    fechaEntrega: QDateTime = QDateTime(fechaCreacion)
-    requiere_factura: bool = False
-    comentarios: str = ''
-    id_cliente: int = 1
-
-    @property
-    def total(self):
-        return Moneda.sum(prod.importe for prod in self.productos)
-
-    @property
-    def total_descuentos(self):
-        return Moneda.sum(prod.total_descuentos for prod in self.productos)
-
-    @property
-    def esVentaDirecta(self):
-        """ Compara fechas de creación y entrega para determinar si la venta será un pedido. """
-        return self.fechaCreacion == self.fechaEntrega
-
-    @property
-    def ventaVacia(self):
-        return len(self.productos) == 0
-
-    def agregarProducto(self, item: ItemVenta):
-        self.productos.append(item)
-
-    def quitarProducto(self, idx: int):
-        self.productos.pop(idx)
-
-    def reajustarPrecios(self, conn):
-        """ Algoritmo para reajustar precios de productos simples al haber cambios de cantidad.
-            Por cada grupo de productos idénticos:
-                1. Calcular cantidad de productos duplex y cantidad de no duplex.
-                2. Obtener precio NO DUPLEX con el total de ambas cantidades.
-                3. Obtener precio DUPLEX con la cantidad duplex correspondiente.
-                4. A todos los productos del grupo, asignar el mínimo de los dos precios obtenidos. """
-        manejador = ManejadorProductos(conn)
-
-        for productos in self._obtenerGruposProductos():
-            if len(productos) <= 1:
-                continue
-
-            id_prod = productos[0].id
-            cantidad = sum(p.cantidad for p in productos)
-            cantidadDuplex = sum(p.cantidad for p in productos if p.duplex)
-
-            precioNormal = manejador.obtenerPrecioSimple(id_prod, cantidad, False)
-            precioDuplex = manejador.obtenerPrecioSimple(id_prod, cantidadDuplex, True)
-            nuevoPrecio = min(precioNormal, precioDuplex or precioNormal)
-
-            for p in productos:
-                p.precio_unit = nuevoPrecio
-
-    def _obtenerGruposProductos(self) -> Iterator[list[ItemVenta]]:
-        """ Obtiene un generador con listas de productos, separadas por identificador. """
-        out = dict()
-        for prod in self.productos:
-            if not isinstance(prod, ItemVenta):
-                continue
-            try:
-                out[prod.id].append(prod)
-            except KeyError:
-                out[prod.id] = [prod]
-        yield from out.values()
-
-    def __len__(self):
-        return len(self.productos)
-
-    def __iter__(self):
-        yield from self.productos
-
-    def __getitem__(self, i: int):
-        return self.productos[i]
+from utils.mywidgets import DimBackground, LabelAdvertencia, SpeechBubble
 
 
 #####################
@@ -186,11 +25,10 @@ class App_CrearVenta(QtWidgets.QWidget):
         TODO:
             - mandar ticket por whatsapp o imprimir, sí o sí """
 
-    def __init__(self, parent: VentanaPrincipal):
+    def __init__(self, conn, user):
         from ui.Ui_CrearVenta import Ui_CrearVenta
 
         super().__init__()
-
         self.ui = Ui_CrearVenta()
         self.ui.setupUi(self)
 
@@ -201,8 +39,8 @@ class App_CrearVenta(QtWidgets.QWidget):
         ventaDatos = Venta()
 
         # guardar conexión y usuarios como atributos
-        self.conn = parent.conn
-        self.user = parent.user
+        self.conn = conn
+        self.user = user
 
         # cuadro de texto para los descuentos del cliente
         self.dialogoDescuentos = SpeechBubble(self)
@@ -230,12 +68,12 @@ class App_CrearVenta(QtWidgets.QWidget):
         self.ui.tabla_productos.itemChanged.connect(self.item_changed)
         self.ui.btRegistrar.clicked.connect(self.insertarCliente)
         self.ui.btSeleccionar.clicked.connect(
-            lambda: App_SeleccionarCliente(self).success.connect(self.seleccionarCliente))
+            lambda: App_SeleccionarCliente(self, conn)
+                    .success.connect(self.seleccionarCliente))
         self.ui.btDescuento.clicked.connect(self.agregarDescuento)
         self.ui.btDescuentosCliente.clicked.connect(self.dialogoDescuentos.alternarDescuentos)
         self.ui.btDeshacer.clicked.connect(self.deshacerFechaEntrega)
-        self.ui.btCotizacion.clicked.connect(
-            lambda: App_EnviarCotizacion(self) if not ventaDatos.ventaVacia else None)
+        self.ui.btCotizacion.clicked.connect(self.enviarCotizacion)
         self.ui.btListo.clicked.connect(self.confirmarVenta)
 
         self.ui.tabla_productos.quitarBordeCabecera()
@@ -290,10 +128,8 @@ class App_CrearVenta(QtWidgets.QWidget):
     # ====================================
     def insertarCliente(self):
         """ Abre ventana para registrar un cliente. """
-        from .AdministrarClientes import App_RegistrarCliente
-
-        modulo = App_RegistrarCliente(
-            self,
+        modulo = App_RegistrarCliente(self, self.conn, self.user)
+        modulo.agregarDatosPorDefecto(
             nombre=self.ui.txtCliente.text(),
             celular=self.ui.txtTelefono.text(),
             correo=self.ui.txtCorreo.text()
@@ -321,7 +157,7 @@ class App_CrearVenta(QtWidgets.QWidget):
         modulo.success.connect(self.actualizarLabelFecha)
 
     def agregarProducto(self):
-        modulo = App_AgregarProducto(self)
+        modulo = App_AgregarProducto(self, self.conn)
         modulo.success.connect(self.colorearActualizar)
 
     def quitarProducto(self):
@@ -340,13 +176,14 @@ class App_CrearVenta(QtWidgets.QWidget):
         for row in sorted(selected, reverse=True):
             ventaDatos.quitarProducto(row)
 
-        ventaDatos.reajustarPrecios(self.conn)
+        man = ManejadorProductos(self.conn)
+        ventaDatos.reajustarPrecios(man)
         self.colorearActualizar()
 
     def agregarDescuento(self):
         """ Abre ventana para agregar un descuento a la orden si el cliente es especial. """
         if not ventaDatos.ventaVacia:
-            modulo = App_AgregarDescuento(self)
+            modulo = App_AgregarDescuento(self, self.conn, self.user)
             modulo.success.connect(
                 lambda: (self.ui.btSeleccionar.setEnabled(False),
                          self.ui.txtCliente.setReadOnly(True),
@@ -354,6 +191,13 @@ class App_CrearVenta(QtWidgets.QWidget):
                          self.ui.txtTelefono.setReadOnly(True),
                          self.colorearActualizar())
             )
+    
+    def enviarCotizacion(self):
+        if not ventaDatos.ventaVacia:
+            cliente = self.ui.txtCliente.text()
+            telefono = self.ui.txtTelefono.text()
+            vendedor = self.ui.txtVendedor.text()
+            wdg = App_EnviarCotizacion(self, cliente, telefono, vendedor)
 
     def verificarCliente(self):
         # se confirma si existe el cliente en la base de datos
@@ -385,9 +229,7 @@ class App_CrearVenta(QtWidgets.QWidget):
                 return
 
             if not all((cliente[correo], cliente[direccion], cliente[rfc])):
-                from .AdministrarClientes import App_EditarCliente
-
-                modulo = App_EditarCliente(self, cliente[id])
+                modulo = App_EditarCliente(self, self.conn, self.user, cliente[id])
                 modulo.success.connect(self.establecerCliente)
 
                 warning('El cliente no tiene completos sus datos para la factura.\n'
@@ -410,278 +252,26 @@ class App_CrearVenta(QtWidgets.QWidget):
         ventaDatos.requiere_factura = self.ui.tickFacturaSi.isChecked()
         ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
 
-        if ventaDatos.total > 0.:
-            bg = DimBackground(self)
-        modulo = App_ConfirmarVenta(self)
+        modulo = App_ConfirmarVenta(
+            self, self.conn, self.user, self.ui.btMetodoGrupo.checkedButton().text())
+        modulo.success.connect(self.parentWidget().goHome)
 
     @requiere_admin
     def goHome(self, conn):
         """ Cierra la ventana y regresa al inicio. """
-        parent: VentanaPrincipal = self.parentWidget()
-        parent.goHome()
+        self.parentWidget().goHome()
 
 
 #################################
 # VENTANAS PARA EDITAR LA VENTA #
 #################################
-class Base_VisualizarProductos(QtWidgets.QWidget):
-    dataChanged = Signal()  # señal para actualizar tabla en hilo principal
-
-    def __init__(self, first: VentanaPrincipal, *, extern: bool = False):
-        from ui.Ui_VisualizadorProductos import Ui_VisualizadorProductos
-
-        super().__init__(None if extern else first)
-
-        self.ui = Ui_VisualizadorProductos()
-        self.ui.setupUi(self)
-        self.setFixedSize(self.size())
-
-        self.warnings = True
-
-        LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
-        LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
-
-        # guardar conexión, usuario y un manejador de DB como atributos
-        self.conn = first.conn
-        self.manejador = ManejadorProductos(self.conn)
-
-        # eventos para widgets
-        self.ui.searchBar.textChanged.connect(self.update_display)
-        self.ui.groupFiltro.buttonClicked.connect(self.update_display)
-        self.ui.tabWidget.currentChanged.connect(
-            lambda: self.tabla_actual.resizeRowsToContents())
-
-        self.ui.btIntercambiarProducto.clicked.connect(self.intercambiarProducto)
-        self.ui.btIntercambiarMaterial.clicked.connect(self.intercambiarMaterial)
-
-        self.ui.txtAncho.textChanged.connect(self.medidasHandle)
-        self.ui.txtAlto.textChanged.connect(self.medidasHandle)
-        self.ui.grupoBotonesAlto.buttonClicked.connect(self.medidasHandle)
-        self.ui.grupoBotonesAncho.buttonClicked.connect(self.medidasHandle)
-
-        # validadores para datos numéricos
-        self.ui.txtCantidad.setValidator(FabricaValidadores.NumeroDecimal)
-        self.ui.txtAlto.setValidator(FabricaValidadores.NumeroDecimal)
-        self.ui.txtAncho.setValidator(FabricaValidadores.NumeroDecimal)
-        self.ui.txtAltoMaterial.setValidator(FabricaValidadores.NumeroDecimal)
-        self.ui.txtAnchoMaterial.setValidator(FabricaValidadores.NumeroDecimal)
-
-        self.ui.tabla_seleccionar.configurarCabecera(lambda col: col != 1)
-        self.ui.tabla_granformato.configurarCabecera(lambda col: col != 1)
-        self.ui.tabla_seleccionar.setSortingEnabled(True)
-        self.ui.tabla_granformato.setSortingEnabled(True)
-
-        # evento para leer cambios en tabla PRODUCTOS
-        self.event_reader = Runner(self.startEvents)
-        self.event_reader.start()
-        self.dataChanged.connect(self.rescan_display)
-
-    def showEvent(self, event):
-        self.rescan_display()
-
-    def closeEvent(self, event):
-        if event.spontaneous():
-            event.ignore()
-        else:
-            # no recomendado generalmente para terminar hilos, sin embargo,
-            # esta vez se puede hacer así al no ser una función crítica.
-            self.event_reader.stop()
-            event.accept()
-
-    # ==================
-    #  FUNCIONES ÚTILES
-    # ==================
-    @property
-    def tabla_actual(self):
-        return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][self.ui.tabWidget.currentIndex()]
-
-    def startEvents(self):
-        # eventos de Firebird para escuchar cambios en tabla productos
-        self.event_conduit = self.conn.event_conduit(['cambio_productos'])
-        self.event_conduit.begin()
-
-        while True:
-            self.event_conduit.wait()
-            self.dataChanged.emit()
-            self.event_conduit.flush()
-
-    def medidasHandle(self):
-        raise NotImplementedError('BEIS CLASSSSSSS')
-
-    def _intercambiarDimensiones(self, alto_textbox, ancho_textbox,
-                                 bt_alto_cm, bt_ancho_cm,
-                                 bt_alto_m, bt_ancho_m):
-        alto = alto_textbox.text()
-        ancho = ancho_textbox.text()
-        bt_alto = bt_alto_cm if bt_ancho_cm.isChecked() else bt_alto_m
-        bt_ancho = bt_ancho_cm if bt_alto_cm.isChecked() else bt_ancho_m
-
-        if alto and ancho:
-            alto_textbox.setText(ancho)
-            ancho_textbox.setText(alto)
-            bt_alto.setChecked(True)
-            bt_ancho.setChecked(True)
-            self.medidasHandle()
-
-    def intercambiarProducto(self):
-        self._intercambiarDimensiones(self.ui.txtAlto, self.ui.txtAncho,
-                                      self.ui.btAltoCm, self.ui.btAnchoCm,
-                                      self.ui.btAltoM, self.ui.btAnchoM)
-
-    def intercambiarMaterial(self):
-        self._intercambiarDimensiones(self.ui.txtAltoMaterial, self.ui.txtAnchoMaterial,
-                                      self.ui.btAltoCm_2, self.ui.btAnchoCm_2,
-                                      self.ui.btAltoM_2, self.ui.btAnchoM_2)
-
-    def obtenerMedidasProducto(self):
-        """ Calcular medidas del producto, regresa tupla (ancho, alto). """
-        ancho_producto = self.ui.txtAncho.text()
-        div_ancho = 100 if self.ui.btAnchoCm.isChecked() else 1
-
-        alto_producto = self.ui.txtAlto.text()
-        div_alto = 100 if self.ui.btAltoCm.isChecked() else 1
-
-        try:
-            ancho_producto = float(ancho_producto) / div_ancho
-            alto_producto = float(alto_producto) / div_alto
-            return (ancho_producto, alto_producto)
-        except ValueError:
-            return (0., 0.)
-
-    def obtenerMedidasMaterial(self):
-        """ Calcular medidas del material, regresa tupla (ancho, alto). """
-        ancho_material = self.ui.txtAnchoMaterial.text()
-        div_ancho_material = 100 if self.ui.btAnchoCm_2.isChecked() else 1
-
-        alto_material = self.ui.txtAltoMaterial.text()
-        div_alto_material = 100 if self.ui.btAltoCm_2.isChecked() else 1
-
-        try:
-            ancho_material = float(ancho_material) / div_ancho_material
-            alto_material = float(alto_material) / div_alto_material
-            return (ancho_material, alto_material)
-        except ValueError:
-            return (0., 0.)
-
-    def generarSimple(self):
-        if not (selected := self.ui.tabla_seleccionar.selectedItems()):
-            return
-
-        try:
-            cantidad = int(float(self.ui.txtCantidad.text() or 1))
-        except ValueError:
-            return
-
-        if cantidad <= 0:
-            return
-
-        # obtener información del producto
-        codigo = selected[0].text()
-        manejador = ManejadorProductos(self.conn)
-
-        idProducto = manejador.obtenerIdProducto(codigo)
-        nombre_ticket = manejador.obtenerNombreParaTicket(codigo)
-
-        # obtener precio basado en cantidad
-        duplex = self.ui.checkDuplex.isChecked()
-        precio = manejador.obtenerPrecioSimple(idProducto, cantidad, duplex)
-
-        if not precio and self.warnings:
-            QtWidgets.QMessageBox.warning(
-                self, 'Atención',
-                'No existe ningún precio de este producto '
-                'asociado a la cantidad proporcionada.')
-            return
-
-        # insertar información del producto con cantidad y especificaciones
-        return ItemVenta(
-            idProducto, codigo, nombre_ticket, precio, 0.0, cantidad,
-            self.ui.txtNotas.text().strip(), duplex)
-
-    def generarGranFormato(self):
-        if not (selected := self.ui.tabla_granformato.selectedItems()):
-            return
-
-        ancho_producto, alto_producto = self.obtenerMedidasProducto()
-        ancho_material, alto_material = self.obtenerMedidasMaterial()
-
-        if not all([ancho_producto, alto_producto, ancho_material, alto_material]):
-            return
-        if (ancho_producto > ancho_material or alto_producto > alto_material) and self.warnings:
-            QtWidgets.QMessageBox.warning(
-                self, 'Atención',
-                'Las medidas del producto sobrepasan las medidas del material.')
-            return
-
-        # obtener información del producto
-        codigo = selected[0].text()
-        manejador = ManejadorProductos(self.conn)
-
-        idProducto = manejador.obtenerIdProducto(codigo)
-        nombre_ticket = manejador.obtenerNombreParaTicket(codigo)
-        min_m2, precio_m2 = manejador.obtenerGranFormato(idProducto)
-
-        # si el alto del producto sobrepasa el ancho del material, quiere decir
-        # que no se pudo imprimir de forma normal; por lo tanto, cobrar sobrante.
-        desc_unit = 0.
-
-        if alto_producto > ancho_material:
-            # sobrante_ancho = ancho_material - ancho_producto
-            # descuento_sobre_total = manejador.obtenerDescuentoSobrante(idProducto, sobrante_ancho)
-            # desc_unit = precio_m2 * descuento_sobre_total
-            ancho_producto = ancho_material
-
-        # insertar información del producto con cantidad y especificaciones
-        return ItemGranFormato(
-            idProducto, codigo, nombre_ticket, precio_m2, desc_unit, ancho_producto * alto_producto,
-            self.ui.txtNotas_2.text().strip(), min_m2)
-
-    def rescan_display(self):
-        """ Lee de nuevo las tablas de productos y actualiza tablas. """
-        self.all_prod = self.manejador.obtenerVista('View_Productos_Simples')
-        self.all_gran = self.manejador.obtenerVista('View_Gran_Formato')
-        self.update_display()
-
-    def update_display(self):
-        """ Actualiza la tabla y el contador de clientes.
-            Acepta una cadena de texto para la búsqueda de clientes. """
-        filtro = self.ui.btDescripcion.isChecked()
-        txt_busqueda = self.ui.searchBar.text()
-
-        # <tabla de productos normales>
-        if txt_busqueda:
-            found = [prod for prod in self.all_prod
-                     if prod[filtro]
-                     if son_similar(txt_busqueda, prod[filtro])]
-        else:
-            found = self.all_prod
-
-        tabla = self.ui.tabla_seleccionar
-        tabla.llenar(found)
-        # </tabla de productos normales>
-
-        # <tabla de gran formato>
-        if txt_busqueda:
-            found = [prod for prod in self.all_gran
-                     if prod[filtro]
-                     if son_similar(txt_busqueda, prod[filtro])]
-        else:
-            found = self.all_gran
-
-        tabla = self.ui.tabla_granformato
-        tabla.llenar(found)
-        # </tabla de gran formato>
-
-        self.tabla_actual.resizeRowsToContents()
-
-
 @fondo_oscuro
 class App_AgregarProducto(Base_VisualizarProductos):
     """ Backend para la función de agregar un producto a la venta. """
     success = Signal()
 
-    def __init__(self, first: App_CrearVenta):
-        super().__init__(first)
+    def __init__(self, parent, conn):
+        super().__init__(parent, conn)
 
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
@@ -728,8 +318,10 @@ class App_AgregarProducto(Base_VisualizarProductos):
             item = self.generarGranFormato()
 
         if item:
+            man = ManejadorProductos(self.conn)
             ventaDatos.agregarProducto(item)
-            ventaDatos.reajustarPrecios(self.conn)
+            ventaDatos.reajustarPrecios(man)
+            
             self.success.emit()
             self.close()
 
@@ -739,10 +331,10 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
     """ Backend para la función de seleccionar un cliente de la base de datos. """
     success = Signal(list)
 
-    def __init__(self, first: App_CrearVenta):
+    def __init__(self, parent, conn):
         from ui.Ui_SeleccionarCliente import Ui_SeleccionarCliente
 
-        super().__init__(first)
+        super().__init__(parent)
 
         self.ui = Ui_SeleccionarCliente()
         self.ui.setupUi(self)
@@ -752,7 +344,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún cliente!')
 
         # llena la tabla con todos los clientes existentes
-        manejador = ManejadorClientes(first.conn)
+        manejador = ManejadorClientes(conn)
         self.all = [datos[1:] for datos in manejador.obtenerVista('view_all_clientes')]
 
         # añade eventos para los botones
@@ -803,10 +395,10 @@ class App_FechaEntrega(QtWidgets.QWidget):
     """ Backend para la función de cambiar fecha de entrega. """
     success = Signal()
 
-    def __init__(self, first: App_CrearVenta):
+    def __init__(self, parent):
         from ui.Ui_FechaEntrega import Ui_FechaEntrega
 
-        super().__init__(first)
+        super().__init__(parent)
 
         self.ui = Ui_FechaEntrega()
         self.ui.setupUi(self)
@@ -851,13 +443,13 @@ class App_AgregarDescuento(QtWidgets.QWidget):
     """ Backend para agregar descuento a la orden. """
     success = Signal()
 
-    def __init__(self, first: App_CrearVenta):
+    def __init__(self, parent, conn, user):
         from ui.Ui_AgregarDescuento import Ui_AgregarDescuento
 
-        super().__init__(first)
+        super().__init__(parent)
 
-        self.conn = first.conn
-        self.user = first.user
+        self.conn = conn
+        self.user = user
 
         self.ui = Ui_AgregarDescuento()
         self.ui.setupUi(self)
@@ -914,18 +506,19 @@ class App_AgregarDescuento(QtWidgets.QWidget):
 class App_EnviarCotizacion(QtWidgets.QWidget):
     """ Backend para agregar descuento a la orden. """
 
-    def __init__(self, first: App_CrearVenta):
+    def __init__(self, parent, txtCliente: str, txtTelefono: str, txtVendedor: str):
         from ui.Ui_Cotizacion import Ui_EnviarCotizacion
 
-        super().__init__(first)
+        super().__init__(parent)
 
         self.ui = Ui_EnviarCotizacion()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
-        self.first = first
-        self.conn = first.conn
+        self.txtCliente = txtCliente
+        self.txtTelefono = txtTelefono
+        self.txtVendedor = txtVendedor
 
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)
@@ -949,9 +542,9 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
     def enviarWhatsApp(self):
         mensaje = [
             '*COTIZACIÓN DE VENTA*',
-            'Cliente: *' + self.first.ui.txtCliente.text() + '*',
+            f'Cliente: *{self.txtCliente}*',
             '-------------------------------------------',
-            'Fecha: *' + formatDate() + '*',
+            f'Fecha: *{formatDate()}*',
             '-------------------------------------------'
         ]
 
@@ -964,29 +557,26 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
 
         mensaje.append(f'*Total a pagar: ${ventaDatos.total}*')
         mensaje = '\n'.join(mensaje)
-        celular = self.first.ui.txtTelefono.text()
 
-        if enviarWhatsApp(celular, mensaje):
+        if enviarWhatsApp(self.txtTelefono, mensaje):
             self.close()
 
     def imprimirTicket(self):
-        vendedor = self.first.ui.txtVendedor.text()
-
-        impresora = ImpresoraTickets(self.conn)
-        impresora.imprimirTicketPresupuesto(ventaDatos, vendedor)
-
+        impresora = ImpresoraTickets()
+        impresora.imprimirTicketPresupuesto(ventaDatos, self.txtVendedor)
         self.close()
 
 
 class App_ConfirmarVenta(Base_PagarVenta):
     """ Backend para la ventana de finalización de venta. """
+    success = Signal()
 
-    def __init__(self, first: App_CrearVenta):
-        super().__init__(first)
+    def __init__(self, parent, conn, user, metodo_pago: str = 'Efectivo') -> None:
+        super().__init__(parent, conn, user)
 
         # seleccionar método para WidgetPago
         wdg = self.stackPagos[0]
-        wdg.metodoSeleccionado = first.ui.btMetodoGrupo.checkedButton().text()
+        wdg.metodoSeleccionado = metodo_pago
 
         if wdg.metodoSeleccionado != 'Efectivo':
             self._handleCounters()
@@ -1016,12 +606,15 @@ class App_ConfirmarVenta(Base_PagarVenta):
         else:
             self.show()
 
-    def showEvent(self, event):
+    def showEvent(self, event) -> None:
+        if parent := self.parentWidget():
+            bg = DimBackground(parent)     # parent = módulo CrearVenta
+
         tabla = self.ui.tabla_productos
         tabla.modelo = tabla.Modelos.CREAR_VENTA
         tabla.llenar(ventaDatos)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event) -> None:
         event.ignore()
 
     # ================
@@ -1030,12 +623,12 @@ class App_ConfirmarVenta(Base_PagarVenta):
     def calcularTotal(self) -> Moneda:
         return ventaDatos.total
 
-    def obtenerDatosGenerales(self):
+    def obtenerDatosGenerales(self) -> tuple:
         manejadorClientes = ManejadorClientes(self.conn)
         _, nombreCliente, telefono, correo, *_ = manejadorClientes.obtenerCliente(ventaDatos.id_cliente)
         return (nombreCliente, correo, telefono, ventaDatos.fechaCreacion, ventaDatos.fechaEntrega)
 
-    def pagoPredeterminado(self):
+    def pagoPredeterminado(self) -> Moneda:
         return ventaDatos.total if ventaDatos.esVentaDirecta else ventaDatos.total / 2
 
     def obtenerIdVenta(self) -> int:
@@ -1045,17 +638,15 @@ class App_ConfirmarVenta(Base_PagarVenta):
         ventas_db_parametros = self.obtenerParametrosVentas()
         ventas_detallado_db_parametros = self.obtenerParametrosVentasDetallado()
 
-        # ejecuta internamente un fetchone, por lo que se desempaca luego
-        result = manejadorVentas.insertarVenta(ventas_db_parametros)
-        if not result:
-            return
+        if (
+            (id_ventas := manejadorVentas.insertarVenta(ventas_db_parametros))
+            and manejadorVentas.insertarDetallesVenta(id_ventas,
+                                                      ventas_detallado_db_parametros)
+        ):
+            return id_ventas
+        return None
 
-        id_ventas, = result
-        manejadorVentas.insertarDetallesVenta(id_ventas,
-                                              ventas_detallado_db_parametros)
-        return id_ventas
-
-    def obtenerParametrosVentas(self):
+    def obtenerParametrosVentas(self) -> tuple:
         """ Parámetros para tabla ventas (datos generales). """
         return (ventaDatos.id_cliente,
                 self.user.id,
@@ -1065,18 +656,18 @@ class App_ConfirmarVenta(Base_PagarVenta):
                 ventaDatos.requiere_factura,
                 'No terminada')
 
-    def obtenerParametrosVentasDetallado(self):
+    def obtenerParametrosVentasDetallado(self) -> list[tuple]:
         """ Parámetros para tabla ventas_detallado (datos de productos). """
         return [(prod.id,
                  prod.cantidad,
                  prod.precio_unit,
                  prod.descuento_unit,
                  prod.notas,
-                 prod.duplex if isinstance(prod, ItemVenta) else False,
+                 prod.duplex,
                  prod.importe)
                 for prod in ventaDatos]
 
-    def listo(self):
+    def listo(self) -> None:
         """ Intenta finalizar la compra o pedido, actualizando el estado
             e insertando los correspondientes movimientos en la tabla Caja. """
         if not ventaDatos.total / 2 <= self.para_pagar:
@@ -1089,8 +680,8 @@ class App_ConfirmarVenta(Base_PagarVenta):
             super().listo()
 
     @requiere_admin
-    def listoAdmin(self, conn):
-        """ Saltar ciertas verificaciones con cuenta de administrador. """
+    def listoAdmin(self, conn) -> None:
+        """ Saltar verificación con cuenta de administrador. """
         super().listo()
 
     def actualizarEstadoVenta(self) -> bool:
@@ -1100,7 +691,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         estado = 'Terminada' if ventaDatos.esVentaDirecta else f'Recibido ${self.para_pagar}'
         return manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True)
 
-    def dialogoExito(self):
+    def dialogoExito(self) -> None:
         if not ventaDatos.esVentaDirecta:
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
 
@@ -1113,9 +704,9 @@ class App_ConfirmarVenta(Base_PagarVenta):
             if ret == qm.Yes:
                 impresora = ImpresoraTickets(self.conn)
                 impresora.imprimirTicketCompra(self.id_ventas)
-        self.goHome()
+        self.success.emit()
 
-    def abortar(self):
+    def abortar(self) -> None:
         """ Función para abortar la venta y actualizar estado a 'Cancelada'. """
         ret = qm.question(self, 'Atención',
                           '¿Desea cancelar la venta? Esta acción no puede deshacerse.')
@@ -1123,15 +714,9 @@ class App_ConfirmarVenta(Base_PagarVenta):
             self._abortar()
 
     @requiere_admin
-    def _abortar(self, conn):
+    def _abortar(self, conn) -> None:
         manejadorAdmin = ManejadorVentas(conn)
 
-        estado = 'Cancelada por ' + manejadorAdmin.usuarioActivo
+        estado = 'Cancelada por ' + manejadorAdmin.nombreUsuarioActivo
         if manejadorAdmin.actualizarEstadoVenta(self.id_ventas, estado, commit=True):
-            self.goHome()
-
-    def goHome(self):
-        """ Cierra la ventana y crea otra venta. """
-        parent: VentanaPrincipal = self.parentWidget().parentWidget()
-        parent.goHome()
-        self.close()
+            self.success.emit()

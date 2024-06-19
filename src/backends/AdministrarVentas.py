@@ -3,15 +3,15 @@ from math import ceil
 from PySide6 import QtWidgets
 from PySide6.QtWidgets import QMessageBox as qm
 from PySide6.QtGui import QFont, QIcon
-from PySide6.QtCore import QModelIndex, Qt, Signal, QMutex
+from PySide6.QtCore import Qt, Signal, QMutex
 
 from pdf import ImpresoraOrdenes, ImpresoraTickets
+from sql import ManejadorVentas
 from utils import Moneda
 from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import *
-from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
-from sql import ManejadorVentas
+from utils.mywidgets import LabelAdvertencia
 
 
 #####################
@@ -23,11 +23,10 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         -   ocultamiento de folios """
     rescanned = Signal()
 
-    def __init__(self, parent: VentanaPrincipal):
+    def __init__(self, conn, user):
         from ui.Ui_AdministrarVentas import Ui_AdministrarVentas
 
         super().__init__()
-
         self.ui = Ui_AdministrarVentas()
         self.ui.setupUi(self)
 
@@ -42,11 +41,11 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         self.all_pedidos = []
 
         # guardar conexión y usuario como atributos
-        self.conn = parent.conn
-        self.user = parent.user
+        self.conn = conn
+        self.user = user
 
         # fechas por defecto
-        manejador = ManejadorVentas(self.conn)
+        manejador = ManejadorVentas(conn)
         fechaMin = manejador.obtenerFechaPrimeraVenta(None)
 
         InterfazFechas(self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
@@ -74,8 +73,9 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         self.ui.dateHasta.dateChanged.connect(self.rescan_update)
         self.rescanned.connect(self.update_display)
 
-        self.ui.tabla_ventasDirectas.doubleClicked.connect(self.detallesVenta)
-        self.ui.tabla_pedidos.doubleClicked.connect(self.detallesVenta)
+        detallesVenta = lambda idxs: App_DetallesVenta(self, conn, idxs.siblingAtColumn(0).data())
+        self.ui.tabla_ventasDirectas.doubleClicked.connect(detallesVenta)
+        self.ui.tabla_pedidos.doubleClicked.connect(detallesVenta)
         self.ui.tabWidget.currentChanged.connect(self.cambiar_pestana)
 
         (InterfazPaginas(
@@ -237,7 +237,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
             return
 
         if manejador.obtenerSaldoRestante(idVenta):
-            widget = App_TerminarVenta(self, idVenta)
+            widget = App_TerminarVenta(self, self.conn, self.user, idVenta)
             widget.success.connect(self.rescan_update)
             return
 
@@ -248,7 +248,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
             return
 
         # terminar venta directamente, al no tener saldo restante
-        if manejador.actualizarEstadoVenta(idVenta, 'Entregado por ' + manejador.usuarioActivo,
+        if manejador.actualizarEstadoVenta(idVenta, 'Entregado por ' + manejador.nombreUsuarioActivo,
                                            commit=True):
             qm.information(self, 'Éxito', 'Se marcó como terminada la venta seleccionada.')
             self.rescan_update()
@@ -276,17 +276,13 @@ class App_AdministrarVentas(QtWidgets.QWidget):
                           '¿Desea registrar la devolución de los pagos realizados en esta venta?')
 
         manejador = ManejadorVentas(conn)
-        estado = 'Cancelada por ' + manejador.usuarioActivo
+        estado = 'Cancelada por ' + manejador.nombreUsuarioActivo
 
-        if ret == qm.Yes and not manejador.anularPagos(idVenta, self.user.id):
+        if ret == qm.Yes and not manejador.anularPagos(idVenta, manejador.idUsuarioActivo):
             return
         if manejador.actualizarEstadoVenta(idVenta, estado, commit=True):
             qm.information(self, 'Éxito', 'Se marcó como cancelada la venta seleccionada.')
             self.rescan_update()
-
-    def detallesVenta(self, idxs: QModelIndex):
-        """ Abre ventana que muestra los detalles de una venta seleccionada. """
-        widget = App_DetallesVenta(self, idxs.siblingAtColumn(0).data())
 
     def imprimirTicket(self):
         """ Imprime ticket de una venta dado el folio de esta. """
@@ -301,7 +297,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         man = ManejadorVentas(self.conn)
 
         if len(pagos := man.obtenerPagosVenta(idVenta)) > 1:
-            wdg = App_ImprimirTickets(self, pagos, idVenta)
+            wdg = App_ImprimirTickets(self, self.conn, pagos, idVenta)
             return
 
         # abrir pregunta
@@ -332,8 +328,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
 
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
-        parent: VentanaPrincipal = self.parentWidget()
-        parent.goHome()
+        self.parentWidget().goHome()
 
 
 #################################
@@ -343,17 +338,17 @@ class App_AdministrarVentas(QtWidgets.QWidget):
 class App_DetallesVenta(QtWidgets.QWidget):
     """ Backend para la ventana que muestra los detalles de una venta. """
 
-    def __init__(self, first: App_AdministrarVentas, idx):
+    def __init__(self, parent, conn, idx):
         from ui.Ui_DetallesVenta import Ui_DetallesVenta
 
-        super().__init__(first)
+        super().__init__(parent)
 
         self.ui = Ui_DetallesVenta()
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         # total de la venta, anticipo y saldo
-        manejador = ManejadorVentas(first.conn)
+        manejador = ManejadorVentas(conn)
 
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
@@ -411,27 +406,27 @@ class App_DetallesVenta(QtWidgets.QWidget):
 
 
 class Base_PagarVenta(QtWidgets.QWidget):
-    def __init__(self, first, idx=None):
+    def __init__(self, parent, conn, user, idx: int = None) -> None:
         from ui.Ui_ConfirmarVenta import Ui_ConfirmarVenta
 
-        super().__init__(first)
+        super().__init__(parent)
 
         self.ui = Ui_ConfirmarVenta()
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         self.setFixedSize(833, 795)
-        
+
         self.stackPagos = self.ui.stackPagos
 
         # guardar conexión y usuario como atributos
-        self.conn = first.conn
-        self.user = first.user
+        self.conn = conn
+        self.user = user
 
         if idx is None:
             self.id_ventas = self.obtenerIdVenta()
         else:
             self.id_ventas = idx
-        
+
         assert self.id_ventas is not None
 
         # llenar labels y campos de texto
@@ -488,19 +483,19 @@ class Base_PagarVenta(QtWidgets.QWidget):
         raise NotImplementedError('CLASE BASE BROU')
 
     @property
-    def para_pagar(self):
+    def para_pagar(self) -> Moneda:
         return self.ui.txtAnticipo.cantidad
 
-    def cambiarAnticipo(self):
+    def cambiarAnticipo(self) -> None:
         """ Cambiar el anticipo pagado por el cliente. """
         self.stackPagos.total = self.ui.txtAnticipo.cantidad
         self._handleCounters()
 
-    def modificar_contador(self):
+    def modificar_contador(self) -> None:
         self.ui.lbContador.setText('Pago {}/{}'.format(self.stackPagos.currentIndex() + 1,
                                                        self.stackPagos.count()))
 
-    def _handleCounters(self):
+    def _handleCounters(self) -> None:
         """ Seguir las mismas reglas de `StackPagos.pagosValidos`
             para actualizar y colorear contadores. """
         stack = self.stackPagos
@@ -534,10 +529,10 @@ class Base_PagarVenta(QtWidgets.QWidget):
     def actualizarEstadoVenta(self) -> bool:
         raise NotImplementedError('CLASE BASE BROU')
 
-    def dialogoExito(self):
+    def dialogoExito(self) -> None:
         raise NotImplementedError('CLASE BASE BROU')
 
-    def listo(self):
+    def listo(self) -> None:
         """ Concluye la venta de la siguiente forma:
             1. Inserta pagos en tabla ventas_pagos.
             2. Si actualizarEstadoVenta, entonces dialogoExito. """
@@ -545,17 +540,21 @@ class Base_PagarVenta(QtWidgets.QWidget):
 
         # registrar pagos en tabla ventas_pagos
         for wdg in self.stackPagos:
-            montoAPagar = (wdg.montoPagado if wdg.metodoSeleccionado != 'Efectivo'
-                           else self.stackPagos.restanteEnEfectivo)
+            if wdg.metodoSeleccionado == 'Efectivo':
+                monto = self.stackPagos.restanteEnEfectivo
+                recibido = wdg.montoPagado if monto else None
+            else:
+                monto = wdg.montoPagado
+                recibido = None
 
             if not manejadorVentas.insertarPago(self.id_ventas, wdg.metodoSeleccionado,
-                                                montoAPagar, wdg.montoPagado, self.user.id):
+                                                monto, recibido, self.user.id):
                 return
 
         if self.actualizarEstadoVenta():
             self.dialogoExito()
 
-    def abortar(self):
+    def abortar(self) -> None:
         raise NotImplementedError('CLASE BASE BROU')
 
 
@@ -564,8 +563,8 @@ class App_TerminarVenta(Base_PagarVenta):
     """ Backend para la ventana para terminar una venta sobre pedido. """
     success = Signal()
 
-    def __init__(self, first: App_AdministrarVentas, idx):
-        super().__init__(first, idx)
+    def __init__(self, parent, conn, user, idx: int):
+        super().__init__(parent, conn, user, idx)
 
         self.ui.lbCincuenta.hide()
         self.ui.label_17.setText('Abonar pago(s) a pedido')
@@ -609,7 +608,7 @@ class App_TerminarVenta(Base_PagarVenta):
         manejador = ManejadorVentas(self.conn)
 
         if self.para_pagar == self.total:
-            estado = 'Entregado por ' + manejador.usuarioActivo
+            estado = 'Entregado por ' + manejador.nombreUsuarioActivo
         else:
             anticipo = manejador.obtenerAnticipo(self.id_ventas)
             estado = f'Recibido ${anticipo + self.para_pagar}'
@@ -640,17 +639,17 @@ class App_TerminarVenta(Base_PagarVenta):
 class App_ImprimirTickets(QtWidgets.QWidget):
     """ Backend para seleccionar tickets a imprimir de una venta/pedido. """
 
-    def __init__(self, first: App_AdministrarVentas, pagos, idVenta):
+    def __init__(self, parent, conn, pagos, idVenta):
         from ui.Ui_ImprimirTickets import Ui_ImprimirTickets
 
-        super().__init__(first)
+        super().__init__(parent)
 
         self.ui = Ui_ImprimirTickets()
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         self.setFixedSize(self.size())
 
-        self.conn = first.conn
+        self.conn = conn
         self.idVenta = idVenta
 
         self.ui.btRegresar.clicked.connect(self.close)

@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 import socket
 
 from PySide6 import QtWidgets, QtGui, QtCore
@@ -7,46 +6,17 @@ from PySide6.QtCore import Qt, QMutex, Signal
 from config import INI
 import licensing
 import sql
+from utils.mydataclasses import Usuario
 from utils.mydecorators import run_in_thread
 from utils.myutils import FabricaValidadores
-
-from PrintPOS import app
-
-
-##################
-# CLASE AUXILIAR #
-##################
-@dataclass
-class Usuario:
-    """ Clase para mantener registro de un usuario. """
-    id: int
-    usuario: str
-    nombre: str
-    permisos: str = 'Vendedor'
-    foto_perfil: bytes = None
-    rol: str = 'Vendedor'
-
-    def __post_init__(self):
-        self.rol = self.rol.upper()
-
-    @property
-    def administrador(self):
-        """ Regresa un booleano que dice si el usuario es administrador. """
-        return self.permisos.upper() == 'ADMINISTRADOR'
-
-    @classmethod
-    def generarUsuarioActivo(cls, conn: sql.Connection):
-        """ Genera clase Usuario dada una conexión válida a la DB. """
-        manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
-        usuario = manejador.identificadorUsuarioActivo
-        result = manejador.obtenerUsuario(usuario)
-
-        return cls(*result, manejador.rolActivo)
+from utils.mywidgets import VentanaPrincipal, WarningDialog
 
 
 #####################
 # VENTANA PRINCIPAL #
 #####################
+licencia_validada = False
+
 class App_Login(QtWidgets.QWidget):
     """ Backend para la pantalla de inicio de sesión. """
     validated = Signal()
@@ -59,7 +29,6 @@ class App_Login(QtWidgets.QWidget):
         from ui.Ui_Login import Ui_Login
 
         super().__init__()
-
         self.ui = Ui_Login()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
@@ -76,13 +45,13 @@ class App_Login(QtWidgets.QWidget):
 
         self.ui.btAjustes.clicked.connect(lambda: AjustesDB(self))
 
-        self.show()
-        self.ui.inputUsuario.setFocus()
-
-        if not app.licencia_validada:
+        if not licencia_validada:
             self.validar_licencia()
         else:
             self.exito_verificacion()
+        
+        self.ui.inputUsuario.setFocus()
+        self.show()
 
     def keyPressEvent(self, event):
         if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
@@ -100,9 +69,10 @@ class App_Login(QtWidgets.QWidget):
             self.validated.emit()
         else:
             self.failure.emit(error)
-
         self.ui.lbEstado.clear()
-        app.licencia_validada = activado
+        
+        global licencia_validada
+        licencia_validada = activado
 
     def exito_verificacion(self):
         """ En método separado para regresar al hilo principal."""
@@ -149,11 +119,12 @@ class App_Login(QtWidgets.QWidget):
             return
 
         self.ui.lbEstado.setStyleSheet('color: black;')
-        self.ui.lbEstado.setText('Conectando a la base de datos...')
+        self.ui.lbEstado.setText('Conectando al servidor...')
 
         try:
             conn = sql.conectar_db(usuario, psswd, rol)
-            user = Usuario.generarUsuarioActivo(conn)
+            manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
+            user = Usuario.generarUsuarioActivo(manejador)
         except sql.Error as err:
             txt, sqlcode, gdscode = err.args
             if gdscode in [335544472, 335544352]:
@@ -169,13 +140,11 @@ class App_Login(QtWidgets.QWidget):
             self.mutex.unlock()
 
     def crearWarningDialog(self, txt):
-        from utils.mywidgets import WarningDialog
         self.ui.lbEstado.clear()
         wdg = WarningDialog('No se pudo acceder al servidor.', txt)
 
     def crearVentanaPrincipal(self, conn, user):
         """ En método separado para regresar al hilo principal."""
-        from utils.mywidgets import VentanaPrincipal
         self.mainWindow = VentanaPrincipal(conn, user)
         self.close()
 

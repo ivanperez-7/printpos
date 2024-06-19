@@ -12,16 +12,19 @@ class InterfazPaginas(QObject):
         `paginaActual` de la tabla asociada. """
     paginaCambiada = Signal()
 
-    def __init__(self, btAdelante: QPushButton,
-                 btUltimo: QPushButton,
-                 btAtras: QPushButton,
-                 btPrimero: QPushButton,
-                 tabla_display: QTableWidget):
+    def __init__(
+        self,
+        btAdelante: QPushButton,
+        btUltimo: QPushButton,
+        btAtras: QPushButton,
+        btPrimero: QPushButton,
+        tabla_display: QTableWidget
+    ):
         super().__init__(tabla_display)
 
         self.tabla = tabla_display
 
-        self.tabla.setProperty('paginaActual', 0)
+        tabla_display.setProperty('paginaActual', 0)
 
         btAdelante.clicked.connect(self.ir_adelante)
         btUltimo.clicked.connect(self.ir_ultimo)
@@ -31,7 +34,6 @@ class InterfazPaginas(QObject):
     def ir_adelante(self):
         currentPage = self.tabla.property('paginaActual')
         self.tabla.setProperty('paginaActual', currentPage + 1)
-
         self.paginaCambiada.emit()
 
     def ir_ultimo(self):
@@ -41,7 +43,6 @@ class InterfazPaginas(QObject):
     def ir_atras(self):
         currentPage = self.tabla.property('paginaActual')
         self.tabla.setProperty('paginaActual', currentPage - 1)
-
         self.paginaCambiada.emit()
 
     def ir_primero(self):
@@ -53,12 +54,15 @@ class InterfazFechas(QObject):
     """ Interfaz para manejar widgets de fechas desde y hasta,
         por medio de botones de 'Hoy', 'Esta semana' y 'Este mes'. """
 
-    def __init__(self, btHoy: QPushButton,
-                 btSemana: QPushButton,
-                 btMes: QPushButton,
-                 dateDesde: QDateEdit,
-                 dateHasta: QDateEdit,
-                 fechaMin: QDate = None):
+    def __init__(
+        self,
+        btHoy: QPushButton,
+        btSemana: QPushButton,
+        btMes: QPushButton,
+        dateDesde: QDateEdit,
+        dateHasta: QDateEdit,
+        fechaMin: QDate = None
+    ):
         super().__init__(dateDesde)
 
         self.dateDesde = dateDesde
@@ -110,12 +114,15 @@ class InterfazFechasReportes(QObject):
     """ Interfaz para manejar widgets de fechas desde y hasta,
         por medio de botones de 'Hoy', 'Esta semana' y 'Este mes'. """
 
-    def __init__(self, btQuincena: QPushButton,
-                 btMes: QPushButton,
-                 btAnio: QPushButton,
-                 dateDesde: QDateEdit,
-                 dateHasta: QDateEdit,
-                 fechaMin: QDate = None):
+    def __init__(
+        self,
+        btQuincena: QPushButton,
+        btMes: QPushButton,
+        btAnio: QPushButton,
+        dateDesde: QDateEdit,
+        dateHasta: QDateEdit,
+        fechaMin: QDate = None
+    ):
         super().__init__(dateDesde)
 
         self.dateDesde = dateDesde

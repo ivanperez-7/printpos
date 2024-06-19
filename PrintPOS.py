@@ -4,6 +4,8 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTranslator
 from PySide6.QtGui import QPalette, Qt
 
+from backends.Login import App_Login
+
 
 class PrintPOS(QApplication):
     """ Subclase de QApplication que configura varios elementos como corresponde.
@@ -12,22 +14,19 @@ class PrintPOS(QApplication):
     def __init__(self):
         super().__init__()
         
-        self.licencia_validada = False
-        
         self.setStyle('Fusion')
         self.configurarPaleta()
         self.instalarTraductor()
     
     def iniciar(self):
         """ Crea ventana de iniciar sesión e invoca método exec(). """
-        from backends.Login import App_Login
         login = App_Login()
         return self.exec()
     
     def configurarPaleta(self):
         """ Configura paleta y estilo de la aplicación. """
         palette = self.palette()
-        
+
         palette.setColor(QPalette.Window, Qt.white)  # color de ventana -> gris claro
         palette.setColor(QPalette.WindowText, Qt.black)  # texto de ventana -> negro
         palette.setColor(QPalette.Base, Qt.white)  # color base -> blanco
@@ -51,10 +50,10 @@ class PrintPOS(QApplication):
     def __repr__(self):
         return 'QApplication afitriona de PrintPOS.'
 
-
 app: PrintPOS = QApplication.instance() or PrintPOS()
+
 
 if __name__ == '__main__':
     # este módulo genera mucho tiempo de espera, por alguna razón
-    from pdf.generadores import *
+    import pdf
     app.iniciar()
