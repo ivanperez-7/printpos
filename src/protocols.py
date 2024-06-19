@@ -14,7 +14,7 @@ class HasConnUser:
     """ Clase para type-hinting de atributos persistentes `conn` y `user`. """
     conn: sql.Connection
     user: Usuario
-    
+
 
 class ModuloPrincipal(QWidget, HasConnUser):
     """ Subclase de QWidget para módulo principal, con atributos persistentes

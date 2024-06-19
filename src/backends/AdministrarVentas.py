@@ -70,7 +70,7 @@ class App_AdministrarVentas(ModuloPrincipal):
         
         self.rescanned.connect(self.update_display)
 
-        detallesVenta = lambda idxs: App_DetallesVenta(self, conn, idxs.siblingAtColumn(0).data())
+        detallesVenta = lambda idxs: App_DetallesVenta(idxs.siblingAtColumn(0).data(), conn, self)
         self.ui.tabla_ventasDirectas.doubleClicked.connect(detallesVenta)
         self.ui.tabla_pedidos.doubleClicked.connect(detallesVenta)
         self.ui.tabWidget.currentChanged.connect(self.cambiar_pestana)
@@ -232,7 +232,7 @@ class App_AdministrarVentas(ModuloPrincipal):
             return
 
         if manejador.obtenerSaldoRestante(idVenta):
-            widget = App_TerminarVenta(self, self.conn, self.user, idVenta)
+            widget = App_TerminarVenta(idVenta, self.conn, self.user, self)
             widget.success.connect(self.rescan_update)
             return
 
@@ -291,8 +291,8 @@ class App_AdministrarVentas(ModuloPrincipal):
         idVenta = selected[0].text()
         man = ManejadorVentas(self.conn)
 
-        if len(pagos := man.obtenerPagosVenta(idVenta)) > 1:
-            wdg = App_ImprimirTickets(self, self.conn, pagos, idVenta)
+        if man.verificarPagos(idVenta) > 1:
+            wdg = App_ImprimirTickets(idVenta, self.conn, self)
             return
 
         # abrir pregunta
@@ -329,7 +329,7 @@ class App_AdministrarVentas(ModuloPrincipal):
 class App_DetallesVenta(QtWidgets.QWidget):
     """ Backend para la ventana que muestra los detalles de una venta. """
 
-    def __init__(self, parent, conn, idx):
+    def __init__(self, idx: int, conn, parent=None):
         from ui.Ui_DetallesVenta import Ui_DetallesVenta
 
         super().__init__(parent)
@@ -372,7 +372,7 @@ class App_DetallesVenta(QtWidgets.QWidget):
         self.ui.txtEntrega.setText(formatDate(fechaEntrega))
         self.ui.txtComentarios.setPlainText(comentarios)
         self.ui.txtVendedor.setText(nombreUsuario)
-        self.ui.lbFolio.setText(idx)
+        self.ui.lbFolio.setText(str(idx))
         self.ui.lbTotal.setText(str(total))
 
         # evento para botón de regresar
@@ -397,7 +397,7 @@ class App_DetallesVenta(QtWidgets.QWidget):
 
 
 class Base_PagarVenta(QtWidgets.QWidget):
-    def __init__(self, parent, conn, user, idx: int = None) -> None:
+    def __init__(self, idx: int, conn, user, parent=None) -> None:
         from ui.Ui_ConfirmarVenta import Ui_ConfirmarVenta
 
         super().__init__(parent)
@@ -554,8 +554,8 @@ class App_TerminarVenta(Base_PagarVenta):
     """ Backend para la ventana para terminar una venta sobre pedido. """
     success = Signal()
 
-    def __init__(self, parent, conn, user, idx: int):
-        super().__init__(parent, conn, user, idx)
+    def __init__(self, idx: int, conn, user, parent=None):
+        super().__init__(idx, conn, user, parent)
 
         self.ui.lbCincuenta.hide()
         self.ui.label_17.setText('Abonar pago(s) a pedido')
@@ -630,7 +630,7 @@ class App_TerminarVenta(Base_PagarVenta):
 class App_ImprimirTickets(QtWidgets.QWidget):
     """ Backend para seleccionar tickets a imprimir de una venta/pedido. """
 
-    def __init__(self, parent, conn, pagos, idVenta):
+    def __init__(self, idVenta: int, conn, parent=None):
         from ui.Ui_ImprimirTickets import Ui_ImprimirTickets
 
         super().__init__(parent)
@@ -650,6 +650,8 @@ class App_ImprimirTickets(QtWidgets.QWidget):
 
         font = QFont()
         font.setPointSize(12)
+
+        pagos = ManejadorVentas(conn).obtenerPagosVenta(idVenta)
 
         for i, (fecha, metodo, monto, r, v) in enumerate(pagos):
             txt = f'  Pago {i + 1}: ${monto:.2f}, {metodo.lower()} ({formatDate(fecha)})'
