@@ -6,6 +6,7 @@ from PySide6.QtGui import QFont, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
 from pdf import ImpresoraOrdenes, ImpresoraTickets
+from protocols import ModuloPrincipal
 from sql import ManejadorVentas
 from utils import Moneda
 from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
@@ -17,7 +18,7 @@ from utils.mywidgets import LabelAdvertencia
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_AdministrarVentas(QtWidgets.QWidget):
+class App_AdministrarVentas(ModuloPrincipal):
     """ Backend para la ventana de administración de ventas.
         TODO:
         -   ocultamiento de folios """
@@ -60,7 +61,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         self.filtro.cambiado.connect(self.update_display)
 
         # crear eventos para los botones
-        self.ui.btRegresar.clicked.connect(self.goHome)
+        self.ui.btRegresar.clicked.connect(self.go_back.emit)
         self.ui.btTerminar.clicked.connect(self.terminarVenta)
         self.ui.btCancelar.clicked.connect(self.cancelarVenta)
         self.ui.btOrden.clicked.connect(self.imprimirOrden)
@@ -319,10 +320,6 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         if ret == qm.Yes:
             impresora = ImpresoraOrdenes(self.conn, self)
             impresora.imprimirOrdenCompra(idVenta)
-
-    def goHome(self):
-        """ Cierra la ventana y regresa al inicio. """
-        self.parentWidget().goHome()
 
 
 #################################

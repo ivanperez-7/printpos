@@ -2,6 +2,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, Signal
 
+from protocols import ModuloPrincipal
 from sql import ManejadorUsuarios
 from utils.mydecorators import fondo_oscuro
 from utils.myinterfaces import InterfazFiltro
@@ -13,7 +14,7 @@ from utils.mywidgets import LabelAdvertencia
 # VENTANA PRINCIPAL #
 #####################
 
-class App_AdministrarUsuarios(QtWidgets.QWidget):
+class App_AdministrarUsuarios(ModuloPrincipal):
     """ Backend para la ventana de administración de usuarios.
         TODO:
             - mecanismo de reseteo de contraseña (sin permisos de admin)
@@ -43,7 +44,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
         self.ui.btAgregar.clicked.connect(self.registrarUsuario)
         self.ui.btEditar.clicked.connect(self.editarUsuario)
         self.ui.btEliminar.clicked.connect(self.quitarUsuario)
-        self.ui.btRegresar.clicked.connect(self.goHome)
+        self.ui.btRegresar.clicked.connect(self.go_back.emit)
 
         self.ui.searchBar.textChanged.connect(lambda: self.update_display())
         self.ui.mostrarCheck.stateChanged.connect(lambda: self.update_display())
@@ -120,10 +121,6 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
         if ret == qm.Yes and manejador.eliminarUsuario(usuario):
             qm.information(self, 'Éxito', 'Se dieron de baja los usuarios seleccionados.')
             self.update_display(rescan=True)
-
-    def goHome(self):
-        """ Cierra la ventana y regresa al inicio. """
-        self.parentWidget().goHome()
 
 
 #################################

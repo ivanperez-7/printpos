@@ -165,11 +165,17 @@ def fondo_oscuro(modulo):
 
     def __init__(self, *args, **kwargs):
         orig_init(self, *args, **kwargs)
-        self.bg = DimBackground(args[0]) # args[0] = widget padre (módulo actual)
+        
+        if parent := args[0]:
+            self.bg = DimBackground(parent) # args[0] = widget padre (módulo actual)
 
     def closeEvent(self, event):
-        orig_close(self, event)
-        self.bg.close()
+        try:
+            self.bg.close()
+        except AttributeError:
+            pass
+        finally:
+            orig_close(self, event)
 
     modulo.__init__ = __init__
     modulo.closeEvent = closeEvent

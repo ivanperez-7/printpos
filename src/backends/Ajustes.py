@@ -3,13 +3,14 @@ from PySide6.QtCore import QDate, QDateTime, QModelIndex, QRegularExpression, Qt
 from PySide6 import QtPrintSupport
 
 from config import INI
+from protocols import ModuloPrincipal
 
 
 #####################
 # VENTANA PRINCIPAL #
 #####################
 
-class App_Ajustes(QtWidgets.QWidget):
+class App_Ajustes(ModuloPrincipal):
     """ Backend para la ventana de administración de ventas. """
 
     def __init__(self, conn, user):
@@ -30,9 +31,9 @@ class App_Ajustes(QtWidgets.QWidget):
         self.ui.txtTelefono.setText(INI.TELEFONO)
 
         # crear eventos para los botones
-        self.ui.btRegresar.clicked.connect(self.goHome)
+        self.ui.btRegresar.clicked.connect(self._salir)
 
-    def goHome(self, _):
+    def _salir(self, _):
         """ Cierra la ventana y regresa a Home. """
         INI.IMPRESORA = self.ui.boxImpresoras.currentText()
         INI.CALLE_1 = self.ui.txtCalle1.text()
@@ -40,4 +41,4 @@ class App_Ajustes(QtWidgets.QWidget):
         INI.TELEFONO = self.ui.txtTelefono.text()
         INI.guardar()
 
-        self.parentWidget().goHome()
+        self.go_back.emit()

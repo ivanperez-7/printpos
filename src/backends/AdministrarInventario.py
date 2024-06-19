@@ -2,6 +2,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QPixmap, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
+from protocols import ModuloPrincipal
 from sql import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myutils import *
@@ -11,7 +12,7 @@ from utils.mywidgets import LabelAdvertencia
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_AdministrarInventario(QtWidgets.QWidget):
+class App_AdministrarInventario(ModuloPrincipal):
     """ Backend para la ventana de administración de inventario. """
     rescanned = Signal()
 
@@ -36,7 +37,7 @@ class App_AdministrarInventario(QtWidgets.QWidget):
         self.ui.btAgregar.clicked.connect(self.agregarInventario)
         self.ui.btEditar.clicked.connect(self.editarInventario)
         self.ui.btEliminar.clicked.connect(self.quitarInventario)
-        self.ui.btRegresar.clicked.connect(self.goHome)
+        self.ui.btRegresar.clicked.connect(self.go_back.emit)
         self.ui.searchBar.textChanged.connect(self.update_display)
         self.rescanned.connect(self.update_display)
 
@@ -159,10 +160,6 @@ class App_AdministrarInventario(QtWidgets.QWidget):
         if manejador.eliminarElemento(id_inventario):
             qm.information(self, 'Éxito', 'Se eliminó el elemento seleccionado.')
             self.rescan_update()
-
-    def goHome(self):
-        """ Cierra la ventana y regresa al inicio. """
-        self.parentWidget().goHome()
 
 
 #################################

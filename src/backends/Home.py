@@ -3,7 +3,7 @@ import inspect
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap, QColor
-from PySide6.QtCore import QDate, Qt, QRect, QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import QDate, Qt, QRect, QPropertyAnimation, QEasingCurve, Signal
 
 from .AdministrarVentas import App_AdministrarVentas
 from .AdministrarInventario import App_AdministrarInventario
@@ -13,13 +13,15 @@ from .AdministrarUsuarios import App_AdministrarUsuarios
 from .Ajustes import App_Ajustes
 from .Caja import App_Caja
 from .CrearVenta import App_CrearVenta
+from protocols import ModuloPrincipal
 from .Reportes import App_Reportes
 import sql
 
 
-class App_Home(QtWidgets.QWidget):
+class App_Home(ModuloPrincipal):
     """ Backend para la pantalla principal. """
-
+    new_module = Signal(object)
+    
     def __init__(self, conn, user):
         from ui.Ui_Home import Ui_Home
 
@@ -31,9 +33,9 @@ class App_Home(QtWidgets.QWidget):
         self.user = user
 
         # foto de perfil del usuario
-        if user.foto_perfil:
+        if self.user.foto_perfil:
             qp = QPixmap()
-            qp.loadFromData(user.foto_perfil)
+            qp.loadFromData(self.user.foto_perfil)
         else:
             qp = QPixmap(":/img/resources/images/user.png")
 
@@ -46,8 +48,8 @@ class App_Home(QtWidgets.QWidget):
 
         # configurar texto dinámico
         self.ui.fechaHoy.setDate(QDate.currentDate())
-        self.ui.usuario.setText(user.nombre)
-        self.ui.tipo_usuario.setText(user.rol.capitalize())
+        self.ui.usuario.setText(self.user.nombre)
+        self.ui.tipo_usuario.setText(self.user.rol.capitalize())
 
         # deshabilita eventos del mouse para los textos en los botones
         for name, item in vars(self.ui).items():
@@ -55,7 +57,7 @@ class App_Home(QtWidgets.QWidget):
                 item.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         # deshabilitar funciones para usuarios normales
-        if user.rol != 'ADMINISTRADOR':
+        if self.user.rol != 'ADMINISTRADOR':
             for w in [self.ui.frameInventario,
                       self.ui.frameCaja,
                       self.ui.frameUsuarios,
@@ -79,13 +81,13 @@ class App_Home(QtWidgets.QWidget):
             self.ui.btCaja: App_Caja,
             self.ui.btCrearVenta: self.iniciarVenta,
             self.ui.btReportes: App_Reportes,
-            self.ui.btSalir: lambda: self.parentWidget().close()
+            self.ui.btSalir: self.go_back.emit
         }
 
         # conectar botones con acciones
         for button, action in button_class_mapping.items():
             if inspect.isclass(action):
-                handle = partial(self.crearVentana, action)
+                handle = partial(self.new_module.emit, action) # action = clase de módulo
                 button.clicked.connect(handle)
             else:
                 button.clicked.connect(action)
@@ -98,11 +100,7 @@ class App_Home(QtWidgets.QWidget):
         ret = qm.question(self, 'Iniciar venta',
                           '¿Desea iniciar una nueva venta?')
         if ret == qm.Yes:
-            self.crearVentana(App_CrearVenta)
-
-    def crearVentana(self, modulo):
-        new = modulo(self.conn, self.user)
-        self.parentWidget().setCentralWidget(new)
+            self.new_module.emit(App_CrearVenta)
 
     def _create_pixmap(self, point: int):
         from PySide6 import QtCore, QtGui
