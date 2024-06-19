@@ -167,10 +167,10 @@ class StackPagos(QtWidgets.QStackedWidget):
                y que lo pagado sea igual o mayor que lo debido (es decir,
                permitir que el efectivo exceda lo necesario)
             5. Al no haber efectivo, verificar que lo pagado sea exactamente lo debido. """
-        if not self.total:
-            return False
-
         montoPagado = sum(wdg.montoPagado for wdg in self)
+        if self.total == montoPagado == 0. and self.count() == 1:
+            return True
+
         n_efec = [wdg.metodoSeleccionado for wdg in self].count('Efectivo')
 
         if n_efec == 0:

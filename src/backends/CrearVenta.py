@@ -215,27 +215,27 @@ class App_CrearVenta(QtWidgets.QWidget):
             return
 
         # indices para acceder a la tupla `cliente`
-        id, nombre, telefono, correo, direccion, rfc = range(6)
+        id_, nombre, telefono, correo, direccion, rfc = range(6)
 
-        if not ventaDatos.esVentaDirecta and cliente[id] == 1:
+        if not ventaDatos.esVentaDirecta and cliente[id_] == 1:
             warning('No se puede generar un pedido a nombre de "Público general".\n'
                     'Por favor, seleccione un cliente y/o regístrelo.')
             return
 
         if self.ui.tickFacturaSi.isChecked():
-            if cliente[id] == 1:
+            if cliente[id_] == 1:
                 warning('No se puede generar una factura a nombre de "Público general".\n'
                         'Por favor, verifique que los datos del cliente sean correctos.')
                 return
 
             if not all((cliente[correo], cliente[direccion], cliente[rfc])):
-                modulo = App_EditarCliente(self, self.conn, self.user, cliente[id])
+                modulo = App_EditarCliente(self, self.conn, self.user, cliente[id_])
                 modulo.success.connect(self.establecerCliente)
 
                 warning('El cliente no tiene completos sus datos para la factura.\n'
                         'Por favor, llene los datos como corresponde.')
                 return
-        return cliente[id]
+        return cliente[id_]
 
     def confirmarVenta(self):
         """ Abre ventana para confirmar y terminar la venta. """
@@ -254,7 +254,6 @@ class App_CrearVenta(QtWidgets.QWidget):
 
         modulo = App_ConfirmarVenta(
             self, self.conn, self.user, self.ui.btMetodoGrupo.checkedButton().text())
-        modulo.success.connect(self.parentWidget().goHome)
 
     @requiere_admin
     def goHome(self, conn):
@@ -601,6 +600,8 @@ class App_ConfirmarVenta(Base_PagarVenta):
         self.ui.lbCincuenta.setText(f'(${ventaDatos.total / 2})')
 
         # brincar el proceso si el pago es de cero
+        self.success.connect(self.parentWidget().goHome)
+        
         if not ventaDatos.total:
             self.listo()
         else:
