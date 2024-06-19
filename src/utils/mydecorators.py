@@ -4,6 +4,9 @@ from functools import wraps
 from PySide6.QtWidgets import QMessageBox, QDialog
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
+import sql
+from .mywidgets import DimBackground
+
 __all__ = ['requiere_admin', 'run_in_thread', 'fondo_oscuro', 'function_details']
 
 
@@ -75,8 +78,6 @@ class Dialog_ObtenerAdmin(QDialog):
         QtCore.QMetaObject.connectSlotsByName(self)
 
     def accept(self):
-        import sql
-
         usuario = self.txtUsuario.text().upper()
         psswd = self.txtPsswd.text()
 
@@ -104,7 +105,7 @@ def requiere_admin(func):
         es devuelto por el decorador para extraer información que se requiera
         de la conexión de administrador, por ejemplo, nombre del administrador.
         
-        Requiere que QWidget tenga atributo `user` (objeto Login.Usuario actual)
+        Requiere que QWidget tenga atributo `user` (objeto mydataclasses.Usuario actual)
         y atributo `conn` (objeto sql.Connection actual). """
 
     @wraps(func)
@@ -163,8 +164,6 @@ def fondo_oscuro(modulo):
     orig_close = modulo.closeEvent
 
     def __init__(self, *args, **kwargs):
-        from utils.mywidgets import DimBackground
-
         orig_init(self, *args, **kwargs)
         self.bg = DimBackground(args[0]) # args[0] = widget padre (módulo actual)
 

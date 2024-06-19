@@ -1,14 +1,14 @@
 from datetime import datetime
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import QFont, QColor, QIcon, QPixmap, QRegularExpressionValidator
+from PySide6.QtGui import QFont, QColor, QIcon, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QDate, Signal, QMutex
 
+from sql import ManejadorClientes
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import *
-from utils.mywidgets import LabelAdvertencia, VentanaPrincipal
-from sql import ManejadorClientes
+from utils.mywidgets import LabelAdvertencia
 
 
 #####################
@@ -18,11 +18,10 @@ class App_AdministrarClientes(QtWidgets.QWidget):
     """ Backend para la ventana de administración de clientes. """
     rescanned = Signal()
 
-    def __init__(self, parent: VentanaPrincipal):
+    def __init__(self, conn, user):
         from ui.Ui_AdministrarClientes import Ui_AdministrarClientes
 
         super().__init__()
-
         self.ui = Ui_AdministrarClientes()
         self.ui.setupUi(self)
 
@@ -31,8 +30,8 @@ class App_AdministrarClientes(QtWidgets.QWidget):
         LabelAdvertencia(self.ui.tabla_clientes, '¡No se encontró ningún cliente!')
 
         # guardar conexión y usuarios como atributos
-        self.conn = parent.conn
-        self.user = parent.user
+        self.conn = conn
+        self.user = user
 
         self.all = []
 
@@ -49,7 +48,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
                          self.update_display()))
 
         # restringir botón de eliminar cliente
-        if not self.user.administrador:
+        if not self.user.rol == 'ADMINISTRADOR':
             self.ui.btEliminar.hide()
 
         # añade eventos para los botones
@@ -172,7 +171,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
     # ====================================
     def insertarCliente(self):
         """ Abre ventana para registrar un cliente. """
-        widget = App_RegistrarCliente(self)
+        widget = App_RegistrarCliente(self, self.conn, self.user)
         widget.success.connect(self.rescan_update)
 
     def editarCliente(self):
@@ -181,7 +180,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
                 or selected[0].text() == '1':
             return
 
-        widget = App_EditarCliente(self, selected[0].text())
+        widget = App_EditarCliente(self, self.conn, self.user, selected[0].text())
         widget.success.connect(self.rescan_update)
 
     def quitarCliente(self):
@@ -204,8 +203,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
 
     def goHome(self):
         """ Cierra la ventana y regresa al inicio. """
-        parent: VentanaPrincipal = self.parentWidget()
-        parent.goHome()
+        self.parentWidget().goHome()
 
 
 #################################
@@ -219,10 +217,10 @@ class Base_EditarCliente(QtWidgets.QWidget):
 
     success = Signal(str, str, str)
 
-    def __init__(self, first: App_AdministrarClientes):
+    def __init__(self, parent, conn, user):
         from ui.Ui_EditarCliente import Ui_EditarCliente
 
-        super().__init__(first)
+        super().__init__(parent)
 
         self.ui = Ui_EditarCliente()
         self.ui.setupUi(self)
@@ -230,8 +228,8 @@ class Base_EditarCliente(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         # guardar conexión y usuarios como atributos
-        self.conn = first.conn
-        self.user = first.user
+        self.conn = conn
+        self.user = user
 
         # validador clave de país
         self.ui.txtLada.setValidator(
@@ -244,7 +242,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
             lambda estado: self.ui.txtDescuentos.setEnabled(estado))
 
         # deshabilitar modificación de descuentos para usuarios normales
-        if not first.user.administrador:
+        if not user.administrador:
             self.ui.checkDescuentos.setEnabled(False)
             self.ui.txtDescuentos.setEnabled(False)
 
@@ -257,7 +255,6 @@ class Base_EditarCliente(QtWidgets.QWidget):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    @property
     def numeroTelefono(self):
         return '+{} {}'.format(self.ui.txtLada.text(),
                                self.ui.txtCelular.displayText())
@@ -275,26 +272,27 @@ class Base_EditarCliente(QtWidgets.QWidget):
 
     def done(self):
         """ Método en el que se modificará o insertará un cliente. """
+        params = (
+            self.ui.txtNombre.text(),
+            self.numeroTelefono(),
+            self.ui.txtCorreo.text(),
+            self.ui.txtDireccion.toPlainText(),
+            self.ui.txtRFC.text(),
+            self.ui.checkDescuentos.isChecked(),
+            self.ui.txtDescuentos.toPlainText()
+        )
         clientes_db_parametros = tuple(v.strip() or None if isinstance(v, str)
-                                       else v for v in (
-                                           self.ui.txtNombre.text(),
-                                           self.numeroTelefono,
-                                           self.ui.txtCorreo.text(),
-                                           self.ui.txtDireccion.toPlainText(),
-                                           self.ui.txtRFC.text(),
-                                           self.ui.checkDescuentos.isChecked(),
-                                           self.ui.txtDescuentos.toPlainText()
-                                       ))
+                                       else v for v in params)
 
-        if self.ejecutarOperacion(clientes_db_parametros):
+        if self.insertar_o_modificar(clientes_db_parametros):
             QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)
 
             self.success.emit(self.ui.txtNombre.text(),
-                              self.numeroTelefono,
+                              self.numeroTelefono(),
                               self.ui.txtCorreo.text())
             self.close()
 
-    def ejecutarOperacion(self, params: tuple):
+    def insertar_o_modificar(self, clientes_db_parametros: tuple):
         """ Función a sobreescribir donde se realiza consulta SQL. """
         raise NotImplementedError('BEIS CLASSSSSSS')
 
@@ -304,23 +302,22 @@ class App_RegistrarCliente(Base_EditarCliente):
     MENSAJE_EXITO = '¡Se registró el cliente!'
     MENSAJE_ERROR = '¡No se pudo registrar el cliente!'
 
-    def __init__(self, first: App_AdministrarClientes,
-                 nombre='', celular='999', correo=''):
-        super().__init__(first)
+    def __init__(self, parent, conn, user):
+        super().__init__(parent, conn, user)
 
         self.ui.lbTitulo.setText('Registrar cliente')
         self.ui.btRegistrar.setText(' Registrar cliente')
         self.ui.btRegistrar.setIcon(QIcon(':/img/resources/images/plus.png'))
 
-        self.agregarDatosPorDefecto(nombre, celular, correo)
+        self.agregarDatosPorDefecto('', '999', '')
 
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def ejecutarOperacion(self, params):
+    def insertar_o_modificar(self, clientes_db_parametros):
         """ Insertar nuevo cliente a la base de datos. """
         manejador = ManejadorClientes(self.conn, self.MENSAJE_ERROR)
-        return manejador.insertarCliente(params)
+        return manejador.insertarCliente(clientes_db_parametros)
 
 
 class App_EditarCliente(Base_EditarCliente):
@@ -328,8 +325,8 @@ class App_EditarCliente(Base_EditarCliente):
     MENSAJE_EXITO = '¡Se editó el cliente!'
     MENSAJE_ERROR = '¡No se pudo editar el cliente!'
 
-    def __init__(self, first: App_AdministrarClientes, idx: int):
-        super().__init__(first)
+    def __init__(self, parent, conn, user, idx: int):
+        super().__init__(parent, conn, user)
 
         self.idx = idx  # id del cliente a editar
 
@@ -354,7 +351,7 @@ class App_EditarCliente(Base_EditarCliente):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def ejecutarOperacion(self, params):
+    def insertar_o_modificar(self, clientes_db_parametros):
         """ Actualizar datos del cliente en la base de datos. """
         manejador = ManejadorClientes(self.conn, self.MENSAJE_ERROR)
-        return manejador.actualizarCliente(self.idx, params)
+        return manejador.actualizarCliente(self.idx, clientes_db_parametros)

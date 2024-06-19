@@ -1220,7 +1220,7 @@
   <customwidget>
    <class>ListaNotificaciones</class>
    <extends>QListWidget</extends>
-   <header>utils.mywidgets.h</header>
+   <header>backends.Home.h</header>
   </customwidget>
  </customwidgets>
  <resources>

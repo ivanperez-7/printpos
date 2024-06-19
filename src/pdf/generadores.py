@@ -17,16 +17,16 @@ from reportlab.lib.units import mm
 from PyPDF2 import PdfReader, PdfWriter
 from PySide6.QtCore import QDateTime, QFile, QIODevice
 
-from backends.Caja import Caja
 from config import INI
+import sql
 from utils import Moneda
+from utils.mydataclasses import Caja
 from utils.myutils import *
-from sql import ManejadorVentas
 
 __all__ = ['generarOrdenCompra', 'generarTicketPDF', 'generarCortePDF']
 
 
-def generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
+def generarOrdenCompra(manejadorVentas: sql.ManejadorVentas, idx: int):
     """ Genera un PDF con el orden de compra correspondiente a 
         la venta con índice `idx` en la base de datos.
 
@@ -190,7 +190,7 @@ def generarTicketPDF(productos: list, vendedor: str, folio: int = 0,
 
     data = [['IMPORTE:', str(total)]]
 
-    if pagado and metodo_pago == 'EFEC':
+    if pagado and metodo_pago == 'EFEC':   # el único lugar donde sirve el dato 'recibido' xd
         pagado = Moneda(pagado)
         data += [['Pagado:', str(pagado)],
                  ['Cambio:', str(pagado - total)]]

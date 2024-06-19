@@ -23,7 +23,7 @@ class ImpresoraPDF:
         self.parent = parent
         self.printer = self.obtenerImpresora()
 
-    def obtenerImpresora(self):
+    def obtenerImpresora(self) -> QPrinter:
         return None
 
     def enviarAImpresora(self, data: io.BytesIO):
