@@ -34,13 +34,10 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
         self.user = user
 
         # añadir menú de opciones al botón para filtrar
-        self.filtro = InterfazFiltro(self.ui.btFiltrar, [
-            ('Nombre', 'nombre', 1),
-            ('Usuario', 'nombre de usuario', 0)
-        ])
-        self.filtro.filtroCambiado.connect(
-            lambda txt: (self.ui.searchBar.setPlaceholderText(f'Busque usuario por {txt}...'),
-                         self.update_display()))
+        self.filtro = InterfazFiltro(self.ui.btFiltrar, self.ui.searchBar,
+            [('Nombre', 1),
+             ('Usuario', 0)])
+        self.filtro.cambiado.connect(self.update_display)
 
         # añade eventos para los botones
         self.ui.btAgregar.clicked.connect(self.registrarUsuario)
@@ -73,8 +70,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget):
 
         if txt_busqueda := self.ui.searchBar.text().strip():
             found = [c for c in self.all
-                     if c[self.filtro.filtro]
-                     if son_similar(txt_busqueda, c[self.filtro.filtro])]
+                     if son_similar(txt_busqueda, c[self.filtro.idx])]
         else:
             found = self.all
         if not self.ui.mostrarCheck.isChecked():

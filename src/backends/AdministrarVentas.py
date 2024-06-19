@@ -53,14 +53,11 @@ class App_AdministrarVentas(QtWidgets.QWidget):
             self.ui.dateDesde, self.ui.dateHasta, fechaMin).dateChanged.connect(self.rescan_update)
 
         # añadir menú de opciones al botón para filtrar
-        self.filtro = InterfazFiltro(self.ui.btFiltrar, [
-            ('Folio', 'folio', 0),
-            ('Vendedor', 'vendedor', 1),
-            ('Cliente', 'cliente', 2)
-        ])
-        self.filtro.filtroCambiado.connect(
-            lambda txt: (self.ui.searchBar.setPlaceholderText(f'Busque venta por {txt}...'),
-                         self.update_display()))
+        self.filtro = InterfazFiltro(self.ui.btFiltrar, self.ui.searchBar, 
+            [('Folio', 0),
+             ('Vendedor', 1),
+             ('Cliente', 2)])
+        self.filtro.cambiado.connect(self.update_display)
 
         # crear eventos para los botones
         self.ui.btRegresar.clicked.connect(self.goHome)
@@ -158,8 +155,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
 
         if txt_busqueda := self.ui.searchBar.text().strip():
             compras = [c for c in compras
-                       if c[self.filtro.filtro]
-                       if son_similar(txt_busqueda, c[self.filtro.filtro])]
+                       if son_similar(txt_busqueda, c[self.filtro.idx])]
 
         chunks = chunkify(compras, self.chunk_size) or [[]]
 
@@ -178,8 +174,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
 
         if txt_busqueda := self.ui.searchBar.text().strip():
             compras = [c for c in compras
-                       if c[self.filtro.filtro]
-                       if son_similar(txt_busqueda, c[self.filtro.filtro])]
+                       if son_similar(txt_busqueda, c[self.filtro.idx])]
 
         chunks = chunkify(compras, self.chunk_size) or [[]]
 

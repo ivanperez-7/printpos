@@ -107,6 +107,9 @@ def randFile(ext: str):
 
 def son_similar(obj1, obj2):
     """ Determina si dos cadenas son similares o no. """
+    if not obj1 or not obj2:
+        return False
+    
     str1_clean = unidecode(re.sub(r'\W+', ' ', str(obj1)))
     str2_clean = unidecode(re.sub(r'\W+', ' ', str(obj2)))
 

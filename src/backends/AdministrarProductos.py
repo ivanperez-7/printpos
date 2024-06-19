@@ -36,13 +36,10 @@ class App_AdministrarProductos(QtWidgets.QWidget):
         self.all = []
 
         # añadir menú de opciones al botón para filtrar
-        self.filtro = InterfazFiltro(self.ui.btFiltrar, [
-            ('Código', 'código', 1),
-            ('Descripción', 'descripción', 2)
-        ])
-        self.filtro.filtroCambiado.connect(
-            lambda txt: (self.ui.searchBar.setPlaceholderText(f'Busque producto por {txt}...'),
-                         self.update_display()))
+        self.filtro = InterfazFiltro(self.ui.btFiltrar, self.ui.searchBar,
+            [('Código', 1),
+             ('Descripción', 2)])
+        self.filtro.cambiado.connect(self.update_display)
 
         # eventos para los botones
         self.ui.btAgregar.clicked.connect(self.agregarProducto)
@@ -90,8 +87,7 @@ class App_AdministrarProductos(QtWidgets.QWidget):
 
         if txt_busqueda := self.ui.searchBar.text().strip():
             found = [c for c in self.all
-                     if c[self.filtro.filtro]
-                     if son_similar(txt_busqueda, c[self.filtro.filtro])]
+                     if son_similar(txt_busqueda, c[self.filtro.idx])]
         else:
             found = self.all
 
