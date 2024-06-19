@@ -6,12 +6,13 @@ from PySide6.QtCharts import *
 from PySide6.QtCore import Qt, QDate, QModelIndex
 from PySide6.QtGui import QPainter, QPen
 
+from protocols import ModuloPrincipal
 from sql import ManejadorReportes, ManejadorVentas
 from utils.myinterfaces import InterfazFechasReportes
 from utils.myutils import stringify_float
 
 
-class App_Reportes(QtWidgets.QWidget):
+class App_Reportes(ModuloPrincipal):
     """ Backend para la ventana de reportes varios. """
 
     def __init__(self, conn, user):
@@ -50,7 +51,7 @@ class App_Reportes(QtWidgets.QWidget):
             self.ui.btQuincena, self.ui.btMes, self.ui.btAnio,
             self.ui.dateDesde, self.ui.dateHasta, fechaMin)
 
-        self.ui.btRegresar.clicked.connect(self.goHome)
+        self.ui.btRegresar.clicked.connect(self.go_back.emit)
         self.ui.stackedWidget.currentChanged.connect(self.actualizar_widget_activo)
         self.ui.dateHasta.dateChanged.connect(self.actualizar_widget_activo)
         self.ui.dateDesde.dateChanged.connect(self.actualizar_widget_activo)
@@ -133,9 +134,6 @@ class App_Reportes(QtWidgets.QWidget):
         tabla.llenar(man.obtenerReporteProductos(self.fechaDesde, self.fechaHasta))
         tabla.resizeRowsToContents()
         tabla.clicked.connect(handle)
-
-    def goHome(self):
-        self.parentWidget().goHome()
 
 
 #########################################

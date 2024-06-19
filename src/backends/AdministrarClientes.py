@@ -4,6 +4,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QDate, Signal, QMutex
 
+from protocols import ModuloPrincipal
 from sql import ManejadorClientes
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
@@ -14,7 +15,7 @@ from utils.mywidgets import LabelAdvertencia
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_AdministrarClientes(QtWidgets.QWidget):
+class App_AdministrarClientes(ModuloPrincipal):
     """ Backend para la ventana de administración de clientes. """
     rescanned = Signal()
 
@@ -52,7 +53,7 @@ class App_AdministrarClientes(QtWidgets.QWidget):
         self.ui.btAgregar.clicked.connect(self.insertarCliente)
         self.ui.btEditar.clicked.connect(self.editarCliente)
         self.ui.btEliminar.clicked.connect(self.quitarCliente)
-        self.ui.btRegresar.clicked.connect(self.goHome)
+        self.ui.btRegresar.clicked.connect(self.go_back.emit)
 
         self.ui.searchBar.textChanged.connect(self.update_display)
         self.ui.resaltarCheck.stateChanged.connect(self.update_display)
@@ -196,10 +197,6 @@ class App_AdministrarClientes(QtWidgets.QWidget):
         if ret == qm.Yes and manejador.eliminarCliente(selected[0].text()):
             qm.information(self, 'Éxito', 'Se eliminaron los clientes seleccionados.')
             self.rescan_update()
-
-    def goHome(self):
-        """ Cierra la ventana y regresa al inicio. """
-        self.parentWidget().goHome()
 
 
 #################################

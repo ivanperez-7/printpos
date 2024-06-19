@@ -9,6 +9,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import *
 from PySide6.QtCore import *
 
+from protocols import ModuloPrincipal
 from . import Moneda
 from .myutils import unidecode, formatDate, ColorsEnum
 
@@ -31,15 +32,23 @@ class VentanaPrincipal(QtWidgets.QMainWindow):
         from backends.AdministrarProductos import App_ConsultarPrecios
         self.consultarPrecios = App_ConsultarPrecios(self, conn)
 
-        self.goHome()
+        self.go_home()
         self.show()
 
-    def goHome(self):
+    def go_home(self):
         """ Regresar al menú principal.
             Crea módulo Home y establece como widget principal. """
         from backends.Home import App_Home
 
         new = App_Home(self.conn, self.user)
+        new.go_back.connect(self.close)
+        new.new_module.connect(self.go_to)
+
+        self.setCentralWidget(new)
+    
+    def go_to(self, modulo):
+        new: ModuloPrincipal = modulo(self.conn, self.user)
+        new.go_back.connect(self.go_home)
         self.setCentralWidget(new)
 
     def closeEvent(self, event):
@@ -127,6 +136,7 @@ class StackPagos(QtWidgets.QStackedWidget):
 
         self.setMaximumHeight(139)
         self.total = Moneda()  # monto debido
+        self.permitir_nulo = False
 
     def retroceder(self):
         self.setCurrentIndex(self.currentIndex() - 1)
@@ -168,7 +178,7 @@ class StackPagos(QtWidgets.QStackedWidget):
                permitir que el efectivo exceda lo necesario)
             5. Al no haber efectivo, verificar que lo pagado sea exactamente lo debido. """
         montoPagado = sum(wdg.montoPagado for wdg in self)
-        if self.total == montoPagado == 0. and self.count() == 1:
+        if self.permitir_nulo and self.total == montoPagado == 0. and self.count() == 1:
             return True
 
         n_efec = [wdg.metodoSeleccionado for wdg in self].count('Efectivo')

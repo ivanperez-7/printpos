@@ -6,6 +6,7 @@ from .AdministrarClientes import App_RegistrarCliente, App_EditarCliente
 from .AdministrarVentas import Base_PagarVenta
 from .AdministrarProductos import Base_VisualizarProductos
 from pdf import ImpresoraOrdenes, ImpresoraTickets
+from protocols import ModuloPrincipal
 from sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
 from utils import Moneda
 from utils.mydataclasses import Venta
@@ -20,7 +21,7 @@ from utils.mywidgets import DimBackground, LabelAdvertencia, SpeechBubble
 ventaDatos: Venta = ...
 
 
-class App_CrearVenta(QtWidgets.QWidget):
+class App_CrearVenta(ModuloPrincipal):
     """ Backend para la función de crear ventas.
         TODO:
             - mandar ticket por whatsapp o imprimir, sí o sí """
@@ -56,7 +57,7 @@ class App_CrearVenta(QtWidgets.QWidget):
         self.ui.btCalendario.clicked.connect(self.cambiarFechaEntrega)
         self.ui.btAgregar.clicked.connect(self.agregarProducto)
         self.ui.btEliminar.clicked.connect(self.quitarProducto)
-        self.ui.btRegresar.clicked.connect(self.goHome)
+        self.ui.btRegresar.clicked.connect(self._salir)
 
         ocultar_boton = lambda: (self.ui.btDescuentosCliente.setVisible(False),
                                  self.dialogoDescuentos.setVisible(False))
@@ -253,12 +254,19 @@ class App_CrearVenta(QtWidgets.QWidget):
         ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
 
         modulo = App_ConfirmarVenta(
-            self, self.conn, self.user, self.ui.btMetodoGrupo.checkedButton().text())
+            self.ui.btMetodoGrupo.checkedButton().text(), self.conn, self.user, self)
+        modulo.success.connect(self.go_back.emit)
+
+        # brincar el proceso si el pago es de cero
+        if not ventaDatos.total:
+            modulo.listo()
+        else:
+            modulo.show()
 
     @requiere_admin
-    def goHome(self, conn):
+    def _salir(self, conn):
         """ Cierra la ventana y regresa al inicio. """
-        self.parentWidget().goHome()
+        self.go_back.emit()
 
 
 #################################
@@ -570,14 +578,16 @@ class App_ConfirmarVenta(Base_PagarVenta):
     """ Backend para la ventana de finalización de venta. """
     success = Signal()
 
-    def __init__(self, parent, conn, user, metodo_pago: str = 'Efectivo') -> None:
+    def __init__(self, metodo_pago: str, conn, user, parent=None) -> None:
         super().__init__(parent, conn, user)
+        
+        self.ui.stackPagos.permitir_nulo = True
 
         # seleccionar método para WidgetPago
         wdg = self.stackPagos[0]
         wdg.metodoSeleccionado = metodo_pago
 
-        if wdg.metodoSeleccionado != 'Efectivo':
+        if metodo_pago != 'Efectivo':
             self._handleCounters()
 
         # si la venta es directa, ocultar los widgets para apartados
@@ -599,14 +609,6 @@ class App_ConfirmarVenta(Base_PagarVenta):
         # llenar total y monto a pagar
         self.ui.lbCincuenta.setText(f'(${ventaDatos.total / 2})')
 
-        # brincar el proceso si el pago es de cero
-        self.success.connect(self.parentWidget().goHome)
-        
-        if not ventaDatos.total:
-            self.listo()
-        else:
-            self.show()
-
     def showEvent(self, event) -> None:
         if parent := self.parentWidget():
             bg = DimBackground(parent)     # parent = módulo CrearVenta
@@ -616,7 +618,10 @@ class App_ConfirmarVenta(Base_PagarVenta):
         tabla.llenar(ventaDatos)
 
     def closeEvent(self, event) -> None:
-        event.ignore()
+        if event.spontaneous():
+            event.ignore()
+        else:
+            super().closeEvent(event)
 
     # ================
     # FUNCIONES ÚTILES
@@ -706,6 +711,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
                 impresora = ImpresoraTickets(self.conn)
                 impresora.imprimirTicketCompra(self.id_ventas)
         self.success.emit()
+        self.close()
 
     def abortar(self) -> None:
         """ Función para abortar la venta y actualizar estado a 'Cancelada'. """
@@ -721,3 +727,4 @@ class App_ConfirmarVenta(Base_PagarVenta):
         estado = 'Cancelada por ' + manejadorAdmin.nombreUsuarioActivo
         if manejadorAdmin.actualizarEstadoVenta(self.id_ventas, estado, commit=True):
             self.success.emit()
+            self.close()

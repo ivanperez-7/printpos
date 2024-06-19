@@ -2,6 +2,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
+from protocols import ModuloPrincipal
 from sql import ManejadorInventario, ManejadorProductos
 from utils import Moneda
 from utils.mydataclasses import ItemVenta, ItemGranFormato
@@ -14,7 +15,7 @@ from utils.mywidgets import LabelAdvertencia
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_AdministrarProductos(QtWidgets.QWidget):
+class App_AdministrarProductos(ModuloPrincipal):
     """ Backend para la ventana de administración de productos. """
     rescanned = Signal()
 
@@ -45,7 +46,7 @@ class App_AdministrarProductos(QtWidgets.QWidget):
         self.ui.btAgregar.clicked.connect(self.agregarProducto)
         self.ui.btEditar.clicked.connect(self.editarProducto)
         self.ui.btEliminar.clicked.connect(self.quitarProducto)
-        self.ui.btRegresar.clicked.connect(self.goHome)
+        self.ui.btRegresar.clicked.connect(self.go_back.emit)
         self.rescanned.connect(self.update_display)
 
         self.ui.searchBar.textChanged.connect(self.update_display)
@@ -150,10 +151,6 @@ class App_AdministrarProductos(QtWidgets.QWidget):
         if ret == qm.Yes and manejador.eliminarProducto(id_productos):
             qm.information(self, 'Éxito', 'Se eliminó el producto seleccionado.')
             self.rescan_update()
-
-    def goHome(self):
-        """ Cierra la ventana y regresa al inicio. """
-        self.parentWidget().goHome()
 
 
 #################################

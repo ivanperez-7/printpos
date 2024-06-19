@@ -3,6 +3,7 @@ from PySide6.QtCore import QDateTime, QMutex, Signal
 from PySide6.QtGui import QFont
 
 from pdf import ImpresoraTickets
+from protocols import ModuloPrincipal
 from sql import ManejadorCaja, ManejadorMetodosPago
 from utils import Moneda
 from utils.mydataclasses import Caja
@@ -15,7 +16,7 @@ from utils.mywidgets import LabelAdvertencia
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_Caja(QtWidgets.QWidget):
+class App_Caja(ModuloPrincipal):
     """ Backend para la ventana de movimientos de la caja. """
     rescanned = Signal()
 
@@ -46,7 +47,7 @@ class App_Caja(QtWidgets.QWidget):
             self.ui.dateDesde, self.ui.dateHasta, fechaMin).dateChanged.connect(self.rescan_update)
 
         # añade eventos para los botones
-        self.ui.btRegresar.clicked.connect(self.goHome)
+        self.ui.btRegresar.clicked.connect(self.go_back.emit)
         self.ui.btIngreso.clicked.connect(self.registrarIngreso)
         self.ui.btEgreso.clicked.connect(self.registrarEgreso)
 
@@ -157,10 +158,6 @@ class App_Caja(QtWidgets.QWidget):
         """ Registrar egreso en movimientos. """
         self.Dialog = Dialog_Registrar(self, self.conn, self.user, egreso=True)
         self.Dialog.success.connect(self.rescan_update)
-
-    def goHome(self):
-        """ Cierra la ventana y regresa al inicio. """
-        self.parentWidget().goHome()
 
 
 #################################
