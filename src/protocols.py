@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import Protocol, TYPE_CHECKING
 
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QWidget, QMainWindow
 from PySide6.QtCore import Signal
 
 if TYPE_CHECKING:
@@ -11,22 +11,23 @@ if TYPE_CHECKING:
 
 
 class _ModuloProtocol(Protocol):
-    """ Protocolo para módulo principal, con atributos persistentes
-        `conn`, `user` y señal `go_back`. """
     conn: sql.Connection
     user: Usuario
-    go_back: Signal = Signal()
 
 _ProtocolMeta = type(_ModuloProtocol)
 _WidgetMeta = type(QWidget)
 
-class _CustomMeta(_WidgetMeta, _ProtocolMeta):
+class _CustomWidgetMeta(_WidgetMeta, _ProtocolMeta):
     pass
 
-class ModuloPrincipal(QWidget, _ModuloProtocol, metaclass=_CustomMeta):
+class ModuloPrincipal(QWidget, _ModuloProtocol, metaclass=_CustomWidgetMeta):
     """ Subclase de QWidget para módulo principal, con atributos persistentes
         `conn`, `user` y señal `go_back`. """
-    pass
+    go_back: Signal = Signal()
+
+class HasConnUser(QMainWindow, _ModuloProtocol, metaclass=_CustomWidgetMeta):
+    """ Subclase de QMainWindow con atributos persistentes `conn` y `user`. """
+    ...
 
 
-__all__ = ['ModuloPrincipal']
+__all__ = ['ModuloPrincipal', 'HasConnUser']
