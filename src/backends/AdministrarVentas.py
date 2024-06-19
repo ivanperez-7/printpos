@@ -48,8 +48,9 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         manejador = ManejadorVentas(conn)
         fechaMin = manejador.obtenerFechaPrimeraVenta(None)
 
-        InterfazFechas(self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
-                       self.ui.dateDesde, self.ui.dateHasta, fechaMin)
+        InterfazFechas(
+            self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
+            self.ui.dateDesde, self.ui.dateHasta, fechaMin).dateChanged.connect(self.rescan_update)
 
         # añadir menú de opciones al botón para filtrar
         self.filtro = InterfazFiltro(self.ui.btFiltrar, [
@@ -68,9 +69,7 @@ class App_AdministrarVentas(QtWidgets.QWidget):
         self.ui.btOrden.clicked.connect(self.imprimirOrden)
         self.ui.btRecibo.clicked.connect(self.imprimirTicket)
         self.ui.searchBar.textChanged.connect(self.update_display)
-
-        self.ui.dateDesde.dateChanged.connect(self.rescan_update)
-        self.ui.dateHasta.dateChanged.connect(self.rescan_update)
+        
         self.rescanned.connect(self.update_display)
 
         detallesVenta = lambda idxs: App_DetallesVenta(self, conn, idxs.siblingAtColumn(0).data())

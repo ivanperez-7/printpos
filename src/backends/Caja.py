@@ -41,16 +41,15 @@ class App_Caja(QtWidgets.QWidget):
         manejador = ManejadorCaja(self.conn)
         fechaMin = manejador.obtenerFechaPrimerMov()
 
-        InterfazFechas(self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
-                       self.ui.dateDesde, self.ui.dateHasta, fechaMin)
+        InterfazFechas(
+            self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
+            self.ui.dateDesde, self.ui.dateHasta, fechaMin).dateChanged.connect(self.rescan_update)
 
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.goHome)
         self.ui.btIngreso.clicked.connect(self.registrarIngreso)
         self.ui.btEgreso.clicked.connect(self.registrarEgreso)
 
-        self.ui.dateDesde.dateChanged.connect(self.rescan_update)
-        self.ui.dateHasta.dateChanged.connect(self.rescan_update)
         self.ui.btImprimir.clicked.connect(self.confirmar_imprimir)
         self.rescanned.connect(self.update_display)
 

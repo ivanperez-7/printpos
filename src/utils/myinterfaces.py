@@ -53,6 +53,7 @@ class InterfazPaginas(QObject):
 class InterfazFechas(QObject):
     """ Interfaz para manejar widgets de fechas desde y hasta,
         por medio de botones de 'Hoy', 'Esta semana' y 'Este mes'. """
+    dateChanged = Signal()
 
     def __init__(
         self,
@@ -82,6 +83,10 @@ class InterfazFechas(QObject):
         btHoy.clicked.connect(self.hoy_handle)
         btSemana.clicked.connect(self.semana_handle)
         btMes.clicked.connect(self.mes_handle)
+        
+        emit = lambda: self.dateChanged.emit()
+        dateDesde.dateChanged.connect(emit)
+        dateHasta.dateChanged.connect(emit)
 
         self.hoy_handle()
 
