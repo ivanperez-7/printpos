@@ -9,7 +9,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import *
 from PySide6.QtCore import *
 
-from protocols import ModuloPrincipal
+from protocols import ModuloPrincipal, HasConnUser
 from . import Moneda
 from .myutils import unidecode, formatDate, ColorsEnum
 
@@ -18,7 +18,7 @@ __all__ = ['VentanaPrincipal', 'DimBackground', 'WidgetPago',
            'WarningDialog', 'SpeechBubble', 'ListaNotificaciones']
 
 
-class VentanaPrincipal(QtWidgets.QMainWindow):
+class VentanaPrincipal(HasConnUser):
     def __init__(self, conn, user):
         super().__init__()
 
