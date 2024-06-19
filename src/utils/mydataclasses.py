@@ -128,6 +128,7 @@ class Venta:
     requiere_factura: bool = False
     comentarios: str = ''
     id_cliente: int = 1
+    metodo_pago: str = 'Efectivo'
 
     @property
     def total(self):

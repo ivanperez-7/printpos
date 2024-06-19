@@ -30,7 +30,7 @@ class VentanaPrincipal(QtWidgets.QMainWindow, HasConnUser):
         self.user = user
 
         from backends.AdministrarProductos import App_ConsultarPrecios
-        self.consultarPrecios = App_ConsultarPrecios(self, conn)
+        self.consultarPrecios = App_ConsultarPrecios(conn)
 
         self.go_home()
         self.show()

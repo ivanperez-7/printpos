@@ -90,14 +90,14 @@ class App_AdministrarUsuarios(ModuloPrincipal):
     # ====================================
     def registrarUsuario(self):
         """ Abre ventana para registrar un usuario."""
-        widget = App_RegistrarUsuario(self, self.conn, self.user)
+        widget = App_RegistrarUsuario(self.conn, self)
         widget.success.connect(
             lambda: self.update_display(rescan=True))
 
     def editarUsuario(self):
         """ Abre ventana para editar un usuario seleccionado. """
         if selected := self.ui.tabla_usuarios.selectedItems():
-            widget = App_EditarUsuario(self, self.conn, self.user, selected[0].text())
+            widget = App_EditarUsuario(selected[0].text(), self.conn, self.user, self)
             widget.success.connect(
                 lambda: self.update_display(rescan=True))
 
@@ -134,7 +134,7 @@ class Base_EditarUsuario(QtWidgets.QWidget):
 
     success = Signal()
 
-    def __init__(self, parent, conn, user):
+    def __init__(self, conn, parent=None):
         from ui.Ui_EditarUsuario import Ui_EditarUsuario
 
         super().__init__(parent)
@@ -144,9 +144,8 @@ class Base_EditarUsuario(QtWidgets.QWidget):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
-        # guardar conexión y usuario como atributos
+        # guardar conexión como atributo
         self.conn = conn
-        self.user = user
 
         # validador para nombre de usuario
         self.ui.txtUsuario.setValidator(FabricaValidadores.IdFirebird)
@@ -223,8 +222,8 @@ class App_RegistrarUsuario(Base_EditarUsuario):
     MENSAJE_EXITO = '¡Se registró el usuario!'
     MENSAJE_ERROR = '¡No se pudo registrar el usuario!'
 
-    def __init__(self, parent, conn, user):
-        super().__init__(parent, conn, user)
+    def __init__(self, conn, parent=None):
+        super().__init__(conn, parent)
 
         self.ui.cambiarPsswd.hide()
         self.ui.groupPsswd.setEnabled(True)
@@ -257,10 +256,10 @@ class App_EditarUsuario(Base_EditarUsuario):
     MENSAJE_EXITO = '¡Se editó el usuario!'
     MENSAJE_ERROR = '¡No se pudo editar el usuario!'
 
-    def __init__(self, parent, conn, user, usuario_: str):
-        super().__init__(parent, conn, user)
+    def __init__(self, usuario_: str, conn, user, parent=None):
+        super().__init__(conn, parent)
 
-        manejador = ManejadorUsuarios(self.conn)
+        manejador = ManejadorUsuarios(conn)
         id, usuario, nombre, permisos, *_ = manejador.obtenerUsuario(usuario_)
 
         self.usuario = usuario  # usuario a editar
@@ -270,7 +269,7 @@ class App_EditarUsuario(Base_EditarUsuario):
             self.ui.cambiarPsswd.setChecked(True)
             self.ui.cambiarPsswd.setEnabled(False)
             self.cambiarTrigger(True)
-        if usuario in ['SYSDBA', self.user.usuario]:
+        if usuario in ['SYSDBA', user.usuario]:
             self.ui.boxPermisos.setEnabled(False)
         self.ui.txtUsuario.setText(usuario)
         self.ui.txtNombre.setText(nombre)

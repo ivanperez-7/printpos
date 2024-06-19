@@ -118,16 +118,16 @@ class App_AdministrarInventario(ModuloPrincipal):
     def surtirExistencias(self):
         idx = self.ui.tabla_inventario.selectedItems()[0].text()
 
-        self.Dialog = ExistenciasWidget(self, self.conn, idx)
+        self.Dialog = ExistenciasWidget(idx, self.conn, self)
         self.Dialog.success.connect(self.rescan_update)
 
     def agregarInventario(self):
-        widget = App_RegistrarInventario(self, self.conn)
+        widget = App_RegistrarInventario(self.conn, self)
         widget.success.connect(self.rescan_update)
 
     def editarInventario(self):
         if selected := self.ui.tabla_inventario.selectedItems():
-            widget = App_EditarInventario(self, self.conn, selected[0].text())
+            widget = App_EditarInventario(selected[0].text(), self.conn, self)
             widget.success.connect(self.rescan_update)
 
     def quitarInventario(self):
@@ -173,7 +173,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
 
     success = Signal()
 
-    def __init__(self, parent, conn):
+    def __init__(self, conn, parent=None):
         from ui.Ui_EditarInventario import Ui_EditarInventario
 
         super().__init__(parent)
@@ -293,8 +293,8 @@ class App_RegistrarInventario(Base_EditarInventario):
     MENSAJE_EXITO = '¡Se registró el elemento!'
     MENSAJE_ERROR = '¡No se pudo registrar el elemento!'
 
-    def __init__(self, parent, conn):
-        super().__init__(parent, conn)
+    def __init__(self, conn, parent=None):
+        super().__init__(conn, parent)
 
         self.ui.lbTitulo.setText('Registrar elemento')
         self.ui.btAceptar.setText(' Registrar elemento')
@@ -313,8 +313,8 @@ class App_EditarInventario(Base_EditarInventario):
     MENSAJE_EXITO = '¡Se editó el elemento!'
     MENSAJE_ERROR = '¡No se pudo editar el elemento!'
 
-    def __init__(self, parent, conn, idx: int = None):
-        super().__init__(parent, conn)
+    def __init__(self, idx: int, conn, parent=None):
+        super().__init__(conn, parent)
 
         self.idx = idx  # id del elemento a editar
 
@@ -383,7 +383,7 @@ class WidgetProducto(QtWidgets.QWidget):
 class ExistenciasWidget(QtWidgets.QDialog):
     success = Signal()
 
-    def __init__(self, parent, conn, idx):
+    def __init__(self, idx: int, conn, parent=None):
         from PySide6 import QtCore
 
         super().__init__(parent)

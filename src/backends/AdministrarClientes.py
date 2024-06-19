@@ -168,7 +168,7 @@ class App_AdministrarClientes(ModuloPrincipal):
     # ====================================
     def insertarCliente(self):
         """ Abre ventana para registrar un cliente. """
-        widget = App_RegistrarCliente(self, self.conn, self.user)
+        widget = App_RegistrarCliente(self.conn, self.user, self)
         widget.success.connect(self.rescan_update)
 
     def editarCliente(self):
@@ -177,7 +177,7 @@ class App_AdministrarClientes(ModuloPrincipal):
                 or selected[0].text() == '1':
             return
 
-        widget = App_EditarCliente(self, self.conn, self.user, selected[0].text())
+        widget = App_EditarCliente(selected[0].text(), self.conn, self.user, self)
         widget.success.connect(self.rescan_update)
 
     def quitarCliente(self):
@@ -210,7 +210,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
 
     success = Signal(str, str, str)
 
-    def __init__(self, parent, conn, user):
+    def __init__(self, conn, user, parent=None):
         from ui.Ui_EditarCliente import Ui_EditarCliente
 
         super().__init__(parent)
@@ -295,8 +295,8 @@ class App_RegistrarCliente(Base_EditarCliente):
     MENSAJE_EXITO = '¡Se registró el cliente!'
     MENSAJE_ERROR = '¡No se pudo registrar el cliente!'
 
-    def __init__(self, parent, conn, user):
-        super().__init__(parent, conn, user)
+    def __init__(self, conn, user, parent=None):
+        super().__init__(conn, user, parent)
 
         self.ui.lbTitulo.setText('Registrar cliente')
         self.ui.btRegistrar.setText(' Registrar cliente')
@@ -318,8 +318,8 @@ class App_EditarCliente(Base_EditarCliente):
     MENSAJE_EXITO = '¡Se editó el cliente!'
     MENSAJE_ERROR = '¡No se pudo editar el cliente!'
 
-    def __init__(self, parent, conn, user, idx: int):
-        super().__init__(parent, conn, user)
+    def __init__(self, idx: int, conn, user, parent=None):
+        super().__init__(conn, user, parent)
 
         self.idx = idx  # id del cliente a editar
 

@@ -1123,6 +1123,16 @@ class ManejadorVentas(DatabaseManager):
             ORDER   BY fecha_hora ASC;
         ''', (id_venta,))
 
+    def verificarPagos(self, id_venta: int) -> int:
+        """ Contar pagos de una venta. Regresa cero aun si la venta no existe. """
+        if result := self.fetchone('''
+            SELECT  COUNT(id_ventas)
+            FROM    ventas_pagos
+            WHERE   id_ventas = ?;
+        ''', (id_venta,)):
+            return result[0]
+        return None
+    
     def insertarVenta(self, params: tuple) -> int:
         """ Insertar venta nueva en la tabla ventas e intenta 
             regresar tupla con índice de venta recién insertada.

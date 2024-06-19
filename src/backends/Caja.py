@@ -151,12 +151,12 @@ class App_Caja(ModuloPrincipal):
     # ====================================
     def registrarIngreso(self):
         """ Registrar ingreso en movimientos. """
-        self.Dialog = Dialog_Registrar(self, self.conn, self.user)
+        self.Dialog = Dialog_Registrar(self.conn, self.user)
         self.Dialog.success.connect(self.rescan_update)
 
     def registrarEgreso(self):
         """ Registrar egreso en movimientos. """
-        self.Dialog = Dialog_Registrar(self, self.conn, self.user, egreso=True)
+        self.Dialog = Dialog_Registrar(self.conn, self.user, egreso=True)
         self.Dialog.success.connect(self.rescan_update)
 
 
@@ -166,10 +166,10 @@ class App_Caja(ModuloPrincipal):
 class Dialog_Registrar(QtWidgets.QDialog):
     success = Signal()
 
-    def __init__(self, parent, conn, user, *, egreso=False):
+    def __init__(self, conn, user, *, egreso=False):
         from ui.Ui_RegistrarMovimiento import Ui_RegistrarMovimiento
 
-        super().__init__(parent)
+        super().__init__()
         self.ui = Ui_RegistrarMovimiento()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())

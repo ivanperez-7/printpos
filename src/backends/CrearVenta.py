@@ -18,8 +18,6 @@ from utils.mywidgets import DimBackground, LabelAdvertencia, SpeechBubble
 #####################
 # VENTANA PRINCIPAL #
 #####################
-ventaDatos: Venta = ...
-
 
 class App_CrearVenta(ModuloPrincipal):
     """ Backend para la función de crear ventas.
@@ -36,8 +34,7 @@ class App_CrearVenta(ModuloPrincipal):
         LabelAdvertencia(self.ui.tabla_productos, '¡Aún no hay productos!')
 
         # VARIABLE DE LA VENTA ACTIVA ACTUAL
-        global ventaDatos
-        ventaDatos = Venta()
+        self.ventaDatos = ventaDatos = Venta()
 
         # guardar conexión y usuarios como atributos
         self.conn = conn
@@ -54,8 +51,14 @@ class App_CrearVenta(ModuloPrincipal):
         self.ui.btDescuentosCliente.hide()
 
         # crear eventos para los botones
-        self.ui.btCalendario.clicked.connect(self.cambiarFechaEntrega)
-        self.ui.btAgregar.clicked.connect(self.agregarProducto)
+        self.ui.btCalendario.clicked.connect(
+            lambda: App_FechaEntrega(ventaDatos.fechaEntrega, self)
+                    .success.connect(self.cambiarFechaEntrega)
+        )
+        self.ui.btAgregar.clicked.connect(
+            lambda: App_AgregarProducto(conn, self)
+                    .success.connect(self.agregarProducto)
+        )
         self.ui.btEliminar.clicked.connect(self.quitarProducto)
         self.ui.btRegresar.clicked.connect(self._salir)
 
@@ -69,11 +72,14 @@ class App_CrearVenta(ModuloPrincipal):
         self.ui.tabla_productos.itemChanged.connect(self.item_changed)
         self.ui.btRegistrar.clicked.connect(self.insertarCliente)
         self.ui.btSeleccionar.clicked.connect(
-            lambda: App_SeleccionarCliente(self, conn)
-                    .success.connect(self.seleccionarCliente))
+            lambda: App_SeleccionarCliente(conn, self)
+                    .success.connect(self.seleccionarCliente)
+        )
         self.ui.btDescuento.clicked.connect(self.agregarDescuento)
         self.ui.btDescuentosCliente.clicked.connect(self.dialogoDescuentos.alternarDescuentos)
-        self.ui.btDeshacer.clicked.connect(self.deshacerFechaEntrega)
+        self.ui.btDeshacer.clicked.connect(
+            lambda: self.cambiarFechaEntrega(QDateTime(ventaDatos.fechaCreacion))
+        )
         self.ui.btCotizacion.clicked.connect(self.enviarCotizacion)
         self.ui.btListo.clicked.connect(self.confirmarVenta)
 
@@ -88,7 +94,7 @@ class App_CrearVenta(ModuloPrincipal):
     # ==================
     def item_changed(self, item: QtWidgets.QTableWidgetItem):
         if item.column() == 2:
-            ventaDatos[item.row()].notas = item.text()
+            self.ventaDatos[item.row()].notas = item.text()
 
     def establecerCliente(self, nombre: str, telefono: str, correo: str):
         """ Atajo para modificar datos del cliente seleccionado. """
@@ -96,32 +102,21 @@ class App_CrearVenta(ModuloPrincipal):
         self.ui.txtTelefono.setText(telefono)
         self.ui.txtCorreo.setText(correo)
 
-    def actualizarLabelFecha(self):
-        """ Actualizar widget de fecha de entrega:
-            label y botón de deshacer. """
-        self.ui.lbFecha.setText(formatDate(ventaDatos.fechaEntrega))
-        self.ui.btDeshacer.setVisible(not ventaDatos.esVentaDirecta)
-
-    def deshacerFechaEntrega(self):
-        """ Deshacer cambio de fecha de entrega. """
-        ventaDatos.fechaEntrega = QDateTime(ventaDatos.fechaCreacion)
-        self.actualizarLabelFecha()
-
     def colorearActualizar(self):
         """ Llenar tabla con los productos seleccionados,
             luego calcular precios y actualizar los QLabel. """
         tabla = self.ui.tabla_productos
         tabla.modelo = tabla.Modelos.CREAR_VENTA
-        tabla.llenar(ventaDatos)
+        tabla.llenar(self.ventaDatos)
 
         # <calcular precios y mostrar>
-        self.ui.lbTotal.setText(str(total := ventaDatos.total))
+        self.ui.lbTotal.setText(str(total := self.ventaDatos.total))
         self.ui.lbSubtotal.setText(str(subtotal := total / 1.16))
         self.ui.lbImpuestos.setText(str(total - subtotal))
-        self.ui.lbDescuento.setText(str(ventaDatos.total_descuentos))
+        self.ui.lbDescuento.setText(str(self.ventaDatos.total_descuentos))
         # </calcular precios y mostrar>
 
-        self.ui.txtNumProds.setText(f'{(l := len(ventaDatos))} producto'
+        self.ui.txtNumProds.setText(f'{(l := len(self.ventaDatos))} producto'
                                     + ('s' if l != 1 else ''))
 
     # ====================================
@@ -129,7 +124,7 @@ class App_CrearVenta(ModuloPrincipal):
     # ====================================
     def insertarCliente(self):
         """ Abre ventana para registrar un cliente. """
-        modulo = App_RegistrarCliente(self, self.conn, self.user)
+        modulo = App_RegistrarCliente(self.conn, self.user, self)
         modulo.agregarDatosPorDefecto(
             nombre=self.ui.txtCliente.text(),
             celular=self.ui.txtTelefono.text(),
@@ -153,13 +148,16 @@ class App_CrearVenta(ModuloPrincipal):
             txt = 'El cliente aún no tiene descuentos.'
         self.dialogoDescuentos.setText(txt)
 
-    def cambiarFechaEntrega(self):
-        modulo = App_FechaEntrega(self)
-        modulo.success.connect(self.actualizarLabelFecha)
+    def cambiarFechaEntrega(self, fechaEntrega: QDateTime):
+        self.ventaDatos.fechaEntrega = fechaEntrega
+        self.ui.lbFecha.setText(formatDate(self.ventaDatos.fechaEntrega))
+        self.ui.btDeshacer.setVisible(not self.ventaDatos.esVentaDirecta)
 
-    def agregarProducto(self):
-        modulo = App_AgregarProducto(self, self.conn)
-        modulo.success.connect(self.colorearActualizar)
+    def agregarProducto(self, item):
+        man = ManejadorProductos(self.conn)
+        self.ventaDatos.agregarProducto(item)
+        self.ventaDatos.reajustarPrecios(man)
+        self.colorearActualizar()    
 
     def quitarProducto(self):
         """ Pide confirmación para eliminar un producto de la tabla. """
@@ -175,16 +173,16 @@ class App_CrearVenta(ModuloPrincipal):
     def _quitarProducto(self, selected, conn):
         """ En método separado para solicitar contraseña. """
         for row in sorted(selected, reverse=True):
-            ventaDatos.quitarProducto(row)
+            self.ventaDatos.quitarProducto(row)
 
         man = ManejadorProductos(self.conn)
-        ventaDatos.reajustarPrecios(man)
+        self.ventaDatos.reajustarPrecios(man)
         self.colorearActualizar()
 
     def agregarDescuento(self):
         """ Abre ventana para agregar un descuento a la orden si el cliente es especial. """
-        if not ventaDatos.ventaVacia:
-            modulo = App_AgregarDescuento(self, self.conn, self.user)
+        if not self.ventaDatos.ventaVacia:
+            modulo = App_AgregarDescuento(self.ventaDatos, self.conn, self.user, self)
             modulo.success.connect(
                 lambda: (self.ui.btSeleccionar.setEnabled(False),
                          self.ui.txtCliente.setReadOnly(True),
@@ -194,11 +192,11 @@ class App_CrearVenta(ModuloPrincipal):
             )
     
     def enviarCotizacion(self):
-        if not ventaDatos.ventaVacia:
+        if not self.ventaDatos.ventaVacia:
             cliente = self.ui.txtCliente.text()
             telefono = self.ui.txtTelefono.text()
             vendedor = self.ui.txtVendedor.text()
-            wdg = App_EnviarCotizacion(self, cliente, telefono, vendedor)
+            wdg = App_EnviarCotizacion(self.ventaDatos, cliente, telefono, vendedor, self)
 
     def verificarCliente(self):
         # se confirma si existe el cliente en la base de datos
@@ -218,7 +216,7 @@ class App_CrearVenta(ModuloPrincipal):
         # indices para acceder a la tupla `cliente`
         id_, nombre, telefono, correo, direccion, rfc = range(6)
 
-        if not ventaDatos.esVentaDirecta and cliente[id_] == 1:
+        if not self.ventaDatos.esVentaDirecta and cliente[id_] == 1:
             warning('No se puede generar un pedido a nombre de "Público general".\n'
                     'Por favor, seleccione un cliente y/o regístrelo.')
             return
@@ -230,7 +228,7 @@ class App_CrearVenta(ModuloPrincipal):
                 return
 
             if not all((cliente[correo], cliente[direccion], cliente[rfc])):
-                modulo = App_EditarCliente(self, self.conn, self.user, cliente[id_])
+                modulo = App_EditarCliente(cliente[id_], self.conn, self.user, self)
                 modulo.success.connect(self.establecerCliente)
 
                 warning('El cliente no tiene completos sus datos para la factura.\n'
@@ -240,7 +238,7 @@ class App_CrearVenta(ModuloPrincipal):
 
     def confirmarVenta(self):
         """ Abre ventana para confirmar y terminar la venta. """
-        if ventaDatos.ventaVacia or (id_cliente := self.verificarCliente()) is None:
+        if self.ventaDatos.ventaVacia or (id_cliente := self.verificarCliente()) is None:
             return
 
         ret = qm.question(self, 'Concluir venta',
@@ -249,16 +247,16 @@ class App_CrearVenta(ModuloPrincipal):
         if ret != qm.Yes:
             return
 
-        ventaDatos.id_cliente = id_cliente
-        ventaDatos.requiere_factura = self.ui.tickFacturaSi.isChecked()
-        ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
+        self.ventaDatos.id_cliente = id_cliente
+        self.ventaDatos.requiere_factura = self.ui.tickFacturaSi.isChecked()
+        self.ventaDatos.comentarios = self.ui.txtComentarios.toPlainText()
+        self.ventaDatos.metodo_pago = self.ui.btMetodoGrupo.checkedButton().text()
 
-        modulo = App_ConfirmarVenta(
-            self.ui.btMetodoGrupo.checkedButton().text(), self.conn, self.user, self)
+        modulo = App_ConfirmarVenta(self.ventaDatos, self.conn, self.user, self)
         modulo.success.connect(self.go_back.emit)
 
         # brincar el proceso si el pago es de cero
-        if not ventaDatos.total:
+        if not self.ventaDatos.total:
             modulo.listo()
         else:
             modulo.show()
@@ -275,10 +273,10 @@ class App_CrearVenta(ModuloPrincipal):
 @fondo_oscuro
 class App_AgregarProducto(Base_VisualizarProductos):
     """ Backend para la función de agregar un producto a la venta. """
-    success = Signal()
+    success = Signal(object)
 
-    def __init__(self, parent, conn):
-        super().__init__(parent, conn)
+    def __init__(self, conn, parent=None):
+        super().__init__(conn, parent)
 
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
@@ -325,11 +323,7 @@ class App_AgregarProducto(Base_VisualizarProductos):
             item = self.generarGranFormato()
 
         if item:
-            man = ManejadorProductos(self.conn)
-            ventaDatos.agregarProducto(item)
-            ventaDatos.reajustarPrecios(man)
-            
-            self.success.emit()
+            self.success.emit(item)
             self.close()
 
 
@@ -338,7 +332,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
     """ Backend para la función de seleccionar un cliente de la base de datos. """
     success = Signal(list)
 
-    def __init__(self, parent, conn):
+    def __init__(self, conn, parent=None):
         from ui.Ui_SeleccionarCliente import Ui_SeleccionarCliente
 
         super().__init__(parent)
@@ -400,9 +394,9 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
 @fondo_oscuro
 class App_FechaEntrega(QtWidgets.QWidget):
     """ Backend para la función de cambiar fecha de entrega. """
-    success = Signal()
+    success = Signal(QDateTime)
 
-    def __init__(self, parent):
+    def __init__(self, fechaEntrega: QDateTime, parent=None):
         from ui.Ui_FechaEntrega import Ui_FechaEntrega
 
         super().__init__(parent)
@@ -413,7 +407,6 @@ class App_FechaEntrega(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         # datos por defecto
-        fechaEntrega = ventaDatos.fechaEntrega
         self.ui.calendario.setSelectedDate(fechaEntrega.date())
         self.ui.horaEdit.setTime(fechaEntrega.time())
 
@@ -440,8 +433,7 @@ class App_FechaEntrega(QtWidgets.QWidget):
             self.ui.calendario.selectedDate(),
             self.ui.horaEdit.time())
 
-        ventaDatos.fechaEntrega = dateTime
-        self.success.emit()
+        self.success.emit(dateTime)
         self.close()
 
 
@@ -450,13 +442,14 @@ class App_AgregarDescuento(QtWidgets.QWidget):
     """ Backend para agregar descuento a la orden. """
     success = Signal()
 
-    def __init__(self, parent, conn, user):
+    def __init__(self, ventaDatos: Venta, conn, user, parent=None):
         from ui.Ui_AgregarDescuento import Ui_AgregarDescuento
 
         super().__init__(parent)
 
         self.conn = conn
         self.user = user
+        self.ventaDatos = ventaDatos
 
         self.ui = Ui_AgregarDescuento()
         self.ui.setupUi(self)
@@ -482,7 +475,7 @@ class App_AgregarDescuento(QtWidgets.QWidget):
     def showEvent(self, event):
         tabla = self.ui.tabla_productos
         tabla.modelo = tabla.Modelos.CREAR_VENTA
-        tabla.llenar(ventaDatos)
+        tabla.llenar(self.ventaDatos)
 
     def keyPressEvent(self, event):
         if event.key() in {Qt.Key_Return, Qt.Key_Enter}:
@@ -502,7 +495,7 @@ class App_AgregarDescuento(QtWidgets.QWidget):
         except (IndexError, ValueError):
             return
 
-        prod = ventaDatos[row]
+        prod = self.ventaDatos[row]
         prod.descuento_unit = clamp(prod.precio_unit - nuevo_precio, 0., prod.precio_unit)
 
         self.success.emit()
@@ -513,7 +506,8 @@ class App_AgregarDescuento(QtWidgets.QWidget):
 class App_EnviarCotizacion(QtWidgets.QWidget):
     """ Backend para agregar descuento a la orden. """
 
-    def __init__(self, parent, txtCliente: str, txtTelefono: str, txtVendedor: str):
+    def __init__(self, ventaDatos: Venta, txtCliente: str,
+                 txtTelefono: str, txtVendedor: str, parent=None):
         from ui.Ui_Cotizacion import Ui_EnviarCotizacion
 
         super().__init__(parent)
@@ -523,6 +517,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
+        self.ventaDatos = ventaDatos
         self.txtCliente = txtCliente
         self.txtTelefono = txtTelefono
         self.txtVendedor = txtVendedor
@@ -555,14 +550,14 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
             '-------------------------------------------'
         ]
 
-        for prod in ventaDatos:
+        for prod in self.ventaDatos:
             mensaje.extend([
                 f'{prod.nombre_ticket} || {prod.cantidad} unidades',
                 f'Importe: ${prod.importe:,.2f}',
                 ''
             ])
 
-        mensaje.append(f'*Total a pagar: ${ventaDatos.total}*')
+        mensaje.append(f'*Total a pagar: ${self.ventaDatos.total}*')
         mensaje = '\n'.join(mensaje)
 
         if enviarWhatsApp(self.txtTelefono, mensaje):
@@ -570,7 +565,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
 
     def imprimirTicket(self):
         impresora = ImpresoraTickets()
-        impresora.imprimirTicketPresupuesto(ventaDatos, self.txtVendedor)
+        impresora.imprimirTicketPresupuesto(self.ventaDatos, self.txtVendedor)
         self.close()
 
 
@@ -578,16 +573,16 @@ class App_ConfirmarVenta(Base_PagarVenta):
     """ Backend para la ventana de finalización de venta. """
     success = Signal()
 
-    def __init__(self, metodo_pago: str, conn, user, parent=None) -> None:
-        super().__init__(parent, conn, user)
-        
-        self.ui.stackPagos.permitir_nulo = True
+    def __init__(self, ventaDatos: Venta, conn, user, parent=None) -> None:
+        self.ventaDatos = ventaDatos # <- aquí para que funcionen los métodos
+
+        super().__init__(None, conn, user, parent)
 
         # seleccionar método para WidgetPago
         wdg = self.stackPagos[0]
-        wdg.metodoSeleccionado = metodo_pago
+        wdg.metodoSeleccionado = ventaDatos.metodo_pago
 
-        if metodo_pago != 'Efectivo':
+        if ventaDatos.metodo_pago != 'Efectivo':
             self._handleCounters()
 
         # si la venta es directa, ocultar los widgets para apartados
@@ -608,6 +603,8 @@ class App_ConfirmarVenta(Base_PagarVenta):
 
         # llenar total y monto a pagar
         self.ui.lbCincuenta.setText(f'(${ventaDatos.total / 2})')
+        # permitir pago vacío
+        self.stackPagos.permitir_nulo = True
 
     def showEvent(self, event) -> None:
         if parent := self.parentWidget():
@@ -615,7 +612,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
 
         tabla = self.ui.tabla_productos
         tabla.modelo = tabla.Modelos.CREAR_VENTA
-        tabla.llenar(ventaDatos)
+        tabla.llenar(self.ventaDatos)
 
     def closeEvent(self, event) -> None:
         if event.spontaneous():
@@ -627,15 +624,15 @@ class App_ConfirmarVenta(Base_PagarVenta):
     # FUNCIONES ÚTILES
     # ================
     def calcularTotal(self) -> Moneda:
-        return ventaDatos.total
+        return self.ventaDatos.total
 
     def obtenerDatosGenerales(self) -> tuple:
         manejadorClientes = ManejadorClientes(self.conn)
-        _, nombreCliente, telefono, correo, *_ = manejadorClientes.obtenerCliente(ventaDatos.id_cliente)
-        return (nombreCliente, correo, telefono, ventaDatos.fechaCreacion, ventaDatos.fechaEntrega)
+        _, nombreCliente, telefono, correo, *_ = manejadorClientes.obtenerCliente(self.ventaDatos.id_cliente)
+        return (nombreCliente, correo, telefono, self.ventaDatos.fechaCreacion, self.ventaDatos.fechaEntrega)
 
     def pagoPredeterminado(self) -> Moneda:
-        return ventaDatos.total if ventaDatos.esVentaDirecta else ventaDatos.total / 2
+        return self.ventaDatos.total if self.ventaDatos.esVentaDirecta else self.ventaDatos.total / 2
 
     def obtenerIdVenta(self) -> int:
         """ Registra datos principales de venta en DB
@@ -654,12 +651,12 @@ class App_ConfirmarVenta(Base_PagarVenta):
 
     def obtenerParametrosVentas(self) -> tuple:
         """ Parámetros para tabla ventas (datos generales). """
-        return (ventaDatos.id_cliente,
+        return (self.ventaDatos.id_cliente,
                 self.user.id,
-                ventaDatos.fechaCreacion.toPython(),
-                ventaDatos.fechaEntrega.toPython(),
-                ventaDatos.comentarios.strip(),
-                ventaDatos.requiere_factura,
+                self.ventaDatos.fechaCreacion.toPython(),
+                self.ventaDatos.fechaEntrega.toPython(),
+                self.ventaDatos.comentarios.strip(),
+                self.ventaDatos.requiere_factura,
                 'No terminada')
 
     def obtenerParametrosVentasDetallado(self) -> list[tuple]:
@@ -671,12 +668,12 @@ class App_ConfirmarVenta(Base_PagarVenta):
                  prod.notas,
                  prod.duplex,
                  prod.importe)
-                for prod in ventaDatos]
+                for prod in self.ventaDatos]
 
     def listo(self) -> None:
         """ Intenta finalizar la compra o pedido, actualizando el estado
             e insertando los correspondientes movimientos en la tabla Caja. """
-        if not ventaDatos.total / 2 <= self.para_pagar:
+        if not self.ventaDatos.total / 2 <= self.para_pagar:
             ret = qm.question(self, 'Atención',
                               'El anticipo está por debajo del 50% del total de compra.\n'
                               '¿Desea continuar?')
@@ -694,11 +691,11 @@ class App_ConfirmarVenta(Base_PagarVenta):
         """ Tras verificar todas las condiciones, finalizar venta y
             registrarla en la base de datos. """
         manejadorVentas = ManejadorVentas(self.conn)
-        estado = 'Terminada' if ventaDatos.esVentaDirecta else f'Recibido ${self.para_pagar}'
+        estado = 'Terminada' if self.ventaDatos.esVentaDirecta else f'Recibido ${self.para_pagar}'
         return manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True)
 
     def dialogoExito(self) -> None:
-        if not ventaDatos.esVentaDirecta:
+        if not self.ventaDatos.esVentaDirecta:
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
 
             impresora = ImpresoraOrdenes(self.conn, self)

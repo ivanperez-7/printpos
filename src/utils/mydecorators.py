@@ -4,6 +4,7 @@ from functools import wraps
 from PySide6.QtWidgets import QMessageBox, QDialog
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
+from protocols import HasConnUser
 import sql
 from .mywidgets import DimBackground
 
@@ -105,12 +106,11 @@ def requiere_admin(func):
         es devuelto por el decorador para extraer información que se requiera
         de la conexión de administrador, por ejemplo, nombre del administrador.
         
-        Requiere que QWidget tenga atributo `user` (objeto mydataclasses.Usuario actual)
-        y atributo `conn` (objeto sql.Connection actual). """
+        Requiere que QWidget cumpla protocolo `HasConnUser`. """
 
     @wraps(func)
     def wrapper_decorator(*args, **kwargs):
-        parent = args[0]  # QWidget (módulo actual)
+        parent: HasConnUser = args[0]  # QWidget (módulo actual)
 
         if parent.user.administrador:
             func(*args, **kwargs, conn=parent.conn)
@@ -159,15 +159,20 @@ def run_in_thread(func):
 
 def fondo_oscuro(modulo):
     """ Decorador para crear un fondo oscurecedor en la ventana principal.
-        NOTA: Modifica método closeEvent para cerrar fondo automáticamente. """
+        Requiere widget padre que, por convención para este proyecto, al ser requerido
+        en el constructor, siempre se pasa como último parámetro del widget hijo. """
     orig_init = modulo.__init__
     orig_close = modulo.closeEvent
 
     def __init__(self, *args, **kwargs):
         orig_init(self, *args, **kwargs)
         
-        if parent := args[0]:
-            self.bg = DimBackground(parent) # args[0] = widget padre (módulo actual)
+        try:
+            if parent := args[-1]:
+                self.bg = DimBackground(parent) # args[-1] = widget padre (módulo actual)
+        except TypeError as err:
+            print('fondo_oscuro error !!\n', str(err))
+            self.bg = None
 
     def closeEvent(self, event):
         try:

@@ -118,12 +118,12 @@ class App_AdministrarProductos(ModuloPrincipal):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def agregarProducto(self):
-        widget = App_RegistrarProducto(self, self.conn, self.user)
+        widget = App_RegistrarProducto(self.conn, self.user, self)
         widget.success.connect(self.rescan_update)
 
     def editarProducto(self):
         if selected := self.ui.tabla_productos.selectedItems():
-            widget = App_EditarProducto(self, self.conn, self.user, selected[0].text())
+            widget = App_EditarProducto(selected[0].text(), self.conn, self.user, self)
             widget.success.connect(self.rescan_update)
 
     def quitarProducto(self):
@@ -159,10 +159,10 @@ class App_AdministrarProductos(ModuloPrincipal):
 class Base_VisualizarProductos(QtWidgets.QWidget):
     dataChanged = Signal()  # señal para actualizar tabla en hilo principal
 
-    def __init__(self, parent, conn, *, extern: bool = False):
+    def __init__(self, conn, parent=None):
         from ui.Ui_VisualizadorProductos import Ui_VisualizadorProductos
 
-        super().__init__(None if extern else parent)
+        super().__init__(parent)
 
         self.ui = Ui_VisualizadorProductos()
         self.ui.setupUi(self)
@@ -175,7 +175,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
         # guardar conexión, usuario y un manejador de DB como atributos
         self.conn = conn
-        self.manejador = ManejadorProductos(self.conn)
+        self.manejador = ManejadorProductos(conn)
 
         # eventos para widgets
         self.ui.searchBar.textChanged.connect(self.update_display)
@@ -408,8 +408,8 @@ class App_ConsultarPrecios(Base_VisualizarProductos):
     """ Backend para el módulo de consultar precios.
         No se puede cerrar hasta cerrar por completo el sistema. """
 
-    def __init__(self, parent, conn):
-        super().__init__(parent, conn, extern=True)
+    def __init__(self, conn):
+        super().__init__(conn)
 
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowMinimizeButtonHint)
         self.setWindowTitle('Consultar precios')
@@ -468,7 +468,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
 
     success = Signal()
 
-    def __init__(self, parent, conn, user):
+    def __init__(self, conn, user, parent=None):
         from ui.Ui_EditarProducto import Ui_EditarProducto
 
         super().__init__(parent)
@@ -664,8 +664,8 @@ class App_RegistrarProducto(Base_EditarProducto):
     MENSAJE_EXITO = '¡Se registró el producto!'
     MENSAJE_ERROR = '¡No se pudo registrar el producto!'
 
-    def __init__(self, parent, conn, user):
-        super().__init__(parent, conn, user)
+    def __init__(self, conn, user, parent=None):
+        super().__init__(conn, user, parent)
 
         self.ui.lbTitulo.setText('Registrar producto')
         self.ui.btAceptar.setText(' Registrar producto')
@@ -681,8 +681,8 @@ class App_EditarProducto(Base_EditarProducto):
     MENSAJE_EXITO = '¡Se editó el producto!'
     MENSAJE_ERROR = '¡No se pudo editar el producto!'
 
-    def __init__(self, parent, conn, user, idx: int):
-        super().__init__(parent, conn, user)
+    def __init__(self, idx: int, conn, user, parent=None):
+        super().__init__(conn, user, parent)
 
         self.idx = idx  # id del elemento a editar
 
