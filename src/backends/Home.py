@@ -5,16 +5,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap, QColor
 from PySide6.QtCore import QDate, Qt, QRect, QPropertyAnimation, QEasingCurve, Signal
 
-from .AdministrarVentas import App_AdministrarVentas
-from .AdministrarInventario import App_AdministrarInventario
-from .AdministrarProductos import App_AdministrarProductos
-from .AdministrarClientes import App_AdministrarClientes
-from .AdministrarUsuarios import App_AdministrarUsuarios
-from .Ajustes import App_Ajustes
-from .Caja import App_Caja
-from .CrearVenta import App_CrearVenta
 from protocols import ModuloPrincipal
-from .Reportes import App_Reportes
 import sql
 
 
@@ -70,6 +61,16 @@ class App_Home(ModuloPrincipal):
             lab.setPixmap(self._create_pixmap(self.ui.listaNotificaciones.count()))
             lab.setGeometry(392, 5, 26, 26)
 
+        from .AdministrarVentas import App_AdministrarVentas
+        from .AdministrarInventario import App_AdministrarInventario
+        from .AdministrarProductos import App_AdministrarProductos
+        from .AdministrarClientes import App_AdministrarClientes
+        from .AdministrarUsuarios import App_AdministrarUsuarios
+        from .Ajustes import App_Ajustes
+        from .Caja import App_Caja
+        from .CrearVenta import App_CrearVenta
+        from .Reportes import App_Reportes
+
         # mapeo de botones con sus acciones
         button_class_mapping = {
             self.ui.btClientes: App_AdministrarClientes,
@@ -79,7 +80,7 @@ class App_Home(ModuloPrincipal):
             self.ui.btVentas: App_AdministrarVentas,
             self.ui.btAjustes: App_Ajustes,
             self.ui.btCaja: App_Caja,
-            self.ui.btCrearVenta: self.iniciarVenta,
+            self.ui.btCrearVenta: App_CrearVenta,
             self.ui.btReportes: App_Reportes,
             self.ui.btSalir: self.go_back.emit
         }
@@ -91,16 +92,6 @@ class App_Home(ModuloPrincipal):
                 button.clicked.connect(handle)
             else:
                 button.clicked.connect(action)
-
-    # ====================================
-    #  VENTANAS INVOCADAS POR LOS BOTONES
-    # ====================================
-    def iniciarVenta(self):
-        qm = QtWidgets.QMessageBox
-        ret = qm.question(self, 'Iniciar venta',
-                          '¿Desea iniciar una nueva venta?')
-        if ret == qm.Yes:
-            self.new_module.emit(App_CrearVenta)
 
     def _create_pixmap(self, point: int):
         from PySide6 import QtCore, QtGui
