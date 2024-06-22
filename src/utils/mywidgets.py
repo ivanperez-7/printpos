@@ -40,11 +40,11 @@ class VentanaPrincipal(QtWidgets.QMainWindow, HasConnUser):
             Crea módulo Home y establece como widget principal. """
         from backends.Home import App_Home
 
-        new = App_Home(self.conn, self.user)
-        new.go_back.connect(self.close)
-        new.new_module.connect(self.go_to)
+        home = App_Home(self.conn, self.user)
+        home.go_back.connect(self.close)
+        home.new_module.connect(self.go_to)
 
-        self.setCentralWidget(new)
+        self.setCentralWidget(home)
     
     def go_to(self, modulo):
         new: ModuloPrincipal = modulo(self.conn, self.user)
