@@ -1,6 +1,6 @@
 """ Módulo con manejadores para tablas en la base de datos. """
-from datetime import datetime
-from functools import partial
+from functools import partialmethod
+from pathlib import Path
 from typing import overload
 
 import fdb
@@ -9,11 +9,10 @@ from PySide6.QtCore import QDate
 
 from config import INI
 from utils import Moneda
-from utils.mywidgets import WarningDialog
 from utils.mydataclasses import ItemVenta, ItemGranFormato
+from utils.mywidgets import WarningDialog
 
 Connection = fdb.Connection
-ServiceConnection = fdb.services.Connection
 Cursor = fdb.Cursor
 Error = fdb.Error
 
@@ -34,15 +33,11 @@ def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
         raise err
 
 
-def conectar_services(usuario: str, psswd: str) -> ServiceConnection:
-    """ Crea conexión de servicios a servidor y regresa objeto ServiceConnection.
-        Regresa None si esta conexión no fue posible. """
-    try:
-        return fdb.services.connect(INI.NOMBRE_SERVIDOR, usuario, psswd)
-    except Error as err:
-        txt, sqlcode, gdscode = err.args
-        print('conectar_services() {\n', sqlcode, gdscode, '\n' + txt + '\n}')
-        return None
+def respaldar_db(user: str, psswd: str):
+        p = Path('./resources/db/printpos.fbk').absolute()
+        conn = fdb.services.connect(INI.NOMBRE_SERVIDOR, user, psswd)
+        conn.backup('PrintPOS.fdb', str(p))
+        return conn.readlines()
 
 
 class DatabaseManager:
@@ -59,20 +54,15 @@ class DatabaseManager:
         assert isinstance(conn, Connection), "Conexión a DB no válida."
 
         self._conn = conn
-        self._error_txt = error_txt or '¡Acceso fallido a base de datos!'
+        self._error_txt = error_txt or 'Operación fallida en base de datos.'
         self._handle_exceptions = handle_exceptions
 
-        crsr: Cursor = conn.cursor()
-        self._crsr = crsr
-
-        self.execute = partial(self._partial_execute, crsr.execute)
-        self.executemany = partial(self._partial_execute, crsr.executemany)
-        self.fetchall: partial[list] = partial(self._partial_fetch, crsr.fetchall)
-        self.fetchone: partial[tuple] = partial(self._partial_fetch, crsr.fetchone)
+        self._crsr = conn.cursor()
+        self._crsr.execute("SET TIME ZONE '-06:00';")  # <- tiempo local en UTC
 
     def _partial_execute(self, func, query: str, parameters=None, commit=False):
         try:
-            func(query, parameters)
+            getattr(self._crsr, func)(query, parameters)
             if commit:
                 self._conn.commit()
             return True
@@ -83,21 +73,29 @@ class DatabaseManager:
     def _partial_fetch(self, func, query: str, parameters=None):
         try:
             self._crsr.execute(query, parameters)
-            return func()
+            return getattr(self._crsr, func)()
         except Error as err:
             self.__handle_err(err)  # <- levanta sql.Error si se solicita
             return None
 
     def __handle_err(self, err: Error):
-        txt, sqlcode, gdscode = err.args
-        print('\n' + self.__class__.__name__, '{\n', sqlcode, gdscode, '\n' + txt + '\n}')
-
         if not self._handle_exceptions:
             raise err
-        self._conn.rollback()
-        WarningDialog(self._error_txt, txt)
 
-    def obtenerVista(self, vista: str):
+        txt, sqlcode, gdscode = err.args
+        body = [self.__class__.__name__ + ' {',
+                f'{gdscode=}',
+                txt,
+                '}']
+        WarningDialog(self._error_txt, '\n'.join(body))
+        self._conn.rollback()
+
+    execute = partialmethod(_partial_execute, 'execute')
+    executemany = partialmethod(_partial_execute, 'executemany')
+    fetchall: partialmethod[list] = partialmethod(_partial_fetch, 'fetchall')
+    fetchone: partialmethod[tuple] = partialmethod(_partial_fetch, 'fetchone')
+
+    def obtener_vista(self, vista: str):
         """ Atajo de sentencia SELECT para obtener una vista. """
         return self.fetchall(f'SELECT * FROM {vista};')
 
@@ -166,7 +164,7 @@ class ManejadorCaja(DatabaseManager):
                 id_metodo_pago, id_usuarios
             )
             VALUES
-                (?,?,?,?,?);
+                (LOCALTIMESTAMP,?,?,?,?);
         ''', params, commit=commit)
 
 
@@ -1140,7 +1138,7 @@ class ManejadorVentas(DatabaseManager):
             No hace commit. """
         if result := self.fetchone('''
             INSERT INTO ventas (
-                id_clientes, id_usuarios, fecha_hora_creacion, 
+                id_clientes, id_usuarios, fecha_hora_creacion,
                 fecha_hora_entrega, comentarios,
                 requiere_factura, estado
             ) 
@@ -1179,8 +1177,8 @@ class ManejadorVentas(DatabaseManager):
             INSERT INTO ventas_pagos (
                 id_ventas, id_metodo_pago, fecha_hora, monto, recibido, id_usuarios
             )
-            VALUES (?,?,?,?,?,?);
-        ''', (id_ventas, id_metodo, datetime.now(), monto, recibido, id_usuarios), commit=commit)
+            VALUES (?,?,LOCALTIMESTAMP,?,?,?);
+        ''', (id_ventas, id_metodo, monto, recibido, id_usuarios), commit=commit)
 
     def anularPagos(self, id_venta: int, id_usuarios: int, commit: bool = False):
         """ Anula pagos en tabla ventas_pagos. No hace `commit` automáticamente. """

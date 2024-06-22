@@ -13,8 +13,8 @@ from protocols import ModuloPrincipal, HasConnUser
 from . import Moneda
 from .myutils import unidecode, formatDate, ColorsEnum
 
-__all__ = ['VentanaPrincipal', 'DimBackground', 'WidgetPago',
-           'StackPagos', 'TablaDatos', 'NumberEdit', 'LabelAdvertencia',
+__all__ = ['VentanaPrincipal', 'WidgetPago', 'StackPagos', 
+           'TablaDatos', 'NumberEdit', 'LabelAdvertencia',
            'WarningDialog', 'SpeechBubble', 'ListaNotificaciones']
 
 
@@ -51,12 +51,14 @@ class VentanaPrincipal(QtWidgets.QMainWindow, HasConnUser):
         new.go_back.connect(self.go_home)
         self.setCentralWidget(new)
 
+    @property
+    def en_venta(self):
+        from backends.CrearVenta import App_CrearVenta
+        return isinstance(self.centralWidget(), App_CrearVenta)
+
     def closeEvent(self, event):
         """ En eventos específicos, restringimos el cerrado del sistema. """
-        from backends.CrearVenta import App_CrearVenta
-        from backends.Login import App_Login
-
-        if isinstance(self.centralWidget(), App_CrearVenta) and not self.user.administrador:
+        if self.en_venta and not self.user.administrador:
             event.ignore()
             return
 
@@ -64,6 +66,8 @@ class VentanaPrincipal(QtWidgets.QMainWindow, HasConnUser):
             os.remove(j)
         self.conn.close()
         self.consultarPrecios.close()
+        
+        from backends.Login import App_Login
         login = App_Login()
 
 
@@ -92,17 +96,6 @@ class ClickableIcon(QtWidgets.QPushButton):
         ''')
         self.setFlat(True)
         self.setCursor(Qt.PointingHandCursor)
-
-
-class DimBackground(QtWidgets.QFrame):
-    """ Crea un QFrame que ocupa la ventana entera, para poner énfasis en las ventanas nuevas. """
-
-    def __init__(self, window: QtWidgets.QWidget):
-        super().__init__(window)
-
-        self.setFixedSize(window.size())
-        self.setStyleSheet('background: rgba(64, 64, 64, 64);')
-        self.show()
 
 
 class WidgetPago(QtWidgets.QFrame):

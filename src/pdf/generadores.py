@@ -20,7 +20,7 @@ from PySide6.QtCore import QDateTime, QFile, QIODevice
 from config import INI
 import sql
 from utils import Moneda
-from utils.mydataclasses import Caja
+from utils.mydataclasses import BaseItem, Caja
 from utils.myutils import *
 
 __all__ = ['generarOrdenCompra', 'generarTicketPDF', 'generarCortePDF']
@@ -133,8 +133,8 @@ def generarOrdenCompra(manejadorVentas: sql.ManejadorVentas, idx: int):
     return buffer
 
 
-def generarTicketPDF(productos: list, vendedor: str, folio: int = 0,
-                     total: float = None, pagado: float = 0., metodo_pago: str = None,
+def generarTicketPDF(productos: list[BaseItem], vendedor: str, folio: int = 0,
+                     total: float = None, recibido: float = 0., metodo_pago: str = None,
                      fechaCreacion: QDateTime = QDateTime.currentDateTime()):
     """ Función general para generar el ticket de compra o presupuesto.
         Contiene:
@@ -190,10 +190,10 @@ def generarTicketPDF(productos: list, vendedor: str, folio: int = 0,
 
     data = [['IMPORTE:', str(total)]]
 
-    if pagado and metodo_pago == 'EFEC':   # el único lugar donde sirve el dato 'recibido' xd
-        pagado = Moneda(pagado)
-        data += [['Pagado:', str(pagado)],
-                 ['Cambio:', str(pagado - total)]]
+    if recibido and metodo_pago == 'EFEC':   # el único lugar donde sirve el dato 'recibido' xd
+        recibido = Moneda(recibido)
+        data += [['Pagado:', str(recibido)],
+                 ['Cambio:', str(recibido - total)]]
 
     tabla_importe = Table(data, hAlign='RIGHT')
     tabla_importe.setStyle(TableStyle([

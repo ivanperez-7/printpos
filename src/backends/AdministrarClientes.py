@@ -87,7 +87,7 @@ class App_AdministrarClientes(ModuloPrincipal):
         self.ui.lbContador.setText('Recuperando información...')
 
         manejador = ManejadorClientes(self.conn)
-        self.all = manejador.obtenerVista('view_all_clientes')
+        self.all = manejador.obtener_vista('view_all_clientes')
         self.ui.lbContador.setText(f'{len(self.all)} clientes en la base de datos.')
 
         self.rescanned.emit()

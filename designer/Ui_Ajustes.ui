@@ -86,6 +86,52 @@
       </attribute>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+        <widget class="QGroupBox" name="groupBox_2">
+         <property name="minimumSize">
+          <size>
+           <width>350</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="title">
+          <string>Respaldo de base de datos</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Usuario:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="txtUsuario"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>Contraseña:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="txtPsswd">
+            <property name="echoMode">
+             <enum>QLineEdit::Password</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="2" alignment="Qt::AlignHCenter">
+           <widget class="QPushButton" name="btRespaldar">
+            <property name="text">
+             <string>  Realizar respaldo  </string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
         <widget class="QGroupBox" name="groupBox">
          <property name="title">
           <string/>

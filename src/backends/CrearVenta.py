@@ -12,7 +12,7 @@ from utils import Moneda
 from utils.mydataclasses import Venta
 from utils.mydecorators import fondo_oscuro, requiere_admin
 from utils.myutils import *
-from utils.mywidgets import DimBackground, LabelAdvertencia, SpeechBubble
+from utils.mywidgets import LabelAdvertencia, SpeechBubble
 
 
 #####################
@@ -198,7 +198,7 @@ class App_CrearVenta(ModuloPrincipal):
             vendedor = self.ui.txtVendedor.text()
             wdg = App_EnviarCotizacion(self.ventaDatos, cliente, telefono, vendedor, self)
 
-    def verificarCliente(self):
+    def verificarCliente(self) -> int:
         # se confirma si existe el cliente en la base de datos
         manejador = ManejadorClientes(self.conn)
 
@@ -346,7 +346,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
 
         # llena la tabla con todos los clientes existentes
         manejador = ManejadorClientes(conn)
-        self.all = [datos[1:] for datos in manejador.obtenerVista('view_all_clientes')]
+        self.all = [datos[1:] for datos in manejador.obtener_vista('view_all_clientes')]
 
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)
@@ -569,6 +569,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
         self.close()
 
 
+@fondo_oscuro
 class App_ConfirmarVenta(Base_PagarVenta):
     """ Backend para la ventana de finalización de venta. """
     success = Signal()
@@ -607,9 +608,6 @@ class App_ConfirmarVenta(Base_PagarVenta):
         self.stackPagos.permitir_nulo = True
 
     def showEvent(self, event) -> None:
-        if parent := self.parentWidget():
-            bg = DimBackground(parent)     # parent = módulo CrearVenta
-
         tabla = self.ui.tabla_productos
         tabla.modelo = tabla.Modelos.CREAR_VENTA
         tabla.llenar(self.ventaDatos)

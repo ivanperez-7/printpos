@@ -6,7 +6,7 @@ from PySide6.QtGui import QFont, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
 from pdf import ImpresoraOrdenes, ImpresoraTickets
-from protocols import ModuloPrincipal
+from protocols import ModuloPrincipal, HasConnUser
 from sql import ManejadorVentas
 from utils import Moneda
 from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
@@ -243,7 +243,7 @@ class App_AdministrarVentas(ModuloPrincipal):
             return
 
         # terminar venta directamente, al no tener saldo restante
-        if manejador.actualizarEstadoVenta(idVenta, 'Entregado por ' + manejador.nombreUsuarioActivo,
+        if manejador.actualizarEstadoVenta(idVenta, 'Entregado por ' + self.user.nombre,
                                            commit=True):
             qm.information(self, 'Éxito', 'Se marcó como terminada la venta seleccionada.')
             self.rescan_update()
@@ -396,7 +396,7 @@ class App_DetallesVenta(QtWidgets.QWidget):
             self.close()
 
 
-class Base_PagarVenta(QtWidgets.QWidget):
+class Base_PagarVenta(QtWidgets.QWidget, HasConnUser):
     def __init__(self, idx: int, conn, user, parent=None) -> None:
         from ui.Ui_ConfirmarVenta import Ui_ConfirmarVenta
 
@@ -599,7 +599,7 @@ class App_TerminarVenta(Base_PagarVenta):
         manejador = ManejadorVentas(self.conn)
 
         if self.para_pagar == self.total:
-            estado = 'Entregado por ' + manejador.nombreUsuarioActivo
+            estado = 'Entregado por ' + self.user.nombre
         else:
             anticipo = manejador.obtenerAnticipo(self.id_ventas)
             estado = f'Recibido ${anticipo + self.para_pagar}'
