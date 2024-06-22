@@ -5,5 +5,5 @@ class WarningLogger:
         raise NotImplementedError('BEIS CLASSSSSSSSSS')
 
 
-class MyMainWindow:
-    ...
+class Abstract_Login:
+    pass
