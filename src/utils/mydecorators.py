@@ -1,12 +1,11 @@
 """ Módulo para implementar decoradores útiles varios. """
 from functools import wraps
 
-from PySide6.QtWidgets import QMessageBox, QDialog
+from PySide6.QtWidgets import QWidget, QMessageBox, QDialog
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
 from protocols import HasConnUser
 import sql
-from .mywidgets import DimBackground
 
 __all__ = ['requiere_admin', 'run_in_thread', 'fondo_oscuro', 'function_details']
 
@@ -111,6 +110,7 @@ def requiere_admin(func):
     @wraps(func)
     def wrapper_decorator(*args, **kwargs):
         parent: HasConnUser = args[0]  # QWidget (módulo actual)
+        assert parent.conn and parent.user, 'QWidget no cumple protocolo `HasConnUser`.'
 
         if parent.user.administrador:
             func(*args, **kwargs, conn=parent.conn)
@@ -157,22 +157,31 @@ def run_in_thread(func):
 #########################################
 
 
-def fondo_oscuro(modulo):
+def fondo_oscuro(widget):
     """ Decorador para crear un fondo oscurecedor en la ventana principal.
         Requiere widget padre que, por convención para este proyecto, al ser requerido
         en el constructor, siempre se pasa como último parámetro del widget hijo. """
-    orig_init = modulo.__init__
-    orig_close = modulo.closeEvent
+    orig_init = widget.__init__
+    orig_show = widget.showEvent
+    orig_close = widget.closeEvent
 
     def __init__(self, *args, **kwargs):
+        self.bg_parent = args[-1]
         orig_init(self, *args, **kwargs)
-        
+    
+    def showEvent(self, event):
         try:
-            if parent := args[-1]:
-                self.bg = DimBackground(parent) # args[-1] = widget padre (módulo actual)
+            if self.bg_parent:
+                wdg = QWidget(self.bg_parent)  # widget padre (módulo actual)
+                wdg.setFixedSize(self.bg_parent.size())
+                wdg.setStyleSheet('background: rgba(64, 64, 64, 64);')
+                wdg.show()
+                self.bg = wdg
         except TypeError as err:
             print('fondo_oscuro error !!\n', str(err))
             self.bg = None
+        finally:
+            orig_show(self, event)
 
     def closeEvent(self, event):
         try:
@@ -182,7 +191,8 @@ def fondo_oscuro(modulo):
         finally:
             orig_close(self, event)
 
-    modulo.__init__ = __init__
-    modulo.closeEvent = closeEvent
+    widget.__init__ = __init__
+    widget.showEvent = showEvent
+    widget.closeEvent = closeEvent
 
-    return modulo
+    return widget

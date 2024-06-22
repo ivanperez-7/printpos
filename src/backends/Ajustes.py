@@ -4,6 +4,7 @@ from PySide6 import QtPrintSupport
 
 from config import INI
 from protocols import ModuloPrincipal
+import sql
 
 
 #####################
@@ -32,6 +33,17 @@ class App_Ajustes(ModuloPrincipal):
 
         # crear eventos para los botones
         self.ui.btRegresar.clicked.connect(self._salir)
+        self.ui.btRespaldar.clicked.connect(self.respaldar_db)
+    
+    def respaldar_db(self):
+        user = self.ui.txtUsuario.text()
+        psswd = self.ui.txtPsswd.text()
+        
+        try:
+            out = sql.respaldar_db(user, psswd)
+            QtWidgets.QMessageBox.information(self, 'Operación terminada', f'{out[-5:]}')
+        except (AttributeError, sql.Error) as e:
+            QtWidgets.QMessageBox.warning(self, 'Fallo en operación', str(e))
 
     def _salir(self, _):
         """ Cierra la ventana y regresa a Home. """

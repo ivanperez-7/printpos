@@ -188,14 +188,18 @@ class Dialog_Registrar(QtWidgets.QDialog):
         self.show()
 
     def accept(self):
+        try:
+            monto = float(self.ui.txtCantidad.text()) * (-1 if self.egreso else 1)
+        except ValueError:
+            monto = 0.
         motivo = self.ui.txtMotivo.text()
-        if not (self.monto and motivo):
+        
+        if not (monto and motivo):
             return
 
         id_metodo = ManejadorMetodosPago(self.conn).obtenerIdMetodo(self.metodo)
         caja_db_parametros = (
-            QDateTime.currentDateTime().toPython(),
-            Moneda(self.monto),
+            Moneda(monto),
             motivo,
             id_metodo,
             self.user.id
@@ -207,13 +211,6 @@ class Dialog_Registrar(QtWidgets.QDialog):
             self.close()
             QtWidgets.QMessageBox.information(self, 'Éxito', '¡Movimiento registrado!')
             self.success.emit()
-
-    @property
-    def monto(self):
-        try:
-            return float(self.ui.txtCantidad.text()) * (-1 if self.egreso else 1)
-        except ValueError:
-            return 0.
 
     @property
     def metodo(self):

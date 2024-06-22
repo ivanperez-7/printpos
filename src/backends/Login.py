@@ -22,7 +22,7 @@ class App_Login(QtWidgets.QWidget):
     validated = Signal()
     failure = Signal(licensing.Errores)
 
-    logged = Signal(sql.Connection, Usuario)
+    logged = Signal(object, object) # emite sql.Connection y Usuario
     warning = Signal(str)
 
     def __init__(self):

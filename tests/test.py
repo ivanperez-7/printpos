@@ -1,3 +1,5 @@
+import random
+
 from PySide6.QtCore import QDateTime, QDate, QTime
 
 from backends.CrearVenta import App_ConfirmarVenta, App_CrearVenta, App_FechaEntrega
@@ -11,13 +13,11 @@ con = sql.conectar_db('pablo', '1', 'vendedor')
 user = Usuario.generarUsuarioActivo(sql.ManejadorUsuarios(con))
 
 
-
 venta = Venta()
 venta.agregarProducto(
-    ItemVenta(1, 'IMP B/N 1', 'Impresión ByN', 0.7, 0., 500, '', False))
-venta.fechaEntrega = QDateTime(QDate(2024, 6, 22), QTime(13, 23, 2))
-venta.metodo_pago = 'Transferencia bancaria'
-venta.id_cliente = 2
+    ItemVenta(1, 'IMP B/N 1', 'Impresión ByN', 0.7, 0., random.randint(10, 500), '', False))
+venta.fechaEntrega = QDateTime(QDate(2024, 6, 29), QTime(13, 27, 2))
+venta.id_cliente = 1
 
 
 wdg = App_ConfirmarVenta(venta, con, user)
