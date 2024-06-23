@@ -7,7 +7,7 @@ from PySide6.QtCore import Qt, QDate, QModelIndex
 from PySide6.QtGui import QPainter, QPen
 
 from protocols import ModuloPrincipal
-from sql import ManejadorReportes, ManejadorVentas
+from sql.handlers import ManejadorReportes, ManejadorVentas
 from utils.myinterfaces import InterfazFechasReportes
 from utils.myutils import stringify_float
 

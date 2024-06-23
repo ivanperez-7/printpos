@@ -1,19 +1,21 @@
-from functools import partial
-import inspect
-
+from injector import inject
 from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap, QColor
 from PySide6.QtCore import QDate, Qt, QRect, QPropertyAnimation, QEasingCurve, Signal
 
 from protocols import ModuloPrincipal
-import sql
+from sql.core import Connection
+from sql.handlers import ManejadorVentas, ManejadorInventario
+from sql.injector_config import db_injector
+from utils.mydataclasses import Usuario
 
 
 class App_Home(ModuloPrincipal):
     """ Backend para la pantalla principal. """
     new_module = Signal(object)
-    
-    def __init__(self, conn, user):
+
+    @inject
+    def __init__(self, conn: Connection, user: Usuario):
         from ui.Ui_Home import Ui_Home
 
         super().__init__()
@@ -24,9 +26,9 @@ class App_Home(ModuloPrincipal):
         self.user = user
 
         # foto de perfil del usuario
-        if self.user.foto_perfil:
+        if user.foto_perfil:
             qp = QPixmap()
-            qp.loadFromData(self.user.foto_perfil)
+            qp.loadFromData(user.foto_perfil)
         else:
             qp = QPixmap(":/img/resources/images/user.png")
 
@@ -35,12 +37,12 @@ class App_Home(ModuloPrincipal):
         # ocultar lista y proporcionar eventos
         self.ui.listaNotificaciones.setVisible(False)
         self.ui.btFotoPerfil.clicked.connect(self.ui.listaNotificaciones.alternarNotificaciones)
-        self.ui.listaNotificaciones.agregarNotificaciones(conn, user)
+        self.ui.listaNotificaciones.agregarNotificaciones(user)
 
         # configurar texto dinámico
         self.ui.fechaHoy.setDate(QDate.currentDate())
-        self.ui.usuario.setText(self.user.nombre)
-        self.ui.tipo_usuario.setText(self.user.rol.capitalize())
+        self.ui.usuario.setText(user.nombre)
+        self.ui.tipo_usuario.setText(user.rol.capitalize())
 
         # deshabilita eventos del mouse para los textos en los botones
         for name, item in vars(self.ui).items():
@@ -48,7 +50,7 @@ class App_Home(ModuloPrincipal):
                 item.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         # deshabilitar funciones para usuarios normales
-        if self.user.rol != 'ADMINISTRADOR':
+        if user.rol != 'ADMINISTRADOR':
             for w in [self.ui.frameInventario,
                       self.ui.frameCaja,
                       self.ui.frameUsuarios,
@@ -61,37 +63,23 @@ class App_Home(ModuloPrincipal):
             lab.setPixmap(self._create_pixmap(self.ui.listaNotificaciones.count()))
             lab.setGeometry(392, 5, 26, 26)
 
-        from .AdministrarVentas import App_AdministrarVentas
-        from .AdministrarInventario import App_AdministrarInventario
-        from .AdministrarProductos import App_AdministrarProductos
-        from .AdministrarClientes import App_AdministrarClientes
-        from .AdministrarUsuarios import App_AdministrarUsuarios
-        from .Ajustes import App_Ajustes
-        from .Caja import App_Caja
-        from .CrearVenta import App_CrearVenta
-        from .Reportes import App_Reportes
-
         # mapeo de botones con sus acciones
         button_class_mapping = {
-            self.ui.btClientes: App_AdministrarClientes,
-            self.ui.btInventario: App_AdministrarInventario,
-            self.ui.btProductos: App_AdministrarProductos,
-            self.ui.btUsuarios: App_AdministrarUsuarios,
-            self.ui.btVentas: App_AdministrarVentas,
-            self.ui.btAjustes: App_Ajustes,
-            self.ui.btCaja: App_Caja,
-            self.ui.btCrearVenta: App_CrearVenta,
-            self.ui.btReportes: App_Reportes,
-            self.ui.btSalir: self.go_back.emit
+            self.ui.btClientes: 'App_AdministrarClientes',
+            self.ui.btInventario: 'App_AdministrarInventario',
+            self.ui.btProductos: 'App_AdministrarProductos',
+            self.ui.btUsuarios: 'App_AdministrarUsuarios',
+            self.ui.btVentas: 'App_AdministrarVentas',
+            self.ui.btAjustes: 'App_Ajustes',
+            self.ui.btCaja: 'App_Caja',
+            self.ui.btCrearVenta: 'App_CrearVenta',
+            self.ui.btReportes: 'App_Reportes'
         }
 
         # conectar botones con acciones
-        for button, action in button_class_mapping.items():
-            if inspect.isclass(action):
-                handle = partial(self.new_module.emit, action) # action = clase de módulo
-                button.clicked.connect(handle)
-            else:
-                button.clicked.connect(action)
+        for button, modulo in button_class_mapping.items():
+            button.clicked.connect(lambda e=modulo, _=None: self.new_module.emit(e))
+        self.ui.btSalir.clicked.connect(self.go_back.emit)
 
     def _create_pixmap(self, point: int):
         from PySide6 import QtCore, QtGui
@@ -135,17 +123,17 @@ class ListaNotificaciones(QtWidgets.QListWidget):
             }
         ''' % QColor(225, 225, 225).name())
 
-    def agregarNotificaciones(self, conn, user):
+    def agregarNotificaciones(self, user):
         """ Llena la caja de notificaciones. """
         items = []
-        manejador = sql.ManejadorVentas(conn)
+        manejador = db_injector.get(ManejadorVentas)
 
         numPendientes, = manejador.obtenerNumPendientes(user.id)
 
         if numPendientes:
             items.append(f'Tiene {numPendientes} pedidos pendientes.')
 
-        manejador = sql.ManejadorInventario(conn)
+        manejador = db_injector.get(ManejadorInventario)
 
         for nombre, stock, minimo in manejador.obtenerInventarioFaltante():
             items.append(

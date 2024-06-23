@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QWidget, QMessageBox, QDialog
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
 from protocols import HasConnUser
-import sql
+from sql.core import conectar_db, DatabaseManager, Error
 
 __all__ = ['requiere_admin', 'run_in_thread', 'fondo_oscuro', 'function_details']
 
@@ -84,10 +84,10 @@ class Dialog_ObtenerAdmin(QDialog):
         if not (usuario and psswd):
             return
         try:
-            conn = sql.conectar_db(usuario, psswd, 'ADMINISTRADOR')
-            manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
-            manejador.obtenerUsuario(usuario)
-        except sql.Error:
+            conn = conectar_db(usuario, psswd, 'ADMINISTRADOR')
+            manejador = DatabaseManager(conn, handle_exceptions=False)
+            print(manejador.nombreUsuarioActivo)
+        except Error:
             self.close()
             QMessageBox.warning(self.parentWidget(), 'Permiso denegado',
                                 'Las credenciales no son válidas para una cuenta de administrador.')

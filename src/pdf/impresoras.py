@@ -2,6 +2,7 @@
 import io
 
 import fitz
+from injector import inject
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QImage
@@ -9,16 +10,19 @@ from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 
 from .generadores import *
 from config import INI
-import sql
+from sql.core import Connection
+from sql.handlers import ManejadorVentas
+from sql.injector_config import db_injector
 from utils.mydecorators import run_in_thread
 from utils.myutils import randFile
 from utils.mywidgets import WarningDialog
 
 
+@inject
 class ImpresoraPDF:
     """ Clase general para manejar impresoras y enviar archivos a estas. """
 
-    def __init__(self, conn: sql.Connection = None, parent: QWidget = None):
+    def __init__(self, conn: Connection = None, parent: QWidget = None):
         self.conn = conn
         self.parent = parent
         self.printer = self.obtenerImpresora()
@@ -56,6 +60,7 @@ class ImpresoraPDF:
         return f'Manejador de PDF con impresora {self.printer.printerName()}.'
 
 
+@inject
 class ImpresoraOrdenes(ImpresoraPDF):
     """ Impresora para órdenes de compra. 
         Siempre crea diálogo para escoger impresora. """
@@ -75,11 +80,12 @@ class ImpresoraOrdenes(ImpresoraPDF):
 
     @run_in_thread
     def imprimirOrdenCompra(self, idx: int):
-        manejador = sql.ManejadorVentas(self.conn)
+        manejador = db_injector.get(ManejadorVentas)
         data = generarOrdenCompra(manejador, idx)
         self.enviarAImpresora(data)
 
 
+@inject
 class ImpresoraTickets(ImpresoraPDF):
     """ Impresora para tickets. 
         Intenta leer impresora por defecto del archivo config. """
@@ -99,7 +105,7 @@ class ImpresoraTickets(ImpresoraPDF):
         """ Genera el ticket de compra a partir de un identificador en la base de datos.
             Recibe un arreglo de índices para imprimir pagos específicos. """
         # obtener datos de la compra, de la base de datos
-        manejador = sql.ManejadorVentas(self.conn)
+        manejador = db_injector.get(ManejadorVentas)
         productos = list(manejador.obtenerTablaTicket(idx))
 
         # cambiar método de pago (abreviatura)

@@ -1,10 +1,12 @@
+from injector import inject
 from PySide6 import QtWidgets
-from PySide6.QtCore import QDateTime, QMutex, Signal
+from PySide6.QtCore import QMutex, Signal
 from PySide6.QtGui import QFont
 
 from pdf import ImpresoraTickets
 from protocols import ModuloPrincipal
-from sql import ManejadorCaja, ManejadorMetodosPago
+from sql.injector_config import db_injector
+from sql.handlers import ManejadorCaja
 from utils import Moneda
 from utils.mydataclasses import Caja
 from utils.mydecorators import run_in_thread
@@ -20,6 +22,7 @@ class App_Caja(ModuloPrincipal):
     """ Backend para la ventana de movimientos de la caja. """
     rescanned = Signal()
 
+    @inject
     def __init__(self, conn, user):
         from ui.Ui_Caja import Ui_Caja
 
@@ -38,8 +41,7 @@ class App_Caja(ModuloPrincipal):
 
         self.all_movimientos = Caja()
 
-        # interfaz de widgets de fechas
-        manejador = ManejadorCaja(self.conn)
+        manejador = db_injector.get(ManejadorCaja)
         fechaMin = manejador.obtenerFechaPrimerMov()
 
         InterfazFechas(
@@ -77,7 +79,7 @@ class App_Caja(ModuloPrincipal):
 
         fechaDesde = self.ui.dateDesde.date()
         fechaHasta = self.ui.dateHasta.date()
-        manejador = ManejadorCaja(self.conn)
+        manejador = db_injector.get(ManejadorCaja)
 
         movimientos = manejador.obtenerMovimientos(fechaDesde, fechaHasta)
         self.all_movimientos = Caja(movimientos)
@@ -197,15 +199,16 @@ class Dialog_Registrar(QtWidgets.QDialog):
         if not (monto and motivo):
             return
 
-        id_metodo = ManejadorMetodosPago(self.conn).obtenerIdMetodo(self.metodo)
+        manejador = db_injector.get(ManejadorCaja)
+        #manejador.manejador._error_txt = 'No se pudo registrar el movimiento.'
+        id_metodo = manejador.obtenerIdMetodoPago(self.metodo)
+        
         caja_db_parametros = (
             Moneda(monto),
             motivo,
             id_metodo,
             self.user.id
         )
-
-        manejador = ManejadorCaja(self.conn, '¡No se pudo registrar el movimiento!')
 
         if manejador.insertarMovimiento(caja_db_parametros):
             self.close()

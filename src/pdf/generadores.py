@@ -18,7 +18,7 @@ from PyPDF2 import PdfReader, PdfWriter
 from PySide6.QtCore import QDateTime, QFile, QIODevice
 
 from config import INI
-import sql
+from sql.handlers import ManejadorVentas
 from utils import Moneda
 from utils.mydataclasses import BaseItem, Caja
 from utils.myutils import *
@@ -26,7 +26,7 @@ from utils.myutils import *
 __all__ = ['generarOrdenCompra', 'generarTicketPDF', 'generarCortePDF']
 
 
-def generarOrdenCompra(manejadorVentas: sql.ManejadorVentas, idx: int):
+def generarOrdenCompra(manejadorVentas: ManejadorVentas, idx: int):
     """ Genera un PDF con el orden de compra correspondiente a 
         la venta con índice `idx` en la base de datos.
 

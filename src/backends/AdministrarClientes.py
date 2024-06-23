@@ -5,7 +5,7 @@ from PySide6.QtGui import QFont, QColor, QIcon, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QDate, Signal, QMutex
 
 from protocols import ModuloPrincipal
-from sql import ManejadorClientes
+from sql.handlers import ManejadorClientes
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import *

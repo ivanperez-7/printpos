@@ -1,3 +1,4 @@
+from injector import inject
 from PySide6 import QtWidgets
 from PySide6.QtWidgets import QMessageBox as qm
 from PySide6.QtCore import QDate, QDateTime, Signal, Qt
@@ -7,7 +8,7 @@ from .AdministrarVentas import Base_PagarVenta
 from .AdministrarProductos import Base_VisualizarProductos
 from pdf import ImpresoraOrdenes, ImpresoraTickets
 from protocols import ModuloPrincipal
-from sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
+from sql.handlers import ManejadorClientes, ManejadorProductos, ManejadorVentas
 from utils import Moneda
 from utils.mydataclasses import Venta
 from utils.mydecorators import fondo_oscuro, requiere_admin
@@ -24,6 +25,7 @@ class App_CrearVenta(ModuloPrincipal):
         TODO:
             - mandar ticket por whatsapp o imprimir, sí o sí """
 
+    @inject
     def __init__(self, conn, user):
         from ui.Ui_CrearVenta import Ui_CrearVenta
 
@@ -45,7 +47,7 @@ class App_CrearVenta(ModuloPrincipal):
         self.dialogoDescuentos.setVisible(False)
 
         # datos por defecto
-        self.ui.txtVendedor.setText(self.user.nombre)
+        self.ui.txtVendedor.setText(user.nombre)
         self.ui.lbFecha.setText(formatDate(ventaDatos.fechaEntrega))
         self.ui.btDeshacer.setVisible(False)
         self.ui.btDescuentosCliente.hide()

@@ -1,5 +1,6 @@
 from math import ceil
 
+from injector import inject
 from PySide6 import QtWidgets
 from PySide6.QtWidgets import QMessageBox as qm
 from PySide6.QtGui import QFont, QIcon
@@ -7,8 +8,11 @@ from PySide6.QtCore import Qt, Signal, QMutex
 
 from pdf import ImpresoraOrdenes, ImpresoraTickets
 from protocols import ModuloPrincipal, HasConnUser
-from sql import ManejadorVentas
+from sql.core import Connection
+from sql.handlers import ManejadorVentas
+from sql.injector_config import db_injector
 from utils import Moneda
+from utils.mydataclasses import Usuario
 from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import *
@@ -24,7 +28,8 @@ class App_AdministrarVentas(ModuloPrincipal):
         -   ocultamiento de folios """
     rescanned = Signal()
 
-    def __init__(self, conn, user):
+    @inject
+    def __init__(self, conn: Connection, user: Usuario):
         from ui.Ui_AdministrarVentas import Ui_AdministrarVentas
 
         super().__init__()
@@ -46,7 +51,7 @@ class App_AdministrarVentas(ModuloPrincipal):
         self.user = user
 
         # fechas por defecto
-        manejador = ManejadorVentas(conn)
+        manejador = db_injector.get(ManejadorVentas)
         fechaMin = manejador.obtenerFechaPrimeraVenta(None)
 
         InterfazFechas(
@@ -138,7 +143,7 @@ class App_AdministrarVentas(ModuloPrincipal):
         fechaHasta = self.ui.dateHasta.date()
         restrict = self.user.id if self.user.rol != 'ADMINISTRADOR' else None
 
-        manejador = ManejadorVentas(self.conn)
+        manejador = db_injector.get(ManejadorVentas)
         self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, restrict)
         self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta)
 
@@ -203,7 +208,7 @@ class App_AdministrarVentas(ModuloPrincipal):
             return
 
         # obtener número y nombre del cliente
-        manejador = ManejadorVentas(self.conn)
+        manejador = db_injector.get(ManejadorVentas)
         id_venta = self.tabla_actual.selectedItems()[0].text()
 
         saldo = manejador.obtenerSaldoRestante(id_venta)
@@ -226,13 +231,13 @@ class App_AdministrarVentas(ModuloPrincipal):
             return
 
         idVenta = selected[0].text()
-        manejador = ManejadorVentas(self.conn)
+        manejador = db_injector.get(ManejadorVentas)
 
         if manejador.obtenerAnticipo(idVenta) is None:
             return
 
         if manejador.obtenerSaldoRestante(idVenta):
-            widget = App_TerminarVenta(idVenta, self.conn, self.user, self)
+            widget = App_TerminarVenta(idVenta, self.user, self)
             widget.success.connect(self.rescan_update)
             return
 
@@ -289,7 +294,7 @@ class App_AdministrarVentas(ModuloPrincipal):
             return
 
         idVenta = selected[0].text()
-        man = ManejadorVentas(self.conn)
+        man = db_injector.get(ManejadorVentas)
 
         if man.verificarPagos(idVenta) > 1:
             wdg = App_ImprimirTickets(idVenta, self.conn, self)
@@ -397,7 +402,7 @@ class App_DetallesVenta(QtWidgets.QWidget):
 
 
 class Base_PagarVenta(QtWidgets.QWidget, HasConnUser):
-    def __init__(self, idx: int, conn, user, parent=None) -> None:
+    def __init__(self, idx: int, user, parent=None) -> None:
         from ui.Ui_ConfirmarVenta import Ui_ConfirmarVenta
 
         super().__init__(parent)
@@ -410,7 +415,6 @@ class Base_PagarVenta(QtWidgets.QWidget, HasConnUser):
         self.stackPagos = self.ui.stackPagos
 
         # guardar conexión y usuario como atributos
-        self.conn = conn
         self.user = user
 
         if idx is None:
@@ -527,7 +531,7 @@ class Base_PagarVenta(QtWidgets.QWidget, HasConnUser):
         """ Concluye la venta de la siguiente forma:
             1. Inserta pagos en tabla ventas_pagos.
             2. Si actualizarEstadoVenta, entonces dialogoExito. """
-        manejadorVentas = ManejadorVentas(self.conn)
+        manejadorVentas = db_injector.get(ManejadorVentas)
 
         # registrar pagos en tabla ventas_pagos
         for wdg in self.stackPagos:
@@ -554,8 +558,8 @@ class App_TerminarVenta(Base_PagarVenta):
     """ Backend para la ventana para terminar una venta sobre pedido. """
     success = Signal()
 
-    def __init__(self, idx: int, conn, user, parent=None):
-        super().__init__(idx, conn, user, parent)
+    def __init__(self, idx: int, user, parent=None):
+        super().__init__(idx, user, parent)
 
         self.ui.lbCincuenta.hide()
         self.ui.label_17.setText('Abonar pago(s) a pedido')
@@ -571,7 +575,7 @@ class App_TerminarVenta(Base_PagarVenta):
             self.close()
 
     def showEvent(self, event):
-        manejador = ManejadorVentas(self.conn)
+        manejador = db_injector.get(ManejadorVentas)
         productos = manejador.obtenerTablaProductosVenta(self.id_ventas)
 
         tabla = self.ui.tabla_productos
@@ -582,12 +586,12 @@ class App_TerminarVenta(Base_PagarVenta):
     # FUNCIONES ÚTILES #
     ####################
     def calcularTotal(self) -> Moneda:
-        manejador = ManejadorVentas(self.conn)
+        manejador = db_injector.get(ManejadorVentas)
         saldo = manejador.obtenerSaldoRestante(self.id_ventas)
         return saldo
 
     def obtenerDatosGenerales(self):
-        manejador = ManejadorVentas(self.conn)
+        manejador = db_injector.get(ManejadorVentas)
         nombreCliente, correo, telefono, fechaCreacion, fechaEntrega, *_ = \
             manejador.obtenerDatosGeneralesVenta(self.id_ventas)
         return (nombreCliente, correo, telefono, fechaCreacion, fechaEntrega)
@@ -596,7 +600,7 @@ class App_TerminarVenta(Base_PagarVenta):
         return self.total
 
     def actualizarEstadoVenta(self) -> bool:
-        manejador = ManejadorVentas(self.conn)
+        manejador = db_injector.get(ManejadorVentas)
 
         if self.para_pagar == self.total:
             estado = 'Entregado por ' + self.user.nombre
@@ -616,7 +620,7 @@ class App_TerminarVenta(Base_PagarVenta):
 
         if ret == qm.Yes:
             slais = slice(-self.ui.stackPagos.count(), None)
-            impresora = ImpresoraTickets(self.conn)
+            impresora = db_injector.get(ImpresoraTickets)
             impresora.imprimirTicketCompra(self.id_ventas, slais)
 
         self.success.emit()

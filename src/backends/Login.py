@@ -5,11 +5,12 @@ from PySide6.QtCore import Qt, QMutex, Signal
 
 from config import INI
 import licensing
-import sql
+from sql.core import conectar_db, DatabaseManager, Error
 from utils.mydataclasses import Usuario
 from utils.mydecorators import run_in_thread
 from utils.myutils import FabricaValidadores
-from utils.mywidgets import VentanaPrincipal, WarningDialog
+from utils.mywidgets import WarningDialog
+from ventanaprincipal import MyMainWindow
 
 
 #####################
@@ -122,10 +123,10 @@ class App_Login(QtWidgets.QWidget):
         self.ui.lbEstado.setText('Conectando al servidor...')
 
         try:
-            conn = sql.conectar_db(usuario, psswd, rol)
-            manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
+            conn = conectar_db(usuario, psswd, rol)
+            manejador = DatabaseManager(conn, handle_exceptions=False)
             user = Usuario.generarUsuarioActivo(manejador)
-        except sql.Error as err:
+        except Error as err:
             txt, sqlcode, gdscode = err.args
             if gdscode in [335544472, 335544352]:
                 self.ui.lbEstado.setStyleSheet('color: red;')
@@ -134,7 +135,7 @@ class App_Login(QtWidgets.QWidget):
                 self.warning.emit(txt)
         except Exception as err:  # arrojado por fdb al no encontrarse librería Firebird
             self.warning.emit(str(err))
-        else:
+        else:  # acceso exitoso, objetos conn y user válidos
             self.logged.emit(conn, user)
         finally:
             self.mutex.unlock()
@@ -144,8 +145,8 @@ class App_Login(QtWidgets.QWidget):
         wdg = WarningDialog('No se pudo acceder al servidor.', txt)
 
     def crearVentanaPrincipal(self, conn, user):
-        """ En método separado para regresar al hilo principal."""
-        self.mainWindow = VentanaPrincipal(conn, user)
+        """ En método separado para regresar al hilo principal. """
+        self.mainWindow = MyMainWindow(conn, user)
         self.close()
 
 

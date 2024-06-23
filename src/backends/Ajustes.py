@@ -4,7 +4,7 @@ from PySide6 import QtPrintSupport
 
 from config import INI
 from protocols import ModuloPrincipal
-import sql
+from sql.core import respaldar_db, Error
 
 
 #####################
@@ -40,9 +40,9 @@ class App_Ajustes(ModuloPrincipal):
         psswd = self.ui.txtPsswd.text()
         
         try:
-            out = sql.respaldar_db(user, psswd)
+            out = respaldar_db(user, psswd)
             QtWidgets.QMessageBox.information(self, 'Operación terminada', f'{out[-5:]}')
-        except (AttributeError, sql.Error) as e:
+        except (AttributeError, Error) as e:
             QtWidgets.QMessageBox.warning(self, 'Fallo en operación', str(e))
 
     def _salir(self, _):

@@ -1,74 +1,18 @@
 """ Módulo con widgets personalizados varios. """
 from datetime import datetime
 from enum import Enum, auto
-import glob
-import os
 from typing import Callable, Iterator
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import *
 from PySide6.QtCore import *
 
-from protocols import ModuloPrincipal, HasConnUser
 from . import Moneda
 from .myutils import unidecode, formatDate, ColorsEnum
 
-__all__ = ['VentanaPrincipal', 'WidgetPago', 'StackPagos', 
-           'TablaDatos', 'NumberEdit', 'LabelAdvertencia',
-           'WarningDialog', 'SpeechBubble', 'ListaNotificaciones']
-
-
-class VentanaPrincipal(QtWidgets.QMainWindow, HasConnUser):
-    def __init__(self, conn, user):
-        super().__init__()
-
-        self.resize(1500, 800)
-        self.setWindowTitle('PrintPOS')
-        self.setWindowIcon(QIcon(':img/icon.ico'))
-
-        self.conn = conn
-        self.user = user
-
-        from backends.AdministrarProductos import App_ConsultarPrecios
-        self.consultarPrecios = App_ConsultarPrecios(conn)
-
-        self.go_home()
-        self.show()
-
-    def go_home(self):
-        """ Regresar al menú principal.
-            Crea módulo Home y establece como widget principal. """
-        from backends.Home import App_Home
-
-        home = App_Home(self.conn, self.user)
-        home.go_back.connect(self.close)
-        home.new_module.connect(self.go_to)
-
-        self.setCentralWidget(home)
-    
-    def go_to(self, modulo):
-        new: ModuloPrincipal = modulo(self.conn, self.user)
-        new.go_back.connect(self.go_home)
-        self.setCentralWidget(new)
-
-    @property
-    def en_venta(self):
-        from backends.CrearVenta import App_CrearVenta
-        return isinstance(self.centralWidget(), App_CrearVenta)
-
-    def closeEvent(self, event):
-        """ En eventos específicos, restringimos el cerrado del sistema. """
-        if self.en_venta and not self.user.administrador:
-            event.ignore()
-            return
-
-        for j in glob.glob('*.jpg'):
-            os.remove(j)
-        self.conn.close()
-        self.consultarPrecios.close()
-        
-        from backends.Login import App_Login
-        login = App_Login()
+__all__ = ['WidgetPago', 'StackPagos', 'TablaDatos', 
+           'NumberEdit', 'LabelAdvertencia', 'WarningDialog',
+           'SpeechBubble', 'ListaNotificaciones']
 
 
 class ClickableIcon(QtWidgets.QPushButton):

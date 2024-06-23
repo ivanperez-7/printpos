@@ -3,7 +3,7 @@ from PySide6.QtGui import QFont, QColor, QPixmap, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
 from protocols import ModuloPrincipal
-from sql import ManejadorInventario, ManejadorProductos
+from sql.handlers import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myutils import *
 from utils.mywidgets import LabelAdvertencia

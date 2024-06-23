@@ -1,9 +1,12 @@
+from injector import inject
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
 from protocols import ModuloPrincipal
-from sql import ManejadorInventario, ManejadorProductos
+from sql.core import DatabaseManager
+from sql.injector_config import db_injector
+from sql.handlers import ManejadorInventario, ManejadorProductos
 from utils import Moneda
 from utils.mydataclasses import ItemVenta, ItemGranFormato
 from utils.mydecorators import fondo_oscuro, run_in_thread
@@ -19,6 +22,7 @@ class App_AdministrarProductos(ModuloPrincipal):
     """ Backend para la ventana de administración de productos. """
     rescanned = Signal()
 
+    @inject
     def __init__(self, conn, user):
         from ui.Ui_AdministrarProductos import Ui_AdministrarProductos
 
@@ -175,7 +179,6 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
         # guardar conexión, usuario y un manejador de DB como atributos
         self.conn = conn
-        self.manejador = ManejadorProductos(conn)
 
         # eventos para widgets
         self.ui.searchBar.textChanged.connect(self.update_display)
@@ -367,8 +370,9 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
     def rescan_display(self):
         """ Lee de nuevo las tablas de productos y actualiza tablas. """
-        self.all_prod = self.manejador.obtener_vista('view_productos_simples')
-        self.all_gran = self.manejador.obtener_vista('view_gran_formato')
+        manejador = db_injector.get(DatabaseManager)
+        self.all_prod = manejador.obtener_vista('view_productos_simples')
+        self.all_gran = manejador.obtener_vista('view_gran_formato')
         self.update_display()
 
     def update_display(self):
