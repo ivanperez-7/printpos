@@ -44,6 +44,8 @@ def generarOrdenCompra(manejadorVentas: sql.ManejadorVentas, idx: int):
 
     total = manejadorVentas.obtenerImporteTotal(idx)
     anticipo = manejadorVentas.obtenerAnticipo(idx)
+    
+    assert anticipo is not None, f'Venta {idx=} es directa, no pedido.'
 
     # datos para la tabla de productos
     productos = manejadorVentas.obtenerTablaOrdenCompra(idx)
@@ -129,7 +131,8 @@ def generarOrdenCompra(manejadorVentas: sql.ManejadorVentas, idx: int):
     # crear archivo temporal e imprimir
     buffer = io.BytesIO()
     writer.write(buffer)
-
+    assert buffer.getbuffer().nbytes > 0
+    
     return buffer
 
 
@@ -144,8 +147,9 @@ def generarTicketPDF(productos: list[BaseItem], vendedor: str, folio: int = 0,
             - Nombre del vendedor
             - Folio de venta
             - Fecha y hora de creación """
+    assert isinstance(productos, list), f'Argumento {productos=} no valido.'
+    
     buffer = io.BytesIO()
-
     doc = SimpleDocTemplate(buffer,
                             pagesize=(80 * mm, 297 * mm),
                             rightMargin=0, leftMargin=0,
@@ -268,6 +272,8 @@ def generarTicketPDF(productos: list[BaseItem], vendedor: str, folio: int = 0,
         Paragraph(pie, styles['Center'])]
 
     doc.build(elements)
+    assert buffer.getbuffer().nbytes > 0
+    
     return buffer
 
 
@@ -354,5 +360,6 @@ def generarCortePDF(caja: Caja, responsable: str):
 
     # Build the PDF document
     doc.build(elements)
+    assert buffer.getbuffer().nbytes > 0
 
     return buffer

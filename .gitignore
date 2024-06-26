@@ -11,5 +11,6 @@ pyvenv.cfg
 # carpetas de configuración IDE
 .idea/
 .vscode/
+.pytest_cache
 # carpetas generadas por nuitka
 PrintPOS.*/

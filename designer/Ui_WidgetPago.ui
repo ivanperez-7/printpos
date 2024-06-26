@@ -50,7 +50,7 @@
        <number>20</number>
       </property>
       <item row="0" column="0">
-       <widget class="QRadioButton" name="radioButton">
+       <widget class="QRadioButton" name="btEfectivo">
         <property name="font">
          <font>
           <family>Segoe UI</family>
@@ -69,7 +69,7 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QRadioButton" name="radioButton_2">
+       <widget class="QRadioButton" name="btCredito">
         <property name="font">
          <font>
           <family>Segoe UI</family>
@@ -85,7 +85,7 @@
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QRadioButton" name="radioButton_4">
+       <widget class="QRadioButton" name="btDebito">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -107,7 +107,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QRadioButton" name="radioButton_3">
+       <widget class="QRadioButton" name="btTransferencia">
         <property name="minimumSize">
          <size>
           <width>0</width>

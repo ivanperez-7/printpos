@@ -85,9 +85,8 @@ class Dialog_ObtenerAdmin(QDialog):
             return
         try:
             conn = sql.conectar_db(usuario, psswd, 'ADMINISTRADOR')
-            manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
-            manejador.obtenerUsuario(usuario)
-        except sql.Error:
+            manejador = sql.DatabaseManager(conn)
+        except (sql.Error, AssertionError):
             self.close()
             QMessageBox.warning(self.parentWidget(), 'Permiso denegado',
                                 'Las credenciales no son válidas para una cuenta de administrador.')

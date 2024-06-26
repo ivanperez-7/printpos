@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum, auto
 import glob
 import os
-from typing import Callable, Iterator
+from typing import Callable, Iterator, Type
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import *
@@ -46,8 +46,8 @@ class VentanaPrincipal(QtWidgets.QMainWindow, HasConnUser):
 
         self.setCentralWidget(home)
     
-    def go_to(self, modulo):
-        new: ModuloPrincipal = modulo(self.conn, self.user)
+    def go_to(self, modulo: Type[ModuloPrincipal]):
+        new = modulo(self.conn, self.user)
         new.go_back.connect(self.go_home)
         self.setCentralWidget(new)
 
@@ -122,7 +122,7 @@ class WidgetPago(QtWidgets.QFrame):
 
 
 class StackPagos(QtWidgets.QStackedWidget):
-    cambioPagos = Signal()
+    cambio_pagos = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -140,19 +140,19 @@ class StackPagos(QtWidgets.QStackedWidget):
     def agregarPago(self):
         """ Agrega widget de pago a la lista y regresa el widget. """
         wdg = WidgetPago()
-        wdg.ui.txtPago.textChanged.connect(lambda: self.cambioPagos.emit())
-        wdg.ui.buttonGroup.buttonClicked.connect(lambda: self.cambioPagos.emit())
+        wdg.ui.txtPago.textChanged.connect(lambda: self.cambio_pagos.emit())
+        wdg.ui.buttonGroup.buttonClicked.connect(lambda: self.cambio_pagos.emit())
 
         self.addWidget(wdg)
         self.setCurrentWidget(wdg)
-        self.cambioPagos.emit()
+        self.cambio_pagos.emit()
         return wdg
 
     def quitarPago(self):
         """ Quitar el widget de pago actual. """
         if self.count() > 1:
             self.removeWidget(self.currentWidget())
-            self.cambioPagos.emit()
+            self.cambio_pagos.emit()
 
     @property
     def restanteEnEfectivo(self):
