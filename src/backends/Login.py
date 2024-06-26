@@ -107,11 +107,9 @@ class App_Login(QtWidgets.QWidget):
         """ Verifica datos ingresados consultando la tabla Usuarios. """
         if not self.mutex.try_lock():
             return
-
-        # verificar que se ingresaron datos
         usuario = self.ui.inputUsuario.text().upper()
         psswd = self.ui.inputContrasenia.text()
-        rol = self.ui.groupRol.checkedButton().text()
+        rol = self.ui.groupRol.checkedButton().text().lower()
 
         if not (usuario and psswd):
             self.ui.lbEstado.clear()
@@ -120,11 +118,15 @@ class App_Login(QtWidgets.QWidget):
 
         self.ui.lbEstado.setStyleSheet('color: black;')
         self.ui.lbEstado.setText('Conectando al servidor...')
-
         try:
             conn = sql.conectar_db(usuario, psswd, rol)
             manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
             user = Usuario.generarUsuarioActivo(manejador)
+            
+            self.logged.emit(conn, user)
+        except AssertionError:
+            self.ui.lbEstado.setStyleSheet('color: red;')
+            self.ui.lbEstado.setText(f'¡Usuario sin permisos para {rol}!')
         except sql.Error as err:
             txt, sqlcode, gdscode = err.args
             if gdscode in [335544472, 335544352]:
@@ -134,8 +136,6 @@ class App_Login(QtWidgets.QWidget):
                 self.warning.emit(txt)
         except Exception as err:  # arrojado por fdb al no encontrarse librería Firebird
             self.warning.emit(str(err))
-        else:
-            self.logged.emit(conn, user)
         finally:
             self.mutex.unlock()
 

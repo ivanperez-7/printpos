@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import overload
 
 import fdb
-
 from PySide6.QtCore import QDate
 
 from config import INI
@@ -59,6 +58,8 @@ class DatabaseManager:
 
         self._crsr = conn.cursor()
         self._crsr.execute("SET TIME ZONE '-06:00';")  # <- tiempo local en UTC
+
+        assert self.rolActivo != 'NONE', 'Rol inválido para esta conexión.'
 
     def _partial_execute(self, func, query: str, parameters=None, commit=False):
         try:
@@ -135,7 +136,9 @@ class DatabaseManager:
 class ManejadorCaja(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Caja. """
 
-    def obtenerMovimientos(self, inicio: QDate, final: QDate):
+    def obtenerMovimientos(self, 
+                           inicio: QDate = QDate(1900, 1, 1), 
+                           final: QDate = QDate.currentDate()):
         """ Obtener historial completo de movimientos de caja.
             
             Requiere fechas de inicio y final, de tipo QDate. """
@@ -155,13 +158,14 @@ class ManejadorCaja(DatabaseManager):
             return result[0]
 
     def insertarMovimiento(self, params: tuple, commit: bool = True):
-        """ Registra ingreso o egreso en tabla historial de movimientos.
+        """ Registra ingreso o egreso en tabla historial de movimientos:
+        
+            monto, descripcion, id_metodo_pago, id_usuarios
         
             Hace commit automáticamente, a menos que se indique lo contrario. """
         return self.execute('''
             INSERT INTO Caja (
-                fecha_hora, monto, descripcion,
-                id_metodo_pago, id_usuarios
+                fecha_hora, monto, descripcion, id_metodo_pago, id_usuarios
             )
             VALUES
                 (LOCALTIMESTAMP,?,?,?,?);
@@ -1093,7 +1097,10 @@ class ManejadorVentas(DatabaseManager):
 
     def obtenerSaldoRestante(self, id_venta: int):
         """ Residuo del importe total menos anticipos. """
-        return self.obtenerImporteTotal(id_venta) - self.obtenerAnticipo(id_venta)
+        try:
+            return self.obtenerImporteTotal(id_venta) - self.obtenerAnticipo(id_venta)
+        except TypeError:
+            return None
 
     def obtenerFechaPrimeraVenta(self, id_usuario: int = None):
         """ Obtener fecha de la venta más antigüa. 
@@ -1133,14 +1140,16 @@ class ManejadorVentas(DatabaseManager):
     
     def insertarVenta(self, params: tuple) -> int:
         """ Insertar venta nueva en la tabla ventas e intenta 
-            regresar tupla con índice de venta recién insertada.
+            regresar tupla con índice de venta recién insertada:
+            
+            id_clientes, id_usuarios, fecha_hora_creacion, fecha_hora_entrega,
+            comentarios, requiere_factura, estado.
             
             No hace commit. """
         if result := self.fetchone('''
             INSERT INTO ventas (
-                id_clientes, id_usuarios, fecha_hora_creacion,
-                fecha_hora_entrega, comentarios,
-                requiere_factura, estado
+                id_clientes, id_usuarios, fecha_hora_creacion, fecha_hora_entrega,
+                comentarios, requiere_factura, estado
             ) 
             VALUES 
                 (?,?,?,?,?,?,?)
@@ -1149,9 +1158,12 @@ class ManejadorVentas(DatabaseManager):
         ''', params):
             return result[0]
 
-    def insertarDetallesVenta(self, id_ventas: int, params: list[tuple]):
+    def insertarDetallesVenta(self, id_ventas: int, params: list[tuple], commit: bool = True):
         """ Insertar detalles de venta en tabla ventas_detallado e intenta 
-            regresar tupla con índice de venta recién insertada.
+            regresar tupla con índice de venta recién insertada:
+            
+            id_productos, cantidad, precio, 
+            descuento, especificaciones, duplex, importe
             
             Hace commit automáticamente. """
         params = [(id_ventas,) + param for param in params]
@@ -1163,7 +1175,7 @@ class ManejadorVentas(DatabaseManager):
             ) 
             VALUES
                 (?,?,?,?,?,?,?,?);
-        ''', params, commit=True)
+        ''', params, commit=commit)
 
     def insertarPago(self, id_ventas: int, metodo: str,
                      monto: Moneda, recibido: Moneda | None, id_usuarios: int,
@@ -1208,9 +1220,7 @@ class ManejadorUsuarios(DatabaseManager):
         ''', (usuario,))
 
     def crearUsuarioServidor(self, usuario: str, psswd: str):
-        """ Registrar usuario en servidor Firebird.
-            
-            No hace commit. """
+        """ Registrar usuario en servidor Firebird. """
         return self.execute(f"CREATE USER {usuario} PASSWORD '{psswd}';")
 
     def insertarUsuario(self, params: tuple):
@@ -1235,24 +1245,24 @@ class ManejadorUsuarios(DatabaseManager):
             WHERE   usuario = ?;
         ''', (*params, usuario))
 
-    def eliminarUsuario(self, usuario: str):
+    def eliminarUsuario(self, usuario: str, commit: bool = True):
         """ Dar de baja usuario del sistema y eliminar del servidor Firebird. 
             
             Hace commit automáticamente. """
         return (
                 self.execute('''UPDATE  Usuarios
-                            SET     permisos = NULL
-                            WHERE   usuario = ?;''', (usuario,))
+                                SET     permisos = NULL
+                                WHERE   usuario = ?;''', (usuario,))
                 and self.retirarRoles(usuario)
-                and self.execute(f'DROP USER {usuario};', commit=True)
+                and self.execute(f'DROP USER {usuario};', commit=commit)
         )
 
-    def otorgarRolVendedor(self, usuario: str):
+    def otorgarRolVendedor(self, usuario: str, commit: bool = True):
         """ Otorgar rol de vendedor en servidor Firebird.
         
             Hace commit automáticamente, al ser última operación 
             del proceso de creación/modificación. """
-        return self.execute(f'GRANT VENDEDOR TO {usuario};', commit=True)
+        return self.execute(f'GRANT VENDEDOR TO {usuario};', commit=commit)
 
     def otorgarRolAdministrador(self, usuario: str):
         """ Otorgar rol de vendedor y administrador en servidor Firebird, con

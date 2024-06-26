@@ -306,20 +306,10 @@ class App_AdministrarVentas(ModuloPrincipal):
 
     def imprimirOrden(self):
         """ Imprime orden de compra de un pedido dado el folio de esta. """
-        if not (selected := self.tabla_actual.selectedItems()) \
-                or not selected[6].text().startswith('Recibido'):
-            return
-
-        idVenta = selected[0].text()
-
-        # abrir pregunta
-        ret = qm.question(self, 'Atención',
-                          'Se imprimirá la orden de compra de la venta '
-                          f'con folio {idVenta}. ¿Desea continuar?')
-
-        if ret == qm.Yes:
+        if (selected := self.tabla_actual.selectedItems()) \
+                and selected[6].text().startswith('Recibido'):
             impresora = ImpresoraOrdenes(self.conn, self)
-            impresora.imprimirOrdenCompra(idVenta)
+            impresora.imprimirOrdenCompra(selected[0].text())
 
 
 #################################
@@ -443,7 +433,7 @@ class Base_PagarVenta(QtWidgets.QWidget, HasConnUser):
         self.ui.btListo.clicked.connect(self.listo)
         self.ui.btCancelar.clicked.connect(self.abortar)
         self.ui.txtAnticipo.textChanged.connect(self.cambiarAnticipo)
-        self.stackPagos.cambioPagos.connect(self._handleCounters)
+        self.stackPagos.cambio_pagos.connect(self._handleCounters)
 
         # interfaz de botones para stackPagos
         self.ui.btAgregar.clicked.connect(self.stackPagos.agregarPago)
