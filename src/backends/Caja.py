@@ -3,7 +3,7 @@ from PySide6.QtCore import QDateTime, QMutex, Signal
 from PySide6.QtGui import QFont
 
 from pdf import ImpresoraTickets
-from protocols import ModuloPrincipal
+from mixins import ModuloPrincipal
 from sql import ManejadorCaja, ManejadorMetodosPago
 from utils import Moneda
 from utils.mydataclasses import Caja
