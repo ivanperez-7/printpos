@@ -78,7 +78,7 @@ class Dialog_ObtenerAdmin(QDialog):
         QtCore.QMetaObject.connectSlotsByName(self)
 
     def accept(self):
-        usuario = self.txtUsuario.text().upper()
+        usuario = self.txtUsuario.text()
         psswd = self.txtPsswd.text()
 
         if not (usuario and psswd):
@@ -98,11 +98,13 @@ class Dialog_ObtenerAdmin(QDialog):
 
 def requiere_admin(func):
     """ Decorador para solicitar contraseña de administrador
-        antes de ejecutar alguna función envuelta.
+        antes de ejecutar alguna función.
         
         Añadir parámetro nombrado `conn` al final de la función envuelta, ya que
         es devuelto por el decorador para extraer información que se requiera
         de la conexión de administrador, por ejemplo, nombre del administrador.
+        
+        Ejemplo: `func(x, y)` -> `func(x, y, conn)`.
         
         Requiere que QWidget cumpla protocolo `HasConnUser`. """
 

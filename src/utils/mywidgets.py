@@ -68,7 +68,7 @@ class VentanaPrincipal(QtWidgets.QMainWindow, HasConnUser):
         self.consultarPrecios.close()
         
         from backends.Login import App_Login
-        login = App_Login()
+        login = App_Login(self.__class__)
 
 
 class ClickableIcon(QtWidgets.QPushButton):

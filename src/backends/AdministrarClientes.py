@@ -250,7 +250,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
     ####################
     def numeroTelefono(self):
         return '+{} {}'.format(self.ui.txtLada.text(),
-                               self.ui.txtCelular.displayText())
+                               self.ui.txtCelular.text())
 
     def agregarDatosPorDefecto(self, nombre: str, celular: str, correo: str):
         """ Datos por defecto, proveído por ambas clases heredadas. """
