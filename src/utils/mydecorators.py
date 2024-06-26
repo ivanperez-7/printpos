@@ -4,7 +4,7 @@ from functools import wraps
 from PySide6.QtWidgets import QWidget, QMessageBox, QDialog
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
-from protocols import HasConnUser
+from mixins import HasConnUser
 import sql
 
 __all__ = ['requiere_admin', 'run_in_thread', 'fondo_oscuro', 'function_details']

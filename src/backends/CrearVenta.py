@@ -6,7 +6,7 @@ from .AdministrarClientes import App_RegistrarCliente, App_EditarCliente
 from .AdministrarVentas import Base_PagarVenta
 from .AdministrarProductos import Base_VisualizarProductos
 from pdf import ImpresoraOrdenes, ImpresoraTickets
-from protocols import ModuloPrincipal
+from mixins import ModuloPrincipal
 from sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
 from utils import Moneda
 from utils.mydataclasses import Venta

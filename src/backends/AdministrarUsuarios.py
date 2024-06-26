@@ -2,7 +2,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, Signal
 
-from protocols import ModuloPrincipal
+from mixins import ModuloPrincipal
 from sql import ManejadorUsuarios
 from utils.mydecorators import fondo_oscuro
 from utils.myinterfaces import InterfazFiltro

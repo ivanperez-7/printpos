@@ -2,7 +2,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
-from protocols import ModuloPrincipal
+from mixins import ModuloPrincipal
 from sql import ManejadorInventario, ManejadorProductos
 from utils import Moneda
 from utils.mydataclasses import ItemVenta, ItemGranFormato

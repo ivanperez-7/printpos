@@ -5,7 +5,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap, QColor
 from PySide6.QtCore import QDate, Qt, QRect, QPropertyAnimation, QEasingCurve, Signal
 
-from protocols import ModuloPrincipal
+from mixins import ModuloPrincipal
 import sql
 
 

@@ -9,7 +9,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import *
 from PySide6.QtCore import *
 
-from protocols import ModuloPrincipal, HasConnUser
+from mixins import ModuloPrincipal, HasConnUser
 from . import Moneda
 from .myutils import unidecode, formatDate, ColorsEnum
 

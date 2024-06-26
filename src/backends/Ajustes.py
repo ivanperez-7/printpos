@@ -3,7 +3,7 @@ from PySide6.QtCore import QDate, QDateTime, QModelIndex, QRegularExpression, Qt
 from PySide6 import QtPrintSupport
 
 from config import INI
-from protocols import ModuloPrincipal
+from mixins import ModuloPrincipal
 import sql
 
 

@@ -6,7 +6,7 @@ from PySide6.QtGui import QFont, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
 from pdf import ImpresoraOrdenes, ImpresoraTickets
-from protocols import ModuloPrincipal, HasConnUser
+from mixins import ModuloPrincipal, HasConnUser
 from sql import ManejadorVentas
 from utils import Moneda
 from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
