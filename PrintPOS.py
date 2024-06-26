@@ -5,6 +5,7 @@ from PySide6.QtCore import QTranslator
 from PySide6.QtGui import QPalette, Qt
 
 from backends.Login import App_Login
+from utils.mywidgets import VentanaPrincipal
 
 
 class PrintPOS(QApplication):
@@ -20,7 +21,7 @@ class PrintPOS(QApplication):
     
     def iniciar(self):
         """ Crea ventana de iniciar sesión e invoca método exec(). """
-        login = App_Login()
+        login = App_Login(VentanaPrincipal)
         return self.exec()
     
     def configurarPaleta(self):

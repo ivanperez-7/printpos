@@ -1,4 +1,5 @@
 import socket
+from typing import Type
 
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt, QMutex, Signal
@@ -9,7 +10,7 @@ import sql
 from utils.mydataclasses import Usuario
 from utils.mydecorators import run_in_thread
 from utils.myutils import FabricaValidadores
-from utils.mywidgets import VentanaPrincipal, WarningDialog
+from utils.mywidgets import WarningDialog
 
 
 #####################
@@ -25,7 +26,7 @@ class App_Login(QtWidgets.QWidget):
     logged = Signal(object, object) # emite sql.Connection y Usuario
     warning = Signal(str)
 
-    def __init__(self):
+    def __init__(self, ventana_principal: Type = None):
         from ui.Ui_Login import Ui_Login
 
         super().__init__()
@@ -33,6 +34,7 @@ class App_Login(QtWidgets.QWidget):
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
 
+        self.ventana_principal = ventana_principal
         self.mutex = QMutex()
 
         # validador para nombre de usuario
@@ -145,7 +147,8 @@ class App_Login(QtWidgets.QWidget):
 
     def crearVentanaPrincipal(self, conn, user):
         """ En método separado para regresar al hilo principal."""
-        self.mainWindow = VentanaPrincipal(conn, user)
+        if self.ventana_principal:
+            self.mainWindow = self.ventana_principal(conn, user)
         self.close()
 
 
