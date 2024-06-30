@@ -121,8 +121,6 @@ def requiere_admin(func):
             dialog.show()
 
     return wrapper_decorator
-
-
 ###############################################
 # </DECORADOR PARA SOLICITAR CUENTA DE ADMIN> #
 ###############################################
@@ -172,6 +170,7 @@ def fondo_oscuro(widget):
     
     def showEvent(self, event):
         try:
+            orig_show(self, event)
             if self.bg_parent:
                 wdg = QWidget(self.bg_parent)  # widget padre (módulo actual)
                 wdg.setFixedSize(self.bg_parent.size())
@@ -181,16 +180,14 @@ def fondo_oscuro(widget):
         except TypeError as err:
             print('fondo_oscuro error !!\n', str(err))
             self.bg = None
-        finally:
-            orig_show(self, event)
 
     def closeEvent(self, event):
         try:
-            self.bg.close()
+            orig_close(self, event)
+            if event.isAccepted():
+                self.bg.close()
         except AttributeError:
             pass
-        finally:
-            orig_close(self, event)
 
     widget.__init__ = __init__
     widget.showEvent = showEvent

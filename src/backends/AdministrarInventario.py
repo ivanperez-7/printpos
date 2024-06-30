@@ -2,6 +2,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QPixmap, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
+from core import ROJO, NumeroDecimal
 from mixins import ModuloPrincipal
 from sql import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import fondo_oscuro, run_in_thread
@@ -106,7 +107,7 @@ class App_AdministrarInventario(ModuloPrincipal):
 
             # resaltar si hay menos cantidad que el mínimo
             if item[6] < item[4]:
-                color = QColor(ColorsEnum.ROJO)
+                color = QColor(ROJO)
                 tabla.item(row, 6).setBackground(color)
 
         tabla.resizeRowsToContents()
@@ -187,7 +188,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
         self.conn = conn
 
         # validadores para datos numéricos
-        validador = FabricaValidadores.NumeroDecimal
+        validador = NumeroDecimal
 
         self.ui.txtPrecioCompra.setValidator(validador)
         self.ui.txtExistencia.setValidator(validador)
@@ -405,7 +406,7 @@ class ExistenciasWidget(QtWidgets.QDialog):
         gridLayout.addWidget(label, 0, 0, 1, 1)
         txtCantidad = QtWidgets.QLineEdit(self)
         txtCantidad.setFont(font)
-        txtCantidad.setValidator(FabricaValidadores.NumeroDecimal)
+        txtCantidad.setValidator(NumeroDecimal)
         gridLayout.addWidget(txtCantidad, 0, 1, 1, 1)
         label_2 = QtWidgets.QLabel(self)
         label_2.setFont(font)

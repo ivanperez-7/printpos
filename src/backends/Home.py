@@ -1,5 +1,4 @@
 from functools import partial
-import inspect
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap, QColor
@@ -11,7 +10,7 @@ import sql
 
 class App_Home(ModuloPrincipal):
     """ Backend para la pantalla principal. """
-    new_module = Signal(object)
+    new_module = Signal(type)
     
     def __init__(self, conn, user):
         from ui.Ui_Home import Ui_Home
@@ -71,7 +70,6 @@ class App_Home(ModuloPrincipal):
         from .CrearVenta import App_CrearVenta
         from .Reportes import App_Reportes
 
-        # mapeo de botones con sus acciones
         button_class_mapping = {
             self.ui.btClientes: App_AdministrarClientes,
             self.ui.btInventario: App_AdministrarInventario,
@@ -81,17 +79,15 @@ class App_Home(ModuloPrincipal):
             self.ui.btAjustes: App_Ajustes,
             self.ui.btCaja: App_Caja,
             self.ui.btCrearVenta: App_CrearVenta,
-            self.ui.btReportes: App_Reportes,
-            self.ui.btSalir: self.go_back.emit
+            self.ui.btReportes: App_Reportes
         }
 
         # conectar botones con acciones
-        for button, action in button_class_mapping.items():
-            if inspect.isclass(action):
-                handle = partial(self.new_module.emit, action) # action = clase de módulo
-                button.clicked.connect(handle)
-            else:
-                button.clicked.connect(action)
+        for button, modulo in button_class_mapping.items():
+            button.clicked.connect(
+                partial(self.new_module.emit, modulo))
+            
+        self.ui.btSalir.clicked.connect(self.go_back.emit)
 
     def _create_pixmap(self, point: int):
         from PySide6 import QtCore, QtGui

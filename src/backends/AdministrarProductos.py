@@ -2,9 +2,9 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
+from core import Moneda, NumeroDecimal, ROJO, Runner
 from mixins import ModuloPrincipal
 from sql import ManejadorInventario, ManejadorProductos
-from utils import Moneda
 from utils.mydataclasses import ItemVenta, ItemGranFormato
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
@@ -108,7 +108,7 @@ class App_AdministrarProductos(ModuloPrincipal):
 
             # resaltar si la utilidad es nula o negativa
             if item[-1] <= 0:
-                color = QColor(ColorsEnum.ROJO)
+                color = QColor(ROJO)
                 tabla.item(row, 7).setBackground(color)
 
         tabla.resizeRowsToContents()
@@ -182,6 +182,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         self.ui.groupFiltro.buttonClicked.connect(self.update_display)
         self.ui.tabWidget.currentChanged.connect(
             lambda: self.tabla_actual.resizeRowsToContents())
+        self.dataChanged.connect(self.rescan_display)
 
         self.ui.btIntercambiarProducto.clicked.connect(self.intercambiarProducto)
         self.ui.btIntercambiarMaterial.clicked.connect(self.intercambiarMaterial)
@@ -192,11 +193,11 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         self.ui.grupoBotonesAncho.buttonClicked.connect(self.medidasHandle)
 
         # validadores para datos numéricos
-        self.ui.txtCantidad.setValidator(FabricaValidadores.NumeroDecimal)
-        self.ui.txtAlto.setValidator(FabricaValidadores.NumeroDecimal)
-        self.ui.txtAncho.setValidator(FabricaValidadores.NumeroDecimal)
-        self.ui.txtAltoMaterial.setValidator(FabricaValidadores.NumeroDecimal)
-        self.ui.txtAnchoMaterial.setValidator(FabricaValidadores.NumeroDecimal)
+        self.ui.txtCantidad.setValidator(NumeroDecimal)
+        self.ui.txtAlto.setValidator(NumeroDecimal)
+        self.ui.txtAncho.setValidator(NumeroDecimal)
+        self.ui.txtAltoMaterial.setValidator(NumeroDecimal)
+        self.ui.txtAnchoMaterial.setValidator(NumeroDecimal)
 
         self.ui.tabla_seleccionar.configurarCabecera(lambda col: col != 1)
         self.ui.tabla_granformato.configurarCabecera(lambda col: col != 1)
@@ -204,9 +205,9 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         self.ui.tabla_granformato.setSortingEnabled(True)
 
         # evento para leer cambios en tabla PRODUCTOS
+        self.event_conduit = self.conn.event_conduit(['cambio_productos'])
         self.event_reader = Runner(self.startEvents)
         self.event_reader.start()
-        self.dataChanged.connect(self.rescan_display)
 
     def showEvent(self, event):
         self.rescan_display()
@@ -214,7 +215,10 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
     def closeEvent(self, event):
         # no recomendado generalmente para terminar hilos, sin embargo,
         # esta vez se puede hacer así al no ser una función crítica.
-        self.event_reader.stop()
+        self.event_reader.terminate()
+        self.event_reader.wait(0)
+        self.event_reader.moveToThread(None)
+        self.event_conduit.close()
         event.accept()
 
     # ==================
@@ -224,11 +228,9 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
     def tabla_actual(self):
         return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][self.ui.tabWidget.currentIndex()]
 
-    def startEvents(self):
+    def startEvents(self):   # async
         # eventos de Firebird para escuchar cambios en tabla productos
-        self.event_conduit = self.conn.event_conduit(['cambio_productos'])
         self.event_conduit.begin()
-
         while True:
             self.event_conduit.wait()
             self.dataChanged.emit()

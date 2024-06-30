@@ -5,11 +5,11 @@ from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt, QMutex, Signal
 
 from config import INI
+from core import IdFirebird
 import licensing
 import sql
 from utils.mydataclasses import Usuario
 from utils.mydecorators import run_in_thread
-from utils.myutils import FabricaValidadores
 from utils.mywidgets import WarningDialog
 
 
@@ -23,7 +23,7 @@ class App_Login(QtWidgets.QWidget):
     validated = Signal()
     failure = Signal(licensing.Errores)
 
-    logged = Signal(object, object) # emite sql.Connection y Usuario
+    logged = Signal(sql.Connection, Usuario)
     warning = Signal(str)
 
     def __init__(self, ventana_principal: Type = None):
@@ -38,7 +38,7 @@ class App_Login(QtWidgets.QWidget):
         self.mutex = QMutex()
 
         # validador para nombre de usuario
-        self.ui.inputUsuario.setValidator(FabricaValidadores.IdFirebird)
+        self.ui.inputUsuario.setValidator(IdFirebird)
 
         self.logged.connect(self.crearVentanaPrincipal)
         self.warning.connect(self.crearWarningDialog)

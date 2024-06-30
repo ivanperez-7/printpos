@@ -7,45 +7,11 @@ import uuid
 
 from openpyxl import Workbook
 from openpyxl.styles import Font
-from PySide6.QtCore import QDateTime, QThread, QLocale
-from PySide6.QtGui import QRegularExpressionValidator
+from PySide6.QtCore import QDateTime, QLocale
 
-__all__ = ['ColorsEnum', 'FabricaValidadores', 'clamp', 'chunkify',
-           'daysTo', 'unidecode', 'randFile', 'son_similar', 'stringify_float',
-           'formatDate', 'exportarXlsx', 'enviarWhatsApp', 'Runner']
-
-
-class ColorsEnum:
-    """ Clase para almacenar colores (hexadecimal) en variables. """
-    VERDE = 0xB2FFAE
-    AMARILLO = 0xFDFDA9
-    ROJO = 0xFFB2AE
-
-
-class FabricaValidadores:
-    """ Clase para generar validadores de expresiones regulares
-        (`QRegularExpressionValidator`) para widgets. """
-    IdFirebird = QRegularExpressionValidator(r'[a-zA-Z0-9_$]+')
-    NumeroDecimal = QRegularExpressionValidator(r'(\d*\.\d+|\d+\.\d*|\d+)')
-
-
-class Runner(QThread):
-    """ Clase derivada de QThread para manejar manualmente cuándo un hilo comienza y termina.
-        Para manejo automático, usar decorador `run_in_thread`. """
-
-    def __init__(self, target, *args, **kwargs):
-        super().__init__()
-        self._target = target
-        self._args = args
-        self._kwargs = kwargs
-
-    def run(self):
-        self._target(*self._args, **self._kwargs)
-
-    def stop(self):
-        """ Llama a métodos `terminate` y luego `wait`. """
-        self.terminate()
-        self.wait()
+__all__ = ['clamp', 'chunkify', 'daysTo', 'unidecode',  'randFile', 
+           'son_similar', 'stringify_float', 'formatdate',
+           'exportarXlsx', 'enviarWhatsApp']
 
 
 def clamp(value, smallest, largest):
@@ -116,13 +82,12 @@ def son_similar(obj1, obj2):
     return str1_clean in str2_clean
 
 
-def formatDate(date=None):
+def formatdate(date=None):
     """ Da formato en texto a un dato QDateTime o datetime de Python.
         Ejemplo: 08 de febrero 2023, 4:56 p. m. """
-    if date is None:
-        date = QDateTime.currentDateTime()
     locale = QLocale(QLocale.Spanish, QLocale.Mexico)
-    formatted = locale.toString(date, "d 'de' MMMM yyyy, h:mm ap")
+    formatted = locale.toString(date or QDateTime.currentDateTime(),
+                                "d 'de' MMMM yyyy, h:mm ap")
     return unicodedata.normalize('NFKD', formatted)
 
 

@@ -1,4 +1,5 @@
 """ Módulo con manejadores para tablas en la base de datos. """
+from collections import namedtuple
 from functools import partialmethod
 from pathlib import Path
 from typing import overload
@@ -7,7 +8,7 @@ import fdb
 from PySide6.QtCore import QDate
 
 from config import INI
-from utils import Moneda
+from core import Moneda
 from utils.mydataclasses import ItemVenta, ItemGranFormato
 from utils.mywidgets import WarningDialog
 
@@ -156,6 +157,15 @@ class ManejadorCaja(DatabaseManager):
         """ Obtener fecha del movimiento más antiguo. """
         if result := self.fetchone('SELECT MIN(fecha_hora) FROM movimientos_caja;'):
             return result[0]
+    
+    def obtenerIdMetodoPago(self, metodo: str):
+        """ Obtener ID del método de pago dado su nombre. """
+        if result := self.fetchone('''
+            SELECT  id_metodo_pago 
+            FROM    metodos_pago 
+            WHERE   metodo = ?;
+        ''', (metodo,)):
+            return result[0]
 
     def insertarMovimiento(self, params: tuple, commit: bool = True):
         """ Registra ingreso o egreso en tabla historial de movimientos:
@@ -174,16 +184,18 @@ class ManejadorCaja(DatabaseManager):
 
 class ManejadorClientes(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Clientes. """
+    Cliente = namedtuple('Cliente', ['id', 'nombre', 'telefono', 'correo', 'direccion',
+                                     'rfc', 'cliente_especial', 'descuentos'])
 
     @overload
-    def obtenerCliente(self, id_cliente: int) -> tuple:
+    def obtenerCliente(self, id_cliente: int) -> Cliente:
         ...
 
     @overload
-    def obtenerCliente(self, nombre: str, telefono: str) -> tuple:
+    def obtenerCliente(self, nombre: str, telefono: str) -> Cliente:
         ...
 
-    def obtenerCliente(self, *args):
+    def obtenerCliente(self, *args) -> Cliente:
         """ Obtener todos los datos de un cliente. """
         if len(args) == 2:
             query = ''' SELECT  * 
@@ -196,32 +208,11 @@ class ManejadorClientes(DatabaseManager):
                         WHERE   id_clientes = ?; '''
         else:
             raise ValueError('Argumentos inválidos: esperado (id_cliente,) o (nombre, teléfono).')
-        return self.fetchone(query, args)
-
-    @overload
-    def obtenerDescuentosCliente(self, id_cliente: int) -> tuple:
-        ...
-
-    @overload
-    def obtenerDescuentosCliente(self, nombre: str, telefono: str) -> tuple:
-        ...
-
-    def obtenerDescuentosCliente(self, *args):
-        """ Obtener booleano de cliente especial y cadena de descuentos. """
-        if len(args) == 2:
-            query = ''' SELECT  cliente_especial,
-                                descuentos
-                        FROM    Clientes
-                        WHERE   nombre = ?
-                                AND telefono = ?; '''
-        elif len(args) == 1:
-            query = ''' SELECT  cliente_especial,
-                                descuentos
-                        FROM    Clientes
-                        WHERE   id_clientes = ?; '''
-        else:
-            raise ValueError('Argumentos inválidos: esperado (id_cliente,) o (nombre, teléfono).')
-        return self.fetchone(query, args)
+        
+        try:
+            return self.Cliente(*self.fetchone(query, args))
+        except TypeError:
+            return None
 
     def insertarCliente(self, datosCliente: tuple):
         """ Sentencia para registrar cliente. Hace commit automáticamente. """
@@ -382,19 +373,6 @@ class ManejadorInventario(DatabaseManager):
             VALUES
                 (?,?,?);
         ''', params, commit=True)
-
-
-class ManejadorMetodosPago(DatabaseManager):
-    """ Clase para manejar sentencias hacia/desde la tabla metodos_pago. """
-
-    def obtenerIdMetodo(self, metodo: str):
-        """ Obtener ID del método de pago dado su nombre. """
-        if result := self.fetchone('''
-            SELECT  id_metodo_pago 
-            FROM    metodos_pago 
-            WHERE   metodo = ?;
-        ''', (metodo,)):
-            return result[0]
 
 
 class ManejadorProductos(DatabaseManager):
@@ -1183,7 +1161,7 @@ class ManejadorVentas(DatabaseManager):
         """ Inserta pago de venta a tabla ventas_pagos.
         
             No hace `commit`, a menos que se indique lo contrario. """
-        id_metodo = ManejadorMetodosPago(self._conn).obtenerIdMetodo(metodo)
+        id_metodo = ManejadorCaja(self._conn).obtenerIdMetodoPago(metodo)
 
         return self.execute('''
             INSERT INTO ventas_pagos (
@@ -1210,14 +1188,19 @@ class ManejadorVentas(DatabaseManager):
 
 class ManejadorUsuarios(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Usuarios. """
+    Usuario = namedtuple('Usuario', ['id', 'usuario', 'nombre', 'permisos', 'foto_perfil'])
 
     def obtenerUsuario(self, usuario: str):
         """ Obtener tupla de usuario dado el identificador de usuario. """
-        return self.fetchone('''
+        data = self.fetchone('''
             SELECT  *
-            FROM    Usuarios
+            FROM    usuarios
             WHERE   usuario = ?;
         ''', (usuario,))
+        try:
+            return self.Usuario(*data)
+        except TypeError:
+            return None
 
     def crearUsuarioServidor(self, usuario: str, psswd: str):
         """ Registrar usuario en servidor Firebird. """

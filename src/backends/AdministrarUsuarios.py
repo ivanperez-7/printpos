@@ -2,6 +2,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, Signal
 
+from core import IdFirebird
 from mixins import ModuloPrincipal
 from sql import ManejadorUsuarios
 from utils.mydecorators import fondo_oscuro
@@ -148,7 +149,7 @@ class Base_EditarUsuario(QtWidgets.QWidget):
         self.conn = conn
 
         # validador para nombre de usuario
-        self.ui.txtUsuario.setValidator(FabricaValidadores.IdFirebird)
+        self.ui.txtUsuario.setValidator(IdFirebird)
 
         # deshabilita eventos del mouse para los textos en los botones
         for name, item in vars(self.ui).items():
@@ -260,20 +261,20 @@ class App_EditarUsuario(Base_EditarUsuario):
         super().__init__(conn, parent)
 
         manejador = ManejadorUsuarios(conn)
-        id, usuario, nombre, permisos, *_ = manejador.obtenerUsuario(usuario_)
+        usuario = manejador.obtenerUsuario(usuario_)
 
-        self.usuario = usuario  # usuario a editar
-        self.permisos = permisos
+        self.usuario = usuario_  # usuario a editar
+        self.permisos = usuario.permisos
 
-        if not permisos:  # usuario existente pero dado de baja
+        if not usuario.permisos:  # usuario existente pero dado de baja
             self.ui.cambiarPsswd.setChecked(True)
             self.ui.cambiarPsswd.setEnabled(False)
             self.cambiarTrigger(True)
-        if usuario in ['SYSDBA', user.usuario]:
+        if usuario_ in ['SYSDBA', user.usuario]:
             self.ui.boxPermisos.setEnabled(False)
-        self.ui.txtUsuario.setText(usuario)
-        self.ui.txtNombre.setText(nombre)
-        self.ui.boxPermisos.setCurrentText(permisos)
+        self.ui.txtUsuario.setText(usuario_)
+        self.ui.txtNombre.setText(usuario.nombre)
+        self.ui.boxPermisos.setCurrentText(usuario.permisos)
         self.ui.txtUsuario.setReadOnly(True)
 
         self.ui.cambiarPsswd.toggled.connect(self.cambiarTrigger)

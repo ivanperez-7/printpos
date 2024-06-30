@@ -8,7 +8,7 @@ from PySide6.QtCore import QDateTime
 
 if TYPE_CHECKING:
     import sql
-from . import Moneda
+from core import Moneda
 
 
 @dataclass
@@ -22,12 +22,14 @@ class Usuario:
     rol: str = 'Vendedor'
 
     def __post_init__(self):
+        self.usuario = self.usuario.upper()
+        self.permisos = self.permisos.upper()
         self.rol = self.rol.upper()
 
     @property
     def administrador(self):
         """ Regresa un booleano que dice si el usuario es administrador. """
-        return self.permisos.upper() == 'ADMINISTRADOR'
+        return self.permisos == 'ADMINISTRADOR'
 
     @classmethod
     def generarUsuarioActivo(cls, manejador: sql.ManejadorUsuarios):
@@ -122,7 +124,7 @@ class ItemGranFormato(BaseItem):
 @dataclass
 class Venta:
     """ Clase para mantener registro de una venta. """
-    productos: list[BaseItem] = field(default_factory=list)
+    _productos: list[BaseItem] = field(default_factory=list)
     fechaCreacion: QDateTime = QDateTime.currentDateTime()
     fechaEntrega: QDateTime = QDateTime(fechaCreacion)
     requiere_factura: bool = False
@@ -132,11 +134,11 @@ class Venta:
 
     @property
     def total(self):
-        return Moneda.sum(prod.importe for prod in self.productos)
+        return Moneda.sum(prod.importe for prod in self._productos)
 
     @property
     def total_descuentos(self):
-        return Moneda.sum(prod.total_descuentos for prod in self.productos)
+        return Moneda.sum(prod.total_descuentos for prod in self._productos)
 
     @property
     def esVentaDirecta(self):
@@ -145,18 +147,18 @@ class Venta:
 
     @property
     def ventaVacia(self):
-        return len(self.productos) == 0
+        return len(self._productos) == 0
 
     def agregarProducto(self, item: ItemVenta):
-        self.productos.append(item)
+        self._productos.append(item)
 
     def quitarProducto(self, idx: int):
-        self.productos.pop(idx)
+        self._productos.pop(idx)
 
     def reajustarPrecios(self, manejador: sql.ManejadorProductos):
         """ Algoritmo para reajustar precios de productos simples al haber cambios de cantidad.
             Por cada grupo de productos idénticos:
-                1. Calcular cantidad de productos duplex y cantidad de no duplex.
+                1. Calcular cantidad de todos los productos y solo duplex.
                 2. Obtener precio NO DUPLEX con el total de ambas cantidades.
                 3. Obtener precio DUPLEX con la cantidad duplex correspondiente.
                 4. A todos los productos del grupo, asignar el mínimo de los dos precios obtenidos. """
@@ -175,7 +177,7 @@ class Venta:
     def _obtenerGruposProductos(self) -> Iterator[list[ItemVenta]]:
         """ Obtiene un generador con listas de productos, separadas por identificador. """
         out = dict()
-        for prod in self.productos:
+        for prod in self._productos:
             if not isinstance(prod, ItemVenta):
                 continue
             try:
@@ -185,13 +187,13 @@ class Venta:
         yield from out.values()
 
     def __len__(self):
-        return len(self.productos)
+        return len(self._productos)
 
     def __iter__(self):
-        yield from self.productos
+        yield from self._productos
 
     def __getitem__(self, i: int):
-        return self.productos[i]
+        return self._productos[i]
 
 
 @dataclass
@@ -211,8 +213,11 @@ class Movimiento:
         """ Alimenta las tablas principales:
         
             Fecha y hora | Monto | Descripción | Método | Usuario. """
-        yield from (self.fecha_hora, self.monto, self.descripcion,
-                    self.metodo, self.usuario)
+        yield from (self.fecha_hora,
+                    self.monto,
+                    self.descripcion,
+                    self.metodo,
+                    self.usuario)
 
 
 class Caja:

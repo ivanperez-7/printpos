@@ -5,9 +5,9 @@ from unittest import TestCase, main, mock
 from PySide6.QtCore import QDateTime, QDate, QTime, Qt
 from PySide6.QtTest import QTest
 
+from core import Moneda
 import PrintPOS
 import sql
-from utils import Moneda
 
 
 class ConnectionsMixin:  # cuentas válidas y existentes

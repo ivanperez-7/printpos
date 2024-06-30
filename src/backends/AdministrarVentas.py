@@ -5,10 +5,10 @@ from PySide6.QtWidgets import QMessageBox as qm
 from PySide6.QtGui import QFont, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
-from pdf import ImpresoraOrdenes, ImpresoraTickets
+from core import Moneda
 from mixins import ModuloPrincipal, HasConnUser
+from pdf import ImpresoraOrdenes, ImpresoraTickets
 from sql import ManejadorVentas
-from utils import Moneda
 from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import *
@@ -47,7 +47,7 @@ class App_AdministrarVentas(ModuloPrincipal):
 
         # fechas por defecto
         manejador = ManejadorVentas(conn)
-        fechaMin = manejador.obtenerFechaPrimeraVenta(None)
+        fechaMin = manejador.obtenerFechaPrimeraVenta()
 
         InterfazFechas(
             self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
@@ -299,7 +299,6 @@ class App_AdministrarVentas(ModuloPrincipal):
         ret = qm.question(self, 'Atención',
                           'Se imprimirá el ticket de compra de la venta '
                           f'con folio {idVenta}. ¿Desea continuar?')
-
         if ret == qm.Yes:
             impresora = ImpresoraTickets(self.conn)
             impresora.imprimirTicketCompra(idVenta)
@@ -358,8 +357,8 @@ class App_DetallesVenta(QtWidgets.QWidget):
         self.ui.txtCliente.setText(nombreCliente)
         self.ui.txtCorreo.setText(correo)
         self.ui.txtTelefono.setText(telefono)
-        self.ui.txtCreacion.setText(formatDate(fechaCreacion))
-        self.ui.txtEntrega.setText(formatDate(fechaEntrega))
+        self.ui.txtCreacion.setText(formatdate(fechaCreacion))
+        self.ui.txtEntrega.setText(formatdate(fechaEntrega))
         self.ui.txtComentarios.setPlainText(comentarios)
         self.ui.txtVendedor.setText(nombreUsuario)
         self.ui.lbFolio.setText(str(idx))
@@ -419,8 +418,8 @@ class Base_PagarVenta(QtWidgets.QWidget, HasConnUser):
         self.ui.txtCliente.setText(nombreCliente)
         self.ui.txtCorreo.setText(correo)
         self.ui.txtTelefono.setText(telefono)
-        self.ui.txtCreacion.setText(formatDate(fechaCreacion))
-        self.ui.txtEntrega.setText(formatDate(fechaEntrega))
+        self.ui.txtCreacion.setText(formatdate(fechaCreacion))
+        self.ui.txtEntrega.setText(formatdate(fechaEntrega))
         self.ui.lbFolio.setText(str(self.id_ventas))
 
         # configurar tabla de productos
@@ -644,7 +643,7 @@ class App_ImprimirTickets(QtWidgets.QWidget):
         pagos = ManejadorVentas(conn).obtenerPagosVenta(idVenta)
 
         for i, (fecha, metodo, monto, r, v) in enumerate(pagos):
-            txt = f'  Pago {i + 1}: ${monto:.2f}, {metodo.lower()} ({formatDate(fecha)})'
+            txt = f'  Pago {i + 1}: ${monto:.2f}, {metodo.lower()} ({formatdate(fecha)})'
             checkbox = QtWidgets.QCheckBox(txt)
             checkbox.setFont(font)
             checkbox.setChecked(True)

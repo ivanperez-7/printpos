@@ -5,10 +5,10 @@ from PySide6.QtCore import QDate, QDateTime, Signal, Qt
 from .AdministrarClientes import App_RegistrarCliente, App_EditarCliente
 from .AdministrarVentas import Base_PagarVenta
 from .AdministrarProductos import Base_VisualizarProductos
-from pdf import ImpresoraOrdenes, ImpresoraTickets
+from core import Moneda, NumeroDecimal
 from mixins import ModuloPrincipal
+from pdf import ImpresoraOrdenes, ImpresoraTickets
 from sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
-from utils import Moneda
 from utils.mydataclasses import Venta
 from utils.mydecorators import fondo_oscuro, requiere_admin
 from utils.myutils import *
@@ -46,7 +46,7 @@ class App_CrearVenta(ModuloPrincipal):
 
         # datos por defecto
         self.ui.txtVendedor.setText(self.user.nombre)
-        self.ui.lbFecha.setText(formatDate(ventaDatos.fechaEntrega))
+        self.ui.lbFecha.setText(formatdate(ventaDatos.fechaEntrega))
         self.ui.btDeshacer.setVisible(False)
         self.ui.btDescuentosCliente.hide()
 
@@ -110,9 +110,9 @@ class App_CrearVenta(ModuloPrincipal):
         tabla.llenar(self.ventaDatos)
 
         # <calcular precios y mostrar>
-        self.ui.lbTotal.setText(str(total := self.ventaDatos.total))
-        self.ui.lbSubtotal.setText(str(subtotal := total / 1.16))
-        self.ui.lbImpuestos.setText(str(total - subtotal))
+        self.ui.lbTotal.setText(str(self.ventaDatos.total))
+        self.ui.lbImpuestos.setText(str(imp := self.ventaDatos.total * 0.16))
+        self.ui.lbSubtotal.setText(str(self.ventaDatos.total - imp))
         self.ui.lbDescuento.setText(str(self.ventaDatos.total_descuentos))
         # </calcular precios y mostrar>
 
@@ -141,22 +141,21 @@ class App_CrearVenta(ModuloPrincipal):
 
         # checar si el cliente es especial
         manejador = ManejadorClientes(self.conn)
-        especial, descuentos = manejador.obtenerDescuentosCliente(nombre, telefono)
-        self.ui.btDescuentosCliente.setVisible(especial)
+        cliente = manejador.obtenerCliente(nombre, telefono)
+        self.ui.btDescuentosCliente.setVisible(cliente.cliente_especial)
 
-        if descuentos is None or not (txt := descuentos.strip()):
+        if cliente.descuentos is None or not (txt := cliente.descuentos.strip()):
             txt = 'El cliente aún no tiene descuentos.'
         self.dialogoDescuentos.setText(txt)
 
     def cambiarFechaEntrega(self, fechaEntrega: QDateTime):
         self.ventaDatos.fechaEntrega = fechaEntrega
-        self.ui.lbFecha.setText(formatDate(self.ventaDatos.fechaEntrega))
+        self.ui.lbFecha.setText(formatdate(fechaEntrega))
         self.ui.btDeshacer.setVisible(not self.ventaDatos.esVentaDirecta)
 
     def agregarProducto(self, item):
-        man = ManejadorProductos(self.conn)
         self.ventaDatos.agregarProducto(item)
-        self.ventaDatos.reajustarPrecios(man)
+        self.ventaDatos.reajustarPrecios(ManejadorProductos(self.conn))
         self.colorearActualizar()    
 
     def quitarProducto(self):
@@ -213,28 +212,25 @@ class App_CrearVenta(ModuloPrincipal):
                     'Por favor, regístrelo como un nuevo cliente o seleccione "Público general".')
             return
 
-        # indices para acceder a la tupla `cliente`
-        id_, nombre, telefono, correo, direccion, rfc = range(6)
-
-        if not self.ventaDatos.esVentaDirecta and cliente[id_] == 1:
+        if not self.ventaDatos.esVentaDirecta and cliente.id == 1:
             warning('No se puede generar un pedido a nombre de "Público general".\n'
                     'Por favor, seleccione un cliente y/o regístrelo.')
             return
 
         if self.ui.tickFacturaSi.isChecked():
-            if cliente[id_] == 1:
+            if cliente.id == 1:
                 warning('No se puede generar una factura a nombre de "Público general".\n'
                         'Por favor, verifique que los datos del cliente sean correctos.')
                 return
 
-            if not all((cliente[correo], cliente[direccion], cliente[rfc])):
-                modulo = App_EditarCliente(cliente[id_], self.conn, self.user, self)
+            if not all((cliente.correo, cliente.direccion, cliente.rfc)):
+                modulo = App_EditarCliente(cliente.id, self.conn, self.user, self)
                 modulo.success.connect(self.establecerCliente)
 
                 warning('El cliente no tiene completos sus datos para la factura.\n'
                         'Por favor, llene los datos como corresponde.')
                 return
-        return cliente[id_]
+        return cliente.id
 
     def confirmarVenta(self):
         """ Abre ventana para confirmar y terminar la venta. """
@@ -461,8 +457,7 @@ class App_AgregarDescuento(QtWidgets.QWidget):
         self.ui.btListo.clicked.connect(self.done)
 
         # validadores numéricos
-        self.ui.txtPrecio.setValidator(
-            FabricaValidadores.NumeroDecimal)
+        self.ui.txtPrecio.setValidator(NumeroDecimal)
 
         self.ui.tabla_productos.quitarBordeCabecera()
         self.ui.tabla_productos.cambiarColorCabecera(Qt.black)
@@ -546,7 +541,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
             '*COTIZACIÓN DE VENTA*',
             f'Cliente: *{self.txtCliente}*',
             '-------------------------------------------',
-            f'Fecha: *{formatDate()}*',
+            f'Fecha: *{formatdate()}*',
             '-------------------------------------------'
         ]
 
@@ -626,8 +621,10 @@ class App_ConfirmarVenta(Base_PagarVenta):
 
     def obtenerDatosGenerales(self) -> tuple:
         manejadorClientes = ManejadorClientes(self.conn)
-        _, nombreCliente, telefono, correo, *_ = manejadorClientes.obtenerCliente(self.ventaDatos.id_cliente)
-        return (nombreCliente, correo, telefono, self.ventaDatos.fechaCreacion, self.ventaDatos.fechaEntrega)
+        cliente = manejadorClientes.obtenerCliente(self.ventaDatos.id_cliente)
+        
+        return (cliente.nombre, cliente.correo, cliente.telefono, 
+                self.ventaDatos.fechaCreacion, self.ventaDatos.fechaEntrega)
 
     def pagoPredeterminado(self) -> Moneda:
         return self.ventaDatos.total if self.ventaDatos.esVentaDirecta else self.ventaDatos.total / 2
@@ -718,8 +715,8 @@ class App_ConfirmarVenta(Base_PagarVenta):
     @requiere_admin
     def _abortar(self, conn) -> None:
         manejadorAdmin = ManejadorVentas(conn)
-
         estado = 'Cancelada por ' + manejadorAdmin.nombreUsuarioActivo
+        
         if manejadorAdmin.actualizarEstadoVenta(self.id_ventas, estado, commit=True):
             self.success.emit()
             self.close()

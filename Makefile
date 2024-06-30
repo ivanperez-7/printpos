@@ -19,17 +19,20 @@ launch:
 install:
 	nuitka $(EXEC).py \
 		--standalone \
-		--disable-console \
+		--windows-console-mode=disable \
 		--enable-plugin=pyside6 \
 		--nofollow-import-to=unittest \
+		--nofollow-import-to=pytest \
+		--nofollow-import-to=setuptools \
 		--nofollow-import-to=tkinter \
 		--nofollow-import-to=pyreadline3 \
-		--force-stderr-spec=%PROGRAM_BASE%.err.txt \
-		--force-stdout-spec=%PROGRAM_BASE%.out.txt \
+		--force-stderr-spec={PROGRAM_BASE}.err.txt \
+		--force-stdout-spec={PROGRAM_BASE}.out.txt \
 		--windows-icon-from-ico=icon.ico \
 		--assume-yes-for-downloads \
 		--remove-output
 #		--include-package-data=resources
+#		7za a -tzip .\printpos.zip .\$(EXEC).dist\*
 
 pip_reinstall:
 	pip --require-virtualenv freeze > installed.txt
