@@ -1,4 +1,3 @@
-""" Módulo con clase `Moneda` para manejar cantidades monetarias. """
 import operator
 import re
 
@@ -9,7 +8,6 @@ class _useless(type):
     @property
     def cero(cls) -> 'Moneda':
         return cls(0.)
-
 
 class Moneda(metaclass=_useless):
     r"""

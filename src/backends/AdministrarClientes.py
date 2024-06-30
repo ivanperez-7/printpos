@@ -4,6 +4,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QDate, Signal, QMutex
 
+from core import ROJO
 from mixins import ModuloPrincipal
 from sql import ManejadorClientes
 from utils.mydecorators import fondo_oscuro, run_in_thread
@@ -119,7 +120,7 @@ class App_AdministrarClientes(ModuloPrincipal):
             for col, dato in enumerate(cliente):
                 if isinstance(dato, datetime):
                     delta = QDate(dato).daysTo(timestamp_now)
-                    cell = '{} ({})'.format(formatDate(dato), daysTo(delta))
+                    cell = '{} ({})'.format(formatdate(dato), daysTo(delta))
                 else:
                     cell = str(dato or '')
                 tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
@@ -130,7 +131,7 @@ class App_AdministrarClientes(ModuloPrincipal):
                 ultimaVisita = QDate(cliente[6])
 
                 if ultimaVisita and ultimaVisita.daysTo(timestamp_now) >= dias:
-                    color = QColor(ColorsEnum.ROJO)
+                    color = QColor(ROJO)
                     tabla.item(row, 6).setBackground(color)
 
         tabla.resizeRowsToContents()
@@ -154,7 +155,7 @@ class App_AdministrarClientes(ModuloPrincipal):
 
             for col, dato in enumerate(cliente):
                 if isinstance(dato, datetime):
-                    cell = formatDate(dato)
+                    cell = formatdate(dato)
                 else:
                     cell = str(dato or '')
                 cliente[col] = cell
@@ -327,19 +328,14 @@ class App_EditarCliente(Base_EditarCliente):
         manejador = ManejadorClientes(self.conn)
         cliente = manejador.obtenerCliente(idx)
 
-        nombre = cliente[1]
-        celular = cliente[2].replace(' ', '')
-        correo = cliente[3]
-        especial = cliente[6]
+        self.agregarDatosPorDefecto(cliente.nombre, cliente.telefono, cliente.correo)
 
-        self.agregarDatosPorDefecto(nombre, celular, correo)
+        self.ui.txtDireccion.setPlainText(cliente.direccion)
+        self.ui.txtRFC.setText(cliente.rfc)
 
-        self.ui.txtDireccion.setPlainText(cliente[4])
-        self.ui.txtRFC.setText(cliente[5])
-
-        self.ui.checkDescuentos.setChecked(especial)
-        self.ui.txtDescuentos.setEnabled(especial)
-        self.ui.txtDescuentos.setPlainText(cliente[7])
+        self.ui.checkDescuentos.setChecked(cliente.cliente_especial)
+        self.ui.txtDescuentos.setEnabled(cliente.cliente_especial)
+        self.ui.txtDescuentos.setPlainText(cliente.descuentos)
 
     ####################
     # FUNCIONES ÚTILES #

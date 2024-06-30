@@ -9,9 +9,9 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import *
 from PySide6.QtCore import *
 
+from core import Moneda, ROJO, VERDE, AMARILLO
 from mixins import ModuloPrincipal, HasConnUser
-from . import Moneda
-from .myutils import unidecode, formatDate, ColorsEnum
+from .myutils import unidecode, formatdate
 
 __all__ = ['VentanaPrincipal', 'WidgetPago', 'StackPagos', 
            'TablaDatos', 'NumberEdit', 'LabelAdvertencia',
@@ -324,7 +324,7 @@ class TablaDatos(QtWidgets.QTableWidget):
                     cell = f'${dato:,.2f}'
                     sort_key = Moneda(dato)
                 elif isinstance(dato, datetime):
-                    cell = formatDate(dato)
+                    cell = formatdate(dato)
                     sort_key = dato
                 else:
                     cell = str(dato or '')
@@ -367,7 +367,7 @@ class TablaDatos(QtWidgets.QTableWidget):
         for row, compra in enumerate(data):
             for col, dato in enumerate(compra):
                 if isinstance(dato, datetime):
-                    cell = formatDate(dato)
+                    cell = formatdate(dato)
                 elif isinstance(dato, float):
                     cell = f'${dato:,.2f}'
                 else:
@@ -380,9 +380,9 @@ class TablaDatos(QtWidgets.QTableWidget):
             estado = self.item(row, 5).text()
 
             if estado.startswith('Cancelada'):
-                self.item(row, 5).setBackground(QColor(ColorsEnum.ROJO))
+                self.item(row, 5).setBackground(QColor(ROJO))
             elif estado.startswith('Terminada'):
-                self.item(row, 5).setBackground(QColor(ColorsEnum.VERDE))
+                self.item(row, 5).setBackground(QColor(VERDE))
 
     def _llenar_tabla_pedidos(self, data):
         bold = QFont()
@@ -392,7 +392,7 @@ class TablaDatos(QtWidgets.QTableWidget):
         for row, compra in enumerate(data):
             for col, dato in enumerate(compra):
                 if isinstance(dato, datetime):
-                    cell = formatDate(dato)
+                    cell = formatdate(dato)
                 elif isinstance(dato, float):
                     cell = f'${dato:,.2f}'
                 else:
@@ -406,11 +406,11 @@ class TablaDatos(QtWidgets.QTableWidget):
             estado = estado_cell.text()
 
             if estado.startswith('Cancelada'):
-                estado_cell.setBackground(QColor(ColorsEnum.ROJO))
+                estado_cell.setBackground(QColor(ROJO))
             elif estado.startswith('Entregado') or estado.startswith('Terminada'):
-                estado_cell.setBackground(QColor(ColorsEnum.VERDE))
+                estado_cell.setBackground(QColor(VERDE))
             elif estado.startswith('Recibido'):
-                estado_cell.setBackground(QColor(ColorsEnum.AMARILLO))
+                estado_cell.setBackground(QColor(AMARILLO))
 
                 button_cell = QtWidgets.QPushButton(' Enviar recordatorio')
                 button_cell.setIcon(icon)
@@ -420,7 +420,7 @@ class TablaDatos(QtWidgets.QTableWidget):
 
                 # resaltar pedidos con fechas de entrega ya pasadas
                 if QDateTime.currentDateTime() > compra[4]:
-                    self.item(row, 4).setBackground(QColor(ColorsEnum.ROJO))
+                    self.item(row, 4).setBackground(QColor(ROJO))
 
 
 class NumberEdit(QtWidgets.QLineEdit):
@@ -432,11 +432,10 @@ class NumberEdit(QtWidgets.QLineEdit):
         font = QFont()
         font.setPointSize(14)
         self.setFont(font)
-        self.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         # validadores para datos numéricos
-        self.setValidator(
-            QRegularExpressionValidator(r'\d{1,15}\.?\d{0,2}'))
+        self.setValidator(QRegularExpressionValidator(r'\d{1,15}\.?\d{0,2}'))
 
     @property
     def cantidad(self):
@@ -467,8 +466,8 @@ class LabelAdvertencia(QtWidgets.QLabel):
         font.setPointSize(14)
         self.setMinimumSize(282, 52)
         self.setFont(font)
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.setAlignment(Qt.AlignCenter)
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
 
         self.actualizarLabel()
 
@@ -477,9 +476,8 @@ class LabelAdvertencia(QtWidgets.QLabel):
         parent.model().rowsRemoved.connect(self.actualizarLabel)
 
     def relocate(self, event):
-        w_t, h_t = self.parent_.width(), self.parent_.height()
-        pm_x = (w_t - self.width()) // 2
-        pm_y = (h_t - self.height()) // 2
+        pm_x = (self.parent_.width() - self.width()) // 2
+        pm_y = (self.parent_.height() - self.height()) // 2
 
         self.move(pm_x, pm_y)
         QtWidgets.QTableWidget.resizeEvent(self.parent_, event)

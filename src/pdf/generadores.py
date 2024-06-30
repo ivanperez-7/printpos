@@ -1,5 +1,9 @@
 """ Provee métodos para generar diversos PDF en bytes. """
+from __future__ import annotations
+
+from datetime import datetime
 import io
+from typing import TYPE_CHECKING
 
 from reportlab.platypus import (
     Image,
@@ -14,21 +18,30 @@ from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
-from PyPDF2 import PdfReader, PdfWriter
-from PySide6.QtCore import QDateTime, QFile, QIODevice
+from pypdf import PdfReader, PdfWriter
+from PySide6.QtCore import QFile, QIODevice
 
+if TYPE_CHECKING:
+    from utils.mydataclasses import BaseItem, Caja
 from config import INI
-import sql
-from utils import Moneda
-from utils.mydataclasses import BaseItem, Caja
-from utils.myutils import *
+from core import Moneda
+from utils.myutils import chunkify, formatdate, stringify_float
 
 __all__ = ['generarOrdenCompra', 'generarTicketPDF', 'generarCortePDF']
 
 
-def generarOrdenCompra(manejadorVentas: sql.ManejadorVentas, idx: int):
+def generarOrdenCompra(
+    productos: list[tuple],
+    folio: int,
+    nombre: str,
+    telefono: str,
+    total: Moneda,
+    anticipo: Moneda,
+    fecha_creacion: datetime,
+    fecha_entrega: datetime
+):
     """ Genera un PDF con el orden de compra correspondiente a 
-        la venta con índice `idx` en la base de datos.
+        la venta con índice `folio` en la base de datos.
 
         La orden de compra contiene:
             - Folio de venta
@@ -38,61 +51,49 @@ def generarOrdenCompra(manejadorVentas: sql.ManejadorVentas, idx: int):
             - Total a pagar, anticipo recibido y saldo restante
             - Fecha de creación
             - Fecha de entrega """
-    # leer datos de venta y de cliente
-    nombre, telefono = manejadorVentas.obtenerClienteAsociado(idx)
-    creacion, entrega = manejadorVentas.obtenerFechas(idx)
+    assert isinstance(productos, list) and len(productos), f'Argumento {productos=} no valido.'
+    assert anticipo is not None, f'Venta {folio=} es directa, no pedido.'
 
-    total = manejadorVentas.obtenerImporteTotal(idx)
-    anticipo = manejadorVentas.obtenerAnticipo(idx)
+    # objetos para PDF combinado y PDF base
+    orden_writer = PdfWriter()
+    base_pdf = PdfReader('resources/pdf/orden_compra2023.pdf')
+    base_page = base_pdf.pages[0]
     
-    assert anticipo is not None, f'Venta {idx=} es directa, no pedido.'
-
-    # datos para la tabla de productos
-    productos = manejadorVentas.obtenerTablaOrdenCompra(idx)
-    # se dividen los productos de la orden en grupos de 6
-    chunks = chunkify(productos, 6)
-
-    writer = PdfWriter()
-
     estilos = getSampleStyleSheet()
     estilos.add(ParagraphStyle(name='codigo', fontSize=10))
     estilos.add(ParagraphStyle(name='especificaciones', fontSize=8, leading=11))
 
-    # itera sobre cada grupo de 6 productos
-    for chunk in chunks:
+    # divide en grupos de 6 productos e itera sobre ellos
+    for chunk in chunkify(productos, 6):
         # inicializar canvas y E/S de bytes
         packet = io.BytesIO()
         can = Canvas(packet)
 
         # <escribir datos en el canvas>
         can.setFont('Helvetica-Bold', 10)
-        can.drawRightString(373, 491, str(idx))
+        can.drawRightString(373, 491, str(folio))
+        can.drawCentredString(353, 192, str(total))
 
         can.setFont('Helvetica', 12)
-        can.drawRightString(373, 546, formatDate(creacion))
+        can.drawRightString(373, 546, formatdate(fecha_creacion))
 
         can.setFontSize(10)
         can.drawString(75, 493, nombre)
         can.drawString(75, 470, telefono)
-        can.drawString(150, 448, formatDate(entrega))
+        can.drawString(150, 448, formatdate(fecha_entrega))
         can.drawCentredString(353, 148, str(total - anticipo))
         can.drawCentredString(353, 170, str(anticipo))
 
-        can.setFont('Helvetica-Bold', 10)
-        can.drawCentredString(353, 192, str(total))
-        can.setFont('Helvetica', 10)
-
         for i, (prodCantidad, prodNombre, prodEspecificaciones,  # <tabla de productos>
                 prodPrecio, prodImporte) in enumerate(chunk):
-            y_sep = -32.4 * i  # separador por renglón de la tabla
+            y_sep = 32.4 * i  # separador por renglón de la tabla
 
-            can.drawCentredString(49, 381 + y_sep, stringify_float(prodCantidad))
-            can.drawCentredString(306, 381 + y_sep, f'{prodPrecio:,.2f}')
-            can.drawCentredString(353, 381 + y_sep, f'{prodImporte:,.2f}')
+            can.drawCentredString(49, 381 - y_sep, stringify_float(prodCantidad))
+            can.drawCentredString(306, 381 - y_sep, f'{prodPrecio:,.2f}')
+            can.drawCentredString(353, 381 - y_sep, f'{prodImporte:,.2f}')
 
             # nombre de producto, tamaño de fuente variable
             estilos['codigo'].fontSize = 10
-
             while estilos['codigo'].fontSize > 1:
                 text = Paragraph(prodNombre, estilos['codigo'])
                 w, h = text.wrap(59, 24)
@@ -100,11 +101,10 @@ def generarOrdenCompra(manejadorVentas: sql.ManejadorVentas, idx: int):
                 if h <= 24:
                     break
                 estilos['codigo'].fontSize -= 0.1
-            text.drawOn(can, 78.4, 398 + y_sep - h)
+            text.drawOn(can, 78.4, 398 - y_sep - h)
 
             # especificaciones, tamaño de fuente variable
             estilos['especificaciones'].fontSize = 9
-
             while estilos['especificaciones'].fontSize > 1:
                 text = Paragraph(prodEspecificaciones, estilos['especificaciones'])
                 w, h = text.wrap(125, 24)
@@ -112,33 +112,34 @@ def generarOrdenCompra(manejadorVentas: sql.ManejadorVentas, idx: int):
                 if h <= 24:
                     break
                 estilos['especificaciones'].fontSize -= 0.1
-            text.drawOn(can, 151.2, 398 + y_sep - h)  # </tabla de productos>
+            text.drawOn(can, 151.2, 398 - y_sep - h)             # </tabla de productos>
         # </escribir datos en el canvas>
 
-        # guardar cambios y mover puntero de bytes al principio
+        # guardar canvas y mover puntero de bytes al principio
         can.save()
         packet.seek(0)
-
         # crear variable para nuevo PDF y leer plantilla
-        new_pdf = PdfReader(packet)
-        existing_pdf = PdfReader(open('resources/pdf/orden_compra2023.pdf', 'rb'))
-
+        text_pdf = PdfReader(packet)
         # agregar trazados en el PDF de la plantilla
-        page = existing_pdf.pages[0]
-        page.merge_page(new_pdf.pages[0])
-        writer.add_page(page)
+        base_page.merge_page(text_pdf.pages[0])
+        orden_writer.add_page(base_page)
 
     # crear archivo temporal e imprimir
-    buffer = io.BytesIO()
-    writer.write(buffer)
+    orden_writer.write(buffer := io.BytesIO())
     assert buffer.getbuffer().nbytes > 0
     
     return buffer
 
 
-def generarTicketPDF(productos: list[BaseItem], vendedor: str, folio: int = 0,
-                     total: float = None, recibido: float = 0., metodo_pago: str = None,
-                     fechaCreacion: QDateTime = QDateTime.currentDateTime()):
+def generarTicketPDF(
+    productos: list[BaseItem],
+    vendedor: str,
+    folio: int = 0,
+    total: float = None,
+    recibido: float = 0.,
+    metodo_pago: str = None,
+    fechaCreacion: datetime = datetime.now()
+):
     """ Función general para generar el ticket de compra o presupuesto.
         Contiene:
             - Logo
@@ -147,7 +148,7 @@ def generarTicketPDF(productos: list[BaseItem], vendedor: str, folio: int = 0,
             - Nombre del vendedor
             - Folio de venta
             - Fecha y hora de creación """
-    assert isinstance(productos, list), f'Argumento {productos=} no valido.'
+    assert isinstance(productos, list) and len(productos), f'Argumento {productos=} no valido.'
     
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer,
@@ -222,7 +223,6 @@ def generarTicketPDF(productos: list[BaseItem], vendedor: str, folio: int = 0,
         folio = ''
 
     calle, fracc = INI.DIRECCION_SUCURSAL
-    telefono = INI.TELEFONO
 
     # convertir imagen en .qrc a imagen normal
     loggg = QFile(':img/resources/images/logo.png')
@@ -230,25 +230,25 @@ def generarTicketPDF(productos: list[BaseItem], vendedor: str, folio: int = 0,
     baits = io.BytesIO(loggg.readAll().data())
 
     t = 0.017  # dimensiones del logo
-    w, h = (3479 * t, 1845 * t)
+    w, h = (3479*t, 1845*t)
     # </contenido del PDF>
 
     elements = [
-        Image(baits, width=w * mm, height=h * mm),
+        Image(baits, width=w*mm, height=h*mm),
         Spacer(1, 6),
 
         Paragraph(calle, styles['Center']),
         Paragraph(fracc, styles['Center']),
         Spacer(1, 6),
 
-        Paragraph(telefono, styles['Center']),
+        Paragraph(INI.TELEFONO, styles['Center']),
         Spacer(1, 6),
 
         Paragraph('* ' * 40, styles['Center']),
         Paragraph(titulo, styles['Center']),
         Paragraph('* ' * 40, styles['Center']),
         Paragraph(folio, styles['Left']),
-        Paragraph('<b>Fecha</b>: ' + formatDate(fechaCreacion), styles['Left']),
+        Paragraph('<b>Fecha</b>: ' + formatdate(fechaCreacion), styles['Left']),
         Spacer(1, 10),
 
         tabla_productos,
@@ -289,7 +289,6 @@ def generarCortePDF(caja: Caja, responsable: str):
             - Tabla de resumen de movimientos
                 Método de pago -> Ingresos | Egresos """
     buffer = io.BytesIO()
-
     doc = SimpleDocTemplate(buffer, pagesize=(80 * mm, 297 * mm),
                             topMargin=0., bottomMargin=0.,
                             leftMargin=0., rightMargin=0.)
@@ -329,7 +328,7 @@ def generarCortePDF(caja: Caja, responsable: str):
         Spacer(1, 6),
 
         Paragraph('Realizado por: ' + responsable, styles['Left']),
-        Paragraph('Fecha y hora: ' + formatDate(), styles['Left']),
+        Paragraph('Fecha y hora: ' + formatdate(), styles['Left']),
         Spacer(1, 6),
 
         Paragraph('Resumen de ingresos', styles['Heading3']),

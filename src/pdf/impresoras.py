@@ -1,13 +1,13 @@
 """ Provee clases para enviar documentos PDF, en bytes, a impresoras. """
 import io
 
-import fitz
+import pymupdf
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QImage
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 
-from .generadores import *
+from .generadores import generarOrdenCompra, generarCortePDF, generarTicketPDF
 from config import INI
 import sql
 from utils.mydecorators import run_in_thread
@@ -29,17 +29,17 @@ class ImpresoraPDF:
     def enviarAImpresora(self, data: io.BytesIO):
         """ Convertir PDF a imagen y mandar a impresora. """
         assert self.printer, 'Impresora aún no inicializada.'
-
-        doc = fitz.open(stream=data)
+        
         painter = QPainter()
-
         if not painter.begin(self.printer):
-            return
-
+            raise RuntimeError(f'oops can\'t start {self.printer=}')
+        
+        doc = pymupdf.open(stream=data)
         for i, page in enumerate(doc):
-            pix = page.get_pixmap(dpi=300, alpha=False)
-            image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
-            # image.save(randFile('jpg'))
+            pix: pymupdf.Pixmap = page.get_pixmap(dpi=300, alpha=False)
+            image = QImage(pix.samples, pix.w, pix.h, pix.stride, QImage.Format_RGB888)
+            if INI.SAVE_PNG:
+                image.save(randFile('jpg'))
 
             rect = painter.viewport()
             qtImageScaled = image.scaled(rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -76,7 +76,15 @@ class ImpresoraOrdenes(ImpresoraPDF):
     @run_in_thread
     def imprimirOrdenCompra(self, idx: int):
         manejador = sql.ManejadorVentas(self.conn)
-        data = generarOrdenCompra(manejador, idx)
+        
+        nombre, telefono = manejador.obtenerClienteAsociado(idx)
+        creacion, entrega = manejador.obtenerFechas(idx)
+        total = manejador.obtenerImporteTotal(idx)
+        anticipo = manejador.obtenerAnticipo(idx)
+        productos = manejador.obtenerTablaOrdenCompra(idx)
+        
+        data = generarOrdenCompra(productos, idx, nombre, telefono,
+                                  total, anticipo, creacion, entrega)
         self.enviarAImpresora(data)
 
 

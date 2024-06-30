@@ -1,15 +1,14 @@
 from PySide6 import QtWidgets
-from PySide6.QtCore import QDateTime, QMutex, Signal
+from PySide6.QtCore import QMutex, Signal
 from PySide6.QtGui import QFont
 
-from pdf import ImpresoraTickets
+from core import Moneda, NumeroDecimal
 from mixins import ModuloPrincipal
-from sql import ManejadorCaja, ManejadorMetodosPago
-from utils import Moneda
+from pdf import ImpresoraTickets
+from sql import ManejadorCaja
 from utils.mydataclasses import Caja
 from utils.mydecorators import run_in_thread
 from utils.myinterfaces import InterfazFechas
-from utils.myutils import FabricaValidadores
 from utils.mywidgets import LabelAdvertencia
 
 
@@ -182,8 +181,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         self.user = user
 
         # validadores para datos numéricos
-        self.ui.txtCantidad.setValidator(
-            FabricaValidadores.NumeroDecimal)
+        self.ui.txtCantidad.setValidator(NumeroDecimal)
 
         self.show()
 
@@ -197,7 +195,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         if not (monto and motivo):
             return
 
-        id_metodo = ManejadorMetodosPago(self.conn).obtenerIdMetodo(self.metodo)
+        id_metodo = ManejadorCaja(self.conn).obtenerIdMetodoPago(self.metodo)
         caja_db_parametros = (
             Moneda(monto),
             motivo,
