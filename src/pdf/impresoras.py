@@ -11,7 +11,7 @@ from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 from .generadores import generarOrdenCompra, generarCortePDF, generarTicketPDF
 from config import INI
 from interfaces import IWarningLogger
-from sql import ManejadorVentas, Connection
+from sql import ManejadorVentas
 from utils.mydecorators import run_in_thread
 from utils.myutils import randFile
 
@@ -20,8 +20,7 @@ class ImpresoraPDF:
     """ Clase general para manejar impresoras y enviar archivos a estas. """
     warning_logger: IWarningLogger = Inject()
 
-    def __init__(self, conn: Connection = None, parent: QWidget = None):
-        self.conn = conn
+    def __init__(self, parent: QWidget = None):
         self.parent = parent
         self.printer = self.obtenerImpresora()
 
@@ -76,9 +75,7 @@ class ImpresoraOrdenes(ImpresoraPDF):
             return printer
 
     @run_in_thread
-    def imprimirOrdenCompra(self, idx: int):
-        manejador = ManejadorVentas(self.conn)
-        
+    def imprimirOrdenCompra(self, idx: int, manejador: ManejadorVentas = None):
         productos = manejador.obtenerTablaOrdenCompra(idx)
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
@@ -105,11 +102,15 @@ class ImpresoraTickets(ImpresoraPDF):
             return QPrinter(pInfo, QPrinter.HighResolution)
 
     @run_in_thread
-    def imprimirTicketCompra(self, idx: int, nums: list[int] | slice = None):
+    def imprimirTicketCompra(
+        self,
+        idx: int,
+        nums: list[int] | slice = None,
+        manejador: ManejadorVentas = None
+    ):
         """ Genera el ticket de compra a partir de un identificador en la base de datos.
             Recibe un arreglo de índices para imprimir pagos específicos. """
         # obtener datos de la compra, de la base de datos
-        manejador = ManejadorVentas(self.conn)
         productos = list(manejador.obtenerTablaTicket(idx))
 
         # cambiar método de pago (abreviatura)

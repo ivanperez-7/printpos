@@ -32,7 +32,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
 
         self.mutex = QMutex()
 
-        LabelAdvertencia(self.ui.tabla_ventasDirectas, '¡No se encontró ninguna venta!')
+        LabelAdvertencia(self.ui.tabla_directas, '¡No se encontró ninguna venta!')
         LabelAdvertencia(self.ui.tabla_pedidos, '¡No se encontró ningún pedido!')
 
         # otras variables importantes
@@ -70,22 +70,17 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         self.rescanned.connect(self.update_display)
 
         detallesVenta = lambda idxs: App_DetallesVenta(idxs.siblingAtColumn(0).data(), conn, self)
-        self.ui.tabla_ventasDirectas.doubleClicked.connect(detallesVenta)
+        self.ui.tabla_directas.doubleClicked.connect(detallesVenta)
         self.ui.tabla_pedidos.doubleClicked.connect(detallesVenta)
         self.ui.tabWidget.currentChanged.connect(self.cambiar_pestana)
 
-        (InterfazPaginas(
+        self.paginado = InterfazPaginas(
             self.ui.btAdelante, self.ui.btUltimo,
-            self.ui.btAtras, self.ui.btPrimero, self.ui.tabla_ventasDirectas)
-         .paginaCambiada.connect(self.update_display))
-
-        (InterfazPaginas(
-            self.ui.btAdelante, self.ui.btUltimo,
-            self.ui.btAtras, self.ui.btPrimero, self.ui.tabla_pedidos)
-         .paginaCambiada.connect(self.update_display))
+            self.ui.btAtras, self.ui.btPrimero, self.ui.tabla_directas)
+        self.paginado.pagina_cambiada.connect(self.update_display)
 
         # configurar y llenar tablas
-        self.ui.tabla_ventasDirectas.configurarCabecera(lambda col: col in {0, 3, 4, 5})
+        self.ui.tabla_directas.configurarCabecera(lambda col: col in {0, 3, 4, 5})
         self.ui.tabla_pedidos.configurarCabecera(lambda col: col in {0, 3, 4, 5, 6})
 
     def showEvent(self, event):
@@ -100,7 +95,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
     # ==================
     @property
     def tabla_actual(self):
-        return [self.ui.tabla_ventasDirectas, self.ui.tabla_pedidos][self.ui.tabWidget.currentIndex()]
+        return [self.ui.tabla_directas, self.ui.tabla_pedidos][self.ui.tabWidget.currentIndex()]
 
     def cambiar_pestana(self, nuevo=None):
         """ Cambia el label con el contador de ventas, según la pestaña,
@@ -115,14 +110,14 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             label = 'pedidos'
             num_compras = len(self.all_pedidos)
 
-        num_pagina = self.tabla_actual.property('paginaActual')
-
         self.ui.lbContador.setText(
             '{} {} en la base de datos.'.format(num_compras, label))
         self.ui.lbPagina.setText(
-            '{} de {}'.format(num_pagina + 1, ceil(num_compras / self.chunk_size) or 1))
+            '{} de {}'.format(self.tabla_actual.paginaActual,
+                              ceil(num_compras / self.chunk_size) or 1))
 
         self.tabla_actual.resizeRowsToContents()
+        self.paginado.tabla = self.tabla_actual
 
     @run_in_thread
     def rescan_update(self, *args):
@@ -157,13 +152,12 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             compras = [c for c in compras
                        if son_similar(txt_busqueda, c[self.filtro.idx])]
 
-        chunks = chunkify(compras, self.chunk_size) or []
+        tabla = self.ui.tabla_directas
+        currentPage = clamp(tabla.paginaActual, 1, ceil(len(compras) / self.chunk_size))
+        tabla.paginaActual = currentPage  # truncar valor de la página si se sale del rango
 
-        tabla = self.ui.tabla_ventasDirectas
-        currentPage = clamp(tabla.property('paginaActual'), 0, ceil(len(compras) / self.chunk_size) - 1)
-        tabla.setProperty('paginaActual', currentPage)  # truncar valor de la página si se sale del rango
-
-        data = chunks[currentPage]
+        chunks = chunkify(compras, self.chunk_size) or [[]]
+        data = chunks[currentPage-1]  # TODO: usar FIRST y SKIP
 
         tabla.modelo = tabla.Modelos.TABLA_VENTAS_DIRECTAS
         tabla.llenar(data)
@@ -176,13 +170,12 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             compras = [c for c in compras
                        if son_similar(txt_busqueda, c[self.filtro.idx])]
 
-        chunks = chunkify(compras, self.chunk_size) or []
-
         tabla = self.ui.tabla_pedidos
-        currentPage = clamp(tabla.property('paginaActual'), 0, ceil(len(compras) / self.chunk_size) - 1)
-        tabla.setProperty('paginaActual', currentPage)  # truncar valor de la página si se sale del rango
+        currentPage = clamp(tabla.paginaActual, 1, ceil(len(compras) / self.chunk_size))
+        tabla.paginaActual = currentPage  # truncar valor de la página si se sale del rango
 
-        data = chunks[currentPage]
+        chunks = chunkify(compras, self.chunk_size) or [[]]
+        data = chunks[currentPage-1]  # TODO: usar FIRST y SKIP
 
         tabla.modelo = tabla.Modelos.TABLA_PEDIDOS
         tabla.llenar(data)
@@ -299,15 +292,15 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
                           'Se imprimirá el ticket de compra de la venta '
                           f'con folio {idVenta}. ¿Desea continuar?')
         if ret == qm.Yes:
-            impresora = ImpresoraTickets(self.conn)
-            impresora.imprimirTicketCompra(idVenta)
+            impresora = ImpresoraTickets()
+            impresora.imprimirTicketCompra(idVenta, manejador=ManejadorVentas(self.conn))
 
     def imprimirOrden(self):
         """ Imprime orden de compra de un pedido dado el folio de esta. """
         if (selected := self.tabla_actual.selectedItems()) \
                 and selected[6].text().startswith('Recibido'):
-            impresora = ImpresoraOrdenes(self.conn, self)
-            impresora.imprimirOrdenCompra(selected[0].text())
+            impresora = ImpresoraOrdenes(self)
+            impresora.imprimirOrdenCompra(selected[0].text(), manejador=ManejadorVentas(self.conn))
 
 
 #################################
@@ -450,8 +443,8 @@ class App_TerminarVenta(Base_PagarVenta):
 
         if ret == qm.Yes:
             slais = slice(-self.ui.stackPagos.count(), None)
-            impresora = ImpresoraTickets(self.conn)
-            impresora.imprimirTicketCompra(self.id_ventas, slais)
+            impresora = ImpresoraTickets()
+            impresora.imprimirTicketCompra(self.id_ventas, slais, manejador=ManejadorVentas(self.conn))
 
         self.success.emit()
         self.close()
@@ -518,6 +511,6 @@ class App_ImprimirTickets(QtWidgets.QWidget):
                 if wdg.isChecked()]
 
         if idxs:
-            impresora = ImpresoraTickets(self.conn)
-            impresora.imprimirTicketCompra(self.idVenta, idxs)
+            impresora = ImpresoraTickets()
+            impresora.imprimirTicketCompra(self.idVenta, idxs, manejador=ManejadorVentas(self.conn))
             self.close()

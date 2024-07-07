@@ -10,6 +10,7 @@ from interfaces import IWarningLogger
 
 class _InvokeMethod(_QObject):
     called = _Signal()
+    
     def __init__(self, method):
         """ Invokes a method on the main thread. Taking care of garbage collection "bugs". """
         super().__init__()
@@ -39,9 +40,6 @@ def _back_to_main(func):
 
 @egg
 class WarningWidget(QMessageBox, IWarningLogger):
-    def __init__(self):
-        super().__init__()
-    
     @_back_to_main
     def display(self, title: str, body: str = '') -> None:
         self.setWindowTitle('Atención')

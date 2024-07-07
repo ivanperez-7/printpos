@@ -3,6 +3,8 @@ from PySide6.QtWidgets import (QPushButton, QDateEdit, QTableWidget,
                                QToolButton, QLineEdit, QMenu)
 from PySide6.QtCore import QDate, QObject, Signal
 
+from utils.mywidgets import TablaDatos
+
 __all__ = ['InterfazPaginas', 'InterfazFechas', 'InterfazFiltro']
 
 
@@ -11,7 +13,7 @@ class InterfazPaginas(QObject):
         
         Lo único que hace esta interfaz es manejar la propiedad 
         `paginaActual` de la tabla asociada. """
-    paginaCambiada = Signal()
+    pagina_cambiada = Signal()
 
     def __init__(
         self,
@@ -19,13 +21,11 @@ class InterfazPaginas(QObject):
         btUltimo: QPushButton,
         btAtras: QPushButton,
         btPrimero: QPushButton,
-        tabla_display: QTableWidget
+        tabla_display: TablaDatos
     ):
         super().__init__(tabla_display)
 
         self.tabla = tabla_display
-
-        tabla_display.setProperty('paginaActual', 0)
 
         btAdelante.clicked.connect(self.ir_adelante)
         btUltimo.clicked.connect(self.ir_ultimo)
@@ -33,22 +33,20 @@ class InterfazPaginas(QObject):
         btPrimero.clicked.connect(self.ir_primero)
 
     def ir_adelante(self):
-        currentPage = self.tabla.property('paginaActual')
-        self.tabla.setProperty('paginaActual', currentPage + 1)
-        self.paginaCambiada.emit()
+        self.tabla.paginaActual += 1
+        self.pagina_cambiada.emit()
 
     def ir_ultimo(self):
-        self.tabla.setProperty('paginaActual', 1e6)
-        self.paginaCambiada.emit()
+        self.tabla.paginaActual = 1e6
+        self.pagina_cambiada.emit()
 
     def ir_atras(self):
-        currentPage = self.tabla.property('paginaActual')
-        self.tabla.setProperty('paginaActual', currentPage - 1)
-        self.paginaCambiada.emit()
+        self.tabla.paginaActual -= 1
+        self.pagina_cambiada.emit()
 
     def ir_primero(self):
-        self.tabla.setProperty('paginaActual', 0)
-        self.paginaCambiada.emit()
+        self.tabla.paginaActual = 1
+        self.pagina_cambiada.emit()
 
 
 class InterfazFechas(QObject):

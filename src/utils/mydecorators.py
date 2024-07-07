@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QWidget, QMessageBox, QDialog
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
-from sql import conectar_db, DatabaseManager, Error
+from sql import conectar_firebird, DatabaseManager, Error
 
 __all__ = ['requiere_admin', 'run_in_thread', 'fondo_oscuro', 'function_details']
 
@@ -85,7 +85,7 @@ class Dialog_ObtenerAdmin(QDialog):
         if not (usuario and psswd):
             return
         try:
-            conn = conectar_db(usuario, psswd, 'ADMINISTRADOR')
+            conn = conectar_firebird(usuario, psswd, 'ADMINISTRADOR')
             manejador = DatabaseManager(conn)
         except (Error, AssertionError):
             self.close()

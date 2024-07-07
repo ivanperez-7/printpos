@@ -11,8 +11,8 @@ import sql
 
 
 class ConnectionsMixin:  # cuentas válidas y existentes
-    con_user = sql.conectar_db('pablo', '1', 'vendedor')
-    con_admin = sql.conectar_db('ivanperez', '123', 'administrador')
+    con_user = sql.conectar_firebird('pablo', '1', 'vendedor')
+    con_admin = sql.conectar_firebird('ivanperez', '123', 'administrador')
 
 
 class RandomTests(TestCase, ConnectionsMixin):
@@ -42,7 +42,7 @@ class RandomTests(TestCase, ConnectionsMixin):
         self.assertEqual(user.usuario, 'PABLO')
         
         with self.assertRaises(sql.Error):
-            nah = sql.conectar_db('pablo', '123', 'vendedor')  # cuenta no existente
+            nah = sql.conectar_firebird('pablo', '123', 'vendedor')  # cuenta no existente
             self.assertIsNone(nah)
     
     def test_db_handlers(self):
@@ -51,7 +51,7 @@ class RandomTests(TestCase, ConnectionsMixin):
         self.assertIsNotNone(man.fetchall('SELECT * FROM clientes;'))
         
         with self.assertRaises(AssertionError) as cm:   # conexión válida pero con rol inválido
-            nah = sql.conectar_db('pablo', '1', 'administrador')
+            nah = sql.conectar_firebird('pablo', '1', 'administrador')
             man2 = sql.DatabaseManager(nah, handle_exceptions=False)
             self.assertIsNone(man2.nombreUsuarioActivo)
         
