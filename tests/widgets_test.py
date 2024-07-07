@@ -8,8 +8,8 @@ import sql
 
 
 class ConnectionsMixin:  # cuentas válidas y existentes
-    con_user = sql.conectar_db('pablo', '1', 'vendedor')
-    con_admin = sql.conectar_db('ivanperez', '123', 'administrador')
+    con_user = sql.conectar_firebird('pablo', '1', 'vendedor')
+    con_admin = sql.conectar_firebird('ivanperez', '123', 'administrador')
 
 
 class WidgetsTest(TestCase, ConnectionsMixin):

@@ -16,7 +16,7 @@ Connection = fdb.Connection
 Error = fdb.Error
 
 
-def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
+def conectar_firebird(usuario: str, psswd: str, rol: str = None) -> Connection:
     """ Crea conexión a base de datos y regresa objeto Connection.
         Levanta sql.Error, por lo que siempre se debe usar en un bloque `try-except`. """
     try:

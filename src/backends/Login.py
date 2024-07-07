@@ -8,7 +8,7 @@ from config import INI
 from core import IdFirebird
 from interfaces import IWarningLogger, IControllerWindow
 import licensing
-from sql import conectar_db, ManejadorUsuarios, Connection, Error
+from sql import conectar_firebird, ManejadorUsuarios, Connection, Error
 from utils.mydataclasses import Usuario
 from utils.mydecorators import function_details, run_in_thread
 
@@ -111,7 +111,7 @@ class App_Login(QtWidgets.QWidget):
         self.ui.lbEstado.setStyleSheet('color: black;')
         self.ui.lbEstado.setText('Conectando al servidor...')
         try:
-            conn = conectar_db(usuario, psswd, rol)
+            conn = conectar_firebird(usuario, psswd, rol)
             manejador = ManejadorUsuarios(conn, handle_exceptions=False)
             user = Usuario.generarUsuarioActivo(manejador)
             

@@ -688,18 +688,19 @@ class App_ConfirmarVenta(Base_PagarVenta):
         return manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True)
 
     def dialogoExito(self) -> None:
+        manejador=ManejadorVentas(self.conn)
         if not self.ventaDatos.esVentaDirecta:
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
 
-            impresora = ImpresoraOrdenes(self.conn, self)
-            impresora.imprimirOrdenCompra(self.id_ventas)
+            impresora = ImpresoraOrdenes(self)
+            impresora.imprimirOrdenCompra(self.id_ventas, manejador=manejador)
         else:
             ret = qm.question(self, 'Éxito',
                               'Venta terminada. ¡Recuerde ofrecer el ticket de compra! '
                               '¿Desea imprimirlo?')
             if ret == qm.Yes:
-                impresora = ImpresoraTickets(self.conn)
-                impresora.imprimirTicketCompra(self.id_ventas)
+                impresora = ImpresoraTickets()
+                impresora.imprimirTicketCompra(self.id_ventas, manejador=manejador)
         self.success.emit()
         self.close()
 
