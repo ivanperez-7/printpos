@@ -1,56 +1,53 @@
 import socket
-from typing import Type
 
+from haps import inject
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt, QMutex, Signal
 
 from config import INI
 from core import IdFirebird
+from interfaces import IWarningLogger, IControllerWindow
 import licensing
-import sql
+from sql import conectar_db, ManejadorUsuarios, Connection, Error
 from utils.mydataclasses import Usuario
-from utils.mydecorators import run_in_thread
-from utils.mywidgets import WarningDialog
+from utils.mydecorators import function_details, run_in_thread
 
 
 #####################
 # VENTANA PRINCIPAL #
 #####################
-licencia_validada = False
+licencia_validada = True
 
 class App_Login(QtWidgets.QWidget):
     """ Backend para la pantalla de inicio de sesión. """
-    validated = Signal()
     failure = Signal(licensing.Errores)
+    logged_in = Signal(Connection, Usuario)
 
-    logged = Signal(sql.Connection, Usuario)
-    warning = Signal(str)
-
-    def __init__(self, ventana_principal: Type = None):
+    @inject
+    def __init__(self, ventana_principal: IControllerWindow, warning_logger: IWarningLogger):
         from ui.Ui_Login import Ui_Login
 
         super().__init__()
         self.ui = Ui_Login()
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
-
+        
         self.ventana_principal = ventana_principal
+        self.warning_logger = warning_logger
         self.mutex = QMutex()
 
         # validador para nombre de usuario
         self.ui.inputUsuario.setValidator(IdFirebird)
 
-        self.logged.connect(self.crearVentanaPrincipal)
-        self.warning.connect(self.crearWarningDialog)
-        self.validated.connect(self.exito_verificacion)
         self.failure.connect(self.error_verificacion)
+        self.logged_in.connect(self.crearVentanaPrincipal)
 
         self.ui.btAjustes.clicked.connect(lambda: AjustesDB(self))
 
         if not licencia_validada:
             self.validar_licencia()
         else:
-            self.exito_verificacion()
+            self.ui.btIngresar.clicked.connect(self.verificar_info)
         
         self.ui.inputUsuario.setFocus()
         self.show()
@@ -68,7 +65,7 @@ class App_Login(QtWidgets.QWidget):
 
         activado, error = licensing.validar_licencia()
         if activado:
-            self.validated.emit()
+            self.ui.btIngresar.clicked.connect(self.verificar_info)
         else:
             self.failure.emit(error)
         self.ui.lbEstado.clear()
@@ -76,19 +73,13 @@ class App_Login(QtWidgets.QWidget):
         global licencia_validada
         licencia_validada = activado
 
-    def exito_verificacion(self):
-        """ En método separado para regresar al hilo principal."""
-        self.ui.btIngresar.clicked.connect(self.verificar_info)
-        print("exito_verificacion()")
-
-    def error_verificacion(self, error):
+    @function_details
+    def error_verificacion(self, error: licensing.Errores):
         """ En método separado para regresar al hilo principal."""
         match error:
-            case licensing.Errores.LICENCIA_NO_EXISTENTE:
-                self.ui.btIngresar.clicked.connect(lambda: self._crear_dialogo(error))
-
-            case licensing.Errores.LICENCIA_NO_VALIDA:
-                self.ui.btIngresar.clicked.connect(lambda: self._crear_dialogo(error))
+            case licensing.Errores.LICENCIA_NO_EXISTENTE | licensing.Errores.LICENCIA_NO_VALIDA:
+                self.ui.btIngresar.clicked.connect(
+                    lambda: self.crear_widget_activacion(error))
 
             case licensing.Errores.VERIFICACION_FALLIDA:
                 QtWidgets.QMessageBox.warning(
@@ -96,10 +87,10 @@ class App_Login(QtWidgets.QWidget):
                     'Ha ocurrido un error al validar su licencia en línea.\n'
                     'Por favor, verifique su acceso a internet e intente nuevamente.')
 
-    def _crear_dialogo(self, error):
+    def crear_widget_activacion(self, error):
         wdg = DialogoActivacion(self)
         wdg.success.connect(lambda: (self.ui.btIngresar.clicked.disconnect(),
-                                     self.exito_verificacion()))
+                                     self.ui.btIngresar.clicked.connect(self.verificar_info)))
 
         if error == licensing.Errores.LICENCIA_NO_VALIDA:
             wdg.ui.label.setText('¡Su licencia ha expirado!')
@@ -109,46 +100,43 @@ class App_Login(QtWidgets.QWidget):
         """ Verifica datos ingresados consultando la tabla Usuarios. """
         if not self.mutex.try_lock():
             return
-        usuario = self.ui.inputUsuario.text().upper()
-        psswd = self.ui.inputContrasenia.text()
-        rol = self.ui.groupRol.checkedButton().text().lower()
+        usuario, psswd, rol = (self.ui.inputUsuario.text().upper(),
+                               self.ui.inputContrasenia.text(),
+                               self.ui.groupRol.checkedButton().text().lower())
 
         if not (usuario and psswd):
-            self.ui.lbEstado.clear()
             self.mutex.unlock()
             return
 
         self.ui.lbEstado.setStyleSheet('color: black;')
         self.ui.lbEstado.setText('Conectando al servidor...')
         try:
-            conn = sql.conectar_db(usuario, psswd, rol)
-            manejador = sql.ManejadorUsuarios(conn, handle_exceptions=False)
+            conn = conectar_db(usuario, psswd, rol)
+            manejador = ManejadorUsuarios(conn, handle_exceptions=False)
             user = Usuario.generarUsuarioActivo(manejador)
             
-            self.logged.emit(conn, user)
+            self.logged_in.emit(conn, user)  # crearVentanaPrincipal
         except AssertionError:
             self.ui.lbEstado.setStyleSheet('color: red;')
             self.ui.lbEstado.setText(f'¡Usuario sin permisos para {rol}!')
-        except sql.Error as err:
+        except Error as err:
             txt, sqlcode, gdscode = err.args
             if gdscode in [335544472, 335544352]:
                 self.ui.lbEstado.setStyleSheet('color: red;')
                 self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
             else:
-                self.warning.emit(txt)
+                self.crearWarningDialog(txt)
         except Exception as err:  # arrojado por fdb al no encontrarse librería Firebird
-            self.warning.emit(str(err))
+            self.crearWarningDialog(str(err))
         finally:
             self.mutex.unlock()
 
-    def crearWarningDialog(self, txt):
+    def crearWarningDialog(self, txt: str):
         self.ui.lbEstado.clear()
-        wdg = WarningDialog('No se pudo acceder al servidor.', txt)
+        self.warning_logger.display('No se pudo acceder al servidor.', txt)
 
     def crearVentanaPrincipal(self, conn, user):
-        """ En método separado para regresar al hilo principal."""
-        if self.ventana_principal:
-            self.mainWindow = self.ventana_principal(conn, user)
+        self.ventana_principal.crear(conn, user)
         self.close()
 
 
@@ -227,7 +215,7 @@ class DialogoActivacion(QtWidgets.QWidget):
             'Su licencia ha sido activada con éxito.'
         )
 
-    def error_verificacion(self, error):
+    def error_verificacion(self, error: licensing.Errores):
         """ En método separado para regresar al hilo principal."""
         match error:
             case licensing.Errores.ACTIVACION_FALLIDA:

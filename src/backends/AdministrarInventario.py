@@ -3,7 +3,7 @@ from PySide6.QtGui import QFont, QColor, QPixmap, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
 from core import ROJO, NumeroDecimal
-from mixins import ModuloPrincipal
+from interfaces import IModuloPrincipal
 from sql import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myutils import *
@@ -13,14 +13,13 @@ from utils.mywidgets import LabelAdvertencia
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_AdministrarInventario(ModuloPrincipal):
+class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
     """ Backend para la ventana de administración de inventario. """
     rescanned = Signal()
 
-    def __init__(self, conn, user):
+    def crear(self, conn, user):
         from ui.Ui_AdministrarInventario import Ui_AdministrarInventario
 
-        super().__init__()
         self.ui = Ui_AdministrarInventario()
         self.ui.setupUi(self)
 
@@ -62,7 +61,7 @@ class App_AdministrarInventario(ModuloPrincipal):
         self.ui.lbContador.setText(f'Recuperando información...')
 
         manejador = ManejadorInventario(self.conn)
-        self.all = manejador.obtenerTablaPrincipal()
+        self.all = manejador.obtenerTablaPrincipal() or []
         self.ui.lbContador.setText(f'{len(self.all)} elementos en la base de datos.')
 
         self.rescanned.emit()
@@ -216,9 +215,8 @@ class Base_EditarInventario(QtWidgets.QWidget):
         # llenar caja de opciones con productos
         manejador = ManejadorProductos(self.conn)
         codigos = manejador.obtenerListaCodigos()
+        
         nuevo.boxProducto.addItems([codigo for codigo, in codigos])
-
-        # modificar valores a los de la base de datos
         nuevo.productoSeleccionado = codigo
         nuevo.cantidadProducto = cantidad
 
@@ -268,10 +266,8 @@ class Base_EditarInventario(QtWidgets.QWidget):
             return
 
         # ejecuta internamente un fetchone, por lo que se desempaca luego
-        result = self.insertar_o_modificar(inventario_db_parametros)
-        if not result:
+        if not (result := self.insertar_o_modificar(inventario_db_parametros)):
             return
-
         idx, = result
         manejador = ManejadorInventario(self.conn, self.MENSAJE_ERROR)
 

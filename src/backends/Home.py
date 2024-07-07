@@ -4,18 +4,17 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap, QColor
 from PySide6.QtCore import QDate, Qt, QRect, QPropertyAnimation, QEasingCurve, Signal
 
-from mixins import ModuloPrincipal
-import sql
+from interfaces import IModuloPrincipal
+from sql import ManejadorVentas, ManejadorInventario
 
 
-class App_Home(ModuloPrincipal):
+class App_Home(QtWidgets.QWidget, IModuloPrincipal):
     """ Backend para la pantalla principal. """
     new_module = Signal(type)
     
-    def __init__(self, conn, user):
+    def crear(self, conn, user):
         from ui.Ui_Home import Ui_Home
 
-        super().__init__()
         self.ui = Ui_Home()
         self.ui.setupUi(self)
 
@@ -60,26 +59,16 @@ class App_Home(ModuloPrincipal):
             lab.setPixmap(self._create_pixmap(self.ui.listaNotificaciones.count()))
             lab.setGeometry(392, 5, 26, 26)
 
-        from .AdministrarVentas import App_AdministrarVentas
-        from .AdministrarInventario import App_AdministrarInventario
-        from .AdministrarProductos import App_AdministrarProductos
-        from .AdministrarClientes import App_AdministrarClientes
-        from .AdministrarUsuarios import App_AdministrarUsuarios
-        from .Ajustes import App_Ajustes
-        from .Caja import App_Caja
-        from .CrearVenta import App_CrearVenta
-        from .Reportes import App_Reportes
-
         button_class_mapping = {
-            self.ui.btClientes: App_AdministrarClientes,
-            self.ui.btInventario: App_AdministrarInventario,
-            self.ui.btProductos: App_AdministrarProductos,
-            self.ui.btUsuarios: App_AdministrarUsuarios,
-            self.ui.btVentas: App_AdministrarVentas,
-            self.ui.btAjustes: App_Ajustes,
-            self.ui.btCaja: App_Caja,
-            self.ui.btCrearVenta: App_CrearVenta,
-            self.ui.btReportes: App_Reportes
+            self.ui.btClientes: 'App_AdministrarClientes',
+            self.ui.btInventario: 'App_AdministrarInventario',
+            self.ui.btProductos: 'App_AdministrarProductos',
+            self.ui.btUsuarios: 'App_AdministrarUsuarios',
+            self.ui.btVentas: 'App_AdministrarVentas',
+            self.ui.btAjustes: 'App_Ajustes',
+            self.ui.btCaja: 'App_Caja',
+            self.ui.btCrearVenta: 'App_CrearVenta',
+            self.ui.btReportes: 'App_Reportes'
         }
 
         # conectar botones con acciones
@@ -134,14 +123,14 @@ class ListaNotificaciones(QtWidgets.QListWidget):
     def agregarNotificaciones(self, conn, user):
         """ Llena la caja de notificaciones. """
         items = []
-        manejador = sql.ManejadorVentas(conn)
+        manejador = ManejadorVentas(conn)
 
-        numPendientes, = manejador.obtenerNumPendientes(user.id)
+        numPendientes = manejador.obtenerNumPendientes(user.id)
 
         if numPendientes:
             items.append(f'Tiene {numPendientes} pedidos pendientes.')
 
-        manejador = sql.ManejadorInventario(conn)
+        manejador = ManejadorInventario(conn)
 
         for nombre, stock, minimo in manejador.obtenerInventarioFaltante():
             items.append(

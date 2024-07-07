@@ -1,6 +1,7 @@
 """ Provee clases para enviar documentos PDF, en bytes, a impresoras. """
 import io
 
+from haps import Inject
 import pymupdf
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt
@@ -9,16 +10,17 @@ from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 
 from .generadores import generarOrdenCompra, generarCortePDF, generarTicketPDF
 from config import INI
-import sql
+from interfaces import IWarningLogger
+from sql import ManejadorVentas, Connection
 from utils.mydecorators import run_in_thread
 from utils.myutils import randFile
-from utils.mywidgets import WarningDialog
 
 
 class ImpresoraPDF:
     """ Clase general para manejar impresoras y enviar archivos a estas. """
+    warning_logger: IWarningLogger = Inject()
 
-    def __init__(self, conn: sql.Connection = None, parent: QWidget = None):
+    def __init__(self, conn: Connection = None, parent: QWidget = None):
         self.conn = conn
         self.parent = parent
         self.printer = self.obtenerImpresora()
@@ -75,13 +77,13 @@ class ImpresoraOrdenes(ImpresoraPDF):
 
     @run_in_thread
     def imprimirOrdenCompra(self, idx: int):
-        manejador = sql.ManejadorVentas(self.conn)
+        manejador = ManejadorVentas(self.conn)
         
-        nombre, telefono = manejador.obtenerClienteAsociado(idx)
-        creacion, entrega = manejador.obtenerFechas(idx)
+        productos = manejador.obtenerTablaOrdenCompra(idx)
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
-        productos = manejador.obtenerTablaOrdenCompra(idx)
+        nombre, telefono = manejador.obtenerClienteAsociado(idx)
+        creacion, entrega = manejador.obtenerFechas(idx)
         
         data = generarOrdenCompra(productos, idx, nombre, telefono,
                                   total, anticipo, creacion, entrega)
@@ -97,7 +99,7 @@ class ImpresoraTickets(ImpresoraPDF):
         pInfo = QPrinterInfo.printerInfo(INI.IMPRESORA)
 
         if not pInfo.printerName():
-            WarningDialog(f'¡No se encontró la impresora {INI.IMPRESORA}!')
+            self.warning_logger.display(f'¡No se encontró la impresora {INI.IMPRESORA}!')
             return None
         else:
             return QPrinter(pInfo, QPrinter.HighResolution)
@@ -107,7 +109,7 @@ class ImpresoraTickets(ImpresoraPDF):
         """ Genera el ticket de compra a partir de un identificador en la base de datos.
             Recibe un arreglo de índices para imprimir pagos específicos. """
         # obtener datos de la compra, de la base de datos
-        manejador = sql.ManejadorVentas(self.conn)
+        manejador = ManejadorVentas(self.conn)
         productos = list(manejador.obtenerTablaTicket(idx))
 
         # cambiar método de pago (abreviatura)

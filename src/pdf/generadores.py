@@ -56,8 +56,6 @@ def generarOrdenCompra(
 
     # objetos para PDF combinado y PDF base
     orden_writer = PdfWriter()
-    base_pdf = PdfReader('resources/pdf/orden_compra2023.pdf')
-    base_page = base_pdf.pages[0]
     
     estilos = getSampleStyleSheet()
     estilos.add(ParagraphStyle(name='codigo', fontSize=10))
@@ -121,7 +119,10 @@ def generarOrdenCompra(
         # crear variable para nuevo PDF y leer plantilla
         text_pdf = PdfReader(packet)
         # agregar trazados en el PDF de la plantilla
+        base_pdf = PdfReader('resources/pdf/orden_compra2023.pdf')
+        base_page = base_pdf.pages[0]
         base_page.merge_page(text_pdf.pages[0])
+        
         orden_writer.add_page(base_page)
 
     # crear archivo temporal e imprimir
@@ -222,8 +223,6 @@ def generarTicketPDF(
         pie = '¡Muchas gracias por su visita!'
         folio = ''
 
-    calle, fracc = INI.DIRECCION_SUCURSAL
-
     # convertir imagen en .qrc a imagen normal
     loggg = QFile(':img/resources/images/logo.png')
     assert loggg.open(QIODevice.ReadOnly), 'cant open logo.png pls check'
@@ -237,8 +236,8 @@ def generarTicketPDF(
         Image(baits, width=w*mm, height=h*mm),
         Spacer(1, 6),
 
-        Paragraph(calle, styles['Center']),
-        Paragraph(fracc, styles['Center']),
+        Paragraph(INI.CALLE_1, styles['Center']),
+        Paragraph(INI.CALLE_2, styles['Center']),
         Spacer(1, 6),
 
         Paragraph(INI.TELEFONO, styles['Center']),

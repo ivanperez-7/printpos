@@ -5,8 +5,8 @@ from PySide6.QtWidgets import QMessageBox as qm
 from PySide6.QtGui import QFont, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
-from core import Moneda
-from mixins import ModuloPrincipal, HasConnUser
+from backends.shared_widgets import Base_PagarVenta
+from interfaces import IModuloPrincipal
 from pdf import ImpresoraOrdenes, ImpresoraTickets
 from sql import ManejadorVentas
 from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
@@ -18,16 +18,15 @@ from utils.mywidgets import LabelAdvertencia
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_AdministrarVentas(ModuloPrincipal):
+class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
     """ Backend para la ventana de administración de ventas.
         TODO:
         -   ocultamiento de folios """
     rescanned = Signal()
 
-    def __init__(self, conn, user):
+    def crear(self, conn, user):
         from ui.Ui_AdministrarVentas import Ui_AdministrarVentas
 
-        super().__init__()
         self.ui = Ui_AdministrarVentas()
         self.ui.setupUi(self)
 
@@ -126,7 +125,7 @@ class App_AdministrarVentas(ModuloPrincipal):
         self.tabla_actual.resizeRowsToContents()
 
     @run_in_thread
-    def rescan_update(self, *args):  # ??? TODO: ignorar parámetros
+    def rescan_update(self, *args):
         """ Actualiza la tabla y el contador de clientes.
             Lee de nuevo la tabla de clientes, si se desea. """
         if not self.mutex.try_lock():
@@ -139,8 +138,8 @@ class App_AdministrarVentas(ModuloPrincipal):
         restrict = self.user.id if self.user.rol != 'ADMINISTRADOR' else None
 
         manejador = ManejadorVentas(self.conn)
-        self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, restrict)
-        self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta)
+        self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, restrict) or []
+        self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta) or []
 
         self.rescanned.emit()
 
@@ -158,7 +157,7 @@ class App_AdministrarVentas(ModuloPrincipal):
             compras = [c for c in compras
                        if son_similar(txt_busqueda, c[self.filtro.idx])]
 
-        chunks = chunkify(compras, self.chunk_size) or [[]]
+        chunks = chunkify(compras, self.chunk_size) or []
 
         tabla = self.ui.tabla_ventasDirectas
         currentPage = clamp(tabla.property('paginaActual'), 0, ceil(len(compras) / self.chunk_size) - 1)
@@ -177,7 +176,7 @@ class App_AdministrarVentas(ModuloPrincipal):
             compras = [c for c in compras
                        if son_similar(txt_busqueda, c[self.filtro.idx])]
 
-        chunks = chunkify(compras, self.chunk_size) or [[]]
+        chunks = chunkify(compras, self.chunk_size) or []
 
         tabla = self.ui.tabla_pedidos
         currentPage = clamp(tabla.property('paginaActual'), 0, ceil(len(compras) / self.chunk_size) - 1)
@@ -385,159 +384,6 @@ class App_DetallesVenta(QtWidgets.QWidget):
             self.close()
 
 
-class Base_PagarVenta(QtWidgets.QWidget, HasConnUser):
-    def __init__(self, idx: int, conn, user, parent=None) -> None:
-        from ui.Ui_ConfirmarVenta import Ui_ConfirmarVenta
-
-        super().__init__(parent)
-
-        self.ui = Ui_ConfirmarVenta()
-        self.ui.setupUi(self)
-        self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
-        self.setFixedSize(833, 795)
-
-        self.stackPagos = self.ui.stackPagos
-
-        # guardar conexión y usuario como atributos
-        self.conn = conn
-        self.user = user
-
-        if idx is None:
-            self.id_ventas = self.obtenerIdVenta()
-        else:
-            self.id_ventas = idx
-
-        assert self.id_ventas is not None
-
-        # llenar labels y campos de texto
-        self.total = self.calcularTotal()
-        self.ui.lbTotal.setText(f'{self.total}')
-
-        nombreCliente, correo, telefono, fechaCreacion, fechaEntrega = self.obtenerDatosGenerales()
-
-        self.ui.txtCliente.setText(nombreCliente)
-        self.ui.txtCorreo.setText(correo)
-        self.ui.txtTelefono.setText(telefono)
-        self.ui.txtCreacion.setText(formatdate(fechaCreacion))
-        self.ui.txtEntrega.setText(formatdate(fechaEntrega))
-        self.ui.lbFolio.setText(str(self.id_ventas))
-
-        # configurar tabla de productos
-        self.ui.tabla_productos.quitarBordeCabecera()
-        self.ui.tabla_productos.configurarCabecera(
-            lambda col: col != 2,
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-
-        # eventos para widgets
-        self.ui.btListo.clicked.connect(self.listo)
-        self.ui.btCancelar.clicked.connect(self.abortar)
-        self.ui.txtAnticipo.textChanged.connect(self.cambiarAnticipo)
-        self.stackPagos.cambio_pagos.connect(self._handleCounters)
-
-        # interfaz de botones para stackPagos
-        self.ui.btAgregar.clicked.connect(self.stackPagos.agregarPago)
-        self.ui.btAgregar.clicked.connect(self.modificar_contador)
-        self.ui.btQuitar.clicked.connect(self.stackPagos.quitarPago)
-        self.ui.btQuitar.clicked.connect(self.modificar_contador)
-        self.ui.btAnterior.clicked.connect(self.stackPagos.retroceder)
-        self.ui.btAnterior.clicked.connect(self.modificar_contador)
-        self.ui.btSiguiente.clicked.connect(self.stackPagos.avanzar)
-        self.ui.btSiguiente.clicked.connect(self.modificar_contador)
-
-        self.stackPagos.total = self.ui.txtAnticipo.cantidad = self.pagoPredeterminado()
-        self.stackPagos.agregarPago()
-
-    ####################
-    # FUNCIONES ÚTILES #
-    ####################
-    def calcularTotal(self) -> Moneda:
-        raise NotImplementedError('CLASE BASE BROU')
-
-    def obtenerDatosGenerales(self) -> tuple:
-        raise NotImplementedError('CLASE BASE BROU')
-
-    def pagoPredeterminado(self) -> Moneda:
-        raise NotImplementedError('CLASE BASE BROU')
-
-    def obtenerIdVenta(self) -> int:
-        raise NotImplementedError('CLASE BASE BROU')
-
-    @property
-    def para_pagar(self) -> Moneda:
-        return self.ui.txtAnticipo.cantidad
-
-    def cambiarAnticipo(self) -> None:
-        """ Cambiar el anticipo pagado por el cliente. """
-        self.stackPagos.total = self.ui.txtAnticipo.cantidad
-        self._handleCounters()
-
-    def modificar_contador(self) -> None:
-        self.ui.lbContador.setText('Pago {}/{}'.format(self.stackPagos.currentIndex() + 1,
-                                                       self.stackPagos.count()))
-
-    def _handleCounters(self) -> None:
-        """ Seguir las mismas reglas de `StackPagos.pagosValidos`
-            para actualizar y colorear contadores. """
-        stack = self.stackPagos
-        n_efec = [wdg.metodoSeleccionado for wdg in stack].count('Efectivo')
-
-        if n_efec:  # hay pagos en efectivo
-            m = sum(wdg.montoPagado for wdg in stack  # pagado en efectivo
-                    if wdg.metodoSeleccionado == 'Efectivo')
-            m = max(Moneda.cero, m - stack.restanteEnEfectivo)  # pagado - restante (en efectivo)
-            self.ui.lbCambio.setText(f'Cambio: ${m}')
-        else:
-            self.ui.lbCambio.clear()  # ignorar cambio
-
-        res = stack.total - sum(wdg.montoPagado for wdg in stack)  # total - pagado (cualquiera)
-
-        if res < 0.0 and (not n_efec or stack.restanteEnEfectivo <= 0.):
-            # sobra dinero y sin efectivo, o efectivo no necesario
-            style = 'color: red;'
-        else:  # recalcular restante, considerando que hay efectivo y necesario
-            res = max(Moneda.cero, res)  # por el cambio a entregar
-            style = ''
-        if stack.pagosValidos:  # todo bien
-            style = 'color: green;'
-
-        self.ui.lbRestante.setStyleSheet(style)
-        self.ui.lbRestante.setText(f'Restante: ${res}')
-
-        self.ui.btListo.setEnabled(stack.pagosValidos
-                                   and 0. <= stack.total <= self.total)
-
-    def actualizarEstadoVenta(self) -> bool:
-        raise NotImplementedError('CLASE BASE BROU')
-
-    def dialogoExito(self) -> None:
-        raise NotImplementedError('CLASE BASE BROU')
-
-    def listo(self) -> None:
-        """ Concluye la venta de la siguiente forma:
-            1. Inserta pagos en tabla ventas_pagos.
-            2. Si actualizarEstadoVenta, entonces dialogoExito. """
-        manejadorVentas = ManejadorVentas(self.conn)
-
-        # registrar pagos en tabla ventas_pagos
-        for wdg in self.stackPagos:
-            if wdg.metodoSeleccionado == 'Efectivo':
-                monto = self.stackPagos.restanteEnEfectivo
-                recibido = wdg.montoPagado if monto else None
-            else:
-                monto = wdg.montoPagado
-                recibido = None
-
-            if not manejadorVentas.insertarPago(self.id_ventas, wdg.metodoSeleccionado,
-                                                monto, recibido, self.user.id):
-                return
-
-        if self.actualizarEstadoVenta():
-            self.dialogoExito()
-
-    def abortar(self) -> None:
-        raise NotImplementedError('CLASE BASE BROU')
-
-
 @fondo_oscuro
 class App_TerminarVenta(Base_PagarVenta):
     """ Backend para la ventana para terminar una venta sobre pedido. """
@@ -570,10 +416,9 @@ class App_TerminarVenta(Base_PagarVenta):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def calcularTotal(self) -> Moneda:
+    def calcularTotal(self):
         manejador = ManejadorVentas(self.conn)
-        saldo = manejador.obtenerSaldoRestante(self.id_ventas)
-        return saldo
+        return manejador.obtenerSaldoRestante(self.id_ventas)
 
     def obtenerDatosGenerales(self):
         manejador = ManejadorVentas(self.conn)

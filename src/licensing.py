@@ -146,7 +146,7 @@ def validar_licencia():
         )
         r = r.json()
     except requests.exceptions.ConnectionError:
-        _sleep(0.2)
+        _sleep(0.5)
         return False, Errores.VERIFICACION_FALLIDA
 
     if (

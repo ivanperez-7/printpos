@@ -1,9 +1,10 @@
 """ Provee varias funciones útiles utilizadas frecuentemente. """
+import random
 import re
+import string
 import unicodedata
 from urllib.parse import quote
 import webbrowser as web
-import uuid
 
 from openpyxl import Workbook
 from openpyxl.styles import Font
@@ -50,6 +51,15 @@ def daysTo(num_days: int):
         return f"hace {years_ago} año{'s' if years_ago > 1 else ''}"
 
 
+def formatdate(date=None):
+    """ Da formato en texto a un dato QDateTime o datetime de Python.
+        Ejemplo: 08 de febrero 2023, 4:56 p. m. """
+    locale = QLocale(QLocale.Spanish, QLocale.Mexico)
+    formatted = locale.toString(date or QDateTime.currentDateTime(),
+                                "d 'de' MMMM yyyy, h:mm ap")
+    return unicodedata.normalize('NFKD', formatted)
+
+
 def unidecode(input_str: str):
     """ Elimina (normaliza) los acentos en una cadena de texto y 
         convierte a minúsculas. Ejemplo: 'Pérez' -> 'perez'. """
@@ -58,17 +68,19 @@ def unidecode(input_str: str):
     return normalized.lower()
 
 
+def randFile(ext: str = ''):
+    """ Genera archivo de extensión dada con nombre aleatorio. """
+    ext = re.sub('[^a-zA-Z]*', '', ext)
+    chars = string.ascii_letters + string.digits
+    rand = ''.join(random.choice(chars) for _ in range(8))
+    return f'auto-{rand}.{ext}'
+
+
 def stringify_float(f):
     try:
         return f'{int(f):,}' if f.is_integer() else f'{f:,.2f}'
     except AttributeError:
         return f'{f:,}'
-
-
-def randFile(ext: str):
-    """ Genera archivo de extensión dada con nombre aleatorio. """
-    ext = re.sub('[^a-zA-Z]*', '', ext)
-    return uuid.uuid4().hex + '.' + ext
 
 
 def son_similar(obj1, obj2):
@@ -80,15 +92,6 @@ def son_similar(obj1, obj2):
     str2_clean = unidecode(re.sub(r'\W+', ' ', str(obj2)))
 
     return str1_clean in str2_clean
-
-
-def formatdate(date=None):
-    """ Da formato en texto a un dato QDateTime o datetime de Python.
-        Ejemplo: 08 de febrero 2023, 4:56 p. m. """
-    locale = QLocale(QLocale.Spanish, QLocale.Mexico)
-    formatted = locale.toString(date or QDateTime.currentDateTime(),
-                                "d 'de' MMMM yyyy, h:mm ap")
-    return unicodedata.normalize('NFKD', formatted)
 
 
 def exportarXlsx(rutaArchivo, titulos, datos):

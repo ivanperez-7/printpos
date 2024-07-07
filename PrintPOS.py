@@ -1,11 +1,11 @@
 """ ARCHIVO PRINCIPAL.
     Inicia una QApplication y abre la ventana de iniciar sesión. """
+from haps import Container as IoC
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTranslator
 from PySide6.QtGui import QPalette, Qt
 
 from backends.Login import App_Login
-from utils.mywidgets import VentanaPrincipal
 
 
 class PrintPOS(QApplication):
@@ -21,7 +21,7 @@ class PrintPOS(QApplication):
     
     def iniciar(self):
         """ Crea ventana de iniciar sesión e invoca método exec(). """
-        login = App_Login(VentanaPrincipal)
+        login = App_Login()
         return self.exec()
     
     def configurarPaleta(self):
@@ -42,7 +42,7 @@ class PrintPOS(QApplication):
     def instalarTraductor(self):
         """ Instala traductor para idioma español. """
         tr = QTranslator(self)
-        tr.load('qtbase_es.qm', directory='resources/translations')
+        tr.load('resources/translations/qtbase_es.qm')
         return self.installTranslator(tr)
     
     def __call__(self):
@@ -52,6 +52,8 @@ class PrintPOS(QApplication):
         return 'QApplication afitriona de PrintPOS.'
 
 app: PrintPOS = QApplication.instance() or PrintPOS()
+
+IoC.autodiscover(['src.implementations'])
 
 
 if __name__ == '__main__':

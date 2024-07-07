@@ -45,6 +45,26 @@ class WidgetsTest(TestCase, ConnectionsMixin):
         wdg3.ui.txtAltoMaterial.setText('1')
         wdg3.ui.txtAnchoMaterial.setText('1')
         wdg3.ui.btAgregar.click()
+    
+    def test_admin_decorator(self):
+        from utils.mydecorators import requiere_admin
+        
+        @requiere_admin
+        def func_with_no_args():
+            pass
+        
+        @requiere_admin
+        def func_with_conn_arg(conn):
+            self.assertIsNotNone(conn)
+        
+        @requiere_admin
+        def func_with_conn_arg_and_users(a, b, conn):
+            self.assertIsNotNone(conn)
+            self.assertEqual(2+3, 5)
+        
+        func_with_no_args()
+        func_with_conn_arg()
+        func_with_conn_arg_and_users(2, 5)
 
 
 if __name__ == '__main__':

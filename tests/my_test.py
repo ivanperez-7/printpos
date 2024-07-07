@@ -98,21 +98,29 @@ class RandomTests(TestCase, ConnectionsMixin):
         self.assertIsNotNone(man.tablaPedidos())
         
     def test_dataclass_venta_and_item(self):
-        from utils.mydataclasses import Venta, ItemVenta
+        from utils.mydataclasses import Venta, ItemVenta, ItemGranFormato
         
         venta = Venta()
         venta.agregarProducto(
-            ItemVenta(1, 'IMP B/N 1', 'Impresión ByN', 0.7, 0., random.randint(1, 99), '', False))
+            ItemVenta(1, 'IMP B/N 1', 'Impresión ByN', 0.7, 0.1, random.randint(1, 99), '', False))
         venta.fechaEntrega = QDateTime(QDate(2024, 6, 29), QTime(13, 27, 2))
         venta.id_cliente = 1
         
         self.assertFalse(venta.ventaVacia or venta.esVentaDirecta)
         
         venta.agregarProducto(
-            ItemVenta(1, 'IMP B/N 1', 'Impresión ByN', 0.7, 0., random.randint(10, 200), '', False))
+            ItemVenta(1, 'IMP B/N 1', 'Impresión ByN', 0.7, 0.1, random.randint(10, 200), '', False))
         venta.reajustarPrecios(sql.ManejadorProductos(self.con_user))
         
         self.assertFalse(venta[1].precio_unit == 0.7)
+        self.assertGreater(venta.total_descuentos, 0.)
+        
+        venta.agregarProducto(
+            p1 := ItemGranFormato(4, 'METRO2', 'Metro lona', 90., 0., 2, '', 1.))
+        self.assertEqual(p1.importe, p1.precio_unit*p1.cantidad)
+        venta.agregarProducto(
+            p2 := ItemGranFormato(4, 'METRO3', 'Metro algo', 110., 0., 1.5, '', 2.))
+        self.assertEqual(p2.importe, p2.precio_unit*p2.min_m2)
     
     def test_registrar_venta_detalles_y_pagos(self):
         con = self.con_user

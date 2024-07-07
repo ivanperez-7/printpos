@@ -2,11 +2,10 @@ from PySide6 import QtWidgets
 from PySide6.QtWidgets import QMessageBox as qm
 from PySide6.QtCore import QDate, QDateTime, Signal, Qt
 
-from .AdministrarClientes import App_RegistrarCliente, App_EditarCliente
-from .AdministrarVentas import Base_PagarVenta
-from .AdministrarProductos import Base_VisualizarProductos
+from backends.AdministrarClientes import App_RegistrarCliente, App_EditarCliente
+from backends.shared_widgets import Base_VisualizarProductos, Base_PagarVenta
 from core import Moneda, NumeroDecimal
-from mixins import ModuloPrincipal
+from interfaces import IModuloPrincipal
 from pdf import ImpresoraOrdenes, ImpresoraTickets
 from sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
 from utils.mydataclasses import Venta
@@ -19,15 +18,14 @@ from utils.mywidgets import LabelAdvertencia, SpeechBubble
 # VENTANA PRINCIPAL #
 #####################
 
-class App_CrearVenta(ModuloPrincipal):
+class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
     """ Backend para la función de crear ventas.
         TODO:
             - mandar ticket por whatsapp o imprimir, sí o sí """
 
-    def __init__(self, conn, user):
+    def crear(self, conn, user):
         from ui.Ui_CrearVenta import Ui_CrearVenta
 
-        super().__init__()
         self.ui = Ui_CrearVenta()
         self.ui.setupUi(self)
 
@@ -169,7 +167,7 @@ class App_CrearVenta(ModuloPrincipal):
             self._quitarProducto(selected)
 
     @requiere_admin
-    def _quitarProducto(self, selected, conn):
+    def _quitarProducto(self, selected):
         """ En método separado para solicitar contraseña. """
         for row in sorted(selected, reverse=True):
             self.ventaDatos.quitarProducto(row)
@@ -258,7 +256,7 @@ class App_CrearVenta(ModuloPrincipal):
             modulo.show()
 
     @requiere_admin
-    def _salir(self, conn):
+    def _salir(self):
         """ Cierra la ventana y regresa al inicio. """
         self.go_back.emit()
 
@@ -482,7 +480,7 @@ class App_AgregarDescuento(QtWidgets.QWidget):
     # FUNCIONES ÚTILES #
     # ================ #
     @requiere_admin
-    def done(self, conn):
+    def done(self):
         """ Acepta los cambios e inserta descuento en la lista de productos. """
         try:
             row = self.ui.tabla_productos.selectedItems()[0].row()
@@ -678,7 +676,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
             super().listo()
 
     @requiere_admin
-    def listoAdmin(self, conn) -> None:
+    def listoAdmin(self) -> None:
         """ Saltar verificación con cuenta de administrador. """
         super().listo()
 

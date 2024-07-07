@@ -3,7 +3,7 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, Signal
 
 from core import IdFirebird
-from mixins import ModuloPrincipal
+from interfaces import IModuloPrincipal
 from sql import ManejadorUsuarios
 from utils.mydecorators import fondo_oscuro
 from utils.myinterfaces import InterfazFiltro
@@ -15,17 +15,16 @@ from utils.mywidgets import LabelAdvertencia
 # VENTANA PRINCIPAL #
 #####################
 
-class App_AdministrarUsuarios(ModuloPrincipal):
+class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
     """ Backend para la ventana de administración de usuarios.
         TODO:
             - mecanismo de reseteo de contraseña (sin permisos de admin)
             - registros de acciones: inicios de sesión, modificación de ajustes y usuarios, acciones en general
             - personalización: foto de perfil y colores del UI """
 
-    def __init__(self, conn, user):
+    def crear(self, conn, user):
         from ui.Ui_AdministrarUsuarios import Ui_AdministrarUsuarios
 
-        super().__init__()
         self.ui = Ui_AdministrarUsuarios()
         self.ui.setupUi(self)
 

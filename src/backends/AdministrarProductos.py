@@ -2,10 +2,9 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
-from core import Moneda, NumeroDecimal, ROJO, Runner
-from mixins import ModuloPrincipal
+from core import ROJO
+from interfaces import IModuloPrincipal
 from sql import ManejadorInventario, ManejadorProductos
-from utils.mydataclasses import ItemVenta, ItemGranFormato
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import *
@@ -15,14 +14,13 @@ from utils.mywidgets import LabelAdvertencia
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_AdministrarProductos(ModuloPrincipal):
+class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
     """ Backend para la ventana de administración de productos. """
     rescanned = Signal()
 
-    def __init__(self, conn, user):
+    def crear(self, conn, user):
         from ui.Ui_AdministrarProductos import Ui_AdministrarProductos
 
-        super().__init__()
         self.ui = Ui_AdministrarProductos()
         self.ui.setupUi(self)
 
@@ -156,312 +154,6 @@ class App_AdministrarProductos(ModuloPrincipal):
 #################################
 # VENTANAS USADAS POR EL MÓDULO #
 #################################
-class Base_VisualizarProductos(QtWidgets.QWidget):
-    dataChanged = Signal()  # señal para actualizar tabla en hilo principal
-
-    def __init__(self, conn, parent=None):
-        from ui.Ui_VisualizadorProductos import Ui_VisualizadorProductos
-
-        super().__init__(parent)
-
-        self.ui = Ui_VisualizadorProductos()
-        self.ui.setupUi(self)
-        self.setFixedSize(self.size())
-
-        self.warnings = True
-
-        LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
-        LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
-
-        # guardar conexión, usuario y un manejador de DB como atributos
-        self.conn = conn
-        self.manejador = ManejadorProductos(conn)
-
-        # eventos para widgets
-        self.ui.searchBar.textChanged.connect(self.update_display)
-        self.ui.groupFiltro.buttonClicked.connect(self.update_display)
-        self.ui.tabWidget.currentChanged.connect(
-            lambda: self.tabla_actual.resizeRowsToContents())
-        self.dataChanged.connect(self.rescan_display)
-
-        self.ui.btIntercambiarProducto.clicked.connect(self.intercambiarProducto)
-        self.ui.btIntercambiarMaterial.clicked.connect(self.intercambiarMaterial)
-
-        self.ui.txtAncho.textChanged.connect(self.medidasHandle)
-        self.ui.txtAlto.textChanged.connect(self.medidasHandle)
-        self.ui.grupoBotonesAlto.buttonClicked.connect(self.medidasHandle)
-        self.ui.grupoBotonesAncho.buttonClicked.connect(self.medidasHandle)
-
-        # validadores para datos numéricos
-        self.ui.txtCantidad.setValidator(NumeroDecimal)
-        self.ui.txtAlto.setValidator(NumeroDecimal)
-        self.ui.txtAncho.setValidator(NumeroDecimal)
-        self.ui.txtAltoMaterial.setValidator(NumeroDecimal)
-        self.ui.txtAnchoMaterial.setValidator(NumeroDecimal)
-
-        self.ui.tabla_seleccionar.configurarCabecera(lambda col: col != 1)
-        self.ui.tabla_granformato.configurarCabecera(lambda col: col != 1)
-        self.ui.tabla_seleccionar.setSortingEnabled(True)
-        self.ui.tabla_granformato.setSortingEnabled(True)
-
-        # evento para leer cambios en tabla PRODUCTOS
-        self.event_conduit = self.conn.event_conduit(['cambio_productos'])
-        self.event_reader = Runner(self.startEvents)
-        self.event_reader.start()
-
-    def showEvent(self, event):
-        self.rescan_display()
-
-    def closeEvent(self, event):
-        # no recomendado generalmente para terminar hilos, sin embargo,
-        # esta vez se puede hacer así al no ser una función crítica.
-        self.event_reader.terminate()
-        self.event_reader.wait(0)
-        self.event_reader.moveToThread(None)
-        self.event_conduit.close()
-        event.accept()
-
-    # ==================
-    #  FUNCIONES ÚTILES
-    # ==================
-    @property
-    def tabla_actual(self):
-        return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][self.ui.tabWidget.currentIndex()]
-
-    def startEvents(self):   # async
-        # eventos de Firebird para escuchar cambios en tabla productos
-        self.event_conduit.begin()
-        while True:
-            self.event_conduit.wait()
-            self.dataChanged.emit()
-            self.event_conduit.flush()
-
-    def medidasHandle(self):
-        raise NotImplementedError('BEIS CLASSSSSSS')
-
-    def _intercambiarDimensiones(self, alto_textbox, ancho_textbox,
-                                 bt_alto_cm, bt_ancho_cm,
-                                 bt_alto_m, bt_ancho_m):
-        alto = alto_textbox.text()
-        ancho = ancho_textbox.text()
-        bt_alto = bt_alto_cm if bt_ancho_cm.isChecked() else bt_alto_m
-        bt_ancho = bt_ancho_cm if bt_alto_cm.isChecked() else bt_ancho_m
-
-        if alto and ancho:
-            alto_textbox.setText(ancho)
-            ancho_textbox.setText(alto)
-            bt_alto.setChecked(True)
-            bt_ancho.setChecked(True)
-            self.medidasHandle()
-
-    def intercambiarProducto(self):
-        self._intercambiarDimensiones(self.ui.txtAlto, self.ui.txtAncho,
-                                      self.ui.btAltoCm, self.ui.btAnchoCm,
-                                      self.ui.btAltoM, self.ui.btAnchoM)
-
-    def intercambiarMaterial(self):
-        self._intercambiarDimensiones(self.ui.txtAltoMaterial, self.ui.txtAnchoMaterial,
-                                      self.ui.btAltoCm_2, self.ui.btAnchoCm_2,
-                                      self.ui.btAltoM_2, self.ui.btAnchoM_2)
-
-    def obtenerMedidasProducto(self):
-        """ Calcular medidas del producto, regresa tupla (ancho, alto). """
-        ancho_producto = self.ui.txtAncho.text()
-        div_ancho = 100 if self.ui.btAnchoCm.isChecked() else 1
-
-        alto_producto = self.ui.txtAlto.text()
-        div_alto = 100 if self.ui.btAltoCm.isChecked() else 1
-
-        try:
-            ancho_producto = float(ancho_producto) / div_ancho
-            alto_producto = float(alto_producto) / div_alto
-            return (ancho_producto, alto_producto)
-        except ValueError:
-            return (0., 0.)
-
-    def obtenerMedidasMaterial(self):
-        """ Calcular medidas del material, regresa tupla (ancho, alto). """
-        ancho_material = self.ui.txtAnchoMaterial.text()
-        div_ancho_material = 100 if self.ui.btAnchoCm_2.isChecked() else 1
-
-        alto_material = self.ui.txtAltoMaterial.text()
-        div_alto_material = 100 if self.ui.btAltoCm_2.isChecked() else 1
-
-        try:
-            ancho_material = float(ancho_material) / div_ancho_material
-            alto_material = float(alto_material) / div_alto_material
-            return (ancho_material, alto_material)
-        except ValueError:
-            return (0., 0.)
-
-    def generarSimple(self):
-        if not (selected := self.ui.tabla_seleccionar.selectedItems()):
-            return
-
-        try:
-            cantidad = int(float(self.ui.txtCantidad.text() or 1))
-        except ValueError:
-            return
-
-        if cantidad <= 0:
-            return
-
-        # obtener información del producto
-        codigo = selected[0].text()
-        manejador = ManejadorProductos(self.conn)
-
-        idProducto = manejador.obtenerIdProducto(codigo)
-        nombre_ticket = manejador.obtenerNombreParaTicket(codigo)
-
-        # obtener precio basado en cantidad
-        duplex = self.ui.checkDuplex.isChecked()
-        precio = manejador.obtenerPrecioSimple(idProducto, cantidad, duplex)
-
-        if not precio and self.warnings:
-            QtWidgets.QMessageBox.warning(
-                self, 'Atención',
-                'No existe ningún precio de este producto '
-                'asociado a la cantidad proporcionada.')
-            return
-
-        # insertar información del producto con cantidad y especificaciones
-        return ItemVenta(
-            idProducto, codigo, nombre_ticket, precio, 0.0, cantidad,
-            self.ui.txtNotas.text().strip(), duplex)
-
-    def generarGranFormato(self):
-        if not (selected := self.ui.tabla_granformato.selectedItems()):
-            return
-
-        ancho_producto, alto_producto = self.obtenerMedidasProducto()
-        ancho_material, alto_material = self.obtenerMedidasMaterial()
-
-        if not all([ancho_producto, alto_producto, ancho_material, alto_material]):
-            return
-        if (ancho_producto > ancho_material or alto_producto > alto_material) and self.warnings:
-            QtWidgets.QMessageBox.warning(
-                self, 'Atención',
-                'Las medidas del producto sobrepasan las medidas del material.')
-            return
-
-        # obtener información del producto
-        codigo = selected[0].text()
-        manejador = ManejadorProductos(self.conn)
-
-        idProducto = manejador.obtenerIdProducto(codigo)
-        nombre_ticket = manejador.obtenerNombreParaTicket(codigo)
-        min_m2, precio_m2 = manejador.obtenerGranFormato(idProducto)
-
-        # si el alto del producto sobrepasa el ancho del material, quiere decir
-        # que no se pudo imprimir de forma normal; por lo tanto, cobrar sobrante.
-        desc_unit = 0.
-
-        if alto_producto > ancho_material:
-            # sobrante_ancho = ancho_material - ancho_producto
-            # descuento_sobre_total = manejador.obtenerDescuentoSobrante(idProducto, sobrante_ancho)
-            # desc_unit = precio_m2 * descuento_sobre_total
-            ancho_producto = ancho_material
-
-        # insertar información del producto con cantidad y especificaciones
-        return ItemGranFormato(
-            idProducto, codigo, nombre_ticket, precio_m2, desc_unit, ancho_producto * alto_producto,
-            self.ui.txtNotas_2.text().strip(), min_m2)
-
-    def rescan_display(self):
-        """ Lee de nuevo las tablas de productos y actualiza tablas. """
-        self.all_prod = self.manejador.obtener_vista('view_productos_simples')
-        self.all_gran = self.manejador.obtener_vista('view_gran_formato')
-        self.update_display()
-
-    def update_display(self):
-        """ Actualiza la tabla y el contador de clientes.
-            Acepta una cadena de texto para la búsqueda de clientes. """
-        filtro = self.ui.btDescripcion.isChecked()
-        txt_busqueda = self.ui.searchBar.text()
-
-        # <tabla de productos normales>
-        if txt_busqueda:
-            found = [prod for prod in self.all_prod
-                     if prod[filtro]
-                     if son_similar(txt_busqueda, prod[filtro])]
-        else:
-            found = self.all_prod
-
-        tabla = self.ui.tabla_seleccionar
-        tabla.llenar(found)
-        # </tabla de productos normales>
-
-        # <tabla de gran formato>
-        if txt_busqueda:
-            found = [prod for prod in self.all_gran
-                     if prod[filtro]
-                     if son_similar(txt_busqueda, prod[filtro])]
-        else:
-            found = self.all_gran
-
-        tabla = self.ui.tabla_granformato
-        tabla.llenar(found)
-        # </tabla de gran formato>
-
-        self.tabla_actual.resizeRowsToContents()
-
-
-class App_ConsultarPrecios(Base_VisualizarProductos):
-    """ Backend para el módulo de consultar precios.
-        No se puede cerrar hasta cerrar por completo el sistema. """
-
-    def __init__(self, conn):
-        super().__init__(conn)
-
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowMinimizeButtonHint)
-        self.setWindowTitle('Consultar precios')
-        self.setWindowIcon(QIcon(':img/icon.ico'))
-
-        self.warnings = False
-
-        self.ui.label.setText('Consultar precios')
-        self.ui.btRegresar.setCursor(Qt.CursorShape.ArrowCursor)
-        self.ui.btRegresar.setIcon(QIcon(':/img/resources/images/package.png'))
-
-        self.ui.btAgregar.hide()
-        self.ui.groupBoxEspecGran.hide()
-        self.ui.groupBoxEspecSimple.hide()
-
-        # eventos para tabla de productos simples
-        self.ui.tabla_seleccionar.itemClicked.connect(self.mostrarSimple)
-        self.ui.txtCantidad.textChanged.connect(self.mostrarSimple)
-        self.ui.checkDuplex.toggled.connect(self.mostrarSimple)
-
-        # eventos para tabla de gran formato
-        self.ui.tabla_granformato.itemClicked.connect(self.medidasHandle)
-        self.ui.txtAnchoMaterial.textChanged.connect(self.medidasHandle)
-        self.ui.txtAltoMaterial.textChanged.connect(self.medidasHandle)
-        # lo demás está en la superclase :p
-
-        self.showMinimized()
-
-    def closeEvent(self, event):
-        if event.spontaneous():
-            event.ignore()
-        else:
-            super().closeEvent(event)
-
-    # ==================
-    #  FUNCIONES ÚTILES
-    # ==================
-    def mostrarSimple(self):
-        if item := self.generarSimple():
-            self.ui.lbTotalSimple.setText(f'Total: ${Moneda(item.importe)}')
-        else:
-            self.ui.lbTotalSimple.setText('Total: ...')
-
-    def medidasHandle(self):
-        if item := self.generarGranFormato():
-            self.ui.lbTotalGran.setText(f'Total: ${Moneda(item.importe)}')
-        else:
-            self.ui.lbTotalGran.setText('Total: ...')
-
-
 @fondo_oscuro
 class Base_EditarProducto(QtWidgets.QWidget):
     """ Backend para la ventana para editar un producto de la base de datos. """
@@ -544,9 +236,8 @@ class Base_EditarProducto(QtWidgets.QWidget):
         # llenar caja de opciones con elementos del inventario
         manejador = ManejadorInventario(self.conn)
         elementos = manejador.obtenerListaNombres()
+        
         nuevo.boxElemento.addItems([nombre for nombre, in elementos])
-
-        # modificar valores a los de la base de datos
         nuevo.elementoSeleccionado = nombre
         nuevo.cantidadElemento = cantidad
 
@@ -689,9 +380,7 @@ class App_EditarProducto(Base_EditarProducto):
         self.idx = idx  # id del elemento a editar
 
         manejador = ManejadorProductos(self.conn)
-
-        _, codigo, descripcion, abreviado, categoria \
-            = manejador.obtenerProducto(idx)
+        _, codigo, descripcion, abreviado, categoria = manejador.obtenerProducto(idx)
 
         self.ui.txtCodigo.setText(codigo)
         self.ui.txtDescripcion.setPlainText(descripcion)

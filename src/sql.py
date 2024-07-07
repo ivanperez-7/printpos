@@ -1,19 +1,18 @@
 """ Módulo con manejadores para tablas en la base de datos. """
 from collections import namedtuple
 from functools import partialmethod
-from pathlib import Path
 from typing import overload
 
 import fdb
+from haps import Inject
 from PySide6.QtCore import QDate
 
 from config import INI
 from core import Moneda
+from interfaces import IWarningLogger
 from utils.mydataclasses import ItemVenta, ItemGranFormato
-from utils.mywidgets import WarningDialog
 
 Connection = fdb.Connection
-Cursor = fdb.Cursor
 Error = fdb.Error
 
 
@@ -27,17 +26,10 @@ def conectar_db(usuario: str, psswd: str, rol: str = None) -> Connection:
             password=psswd,
             charset='UTF8',
             role=rol)
-    except Error as err:
+    except fdb.Error as err:
         txt, sqlcode, gdscode = err.args
         print('\nconectar_db() {\n', sqlcode, gdscode, '\n' + txt + '\n}')
         raise err
-
-
-def respaldar_db(user: str, psswd: str):
-        p = Path('./resources/db/printpos.fbk').absolute()
-        conn = fdb.services.connect(INI.NOMBRE_SERVIDOR, user, psswd)
-        conn.backup('PrintPOS.fdb', str(p))
-        return conn.readlines()
 
 
 class DatabaseManager:
@@ -47,7 +39,8 @@ class DatabaseManager:
         Todas las operaciones realizadas en esta clase y en clases derivadas
         pueden regresar `False` o `None` al ocurrir un error, por lo que siempre se 
         debe verificar el resultado obtenido para asegurar una correcta funcionalidad. """
-
+    warning_logger: IWarningLogger = Inject()
+    
     def __init__(self, conn: Connection,
                  error_txt: str = None,
                  *, handle_exceptions: bool = True):
@@ -85,11 +78,11 @@ class DatabaseManager:
             raise err
 
         txt, sqlcode, gdscode = err.args
-        body = [self.__class__.__name__ + ' {',
+        body = (self.__class__.__name__ + ' {',
                 f'{gdscode=}',
                 txt,
-                '}']
-        WarningDialog(self._error_txt, '\n'.join(body))
+                '}')
+        self.warning_logger.display(self._error_txt, '\n'.join(body))
         self._conn.rollback()
 
     execute = partialmethod(_partial_execute, 'execute')
@@ -305,7 +298,7 @@ class ManejadorInventario(DatabaseManager):
             SELECT	codigo,
                     utiliza_inventario
             FROM	Productos_Utiliza_Inventario AS PUI
-                    LEFT JOIN Productos AS P
+                    LEFT JOIN productos AS P
                            ON PUI.id_productos = P.id_productos
             WHERE 	id_inventario = ?;
         ''', (id_inventario,))
@@ -382,19 +375,19 @@ class ManejadorProductos(DatabaseManager):
         """ Obtener todas las columnas de un producto. """
         return self.fetchone('''
             SELECT  * 
-            FROM    Productos 
+            FROM    productos 
             WHERE   id_productos = ?;
         ''', (id_productos,))
 
     def obtenerListaCodigos(self):
         """ Obtener lista con códigos de todos los productos. """
-        return self.fetchall('SELECT codigo FROM Productos;')
+        return self.fetchall('SELECT codigo FROM productos;')
 
     def obtenerIdProducto(self, codigo: str):
         """ Obtener id_producto dado código de un producto. """
         if result := self.fetchone('''
             SELECT  id_productos
-            FROM    Productos 
+            FROM    productos 
             WHERE   codigo = ?;
         ''', (codigo,)):
             return result[0]
@@ -403,7 +396,7 @@ class ManejadorProductos(DatabaseManager):
         """ Obtener nombre para mostrar en ticket dado código de un producto. """
         if result := self.fetchone('''
             SELECT  abreviado
-            FROM    Productos 
+            FROM    productos 
             WHERE   codigo = ?;
         ''', (codigo,)):
             return result[0]
@@ -412,7 +405,7 @@ class ManejadorProductos(DatabaseManager):
         """ Obtener relación con ventas en la tabla ventas_detallado. """
         return self.fetchall('''
             SELECT	id_productos
-            FROM	Ventas_Detallado
+            FROM	ventas_detallado
             WHERE	id_productos = ?;
         ''', (id_productos,))
 
@@ -427,10 +420,8 @@ class ManejadorProductos(DatabaseManager):
             ORDER   BY desde ASC, duplex ASC;
         ''', (id_productos,))
 
-    def obtenerPrecioSimple(self, id_productos: int, cantidad: int, duplex: bool):
+    def obtenerPrecioSimple(self, id_productos: int, cantidad: int, duplex: bool = False):
         """ Obtener precio de producto categoría simple. """
-        with_duplex = 'AND duplex' if duplex else ''
-
         if result := self.fetchone(f'''
             SELECT * FROM (
                 SELECT  FIRST 1
@@ -438,7 +429,7 @@ class ManejadorProductos(DatabaseManager):
                 FROM    productos_intervalos
                 WHERE   id_productos = ?
                         AND desde <= ?
-                        {with_duplex}
+                        {'AND duplex' if duplex else ''}
                 ORDER   BY desde DESC)
             UNION ALL
             SELECT * FROM (
@@ -486,7 +477,7 @@ class ManejadorProductos(DatabaseManager):
         """ Intenta insertar un producto y regresar tupla
             con el índice recién insertado. No hace commit. """
         return self.fetchone('''
-            INSERT INTO Productos (
+            INSERT INTO productos (
                 codigo, descripcion, abreviado, categoria
             )
             VALUES
@@ -499,30 +490,25 @@ class ManejadorProductos(DatabaseManager):
         """ Intenta editar un productos y regresar tupla
             con el índice recién modificado. No hace commit. """
         return self.fetchone('''
-            UPDATE  Productos
+            UPDATE  productos
             SET     codigo = ?,
                     descripcion = ?,
                     abreviado = ?,
                     categoria = ?
             WHERE   id_productos = ?
             RETURNING id_productos;
-        ''', (*params, id_productos))
+        ''', params + (id_productos,))
 
     def eliminarProducto(self, id_productos: int):
         """ Elimina el producto y sus relaciones con las tablas productos_intervalos,
             productos_gran_formato, productos_utiliza_inventario y productos.
             Hace commit automáticamente. """
-        param = (id_productos,)
-        query = lambda tabla: f'DELETE FROM {tabla} WHERE id_productos = ?;'
-
-        # primero borrar en tres tablas, antes de hacer commit
-        if all(self.execute(query(tabla), param) for tabla in [
-            'Productos_Utiliza_Inventario',
-            'Productos_Gran_Formato',
-            'Productos_Intervalos']):
-            return self.execute(query('Productos'), param, commit=True)
-        else:
-            return False
+        query = 'DELETE FROM productos WHERE id_productos = ?;'
+        return (
+            self.eliminarPrecios(id_productos)
+            and self.eliminarProdUtilizaInv(id_productos)
+            and self.execute(query, (id_productos,), commit=True)
+        )
 
     def eliminarProdUtilizaInv(self, id_productos: int):
         """ Elimina producto de la tabla productos_utiliza_inventario.
@@ -530,8 +516,19 @@ class ManejadorProductos(DatabaseManager):
         return self.execute('''
             DELETE  FROM productos_utiliza_inventario
             WHERE   id_productos = ?;
-        ''', (id_productos,), commit=False)
+        ''', (id_productos,))
 
+    def eliminarPrecios(self, id_productos: int):
+        """ Eliminar todos los precios del producto, en las tablas 
+            productos_intervalos y productos_gran_formato. 
+            No hace commit, al ser parte del proceso de registro/modificación. """
+        param = (id_productos,)
+        query = 'DELETE FROM {} WHERE id_productos = ?;'
+
+        return all(self.execute(query.format(tabla), param)
+                   for tabla in ['productos_intervalos',
+                                 'productos_gran_formato'])
+    
     def insertarProdUtilizaInv(self, id_productos: int, params: list[tuple]):
         """ Inserta producto en la tabla productos_utiliza_inventario.
             No hace commit, al ser parte del proceso de registro/modificación. """
@@ -543,18 +540,7 @@ class ManejadorProductos(DatabaseManager):
             )
             VALUES
                 (?,?,?);
-        ''', params, commit=False)
-
-    def eliminarPrecios(self, id_productos: int):
-        """ Eliminar todos los precios del producto, en las tablas 
-            productos_intervalos y productos_gran_formato. 
-            No hace commit, al ser parte del proceso de registro/modificación. """
-        param = (id_productos,)
-        query = lambda tabla: f'DELETE FROM {tabla} WHERE id_productos = ?;'
-
-        return all(self.execute(query(tabla), param) for tabla in [
-            'Productos_Intervalos',
-            'Productos_Gran_Formato'])
+        ''', params)
 
     def insertarProductosIntervalos(self, id_productos: int, params: list[tuple]):
         """ Inserta precios para el producto en la tabla productos_intervalos.
@@ -592,60 +578,47 @@ class ManejadorReportes(DatabaseManager):
         """ Obtiene ingresos brutos de ventas concretadas o pendientes.
             Devuelve: cantidad total, número de ventas. """
         return self.fetchone(f'''
-            SELECT
-                SUM(monto),
-                COUNT(DISTINCT V.id_ventas)
-            FROM
-                ventas V
-                JOIN ventas_pagos VP
-                    ON VP.id_ventas = V.id_ventas
-            WHERE
-                {self.restr_ventas_terminadas};
+            SELECT  SUM(monto),
+                    COUNT(DISTINCT V.id_ventas)
+            FROM    ventas V
+                    JOIN ventas_pagos VP
+                      ON VP.id_ventas = V.id_ventas
+            WHERE   {self.restr_ventas_terminadas};
         ''')
 
     def obtenerTopVendedor(self, count: int = 1):
         """ Consultar los primeros `count` vendedores con más ventas.
             Devuelve: nombre, suma de ingresos brutos. """
         return self.fetchone(f'''
-            SELECT
-                FIRST {count}
-                U.NOMBRE,
-                SUM(monto) AS ingreso_bruto
-            FROM
-                Ventas V
-                JOIN ventas_pagos VP
-                    ON VP.id_ventas = V.id_ventas
-                JOIN Usuarios U
-                    ON V.id_usuarios = U.ID_USUARIOS
-            WHERE
-                {self.restr_ventas_terminadas}
-            GROUP BY
-                U.nombre
-            ORDER BY
-                2 DESC;
+            SELECT  FIRST {count}
+                    U.NOMBRE,
+                    SUM(monto) AS ingreso_bruto
+            FROM    ventas V
+                    JOIN ventas_pagos VP
+                      ON VP.id_ventas = V.id_ventas
+                    JOIN usuarios U
+                      ON V.id_usuarios = U.id_usuarios
+            WHERE   {self.restr_ventas_terminadas}
+            GROUP   BY U.nombre
+            ORDER   BY 2 DESC;
         ''')
 
     def obtenerTopProducto(self, count: int = 1):
         """ Consultar los primeros `count` productos más vendidos.
             Devuelve: abreviado, código, número de unidades vendidas. """
         result = self.fetchall(f'''
-            SELECT
-                FIRST {count}
-                P.abreviado,
-                P.codigo,
-                SUM(cantidad)
-            FROM
-                ventas_detallado VD
-                JOIN ventas V
-                    ON VD.id_ventas = V.id_ventas
-                JOIN Productos P
-                    ON VD.id_productos = P.id_productos
-            WHERE
-                {self.restr_ventas_terminadas}
-            GROUP BY
-                1, 2
-            ORDER BY
-                3 DESC;
+            SELECT  FIRST {count}
+                    P.abreviado,
+                    P.codigo,
+                    SUM(cantidad)
+            FROM    ventas_detallado VD
+                    JOIN ventas V
+                      ON VD.id_ventas = V.id_ventas
+                    JOIN productos P
+                      ON VD.id_productos = P.id_productos
+            WHERE   {self.restr_ventas_terminadas}
+            GROUP   BY 1, 2
+            ORDER   BY 3 DESC;
         ''')
         if count <= 1:
             return result[0]
@@ -653,265 +626,210 @@ class ManejadorReportes(DatabaseManager):
 
     def obtenerGraficaMetodos(self):
         return self.fetchall(f'''
-            SELECT
-                MP.metodo,
-                COUNT(*) num_pagos
-            FROM
-                ventas_pagos VP
-                JOIN ventas V
-                    ON VP.id_ventas = V.id_ventas
-                JOIN metodos_pago MP
-                    ON VP.id_metodo_pago = MP.id_metodo_pago
-            WHERE
-                {self.restr_ventas_terminadas}
-            GROUP BY
-                1;
+            SELECT  MP.metodo,
+                    COUNT(*) num_pagos
+            FROM    ventas_pagos VP
+                    JOIN ventas V
+                      ON VP.id_ventas = V.id_ventas
+                    JOIN metodos_pago MP
+                      ON VP.id_metodo_pago = MP.id_metodo_pago
+            WHERE   {self.restr_ventas_terminadas}
+            GROUP   BY 1;
         ''')
 
     def obtenerGraficaVentas(self, year):
         """ Regresa lista de tuplas para la gráfica de barras de ventas:
             [(mes/año, suma, número de ventas)]. """
         return self.fetchall(f'''
-            SELECT
-                EXTRACT(YEAR FROM fecha_hora_creacion)
-                    || '-'
-                    || LPAD(EXTRACT(MONTH FROM fecha_hora_creacion), 2, '0') AS formatted_date,
-                SUM(VP.monto)                                                AS total_sales,
-                COUNT(DISTINCT V.id_ventas)                                  AS num_ventas
-            FROM
-                ventas_pagos VP
-                JOIN ventas V
-                    ON VP.id_ventas = V.id_ventas
-            WHERE
-                {self.restr_ventas_terminadas}
-                AND EXTRACT(YEAR FROM fecha_hora_creacion) = ?
-            GROUP BY
-                EXTRACT(YEAR FROM fecha_hora_creacion),
-                EXTRACT(MONTH FROM fecha_hora_creacion)
-            ORDER BY
-                1;
+            SELECT  EXTRACT(YEAR FROM fecha_hora_creacion)
+                        || '-'
+                        || LPAD(EXTRACT(MONTH FROM fecha_hora_creacion), 2, '0') AS formatted_date,
+                    SUM(VP.monto)                                                AS total_sales,
+                    COUNT(DISTINCT V.id_ventas)                                  AS num_ventas
+            FROM    ventas_pagos VP
+                    JOIN ventas V
+                      ON VP.id_ventas = V.id_ventas
+            WHERE   {self.restr_ventas_terminadas}
+                    AND EXTRACT(YEAR FROM fecha_hora_creacion) = ?
+            GROUP   BY EXTRACT(YEAR FROM fecha_hora_creacion),
+                       EXTRACT(MONTH FROM fecha_hora_creacion)
+            ORDER   BY 1;
         ''', (year,))
 
     def obtenerReporteVendedores(self, fechaDesde: QDate, fechaHasta: QDate):
         return self.fetchall(f'''
             WITH ventas_canceladas AS (
-                SELECT
-                    U.id_usuarios,
-                    COUNT(
-                        DISTINCT CASE 
-                            WHEN V.estado LIKE 'Cancelada%' OR V.estado = 'No terminada'
-                                THEN V.id_ventas 
-                        END) AS num_canceladas
-                FROM
-                    usuarios U
+                SELECT  U.id_usuarios,
+                        COUNT(
+                            DISTINCT CASE 
+                                WHEN V.estado LIKE 'Cancelada%' OR V.estado = 'No terminada'
+                                    THEN V.id_ventas 
+                            END) AS num_canceladas
+                FROM    usuarios U
+                        LEFT JOIN ventas V
+                            ON V.id_usuarios = U.id_usuarios
+                WHERE   CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?
+                GROUP   BY 1
+            )
+            SELECT  U.nombre,
+                    COUNT(DISTINCT V.id_ventas) || ' ventas'    AS ventas_concretadas,
+                    COALESCE(VC.num_canceladas, 0) || ' ventas' AS ventas_canceladas,
+                    SUM(monto)                                  AS ventas_brutas,
+                    SUM(monto) / COUNT(DISTINCT V.id_ventas)    AS ventas_promedio
+            FROM    usuarios U
                     LEFT JOIN ventas V
                         ON V.id_usuarios = U.id_usuarios
-                WHERE
-                    CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?
-                GROUP BY
-                    1
-            )
-
-            SELECT
-                U.nombre,
-                COUNT(DISTINCT V.id_ventas) || ' ventas'    AS ventas_concretadas,
-                COALESCE(VC.num_canceladas, 0) || ' ventas' AS ventas_canceladas,
-                SUM(monto)                                  AS ventas_brutas,
-                SUM(monto) / COUNT(DISTINCT V.id_ventas)    AS ventas_promedio
-            FROM
-                usuarios U
-                LEFT JOIN ventas V
-                    ON V.id_usuarios = U.id_usuarios
-                LEFT JOIN ventas_pagos VP
-                    ON VP.id_ventas = V.id_ventas
-                JOIN ventas_canceladas VC
-                    ON VC.id_usuarios = U.id_usuarios
-            WHERE
-                {self.restr_ventas_terminadas}
-                AND CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?
-            GROUP BY
-                1, 3
-            ORDER BY
-                4 DESC;
+                    LEFT JOIN ventas_pagos VP
+                        ON VP.id_ventas = V.id_ventas
+                    JOIN ventas_canceladas VC
+                        ON VC.id_usuarios = U.id_usuarios
+            WHERE   {self.restr_ventas_terminadas}
+                    AND CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?
+            GROUP   BY 1, 3
+            ORDER   BY 4 DESC;
     ''', (fechaDesde.toPython(), fechaHasta.toPython()) * 2)
 
     def obtenerGraficaVentasVendedor(self, vendedor: str, year: int):
         return self.fetchall(f'''
-            SELECT
-                EXTRACT(YEAR FROM fecha_hora_creacion)
-                    || '-'
-                    || LPAD(EXTRACT(MONTH FROM fecha_hora_creacion), 2, '0') AS formatted_date,
-                SUM(monto)                                                   AS total_sales
-            FROM
-                ventas_pagos VP
-                LEFT JOIN ventas V
-                    ON VP.id_ventas = V.id_ventas
-                LEFT JOIN Usuarios U
-                    ON V.id_usuarios = U.ID_USUARIOS
-            WHERE
-                {self.restr_ventas_terminadas}
-                AND EXTRACT(YEAR FROM fecha_hora_creacion) = ?
-                AND U.nombre = ?
-            GROUP BY
-                EXTRACT(YEAR FROM fecha_hora_creacion),
-                EXTRACT(MONTH FROM fecha_hora_creacion)
-            ORDER BY
-                1;
+            SELECT  EXTRACT(YEAR FROM fecha_hora_creacion)
+                        || '-'
+                        || LPAD(EXTRACT(MONTH FROM fecha_hora_creacion), 2, '0') AS formatted_date,
+                    SUM(monto)                                                   AS total_sales
+            FROM    ventas_pagos VP
+                    LEFT JOIN ventas V
+                        ON VP.id_ventas = V.id_ventas
+                    LEFT JOIN Usuarios U
+                        ON V.id_usuarios = U.ID_USUARIOS
+            WHERE   {self.restr_ventas_terminadas}
+                    AND EXTRACT(YEAR FROM fecha_hora_creacion) = ?
+                    AND U.nombre = ?
+            GROUP   BY EXTRACT(YEAR FROM fecha_hora_creacion),
+                       EXTRACT(MONTH FROM fecha_hora_creacion)
+            ORDER   BY 1;
         ''', (year, vendedor))
 
     def obtenerReporteClientes(self, fechaDesde: QDate, fechaHasta: QDate):
         restr = (self.restr_ventas_terminadas
-                 + "AND CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?")
+                 + 'AND CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?')
 
         return self.fetchall(f'''
             WITH prod_mas_comprados AS (
-                SELECT
-                    V.id_clientes,
-                    P.abreviado || ' (' || P.codigo || ')' AS prod_mas_comprado,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY
-                            V.id_clientes
-                        ORDER BY
-                            COUNT(*) DESC
-                    )                                      AS rn
-                FROM
-                    ventas V
-                    JOIN ventas_detallado VD
-                        ON V.id_ventas = VD.id_ventas
-                    JOIN productos P
-                        ON VD.ID_PRODUCTOS = P.ID_PRODUCTOS
-                WHERE
-                    {restr}
-                GROUP BY
-                    1, 2
+                SELECT  V.id_clientes,
+                        P.abreviado || ' (' || P.codigo || ')' AS prod_mas_comprado,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY V.id_clientes
+                            ORDER BY COUNT(*) DESC
+                        )                                      AS rn
+                FROM    ventas V
+                        JOIN ventas_detallado VD
+                          ON V.id_ventas = VD.id_ventas
+                        JOIN productos P
+                          ON VD.ID_PRODUCTOS = P.ID_PRODUCTOS
+                WHERE   {restr}
+                GROUP   BY 1, 2
             )
-            
-            SELECT
-                nombre,
-                MIN(V.fecha_hora_creacion)                AS primera_compra,
-                MAX(V.fecha_hora_creacion)                AS ultima_compra,
-                COUNT(DISTINCT V.id_ventas) || ' compras' AS num_concretadas,
-                SUM(monto)                                AS compras_brutas,
-                SUM(monto) / COUNT(DISTINCT V.id_ventas)  AS compra_promedio,
-                PMC.prod_mas_comprado
-            FROM
-                clientes C
-                LEFT JOIN ventas V
-                    ON C.id_clientes = V.id_clientes
-                LEFT JOIN ventas_pagos VP
-                    ON V.id_ventas = VP.id_ventas
-                JOIN prod_mas_comprados PMC
-                    ON C.id_clientes = PMC.id_clientes
-                       AND PMC.rn = 1
-            WHERE
-                {restr}
-            GROUP BY
-                1, 7
-            ORDER BY
-                5 DESC;
+            SELECT  nombre,
+                    MIN(V.fecha_hora_creacion)                AS primera_compra,
+                    MAX(V.fecha_hora_creacion)                AS ultima_compra,
+                    COUNT(DISTINCT V.id_ventas) || ' compras' AS num_concretadas,
+                    SUM(monto)                                AS compras_brutas,
+                    SUM(monto) / COUNT(DISTINCT V.id_ventas)  AS compra_promedio,
+                    PMC.prod_mas_comprado
+            FROM    clientes C
+                    LEFT JOIN ventas V
+                        ON C.id_clientes = V.id_clientes
+                    LEFT JOIN ventas_pagos VP
+                        ON V.id_ventas = VP.id_ventas
+                    JOIN prod_mas_comprados PMC
+                      ON C.id_clientes = PMC.id_clientes
+                         AND PMC.rn = 1
+            WHERE   {restr}
+            GROUP   BY 1, 7
+            ORDER   BY 5 DESC;
         ''', (fechaDesde.toPython(), fechaHasta.toPython()) * 2)
 
     def obtenerReporteProductos(self, fechaDesde: QDate, fechaHasta: QDate):
         return self.fetchall(f'''
-            SELECT
-                abreviado,
-                codigo,
-                MAX(V.fecha_hora_creacion)          AS ultima_compra,
-                SUM(cantidad) || ' unidades'        AS num_vendidos,
-                ROUND(AVG(cantidad)) || ' unidades' AS promedio_vendidos,
-                SUM(importe)                        AS ingresos_brutos
-            FROM
-                productos P
-                LEFT JOIN ventas_detallado VD
-                    ON P.id_productos = VD.id_productos
-                LEFT JOIN ventas V
-                    ON VD.id_ventas = V.id_ventas
-            WHERE
-                {self.restr_ventas_terminadas}
-                AND CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?
-            GROUP BY
-                1, 2
-            ORDER BY
-                SUM(cantidad) DESC;
+            SELECT  abreviado,
+                    codigo,
+                    MAX(V.fecha_hora_creacion)          AS ultima_compra,
+                    SUM(cantidad) || ' unidades'        AS num_vendidos,
+                    ROUND(AVG(cantidad)) || ' unidades' AS promedio_vendidos,
+                    SUM(importe)                        AS ingresos_brutos
+            FROM    productos P
+                    LEFT JOIN ventas_detallado VD
+                        ON P.id_productos = VD.id_productos
+                    LEFT JOIN ventas V
+                        ON VD.id_ventas = V.id_ventas
+            WHERE   {self.restr_ventas_terminadas}
+                    AND CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?
+            GROUP   BY 1, 2
+            ORDER   BY SUM(cantidad) DESC;
         ''', (fechaDesde.toPython(), fechaHasta.toPython()) * 2)
 
     def obtenerGraficaVentasProducto(self, codigo: str, year: int):
         return self.fetchall(f'''
-            SELECT
-                EXTRACT(YEAR FROM fecha_hora_creacion)
-                    || '-'
-                    || LPAD(EXTRACT(MONTH FROM fecha_hora_creacion), 2, '0') AS formatted_date,
-                SUM(importe)                                                 AS total_sales
-            FROM
-                ventas_detallado VD
-                LEFT JOIN ventas V
-                    ON VD.id_ventas = V.id_ventas
-                LEFT JOIN productos P
-                    ON P.id_productos = VD.id_productos
-            WHERE
-                {self.restr_ventas_terminadas}
-                AND EXTRACT(YEAR FROM fecha_hora_creacion) = ?
-                AND P.codigo = ?
-            GROUP BY
-                EXTRACT(YEAR FROM fecha_hora_creacion),
-                EXTRACT(MONTH FROM fecha_hora_creacion)
-            ORDER BY
-                1;
+            SELECT  EXTRACT(YEAR FROM fecha_hora_creacion)
+                        || '-'
+                        || LPAD(EXTRACT(MONTH FROM fecha_hora_creacion), 2, '0') AS formatted_date,
+                    SUM(importe)                                                 AS total_sales
+            FROM    ventas_detallado VD
+                    LEFT JOIN ventas V
+                        ON VD.id_ventas = V.id_ventas
+                    LEFT JOIN productos P
+                        ON P.id_productos = VD.id_productos
+            WHERE   {self.restr_ventas_terminadas}
+                    AND EXTRACT(YEAR FROM fecha_hora_creacion) = ?
+                    AND P.codigo = ?
+            GROUP   BY EXTRACT(YEAR FROM fecha_hora_creacion),
+                       EXTRACT(MONTH FROM fecha_hora_creacion)
+            ORDER   BY 1;
         ''', (year, codigo))
 
     def obtenerVentasIntervalos(self, codigo: str):
         return self.fetchall('''
-            SELECT
-                P_Inv.desde,
-                CASE P_Inv.duplex
-                    WHEN true THEN 'Sí'
-                    ELSE 'No'
-                END,
-                SUM(VD.cantidad) AS unit_vendidas
-            FROM
-                ventas_detallado VD
-                JOIN productos_intervalos P_Inv
-                    ON VD.id_productos = P_Inv.id_productos
-                       AND VD.duplex = P_Inv.duplex
-                       AND VD.cantidad >= P_Inv.desde
-                LEFT JOIN productos P
-                    ON VD.id_productos = P.id_productos
-            WHERE
-                P.codigo = ?
-            GROUP BY
-                1, 2;
+            SELECT  P_Inv.desde,
+                    CASE P_Inv.duplex
+                        WHEN true THEN 'Sí'
+                        ELSE 'No'
+                    END,
+                    SUM(VD.cantidad) AS unit_vendidas
+            FROM    ventas_detallado VD
+                    JOIN productos_intervalos P_Inv
+                      ON VD.id_productos = P_Inv.id_productos
+                         AND VD.duplex = P_Inv.duplex
+                         AND VD.cantidad >= P_Inv.desde
+                    LEFT JOIN productos P
+                        ON VD.id_productos = P.id_productos
+            WHERE   P.codigo = ?
+            GROUP   BY 1, 2;
         ''', (codigo,))
 
 
 class ManejadorVentas(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Ventas. """
     query_all_ventas = '''
-        SELECT
-            V.id_ventas,
-            U.nombre             AS nombre_vendedor,
-            C.nombre             AS nombre_cliente,
-            fecha_hora_creacion,
-            {col_fecha_entrega}
-            SUM(VD.importe)      AS total,
-            estado,
-            comentarios
-        FROM
-            ventas V
-            LEFT JOIN usuarios U
-                ON V.id_usuarios = U.id_usuarios
-            LEFT JOIN clientes C
-                ON V.id_clientes = C.id_clientes
-            LEFT JOIN ventas_detallado VD
-                ON V.id_ventas = VD.id_ventas
-        WHERE
-            fecha_hora_entrega {fecha_where} fecha_hora_creacion
-            AND (CAST(fecha_hora_creacion AS DATE) BETWEEN ? AND ?
-                 OR estado LIKE 'Recibido%')
-            {restrict_user}
-        GROUP BY
-            {clausula_group}
-        ORDER BY
-            1 DESC;
+        SELECT  V.id_ventas,
+                U.nombre             AS nombre_vendedor,
+                C.nombre             AS nombre_cliente,
+                fecha_hora_creacion,
+                {col_fecha_entrega}
+                SUM(VD.importe)      AS total,
+                estado,
+                comentarios
+        FROM    ventas V
+                LEFT JOIN usuarios U
+                    ON V.id_usuarios = U.id_usuarios
+                LEFT JOIN clientes C
+                    ON V.id_clientes = C.id_clientes
+                LEFT JOIN ventas_detallado VD
+                    ON V.id_ventas = VD.id_ventas
+        WHERE   fecha_hora_entrega {fecha_where} fecha_hora_creacion
+                AND (CAST(fecha_hora_creacion AS DATE) BETWEEN ? AND ?
+                     OR estado LIKE 'Recibido%')
+                {restrict_user}
+        GROUP   BY {clausula_group}
+        ORDER   BY 1 DESC;
     '''
 
     def tablaVentas(self, inicio: QDate = QDate(1900, 1, 1),
@@ -944,31 +862,32 @@ class ManejadorVentas(DatabaseManager):
 
     def obtenerNumPendientes(self, id_usuario: int):
         """ Obtener número de pedidos pendientes del usuario. """
-        return self.fetchone('''
+        if result := self.fetchone('''
             SELECT	COUNT(*)
             FROM	Ventas
             WHERE	fecha_hora_creacion != fecha_hora_entrega
                     AND estado LIKE 'Recibido%'
                     AND id_usuarios = ?;
-        ''', (id_usuario,))
+        ''', (id_usuario,)):
+            return result[0]
 
     def obtenerDatosGeneralesVenta(self, id_venta: int):
         """ Obtiene otros datos generales de una venta:
             nombre de cliente, correo, teléfono, fecha y hora de creación,
             fecha y hora de entrega, comentarios generales, nombre de vendedor. """
         return self.fetchone('''
-            SELECT  Clientes.nombre,
-                    correo,
-                    telefono,
+            SELECT  C.nombre,
+                    C.correo,
+                    C.telefono,
                     fecha_hora_creacion,
                     fecha_hora_entrega,
                     comentarios,
-                    Usuarios.nombre
-            FROM    Ventas
-                    LEFT JOIN Clientes
-                           ON Ventas.id_clientes = Clientes.id_clientes
-                    LEFT JOIN Usuarios
-                           ON Ventas.id_usuarios = Usuarios.id_usuarios
+                    U.nombre
+            FROM    ventas V
+                    LEFT JOIN clientes C
+                        ON V.id_clientes = C.id_clientes
+                    LEFT JOIN usuarios U
+                        ON V.id_usuarios = U.id_usuarios
             WHERE   id_ventas = ?;
         ''', (id_venta,))
 
@@ -982,9 +901,9 @@ class ManejadorVentas(DatabaseManager):
                     especificaciones,
                     precio,
                     importe
-            FROM    Ventas_Detallado AS VD
-                    LEFT JOIN Productos AS P
-                           ON VD.id_productos = P.id_productos
+            FROM    ventas_detallado AS VD
+                    LEFT JOIN productos AS P
+                        ON VD.id_productos = P.id_productos
             WHERE   id_ventas = ?;
         ''', (id_venta,))
 
@@ -1008,7 +927,7 @@ class ManejadorVentas(DatabaseManager):
                     P.categoria
             FROM	ventas_detallado VD
                     LEFT JOIN productos P
-                           ON VD.id_productos = P.id_productos
+                        ON VD.id_productos = P.id_productos
             WHERE	id_ventas = ?;
         ''', (id_venta,)):
             data = (0, '', p[abrev], p[precio], p[desc], p[cant], '')
@@ -1031,9 +950,9 @@ class ManejadorVentas(DatabaseManager):
                     precio,
                     descuento,
                     importe
-            FROM    Ventas_Detallado
-                    LEFT JOIN Productos
-                           ON Ventas_Detallado.id_productos = Productos.id_productos
+            FROM    ventas_detallado
+                    LEFT JOIN productos
+                        ON ventas_detallado.id_productos = productos.id_productos
             WHERE   id_ventas = ?;
         ''', (id_venta,))
 
@@ -1044,7 +963,7 @@ class ManejadorVentas(DatabaseManager):
                     C.telefono
             FROM    Ventas AS V
                     LEFT JOIN Clientes AS C
-                           ON V.id_clientes = C.id_clientes
+                        ON V.id_clientes = C.id_clientes
             WHERE   id_ventas = ?;
         ''', (id_venta,))
 
@@ -1052,7 +971,7 @@ class ManejadorVentas(DatabaseManager):
         """ Obtiene el importe total de una venta. """
         if result := self.fetchone('''
             SELECT  SUM(importe)
-            FROM    Ventas_Detallado
+            FROM    ventas_detallado
             WHERE   id_ventas = ?;
         ''', (id_venta,)):
             total = result[0]  # float o None
@@ -1173,7 +1092,7 @@ class ManejadorVentas(DatabaseManager):
     def anularPagos(self, id_venta: int, id_usuarios: int, commit: bool = False):
         """ Anula pagos en tabla ventas_pagos. No hace `commit` automáticamente. """
         return all(self.insertarPago(id_venta, metodo, -monto, None, id_usuarios)
-                   for fecha, metodo, monto, recibido, v in self.obtenerPagosVenta(id_venta))
+                   for f, metodo, monto, r, v in self.obtenerPagosVenta(id_venta))
 
     def actualizarEstadoVenta(self, id_ventas: int, estado: str, commit: bool = False):
         """ Actualiza estado de venta a parámetro.
@@ -1233,11 +1152,11 @@ class ManejadorUsuarios(DatabaseManager):
             
             Hace commit automáticamente. """
         return (
-                self.execute('''UPDATE  Usuarios
-                                SET     permisos = NULL
-                                WHERE   usuario = ?;''', (usuario,))
-                and self.retirarRoles(usuario)
-                and self.execute(f'DROP USER {usuario};', commit=commit)
+            self.execute('''UPDATE  Usuarios
+                            SET     permisos = NULL
+                            WHERE   usuario = ?;''', (usuario,))
+            and self.retirarRoles(usuario)
+            and self.execute(f'DROP USER {usuario};', commit=commit)
         )
 
     def otorgarRolVendedor(self, usuario: str, commit: bool = True):
@@ -1254,8 +1173,8 @@ class ManejadorUsuarios(DatabaseManager):
             Hace commit automáticamente, al ser última operación 
             del proceso de creación/modificación. """
         return (
-                self.execute(f'GRANT ADMINISTRADOR, VENDEDOR TO {usuario} WITH ADMIN OPTION;')
-                and self.execute(f'ALTER USER {usuario} GRANT ADMIN ROLE;', commit=True)
+            self.execute(f'GRANT ADMINISTRADOR, VENDEDOR TO {usuario} WITH ADMIN OPTION;')
+            and self.execute(f'ALTER USER {usuario} GRANT ADMIN ROLE;', commit=True)
         )
 
     def retirarRoles(self, usuario: str):
@@ -1264,8 +1183,8 @@ class ManejadorUsuarios(DatabaseManager):
         
             No hace commit. """
         return (
-                self.execute(f'REVOKE ADMINISTRADOR, VENDEDOR FROM {usuario};')
-                and self.execute(f'ALTER USER {usuario} REVOKE ADMIN ROLE;')
+            self.execute(f'REVOKE ADMINISTRADOR, VENDEDOR FROM {usuario};')
+            and self.execute(f'ALTER USER {usuario} REVOKE ADMIN ROLE;')
         )
 
     def cambiarPsswd(self, usuario: str, psswd: str):
