@@ -5,7 +5,7 @@ from PySide6.QtGui import QFont, QColor, QIcon, QRegularExpressionValidator
 from PySide6.QtCore import Qt, QDate, Signal, QMutex
 
 from core import ROJO
-from mixins import ModuloPrincipal
+from interfaces import IModuloPrincipal
 from sql import ManejadorClientes
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
@@ -16,14 +16,13 @@ from utils.mywidgets import LabelAdvertencia
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_AdministrarClientes(ModuloPrincipal):
+class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
     """ Backend para la ventana de administración de clientes. """
     rescanned = Signal()
 
-    def __init__(self, conn, user):
+    def crear(self, conn, user):
         from ui.Ui_AdministrarClientes import Ui_AdministrarClientes
 
-        super().__init__()
         self.ui = Ui_AdministrarClientes()
         self.ui.setupUi(self)
 
@@ -88,7 +87,7 @@ class App_AdministrarClientes(ModuloPrincipal):
         self.ui.lbContador.setText('Recuperando información...')
 
         manejador = ManejadorClientes(self.conn)
-        self.all = manejador.obtener_vista('view_all_clientes')
+        self.all = manejador.obtener_vista('view_all_clientes') or []
         self.ui.lbContador.setText(f'{len(self.all)} clientes en la base de datos.')
 
         self.rescanned.emit()

@@ -7,7 +7,7 @@ from typing import overload, Iterator, Iterable, TYPE_CHECKING
 from PySide6.QtCore import QDateTime
 
 if TYPE_CHECKING:
-    import sql
+    from sql import ManejadorUsuarios, ManejadorProductos
 from core import Moneda
 
 
@@ -32,7 +32,7 @@ class Usuario:
         return self.permisos == 'ADMINISTRADOR'
 
     @classmethod
-    def generarUsuarioActivo(cls, manejador: sql.ManejadorUsuarios):
+    def generarUsuarioActivo(cls, manejador: ManejadorUsuarios):
         """ Genera clase Usuario dada una conexión válida a la DB. """
         usuario = manejador.usuarioActivo
         result = manejador.obtenerUsuario(usuario)
@@ -51,12 +51,12 @@ class BaseItem:
     notas: str  # especificaciones del producto
 
     @property
-    def importe(self):
+    def importe(self) -> float:
         """ Costo total del producto. """
         raise NotImplementedError('BEIS CLASSSS')
 
     @property
-    def total_descuentos(self):
+    def total_descuentos(self) -> float:
         """ Regresa el total de descuentos (descuento * cantidad). """
         raise NotImplementedError('BEIS CLASSSS')
 
@@ -155,7 +155,7 @@ class Venta:
     def quitarProducto(self, idx: int):
         self._productos.pop(idx)
 
-    def reajustarPrecios(self, manejador: sql.ManejadorProductos):
+    def reajustarPrecios(self, manejador: ManejadorProductos):
         """ Algoritmo para reajustar precios de productos simples al haber cambios de cantidad.
             Por cada grupo de productos idénticos:
                 1. Calcular cantidad de todos los productos y solo duplex.

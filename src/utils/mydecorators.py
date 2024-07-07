@@ -2,10 +2,10 @@
 from functools import wraps
 
 from PySide6.QtWidgets import QWidget, QMessageBox, QDialog
+from PySide6.QtGui import QIcon
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
-from mixins import HasConnUser
-import sql
+from sql import conectar_db, DatabaseManager, Error
 
 __all__ = ['requiere_admin', 'run_in_thread', 'fondo_oscuro', 'function_details']
 
@@ -44,6 +44,7 @@ class Dialog_ObtenerAdmin(QDialog):
 
         self.setFixedSize(380, 120)
         self.setWindowTitle("Requiere administrador")
+        self.setWindowIcon(QIcon(":img/icon.ico"))
         self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.formLayout = QtWidgets.QFormLayout(self)
         self.formLayout.setObjectName(u"formLayout")
@@ -84,12 +85,14 @@ class Dialog_ObtenerAdmin(QDialog):
         if not (usuario and psswd):
             return
         try:
-            conn = sql.conectar_db(usuario, psswd, 'ADMINISTRADOR')
-            manejador = sql.DatabaseManager(conn)
-        except (sql.Error, AssertionError):
+            conn = conectar_db(usuario, psswd, 'ADMINISTRADOR')
+            manejador = DatabaseManager(conn)
+        except (Error, AssertionError):
             self.close()
-            QMessageBox.warning(self.parentWidget(), 'Permiso denegado',
-                                'Las credenciales no son válidas para una cuenta de administrador.')
+            wdg = QMessageBox(QMessageBox.Warning, 'Permiso denegado',
+                              'Las credenciales no son válidas para una cuenta de administrador.')
+            wdg.setWindowIcon(QIcon(':img/icon.ico'))
+            wdg.exec()
         else:
             self.close()
             self.success.emit(conn)
@@ -100,25 +103,34 @@ def requiere_admin(func):
     """ Decorador para solicitar contraseña de administrador
         antes de ejecutar alguna función.
         
-        Añadir parámetro nombrado `conn` al final de la función envuelta, ya que
-        es devuelto por el decorador para extraer información que se requiera
+        Se puede añadir parámetro nombrado `conn` al final de la función envuelta,
+        ya que es devuelto por el decorador para extraer información que se requiera
         de la conexión de administrador, por ejemplo, nombre del administrador.
         
-        Ejemplo: `func(x, y)` -> `func(x, y, conn)`.
+        Ejemplo: `func(x, y)` -> `func(x, y, conn)` 
         
-        Requiere que QWidget cumpla protocolo `HasConnUser`. """
-
+        Por el momento, no se puede usar un return en una función envuelta. """
+    
     @wraps(func)
     def wrapper_decorator(*args, **kwargs):
-        parent: HasConnUser = args[0]  # QWidget (módulo actual)
-        assert parent.conn and parent.user, 'QWidget no cumple protocolo `HasConnUser`.'
-
-        if parent.user.administrador:
-            func(*args, **kwargs, conn=parent.conn)
-        else:
-            dialog = Dialog_ObtenerAdmin(parent)
-            dialog.success.connect(lambda conn: func(*args, **kwargs, conn=conn))
-            dialog.show()
+        def admin_func(conn):
+            try:
+                func(*args, **kwargs, conn=conn)
+            except TypeError:
+                func(*args, **kwargs)
+        
+        try:
+            parent = args[0]  # QWidget (módulo actual)
+            assert parent.conn and parent.user
+            
+            if parent.user.administrador:
+                admin_func(parent.conn)
+            else:
+                raise AttributeError
+        except (IndexError, AttributeError):
+            dialog = Dialog_ObtenerAdmin()
+            dialog.success.connect(admin_func)
+            dialog.exec()
 
     return wrapper_decorator
 ###############################################
@@ -129,7 +141,7 @@ def requiere_admin(func):
 ########################################
 # <DECORADOR PARA EEJCUTAR EN QTHREAD> #
 ########################################
-class _Runner(QRunnable):
+class _Runnable(QRunnable):
     def __init__(self, func, *args, **kwargs):
         super().__init__()
         self._func = func
@@ -142,15 +154,12 @@ class _Runner(QRunnable):
 
 def run_in_thread(func):
     """ Decorador para ejecutar alguna función dada en otro hilo. """
-
     @wraps(func)
     def async_func(*args, **kwargs):
-        task = _Runner(func, *args, **kwargs)
+        task = _Runnable(func, *args, **kwargs)
         QThreadPool.globalInstance().start(task)
 
     return async_func
-
-
 #########################################
 # </DECORADOR PARA EEJCUTAR EN QTHREAD> #
 #########################################

@@ -18,12 +18,12 @@ class PdfTests(TestCase):
         printer = ImpresoraTickets(sql.conectar_db('ivanperez', '123', 'administrador'))
         self.assertEqual(printer.printer.printerName(), INI.IMPRESORA)
         
-        res1 = printer.imprimirTicketCompra(776) # varios pagos
-        res2 = printer.imprimirTicketCompra(676) # un solo pago
-        res3 = printer.imprimirTicketCompra(776, [0,2]) # varios pagos, pero seleccionados
+        res1 = printer.imprimirTicketCompra(670) # varios pagos
+        res2 = printer.imprimirTicketCompra(671) # un solo pago
+        res3 = printer.imprimirTicketCompra(670, [0,2]) # varios pagos, pero seleccionados
         
         prods = [ItemVenta(1, 'IMP B/N 1', 'Impresión ByN', 0.7, 0., random.randint(10, 200), '', False)]
-        res4 = printer.imprimirTicketPresupuesto(prods, 'yo merengues')
+        res4 = printer.imprimirTicketPresupuesto(prods*3, 'yo merengues')
         
         caja = Caja([
             (datetime.now(), 500., 'renta lol', 'Efectivo', 'ivan p.'),
@@ -37,7 +37,7 @@ class PdfTests(TestCase):
         printer = ImpresoraOrdenes(sql.conectar_db('ivanperez', '123', 'administrador'))
         self.assertEqual(printer.printer.printerName(), INI.IMPRESORA)
         
-        res1 = printer.imprimirOrdenCompra(676)
+        res1 = printer.imprimirOrdenCompra(693)
         QThreadPool.globalInstance().waitForDone()  # <- porque las impresoras usan run_in_thread
 
 

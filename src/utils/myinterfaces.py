@@ -1,5 +1,6 @@
 """ Módulo para controladores de grupos de widgets y otras funciones. """
-from PySide6.QtWidgets import *
+from PySide6.QtWidgets import (QPushButton, QDateEdit, QTableWidget,
+                               QToolButton, QLineEdit, QMenu)
 from PySide6.QtCore import QDate, QObject, Signal
 
 __all__ = ['InterfazPaginas', 'InterfazFechas', 'InterfazFiltro']

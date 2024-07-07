@@ -2,21 +2,19 @@ from PySide6 import QtWidgets
 from PySide6 import QtPrintSupport
 
 from config import INI
-from mixins import ModuloPrincipal
-import sql
+from interfaces import IModuloPrincipal
 
 
 #####################
 # VENTANA PRINCIPAL #
 #####################
 
-class App_Ajustes(ModuloPrincipal):
+class App_Ajustes(QtWidgets.QWidget, IModuloPrincipal):
     """ Backend para la ventana de administración de ventas. """
 
-    def __init__(self, conn, user):
+    def crear(self, conn, user):
         from ui.Ui_Ajustes import Ui_Ajustes
 
-        super().__init__()
         self.ui = Ui_Ajustes()
         self.ui.setupUi(self)
 
@@ -32,17 +30,7 @@ class App_Ajustes(ModuloPrincipal):
 
         # crear eventos para los botones
         self.ui.btRegresar.clicked.connect(self._salir)
-        self.ui.btRespaldar.clicked.connect(self.respaldar_db)
-    
-    def respaldar_db(self):
-        user = self.ui.txtUsuario.text()
-        psswd = self.ui.txtPsswd.text()
-        
-        try:
-            out = sql.respaldar_db(user, psswd)
-            QtWidgets.QMessageBox.information(self, 'Operación terminada', f'{out[-5:]}')
-        except (AttributeError, sql.Error) as e:
-            QtWidgets.QMessageBox.warning(self, 'Fallo en operación', str(e))
+        #self.ui.btRespaldar.clicked.connect(self.respaldar_db)
 
     def _salir(self, _):
         """ Cierra la ventana y regresa a Home. """

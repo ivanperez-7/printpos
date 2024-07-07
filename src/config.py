@@ -16,12 +16,12 @@ INSTANCE_NAME = machineid.id().split('-')[-1]
 FERNET_KEY = base64.urlsafe_b64encode(
     bytes(machineid.hashed_id('PrintPOS'), 'utf-8')[-32:])
 
+
 #################################
 # VARIABLES PARA ACCEDER A .INI #
 #################################
 _INIParser = ConfigParser(inline_comment_prefixes=';')
 filename = 'config.ini'
-
 
 class _INIManager:
     def __init__(self):
@@ -54,11 +54,6 @@ class _INIManager:
 
         setattr(self.__class__, option.upper(), property(getter, setter))
         setattr(self, option.upper(), getter(self))
-
-    @property
-    def DIRECCION_SUCURSAL(self):
-        """ Calles y fracc. de la sucursal. Regresa una cadena por cada dato. """
-        return self.CALLE_1, self.CALLE_2
 
 
 INI = _INIManager()

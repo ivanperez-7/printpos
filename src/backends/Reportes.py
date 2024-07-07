@@ -2,23 +2,29 @@ from functools import partial
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont
-from PySide6.QtCharts import *
+from PySide6.QtCharts import (
+    QChart,
+    QChartView,
+    QBarSeries,
+    QBarSet,
+    QBarCategoryAxis,
+    QPieSeries
+)
 from PySide6.QtCore import Qt, QDate, QModelIndex
 from PySide6.QtGui import QPainter, QPen
 
-from mixins import ModuloPrincipal
+from interfaces import IModuloPrincipal
 from sql import ManejadorReportes, ManejadorVentas
 from utils.myinterfaces import InterfazFechasReportes
 from utils.myutils import stringify_float
 
 
-class App_Reportes(ModuloPrincipal):
+class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
     """ Backend para la ventana de reportes varios. """
 
-    def __init__(self, conn, user):
+    def crear(self, conn, user):
         from ui.Ui_Reportes import Ui_Reportes
 
-        super().__init__()
         self.ui = Ui_Reportes()
         self.ui.setupUi(self)
 

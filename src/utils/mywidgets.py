@@ -1,74 +1,13 @@
 """ Módulo con widgets personalizados varios. """
 from datetime import datetime
 from enum import Enum, auto
-import glob
-import os
-from typing import Callable, Iterator, Type
+from typing import Callable, Iterator
 
-from PySide6 import QtWidgets
-from PySide6.QtGui import *
-from PySide6.QtCore import *
+from PySide6 import QtWidgets, QtCore, QtGui
+from PySide6.QtCore import Qt, Signal
 
 from core import Moneda, ROJO, VERDE, AMARILLO
-from mixins import ModuloPrincipal, HasConnUser
 from .myutils import unidecode, formatdate
-
-__all__ = ['VentanaPrincipal', 'WidgetPago', 'StackPagos', 
-           'TablaDatos', 'NumberEdit', 'LabelAdvertencia',
-           'WarningDialog', 'SpeechBubble', 'ListaNotificaciones']
-
-
-class VentanaPrincipal(QtWidgets.QMainWindow, HasConnUser):
-    def __init__(self, conn, user):
-        super().__init__()
-
-        self.resize(1500, 800)
-        self.setWindowTitle('PrintPOS')
-        self.setWindowIcon(QIcon(':img/icon.ico'))
-
-        self.conn = conn
-        self.user = user
-
-        from backends.AdministrarProductos import App_ConsultarPrecios
-        self.consultarPrecios = App_ConsultarPrecios(conn)
-
-        self.go_home()
-        self.show()
-
-    def go_home(self):
-        """ Regresar al menú principal.
-            Crea módulo Home y establece como widget principal. """
-        from backends.Home import App_Home
-
-        home = App_Home(self.conn, self.user)
-        home.go_back.connect(self.close)
-        home.new_module.connect(self.go_to)
-
-        self.setCentralWidget(home)
-    
-    def go_to(self, modulo: Type[ModuloPrincipal]):
-        new = modulo(self.conn, self.user)
-        new.go_back.connect(self.go_home)
-        self.setCentralWidget(new)
-
-    @property
-    def en_venta(self):
-        from backends.CrearVenta import App_CrearVenta
-        return isinstance(self.centralWidget(), App_CrearVenta)
-
-    def closeEvent(self, event):
-        """ En eventos específicos, restringimos el cerrado del sistema. """
-        if self.en_venta and not self.user.administrador:
-            event.ignore()
-            return
-
-        for j in glob.glob('*.jpg'):
-            os.remove(j)
-        self.conn.close()
-        self.consultarPrecios.close()
-        
-        from backends.Login import App_Login
-        login = App_Login(self.__class__)
 
 
 class ClickableIcon(QtWidgets.QPushButton):
@@ -103,7 +42,6 @@ class WidgetPago(QtWidgets.QFrame):
         from ui.Ui_WidgetPago import Ui_WidgetPago
 
         super().__init__(parent)
-
         self.ui = Ui_WidgetPago()
         self.ui.setupUi(self)
 
@@ -132,10 +70,10 @@ class StackPagos(QtWidgets.QStackedWidget):
         self.permitir_nulo = False
 
     def retroceder(self):
-        self.setCurrentIndex(self.currentIndex() - 1)
+        self.setCurrentIndex((self.currentIndex() - 1) % self.count())
 
     def avanzar(self):
-        self.setCurrentIndex(self.currentIndex() + 1)
+        self.setCurrentIndex((self.currentIndex() + 1) % self.count())
 
     def agregarPago(self):
         """ Agrega widget de pago a la lista y regresa el widget. """
@@ -223,29 +161,22 @@ class TablaDatos(QtWidgets.QTableWidget):
         self.setStyleSheet("""
             QHeaderView::section {
                 font: bold 10pt;
-                color: rgb(255, 255, 255);
+                color: white;
                 background-color: rgb(52, 172, 224);
-                padding: 7px;
-            }
-
-            QTableView::item{
-                padding: 5px;
+                padding: 8px;
             }
             
             QTableWidget {
-                alternate-background-color: %s;
+                alternate-background-color: rgb(225, 225, 225);
+                selection-background-color: rgb(85, 85, 255);
+                selection-color: white;
             }
 
-            QTableView {
-                selection-background-color: rgb(85, 85, 255);
-                selection-color: rgb(255, 255, 255);
+            QTableWidget::item {
+                padding: 10px;
             }
-            QTableView:active {
-                selection-background-color: rgb(85, 85, 255);
-                selection-color: rgb(255, 255, 255);
-            }
-        """ % QColor(225, 225, 225).name())
-        font = QFont()
+        """)
+        font = QtGui.QFont()
         font.setPointSize(10)
         self.setFont(font)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -257,6 +188,8 @@ class TablaDatos(QtWidgets.QTableWidget):
         self.setWordWrap(True)
         self.verticalHeader().hide()
         self.horizontalHeader().setMinimumSectionSize(50)
+        
+        self.paginaActual: int = 1
 
     def llenar(self, data):
         if not isinstance(data, list):
@@ -290,7 +223,7 @@ class TablaDatos(QtWidgets.QTableWidget):
 
     def cambiarColorCabecera(self, color):
         qs = self.styleSheet()
-        color = QColor(color)
+        color = QtGui.QColor(color)
         color_qs = 'QHeaderView::section {{ background-color: {} }};'.format(color.name())
         self.setStyleSheet(qs + color_qs)
 
@@ -334,7 +267,7 @@ class TablaDatos(QtWidgets.QTableWidget):
     def _llenar_resaltar_segunda(self, data):
         self._llenar_default(data)
 
-        bold = QFont()
+        bold = QtGui.QFont()
         bold.setBold(True)
 
         for row in range(self.rowCount()):
@@ -361,7 +294,7 @@ class TablaDatos(QtWidgets.QTableWidget):
         self.resizeRowsToContents()
 
     def _llenar_tabla_ventas_directas(self, data):
-        bold = QFont()
+        bold = QtGui.QFont()
         bold.setBold(True)
 
         for row, compra in enumerate(data):
@@ -380,14 +313,14 @@ class TablaDatos(QtWidgets.QTableWidget):
             estado = self.item(row, 5).text()
 
             if estado.startswith('Cancelada'):
-                self.item(row, 5).setBackground(QColor(ROJO))
+                self.item(row, 5).setBackground(QtGui.QColor(ROJO))
             elif estado.startswith('Terminada'):
-                self.item(row, 5).setBackground(QColor(VERDE))
+                self.item(row, 5).setBackground(QtGui.QColor(VERDE))
 
     def _llenar_tabla_pedidos(self, data):
-        bold = QFont()
+        bold = QtGui.QFont()
         bold.setBold(True)
-        icon = QIcon(":/img/resources/images/whatsapp.png")
+        icon = QtGui.QIcon(":/img/resources/images/whatsapp.png")
 
         for row, compra in enumerate(data):
             for col, dato in enumerate(compra):
@@ -406,11 +339,11 @@ class TablaDatos(QtWidgets.QTableWidget):
             estado = estado_cell.text()
 
             if estado.startswith('Cancelada'):
-                estado_cell.setBackground(QColor(ROJO))
+                estado_cell.setBackground(QtGui.QColor(ROJO))
             elif estado.startswith('Entregado') or estado.startswith('Terminada'):
-                estado_cell.setBackground(QColor(VERDE))
+                estado_cell.setBackground(QtGui.QColor(VERDE))
             elif estado.startswith('Recibido'):
-                estado_cell.setBackground(QColor(AMARILLO))
+                estado_cell.setBackground(QtGui.QColor(AMARILLO))
 
                 button_cell = QtWidgets.QPushButton(' Enviar recordatorio')
                 button_cell.setIcon(icon)
@@ -419,8 +352,8 @@ class TablaDatos(QtWidgets.QTableWidget):
                 self.setCellWidget(row, 8, button_cell)
 
                 # resaltar pedidos con fechas de entrega ya pasadas
-                if QDateTime.currentDateTime() > compra[4]:
-                    self.item(row, 4).setBackground(QColor(ROJO))
+                if QtCore.QDateTime.currentDateTime() > compra[4]:
+                    self.item(row, 4).setBackground(QtGui.QColor(ROJO))
 
 
 class NumberEdit(QtWidgets.QLineEdit):
@@ -429,13 +362,13 @@ class NumberEdit(QtWidgets.QLineEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        font = QFont()
+        font = QtGui.QFont()
         font.setPointSize(14)
         self.setFont(font)
         self.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         # validadores para datos numéricos
-        self.setValidator(QRegularExpressionValidator(r'\d{1,15}\.?\d{0,2}'))
+        self.setValidator(QtGui.QRegularExpressionValidator(r'\d{1,15}\.?\d{0,2}'))
 
     @property
     def cantidad(self):
@@ -462,7 +395,7 @@ class LabelAdvertencia(QtWidgets.QLabel):
         self.parent_ = parent
         self.msj = msj
 
-        font = QFont()
+        font = QtGui.QFont()
         font.setPointSize(14)
         self.setMinimumSize(282, 52)
         self.setFont(font)
@@ -486,25 +419,9 @@ class LabelAdvertencia(QtWidgets.QLabel):
         self.setText(self.msj if not self.parent_.rowCount() else '')
 
 
-class WarningDialog(QtWidgets.QMessageBox):
-    """ Crea un widget simple con un ícono de advertencia. """
-
-    def __init__(self, body: str, error: str = None):
-        super().__init__()
-
-        self.setWindowTitle('Atención')
-        self.setWindowIcon(QIcon(':img/icon.ico'))
-        self.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-        self.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-        self.setText(body)
-        if error:
-            self.setDetailedText(error)
-        self.exec()
-
-
 class SpeechBubble(QtWidgets.QWidget):
-    hiddenGeom = QRect(610, 28, 0, 165)
-    shownGeom = QRect(610, 28, 345, 165)
+    hiddenGeom = QtCore.QRect(610, 28, 0, 165)
+    shownGeom = QtCore.QRect(610, 28, 345, 165)
 
     def __init__(self, parent, txt=''):
         super().__init__(parent)
@@ -547,7 +464,7 @@ class SpeechBubble(QtWidgets.QWidget):
             }
         ''')
         self.text_browser.setPlainText(txt)
-        font = QFont()
+        font = QtGui.QFont()
         font.setPointSize(11)
         self.text_browser.setFont(font)
         self.text_browser.setLineWrapMode(QtWidgets.QTextBrowser.LineWrapMode.FixedPixelWidth)
@@ -560,24 +477,24 @@ class SpeechBubble(QtWidgets.QWidget):
         self.text_browser.setPlainText(txt)
 
     def paintEvent(self, event):
-        painter_path = QPainterPath()
+        painter_path = QtGui.QPainterPath()
 
         # Draw the speech bubble background with added padding
         bubble_rect = self.rect().adjusted(10, 10, -10, -10)
         painter_path.addRoundedRect(bubble_rect, 10, 10)
 
         # Draw the triangle at the top middle
-        triangle_path = QPolygon()
+        triangle_path = QtGui.QPolygon()
         triangle_center = bubble_rect.center().y()
-        triangle_path << QPoint(bubble_rect.left(), triangle_center - 10)
-        triangle_path << QPoint(bubble_rect.left(), triangle_center + 10)
-        triangle_path << QPoint(bubble_rect.left() - 10, triangle_center)
+        triangle_path << QtCore.QPoint(bubble_rect.left(), triangle_center - 10)
+        triangle_path << QtCore.QPoint(bubble_rect.left(), triangle_center + 10)
+        triangle_path << QtCore.QPoint(bubble_rect.left() - 10, triangle_center)
 
         painter_path.addPolygon(triangle_path)
 
         # Set the painter properties
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(Qt.GlobalColor.white)
 
@@ -589,18 +506,18 @@ class SpeechBubble(QtWidgets.QWidget):
         if not self.isVisible():
             # Create an animation to gradually change the height of the widget
             self.setVisible(True)
-            self.show_animation = QPropertyAnimation(self, b'geometry')
+            self.show_animation = QtCore.QPropertyAnimation(self, b'geometry')
             self.show_animation.setDuration(200)
             self.show_animation.setStartValue(self.hiddenGeom)
             self.show_animation.setEndValue(self.shownGeom)
-            self.show_animation.setEasingCurve(QEasingCurve.OutSine)
+            self.show_animation.setEasingCurve(QtCore.QEasingCurve.OutSine)
             self.show_animation.start()
         else:
             # Hide the widget
-            self.hide_animation = QPropertyAnimation(self, b'geometry')
+            self.hide_animation = QtCore.QPropertyAnimation(self, b'geometry')
             self.hide_animation.setDuration(200)
             self.hide_animation.setStartValue(self.shownGeom)
             self.hide_animation.setEndValue(self.hiddenGeom)
-            self.hide_animation.setEasingCurve(QEasingCurve.InSine)
+            self.hide_animation.setEasingCurve(QtCore.QEasingCurve.InSine)
             self.hide_animation.finished.connect(lambda: self.setVisible(False))
             self.hide_animation.start()

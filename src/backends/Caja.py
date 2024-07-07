@@ -3,7 +3,7 @@ from PySide6.QtCore import QMutex, Signal
 from PySide6.QtGui import QFont
 
 from core import Moneda, NumeroDecimal
-from mixins import ModuloPrincipal
+from interfaces import IModuloPrincipal
 from pdf import ImpresoraTickets
 from sql import ManejadorCaja
 from utils.mydataclasses import Caja
@@ -15,14 +15,13 @@ from utils.mywidgets import LabelAdvertencia
 #####################
 # VENTANA PRINCIPAL #
 #####################
-class App_Caja(ModuloPrincipal):
+class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
     """ Backend para la ventana de movimientos de la caja. """
     rescanned = Signal()
 
-    def __init__(self, conn, user):
+    def crear(self, conn, user):
         from ui.Ui_Caja import Ui_Caja
-
-        super().__init__()
+        
         self.ui = Ui_Caja()
         self.ui.setupUi(self)
 
@@ -78,7 +77,7 @@ class App_Caja(ModuloPrincipal):
         fechaHasta = self.ui.dateHasta.date()
         manejador = ManejadorCaja(self.conn)
 
-        movimientos = manejador.obtenerMovimientos(fechaDesde, fechaHasta)
+        movimientos = manejador.obtenerMovimientos(fechaDesde, fechaHasta) or []
         self.all_movimientos = Caja(movimientos)
 
         self.rescanned.emit()
@@ -194,17 +193,15 @@ class Dialog_Registrar(QtWidgets.QDialog):
         
         if not (monto and motivo):
             return
-
-        id_metodo = ManejadorCaja(self.conn).obtenerIdMetodoPago(self.metodo)
+        manejador = ManejadorCaja(self.conn, '¡No se pudo registrar el movimiento!')
+        id_metodo = manejador.obtenerIdMetodoPago(self.metodo)
+        
         caja_db_parametros = (
             Moneda(monto),
             motivo,
             id_metodo,
             self.user.id
         )
-
-        manejador = ManejadorCaja(self.conn, '¡No se pudo registrar el movimiento!')
-
         if manejador.insertarMovimiento(caja_db_parametros):
             self.close()
             QtWidgets.QMessageBox.information(self, 'Éxito', '¡Movimiento registrado!')
