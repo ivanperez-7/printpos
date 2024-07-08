@@ -8,7 +8,6 @@ from utils.mywidgets import LabelAdvertencia
 from utils.myutils import son_similar, formatdate
 
 
-
 class Base_PagarVenta(QtWidgets.QWidget):
     def __init__(self, idx: int, conn, user, parent=None) -> None:
         from ui.Ui_ConfirmarVenta import Ui_ConfirmarVenta
