@@ -17,6 +17,7 @@ from utils.mywidgets import LabelAdvertencia, SpeechBubble
 #####################
 # VENTANA PRINCIPAL #
 #####################
+TASA_IVA = 0.16
 
 class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
     """ Backend para la función de crear ventas.
@@ -109,7 +110,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
 
         # <calcular precios y mostrar>
         self.ui.lbTotal.setText(str(self.ventaDatos.total))
-        self.ui.lbImpuestos.setText(str(imp := self.ventaDatos.total * 0.16))
+        self.ui.lbImpuestos.setText(str(imp := self.ventaDatos.total * TASA_IVA))
         self.ui.lbSubtotal.setText(str(self.ventaDatos.total - imp))
         self.ui.lbDescuento.setText(str(self.ventaDatos.total_descuentos))
         # </calcular precios y mostrar>
