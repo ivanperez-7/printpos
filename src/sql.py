@@ -17,7 +17,7 @@ Error = fdb.Error
 
 
 def conectar_firebird(usuario: str, psswd: str, rol: str = None) -> Connection:
-    """ Crea conexión a base de datos y regresa objeto Connection.
+    """ Crea conexión a base de datos y regresa conexión a DB.
         Levanta sql.Error, por lo que siempre se debe usar en un bloque `try-except`. """
     try:
         return fdb.connect(
@@ -786,7 +786,7 @@ class ManejadorReportes(DatabaseManager):
             ORDER   BY 1;
         ''', (year, codigo))
 
-    def obtenerVentasIntervalos(self, codigo: str):
+    def obtenerVentasIntervalos(self, codigo: str, fechaDesde: QDate, fechaHasta: QDate):
         return self.fetchall('''
             SELECT  P_Inv.desde,
                     CASE P_Inv.duplex

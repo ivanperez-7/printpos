@@ -11,8 +11,10 @@ from time import sleep as _sleep
 import config as _config
 
 BASE_URL = 'https://api.lemonsqueezy.com'
-BASE_HEADER = {'Accept': 'application/json'}
-POST_HEADERS = BASE_HEADER | {'Content-Type': 'application/x-www-form-urlencoded'}
+POST_HEADERS = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/x-www-form-urlencoded'
+}
 
 
 class Errores(_Enum):
