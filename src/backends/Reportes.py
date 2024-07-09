@@ -126,14 +126,15 @@ class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
         tabla.clicked.connect(handle)
 
     def actualizar_productos(self):
-        self.ui.tabla_intervalos.modelo = self.ui.tabla_intervalos.Modelos.CREAR_VENTA
-        self.ui.tabla_intervalos.configurarCabecera(lambda col: col == 0)
-        self.ui.tabla_intervalos.setSortingEnabled(False)
+        tabla_intervalos = self.ui.tabla_intervalos
+        tabla_intervalos.modelo = tabla_intervalos.Modelos.CREAR_VENTA
+        tabla_intervalos.configurarCabecera(lambda col: col == 0)
+        tabla_intervalos.setSortingEnabled(False)
 
         def handle(index: QModelIndex):
             codigo = index.siblingAtColumn(1).data()
             self.ui.ventas_prod_graph.alimentar_producto(self.conn, codigo)
-            self.ui.tabla_intervalos.llenar(man.obtenerVentasIntervalos(codigo))
+            tabla_intervalos.llenar(man.obtenerVentasIntervalos(codigo, self.fechaDesde, self.fechaHasta))
 
         man = ManejadorReportes(self.conn)
         tabla = self.ui.tabla_prods
@@ -273,6 +274,8 @@ class ChartView2(QChartView):
             s = series.append(codigo + ' ({})'.format(stringify_float(num)), num)
             s.hovered.connect(partial(self.handle_slice_hover, s))
 
+        if not series.slices():
+            return
         _slice = max(series.slices(), key=lambda s: s.value())
         _slice.setLabelVisible(True)
         _slice.setPen(QPen(Qt.darkGreen, 2))

@@ -6,9 +6,9 @@ from PySide6.QtCore import Qt, QMutex, Signal
 
 from config import INI
 from core import IdFirebird
-from interfaces import IWarningLogger, IControllerWindow
+from interfaces import IWarningLogger, IControllerWindow, IDatabaseConnection
 import licensing
-from sql import conectar_firebird, ManejadorUsuarios, Connection, Error
+from sql import conectar_firebird, ManejadorUsuarios, Error
 from utils.mydataclasses import Usuario
 from utils.mydecorators import function_details, run_in_thread
 
@@ -21,7 +21,7 @@ licencia_validada = True
 class App_Login(QtWidgets.QWidget):
     """ Backend para la pantalla de inicio de sesión. """
     failure = Signal(licensing.Errores)
-    logged_in = Signal(Connection, Usuario)
+    logged_in = Signal(IDatabaseConnection, Usuario)
 
     @inject
     def __init__(self, ventana_principal: IControllerWindow, warning_logger: IWarningLogger):

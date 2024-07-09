@@ -5,6 +5,7 @@ from haps import egg
 from PySide6.QtWidgets import QMainWindow
 from PySide6.QtGui import QIcon
 
+from backends.ConsultarPrecios import App_ConsultarPrecios
 from factorias import crear_modulo
 from interfaces import IControllerWindow
 
@@ -21,7 +22,6 @@ class VentanaPrincipal(QMainWindow, IControllerWindow): # TODO: clase App -> Inj
         self.conn = conn
         self.user = user
 
-        from backends.ConsultarPrecios import App_ConsultarPrecios
         self.consultarPrecios = App_ConsultarPrecios(conn)
 
         self.go_home()
