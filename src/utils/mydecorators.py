@@ -5,7 +5,8 @@ from PySide6.QtWidgets import QWidget, QMessageBox, QDialog
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
-from sql import conectar_firebird, DatabaseManager, Error
+from sql import DatabaseManager
+from sql.core import conectar_firebird, FirebirdError
 
 __all__ = ['requiere_admin', 'run_in_thread', 'fondo_oscuro', 'function_details']
 
@@ -87,7 +88,7 @@ class Dialog_ObtenerAdmin(QDialog):
         try:
             conn = conectar_firebird(usuario, psswd, 'ADMINISTRADOR')
             manejador = DatabaseManager(conn)
-        except (Error, AssertionError):
+        except (FirebirdError, AssertionError):
             self.close()
             wdg = QMessageBox(QMessageBox.Warning, 'Permiso denegado',
                               'Las credenciales no son válidas para una cuenta de administrador.')

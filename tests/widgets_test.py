@@ -1,15 +1,12 @@
 from unittest import TestCase, main
 
-from PySide6.QtCore import Qt
-from PySide6.QtTest import QTest
-
 import PrintPOS
-import sql
+import sql.core
 
 
 class ConnectionsMixin:  # cuentas válidas y existentes
-    con_user = sql.conectar_firebird('pablo', '1', 'vendedor')
-    con_admin = sql.conectar_firebird('ivanperez', '123', 'administrador')
+    con_user = sql.core.conectar_firebird('pablo', '1', 'vendedor')
+    con_admin = sql.core.conectar_firebird('ivanperez', '123', 'administrador')
 
 
 class WidgetsTest(TestCase, ConnectionsMixin):

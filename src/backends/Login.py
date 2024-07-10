@@ -8,7 +8,8 @@ from config import INI
 from core import IdFirebird
 from interfaces import IWarningLogger, IControllerWindow, IDatabaseConnection
 import licensing
-from sql import conectar_firebird, ManejadorUsuarios, Error
+from sql import ManejadorUsuarios
+from sql.core import conectar_firebird, FirebirdError
 from utils.mydataclasses import Usuario
 from utils.mydecorators import function_details, run_in_thread
 
@@ -119,7 +120,7 @@ class App_Login(QtWidgets.QWidget):
         except AssertionError:
             self.ui.lbEstado.setStyleSheet('color: red;')
             self.ui.lbEstado.setText(f'¡Usuario sin permisos para {rol}!')
-        except Error as err:
+        except FirebirdError as err:
             txt, sqlcode, gdscode = err.args
             if gdscode in [335544472, 335544352]:
                 self.ui.lbEstado.setStyleSheet('color: red;')
