@@ -3,33 +3,17 @@ from collections import namedtuple
 from functools import partialmethod
 from typing import overload
 
-import fdb
 from haps import Inject
 from PySide6.QtCore import QDate
 
-from config import INI
 from core import Moneda
-from interfaces import IWarningLogger
+from interfaces import IWarningLogger, IDatabaseConnection
+from sql.core import FirebirdError
 from utils.mydataclasses import ItemVenta, ItemGranFormato
 
-Connection = fdb.Connection
-Error = fdb.Error
-
-
-def conectar_firebird(usuario: str, psswd: str, rol: str = None) -> Connection:
-    """ Crea conexión a base de datos y regresa conexión a DB.
-        Levanta sql.Error, por lo que siempre se debe usar en un bloque `try-except`. """
-    try:
-        return fdb.connect(
-            dsn='{}/3050:PrintPOS.fdb'.format(INI.NOMBRE_SERVIDOR),
-            user=usuario,
-            password=psswd,
-            charset='UTF8',
-            role=rol)
-    except fdb.Error as err:
-        txt, sqlcode, gdscode = err.args
-        print('\nconectar_db() {\n', sqlcode, gdscode, '\n' + txt + '\n}')
-        raise err
+__all__ = ['DatabaseManager', 'ManejadorCaja', 'ManejadorClientes', 
+           'ManejadorInventario', 'ManejadorProductos', 'ManejadorReportes', 
+           'ManejadorVentas', 'ManejadorUsuarios']
 
 
 class DatabaseManager:
@@ -41,10 +25,10 @@ class DatabaseManager:
         debe verificar el resultado obtenido para asegurar una correcta funcionalidad. """
     warning_logger: IWarningLogger = Inject()
     
-    def __init__(self, conn: Connection,
+    def __init__(self, conn: IDatabaseConnection,
                  error_txt: str = None,
                  *, handle_exceptions: bool = True):
-        assert isinstance(conn, Connection), "Conexión a DB no válida."
+        assert isinstance(conn, IDatabaseConnection), "Conexión a DB no válida."
 
         self._conn = conn
         self._error_txt = error_txt or 'Operación fallida en base de datos.'
@@ -61,19 +45,19 @@ class DatabaseManager:
             if commit:
                 self._conn.commit()
             return True
-        except Error as err:
-            self.__handle_err(err)  # <- levanta sql.Error si se solicita
+        except FirebirdError as err:
+            self.__handle_err(err)  # <- levanta sql.FirebirdError si se solicita
             return False
 
     def _partial_fetch(self, func, query: str, parameters=None):
         try:
             self._crsr.execute(query, parameters)
             return getattr(self._crsr, func)()
-        except Error as err:
-            self.__handle_err(err)  # <- levanta sql.Error si se solicita
+        except FirebirdError as err:
+            self.__handle_err(err)  # <- levanta sql.FirebirdError si se solicita
             return None
 
-    def __handle_err(self, err: Error):
+    def __handle_err(self, err: FirebirdError):
         if not self._handle_exceptions:
             raise err
 

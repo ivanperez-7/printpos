@@ -18,6 +18,8 @@ from utils.mywidgets import LabelAdvertencia
 #####################
 # VENTANA PRINCIPAL #
 #####################
+CHUNK_SIZE = 100
+
 class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
     """ Backend para la ventana de administración de ventas.
         TODO:
@@ -36,7 +38,6 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         LabelAdvertencia(self.ui.tabla_pedidos, '¡No se encontró ningún pedido!')
 
         # otras variables importantes
-        self.chunk_size = 50
         self.all_directas = []
         self.all_pedidos = []
 
@@ -114,7 +115,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             '{} {} en la base de datos.'.format(num_compras, label))
         self.ui.lbPagina.setText(
             '{} de {}'.format(self.tabla_actual.paginaActual,
-                              ceil(num_compras / self.chunk_size) or 1))
+                              ceil(num_compras / CHUNK_SIZE) or 1))
 
         self.tabla_actual.resizeRowsToContents()
         self.paginado.tabla = self.tabla_actual
@@ -153,10 +154,10 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
                        if son_similar(txt_busqueda, c[self.filtro.idx])]
 
         tabla = self.ui.tabla_directas
-        currentPage = clamp(tabla.paginaActual, 1, ceil(len(compras) / self.chunk_size))
+        currentPage = clamp(tabla.paginaActual, 1, ceil(len(compras) / CHUNK_SIZE))
         tabla.paginaActual = currentPage  # truncar valor de la página si se sale del rango
 
-        chunks = chunkify(compras, self.chunk_size) or [[]]
+        chunks = chunkify(compras, CHUNK_SIZE) or [[]]
         data = chunks[currentPage-1]  # TODO: usar FIRST y SKIP
 
         tabla.modelo = tabla.Modelos.TABLA_VENTAS_DIRECTAS
@@ -171,10 +172,10 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
                        if son_similar(txt_busqueda, c[self.filtro.idx])]
 
         tabla = self.ui.tabla_pedidos
-        currentPage = clamp(tabla.paginaActual, 1, ceil(len(compras) / self.chunk_size))
+        currentPage = clamp(tabla.paginaActual, 1, ceil(len(compras) / CHUNK_SIZE))
         tabla.paginaActual = currentPage  # truncar valor de la página si se sale del rango
 
-        chunks = chunkify(compras, self.chunk_size) or [[]]
+        chunks = chunkify(compras, CHUNK_SIZE) or [[]]
         data = chunks[currentPage-1]  # TODO: usar FIRST y SKIP
 
         tabla.modelo = tabla.Modelos.TABLA_PEDIDOS

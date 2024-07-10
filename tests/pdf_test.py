@@ -8,7 +8,7 @@ from ui import resources_rc
 from config import INI
 from pdf import ImpresoraOrdenes, ImpresoraTickets
 import PrintPOS
-import sql
+import sql.core
 
 
 class PdfTests(TestCase):
@@ -16,7 +16,7 @@ class PdfTests(TestCase):
         from utils.mydataclasses import Caja, ItemVenta
         
         printer = ImpresoraTickets()
-        man = sql.ManejadorVentas(sql.conectar_firebird('ivanperez', '123', 'administrador'))
+        man = sql.ManejadorVentas(sql.core.conectar_firebird('ivanperez', '123', 'administrador'))
         self.assertEqual(printer.printer.printerName(), INI.IMPRESORA)
         
         res1 = printer.imprimirTicketCompra(670, manejador=man) # varios pagos
@@ -41,7 +41,7 @@ class PdfTests(TestCase):
         printer = ImpresoraOrdenes()
         self.assertEqual(printer.printer.printerName(), INI.IMPRESORA)
         
-        res1 = printer.imprimirOrdenCompra(693, manejador=sql.ManejadorVentas(sql.conectar_firebird('ivanperez', '123', 'administrador')))
+        res1 = printer.imprimirOrdenCompra(693, manejador=sql.ManejadorVentas(sql.core.conectar_firebird('ivanperez', '123', 'administrador')))
         QThreadPool.globalInstance().waitForDone()  # <- porque las impresoras usan run_in_thread
 
 
