@@ -298,8 +298,10 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
 
     def imprimirOrden(self):
         """ Imprime orden de compra de un pedido dado el folio de esta. """
-        if (selected := self.tabla_actual.selectedItems()) \
-                and selected[6].text().startswith('Recibido'):
+        if (
+            (selected := self.tabla_actual.selectedItems())
+            and selected[6].text().startswith('Recibido')
+        ):
             impresora = ImpresoraOrdenes(self)
             impresora.imprimirOrdenCompra(selected[0].text(), manejador=ManejadorVentas(self.conn))
 

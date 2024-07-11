@@ -73,7 +73,7 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def resaltarTrigger(self, *args):
+    def resaltarTrigger(self):
         """ Recolorea la tabla para resaltar clientes que no han
         visitado en una cantidad escogida de días. """
         if self.ui.resaltarCheck.isChecked():
@@ -141,10 +141,11 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
         # abrir widget para determinar ubicación de archivo
         fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Guardar archivo...',
                                                             filter='Libro de Excel (*.xlsx)')
+        if fileName:
+            self.generar_xlsx(fileName)
 
-        if not fileName:
-            return
-
+    @run_in_thread
+    def generar_xlsx(self, fileName: str):
         titulos = [self.ui.tabla_clientes.horizontalHeaderItem(section).text()
                    for section in range(1, self.ui.tabla_clientes.columnCount())]
         datos = []
@@ -158,9 +159,8 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
                 else:
                     cell = str(dato or '')
                 cliente[col] = cell
-
             datos.append(cliente)
-
+        
         exportarXlsx(fileName, titulos, datos)
 
     # ====================================
@@ -249,8 +249,8 @@ class Base_EditarCliente(QtWidgets.QWidget):
     # FUNCIONES ÚTILES #
     ####################
     def numeroTelefono(self):
-        return '+{} {}'.format(self.ui.txtLada.text(),
-                               self.ui.txtCelular.text())
+        return '+{} {}'.format(self.ui.txtLada.displayText(),
+                               self.ui.txtCelular.displayText())
 
     def agregarDatosPorDefecto(self, nombre: str, celular: str, correo: str):
         """ Datos por defecto, proveído por ambas clases heredadas. """

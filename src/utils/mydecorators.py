@@ -18,15 +18,14 @@ def function_details(func):
     fname = func.__name__ 
 
     def inner_func(*args, **kwargs): 
-        print(fname, "(", end = "") 
+        print(f'{fname}(', end='') 
         # printing the function arguments 
-        print(', '.join( '% s = % r' % entry 
-                        for entry in zip(argnames, args[:len(argnames)])), end = ", ") 
+        print(*('{} = {}'.format(name, val)
+                for name, val in zip(argnames, args)), sep=', ', end=', ')
         # printing the variable length Arguments 
-        print("args =", list(args[len(argnames):]), end = ", ") 
+        print('args =', list(args[len(argnames):]), end=', ')
         # printing the variable length keyword arguments
-        print("kwargs =", kwargs, end = "")
-        print(")")
+        print(f'kwargs = {kwargs})')
         return func(*args, **kwargs)
 
     return inner_func 
@@ -166,7 +165,7 @@ def run_in_thread(func):
 #########################################
 
 
-def fondo_oscuro(widget):
+def fondo_oscuro(widget: QWidget):
     """ Decorador para crear un fondo oscurecedor en la ventana principal.
         Requiere widget padre que, por convención para este proyecto, al ser requerido
         en el constructor, siempre se pasa como último parámetro del widget hijo. """
