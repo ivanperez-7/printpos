@@ -384,10 +384,7 @@ class NumberEdit(QtWidgets.QLineEdit):
 
 class LabelAdvertencia(QtWidgets.QLabel):
     """ Crea un label de advertencia para las tablas, ya que en Qt Designer no se puede.
-
-        Añade método `resizeEvent` al padre para posicionar el label en el centro.
-        
-        Añade método al padre para actualizar el texto, que verifica si hay items o no en la tabla. """
+        Modifica métodos `resizeEvent` y `showEvent`. """
 
     def __init__(self, parent: QtWidgets.QTableWidget, msj: str):
         super().__init__(parent)
@@ -397,23 +394,29 @@ class LabelAdvertencia(QtWidgets.QLabel):
 
         font = QtGui.QFont()
         font.setPointSize(14)
-        self.setMinimumSize(282, 52)
         self.setFont(font)
         self.setAlignment(Qt.AlignCenter)
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
 
-        self.actualizarLabel()
-
         parent.resizeEvent = self.relocate
+        parent.showEvent = self.init
         parent.model().rowsInserted.connect(self.actualizarLabel)
         parent.model().rowsRemoved.connect(self.actualizarLabel)
 
     def relocate(self, event):
+        self.moveToMiddle()
+        QtWidgets.QTableWidget.resizeEvent(self.parent_, event)
+    
+    def init(self, event):
+        self.actualizarLabel()
+        self.moveToMiddle()
+        QtWidgets.QTableWidget.showEvent(self.parent_, event)
+
+    def moveToMiddle(self):
         pm_x = (self.parent_.width() - self.width()) // 2
         pm_y = (self.parent_.height() - self.height()) // 2
-
         self.move(pm_x, pm_y)
-        QtWidgets.QTableWidget.resizeEvent(self.parent_, event)
+        self.setFixedWidth(self.parent_.width())
 
     def actualizarLabel(self):
         self.setText(self.msj if not self.parent_.rowCount() else '')
