@@ -39,6 +39,10 @@ def _back_to_main(func):
 @egg
 class WarningWidget(QMessageBox, IWarningLogger):
     @_back_to_main
+    def __init__(self):
+        super().__init__()
+    
+    @_back_to_main
     def display(self, title: str, body: str = '') -> None:
         self.setWindowTitle('Atención')
         self.setWindowIcon(QIcon(':img/icon.ico'))

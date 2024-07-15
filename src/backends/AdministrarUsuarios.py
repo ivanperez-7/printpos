@@ -7,7 +7,7 @@ from interfaces import IModuloPrincipal
 from sql import ManejadorUsuarios
 from utils.mydecorators import fondo_oscuro
 from utils.myinterfaces import InterfazFiltro
-from utils.myutils import *
+from utils.myutils import son_similar
 from utils.mywidgets import LabelAdvertencia
 
 
