@@ -139,7 +139,7 @@ def generarTicketPDF(
     total: float = None,
     recibido: float = 0.,
     metodo_pago: str = None,
-    fechaCreacion: datetime = datetime.now()
+    fecha_creacion = datetime.now()
 ):
     """ Función general para generar el ticket de compra o presupuesto.
         Contiene:
@@ -247,7 +247,7 @@ def generarTicketPDF(
         Paragraph(titulo, styles['Center']),
         Paragraph('* ' * 40, styles['Center']),
         Paragraph(folio, styles['Left']),
-        Paragraph('<b>Fecha</b>: ' + formatdate(fechaCreacion), styles['Left']),
+        Paragraph('<b>Fecha</b>: ' + formatdate(fecha_creacion), styles['Left']),
         Spacer(1, 10),
 
         tabla_productos,

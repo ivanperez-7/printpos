@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (QPushButton, QDateEdit, QTableWidget,
                                QToolButton, QLineEdit, QMenu)
 from PySide6.QtCore import QDate, QObject, Signal
 
+from core import DateRange
 from utils.mywidgets import TablaDatos
 
 __all__ = ['InterfazPaginas', 'InterfazFechas', 'InterfazFiltro']
@@ -88,6 +89,10 @@ class InterfazFechas(QObject):
         dateHasta.dateChanged.connect(emit)
 
         self.hoy_handle()
+    
+    @property
+    def rango_fechas(self):
+        return DateRange(self.dateDesde.date(), self.dateHasta.date())
 
     def hoy_handle(self):
         hoy = QDate.currentDate()

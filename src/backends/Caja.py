@@ -40,9 +40,10 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         manejador = ManejadorCaja(self.conn)
         fechaMin = manejador.obtenerFechaPrimerMov()
 
-        InterfazFechas(
+        self.iFechas = InterfazFechas(
             self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
-            self.ui.dateDesde, self.ui.dateHasta, fechaMin).dateChanged.connect(self.rescan_update)
+            self.ui.dateDesde, self.ui.dateHasta, fechaMin)
+        self.iFechas.dateChanged.connect(self.rescan_update)
 
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.go_back.emit)
@@ -72,14 +73,12 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
             return
 
         self.ui.lbTotal.setText('Recuperando información...')
-
-        fechaDesde = self.ui.dateDesde.date()
-        fechaHasta = self.ui.dateHasta.date()
+        
         manejador = ManejadorCaja(self.conn)
-
-        movimientos = manejador.obtenerMovimientos(fechaDesde, fechaHasta) or []
+        fechas = self.iFechas.rango_fechas
+        movimientos = manejador.obtenerMovimientos(fechas) or []
+        
         self.all_movimientos = Caja(movimientos)
-
         self.rescanned.emit()
 
     def update_display(self):

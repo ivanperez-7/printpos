@@ -103,11 +103,18 @@ def requiere_admin(func):
     """ Decorador para solicitar contraseña de administrador
         antes de ejecutar alguna función.
         
+        >>> @requiere_admin
+        ... def abortar_venta():
+        ...     print("función secreta!")
+        
         Se puede añadir parámetro nombrado `conn` al final de la función envuelta,
         ya que es devuelto por el decorador para extraer información que se requiera
         de la conexión de administrador, por ejemplo, nombre del administrador.
         
-        Ejemplo: `func(x, y)` -> `func(x, y, conn)` 
+        >>> @requiere_admin
+        ... def abortar_venta(conn):
+        ...     man = sql.ManejadorVentas(conn)
+        ...     print(man.nombreUsuarioActivo)
         
         Por el momento, no se puede usar un return en una función envuelta. """
     
@@ -154,6 +161,7 @@ class _Runnable(QRunnable):
 
 def run_in_thread(func):
     """ Decorador para ejecutar alguna función dada en otro hilo. """
+    
     @wraps(func)
     def async_func(*args, **kwargs):
         task = _Runnable(func, *args, **kwargs)
@@ -165,7 +173,7 @@ def run_in_thread(func):
 #########################################
 
 
-def fondo_oscuro(widget: QWidget):
+def fondo_oscuro(widget):
     """ Decorador para crear un fondo oscurecedor en la ventana principal.
         Requiere widget padre que, por convención para este proyecto, al ser requerido
         en el constructor, siempre se pasa como último parámetro del widget hijo. """

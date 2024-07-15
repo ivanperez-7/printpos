@@ -10,7 +10,7 @@ from pdf import ImpresoraOrdenes, ImpresoraTickets
 from sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
 from utils.mydataclasses import Venta
 from utils.mydecorators import fondo_oscuro, requiere_admin
-from utils.myutils import *
+from utils.myutils import clamp, enviarWhatsApp, formatdate, son_similar
 from utils.mywidgets import LabelAdvertencia, SpeechBubble
 
 
@@ -626,7 +626,8 @@ class App_ConfirmarVenta(Base_PagarVenta):
                 self.ventaDatos.fechaCreacion, self.ventaDatos.fechaEntrega)
 
     def pagoPredeterminado(self) -> Moneda:
-        return self.ventaDatos.total if self.ventaDatos.esVentaDirecta else self.ventaDatos.total / 2
+        return (self.ventaDatos.total if self.ventaDatos.esVentaDirecta
+                else self.ventaDatos.total / 2)
 
     def obtenerIdVenta(self) -> int:
         """ Registra datos principales de venta en DB
@@ -685,13 +686,15 @@ class App_ConfirmarVenta(Base_PagarVenta):
         """ Tras verificar todas las condiciones, finalizar venta y
             registrarla en la base de datos. """
         manejadorVentas = ManejadorVentas(self.conn)
-        estado = 'Terminada' if self.ventaDatos.esVentaDirecta else f'Recibido ${self.para_pagar}'
+        estado = ('Terminada' if self.ventaDatos.esVentaDirecta
+                  else f'Recibido ${self.para_pagar}')
         return manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True)
 
     def dialogoExito(self) -> None:
         manejador=ManejadorVentas(self.conn)
         if not self.ventaDatos.esVentaDirecta:
-            qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
+            qm.information(self, 'Éxito',
+                           'Venta terminada. Se imprimirá ahora la orden de compra.')
 
             impresora = ImpresoraOrdenes(self)
             impresora.imprimirOrdenCompra(self.id_ventas, manejador=manejador)

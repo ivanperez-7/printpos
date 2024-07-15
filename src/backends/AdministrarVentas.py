@@ -11,7 +11,7 @@ from pdf import ImpresoraOrdenes, ImpresoraTickets
 from sql import ManejadorVentas
 from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
-from utils.myutils import *
+from utils.myutils import chunkify, clamp, enviarWhatsApp, formatdate, son_similar
 from utils.mywidgets import LabelAdvertencia
 
 
@@ -49,9 +49,10 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         manejador = ManejadorVentas(conn)
         fechaMin = manejador.obtenerFechaPrimeraVenta()
 
-        InterfazFechas(
+        self.iFechas = InterfazFechas(
             self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
-            self.ui.dateDesde, self.ui.dateHasta, fechaMin).dateChanged.connect(self.rescan_update)
+            self.ui.dateDesde, self.ui.dateHasta, fechaMin)
+        self.iFechas.dateChanged.connect(self.rescan_update)
 
         # añadir menú de opciones al botón para filtrar
         self.filtro = InterfazFiltro(self.ui.btFiltrar, self.ui.searchBar, 
@@ -128,15 +129,13 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             return
 
         self.ui.lbContador.setText('Recuperando información...')
-
-        fechaDesde = self.ui.dateDesde.date()
-        fechaHasta = self.ui.dateHasta.date()
-        restrict = self.user.id if self.user.rol != 'ADMINISTRADOR' else None
-
+        
         manejador = ManejadorVentas(self.conn)
-        self.all_directas = manejador.tablaVentas(fechaDesde, fechaHasta, restrict) or []
-        self.all_pedidos = manejador.tablaPedidos(fechaDesde, fechaHasta) or []
-
+        restrict = self.user.id if self.user.rol != 'ADMINISTRADOR' else None
+        fechas = self.iFechas.rango_fechas
+        
+        self.all_directas = manejador.tablaVentas(fechas, restrict) or []
+        self.all_pedidos = manejador.tablaPedidos(fechas) or []
         self.rescanned.emit()
 
     def update_display(self):

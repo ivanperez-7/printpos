@@ -9,7 +9,7 @@ from interfaces import IModuloPrincipal
 from sql import ManejadorClientes
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
-from utils.myutils import *
+from utils.myutils import daysTo, exportarXlsx, formatdate, son_similar
 from utils.mywidgets import LabelAdvertencia
 
 

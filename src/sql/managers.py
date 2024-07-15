@@ -6,7 +6,7 @@ from typing import overload
 from haps import Inject
 from PySide6.QtCore import QDate
 
-from core import Moneda
+from core import DateRange, Moneda
 from interfaces import IWarningLogger, IDatabaseConnection
 from sql.core import FirebirdError
 from utils.mydataclasses import ItemVenta, ItemGranFormato
@@ -114,21 +114,15 @@ class DatabaseManager:
 class ManejadorCaja(DatabaseManager):
     """ Clase para manejar sentencias hacia/desde la tabla Caja. """
 
-    def obtenerMovimientos(self, 
-                           inicio: QDate = QDate(1900, 1, 1), 
-                           final: QDate = QDate.currentDate()):
+    def obtenerMovimientos(self, fechas = DateRange()):
         """ Obtener historial completo de movimientos de caja.
             
             Requiere fechas de inicio y final, de tipo QDate. """
         return self.fetchall('''
-            SELECT  fecha_hora,
-                    monto, 
-                    REPLACE(descripcion, '  ', ''), 
-                    metodo, 
-                    nombre
+            SELECT  *
             FROM    movimientos_caja
             WHERE   CAST(fecha_hora AS DATE) BETWEEN ? AND ?;
-        ''', (inicio.toPython(), final.toPython()))
+        ''', (fechas.desde, fechas.hasta))
 
     def obtenerFechaPrimerMov(self):
         """ Obtener fecha del movimiento más antiguo. """
@@ -802,38 +796,37 @@ class ManejadorVentas(DatabaseManager):
                 estado,
                 comentarios
         FROM    ventas V
-                LEFT JOIN usuarios U
+                JOIN usuarios U
                     ON V.id_usuarios = U.id_usuarios
-                LEFT JOIN clientes C
+                JOIN clientes C
                     ON V.id_clientes = C.id_clientes
                 LEFT JOIN ventas_detallado VD
                     ON V.id_ventas = VD.id_ventas
         WHERE   fecha_hora_entrega {fecha_where} fecha_hora_creacion
-                AND (CAST(fecha_hora_creacion AS DATE) BETWEEN ? AND ?
-                     OR estado LIKE 'Recibido%')
-                {restrict_user}
+                AND (
+                    CAST(fecha_hora_creacion AS DATE) BETWEEN ? AND ?
+                    OR estado LIKE 'Recibido%'
+                )
+                AND {restrict_user}
         GROUP   BY {clausula_group}
         ORDER   BY 1 DESC;
     '''
 
-    def tablaVentas(self, inicio: QDate = QDate(1900, 1, 1),
-                          final: QDate = QDate.currentDate(),
-                          restrict: int = None):
+    def tablaVentas(self, fechas = DateRange(), restrict: int = None):
         query = self.query_all_ventas.format(
             col_fecha_entrega='',
             fecha_where='=',
-            restrict_user=f'AND U.id_usuarios = {restrict}' if restrict else '',
+            restrict_user=f'U.id_usuarios = {restrict}' if restrict else 'true',
             clausula_group='1, 2, 3, 4, 6, 7')
-        return self.fetchall(query, (inicio.toPython(), final.toPython()))
+        return self.fetchall(query, (fechas.desde, fechas.hasta))
     
-    def tablaPedidos(self, inicio: QDate = QDate(1900, 1, 1),
-                           final: QDate = QDate.currentDate()):
+    def tablaPedidos(self, fechas = DateRange()):
         query = self.query_all_ventas.format(
             col_fecha_entrega='fecha_hora_entrega,',
             fecha_where='!=',
-            restrict_user='',
+            restrict_user='true',
             clausula_group='1, 2, 3, 4, 5, 7, 8')
-        return self.fetchall(query, (inicio.toPython(), final.toPython()))
+        return self.fetchall(query, (fechas.desde, fechas.hasta))
 
     def obtenerFechas(self, id_venta: int):
         """ Obtener fechas de creación y entrega de la venta dada. """

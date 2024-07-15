@@ -271,3 +271,6 @@ class Caja:
 
     def totalCorte(self, metodo: str = None):
         return self._total(self.movimientos, metodo)
+    
+    def __repr__(self):
+        return f'Caja(movimientos={self.movimientos})'
