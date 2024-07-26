@@ -34,9 +34,11 @@ class Base_PagarVenta(QtWidgets.QWidget):
 
         # llenar labels y campos de texto
         self.total = self.calcularTotal()
-        self.ui.lbTotal.setText(f'{self.total}')
+        self.ui.lbTotal.setText(f"{self.total}")
 
-        nombreCliente, correo, telefono, fechaCreacion, fechaEntrega = self.obtenerDatosGenerales()
+        nombreCliente, correo, telefono, fechaCreacion, fechaEntrega = (
+            self.obtenerDatosGenerales()
+        )
 
         self.ui.txtCliente.setText(nombreCliente)
         self.ui.txtCorreo.setText(correo)
@@ -49,7 +51,8 @@ class Base_PagarVenta(QtWidgets.QWidget):
         self.ui.tabla_productos.quitarBordeCabecera()
         self.ui.tabla_productos.configurarCabecera(
             lambda col: col != 2,
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+        )
 
         # eventos para widgets
         self.ui.btListo.clicked.connect(self.listo)
@@ -74,91 +77,103 @@ class Base_PagarVenta(QtWidgets.QWidget):
     # FUNCIONES ÚTILES #
     ####################
     def calcularTotal(self) -> Moneda:
-        raise NotImplementedError('CLASE BASE BROU')
+        raise NotImplementedError("CLASE BASE BROU")
 
     def obtenerDatosGenerales(self) -> tuple:
-        raise NotImplementedError('CLASE BASE BROU')
+        raise NotImplementedError("CLASE BASE BROU")
 
     def pagoPredeterminado(self) -> Moneda:
-        raise NotImplementedError('CLASE BASE BROU')
+        raise NotImplementedError("CLASE BASE BROU")
 
     def obtenerIdVenta(self) -> int:
-        raise NotImplementedError('CLASE BASE BROU')
+        raise NotImplementedError("CLASE BASE BROU")
 
     @property
     def para_pagar(self) -> Moneda:
         return self.ui.txtAnticipo.cantidad
 
     def cambiarAnticipo(self) -> None:
-        """ Cambiar el anticipo pagado por el cliente. """
+        """Cambiar el anticipo pagado por el cliente."""
         self.stackPagos.total = self.ui.txtAnticipo.cantidad
         self._handleCounters()
 
     def modificar_contador(self) -> None:
-        self.ui.lbContador.setText('Pago {}/{}'.format(self.stackPagos.currentIndex() + 1,
-                                                       self.stackPagos.count()))
+        self.ui.lbContador.setText(
+            "Pago {}/{}".format(
+                self.stackPagos.currentIndex() + 1, self.stackPagos.count()
+            )
+        )
 
     def _handleCounters(self) -> None:
-        """ Seguir las mismas reglas de `StackPagos.pagosValidos`
-            para actualizar y colorear contadores. """
+        """Seguir las mismas reglas de `StackPagos.pagosValidos`
+        para actualizar y colorear contadores."""
         stack = self.stackPagos
-        n_efec = [wdg.metodoSeleccionado for wdg in stack].count('Efectivo')
+        n_efec = [wdg.metodoSeleccionado for wdg in stack].count("Efectivo")
 
         if n_efec:  # hay pagos en efectivo
-            m = sum(wdg.montoPagado for wdg in stack  # pagado en efectivo
-                    if wdg.metodoSeleccionado == 'Efectivo')
-            m = max(Moneda.cero, m - stack.restanteEnEfectivo)  # pagado - restante (en efectivo)
-            self.ui.lbCambio.setText(f'Cambio: ${m}')
+            m = sum(
+                wdg.montoPagado
+                for wdg in stack  # pagado en efectivo
+                if wdg.metodoSeleccionado == "Efectivo"
+            )
+            m = max(
+                Moneda.cero, m - stack.restanteEnEfectivo
+            )  # pagado - restante (en efectivo)
+            self.ui.lbCambio.setText(f"Cambio: ${m}")
         else:
             self.ui.lbCambio.clear()  # ignorar cambio
 
-        res = stack.total - sum(wdg.montoPagado for wdg in stack)  # total - pagado (cualquiera)
+        res = stack.total - sum(
+            wdg.montoPagado for wdg in stack
+        )  # total - pagado (cualquiera)
 
-        if res < 0.0 and (not n_efec or stack.restanteEnEfectivo <= 0.):
+        if res < 0.0 and (not n_efec or stack.restanteEnEfectivo <= 0.0):
             # sobra dinero y sin efectivo, o efectivo no necesario
-            style = 'color: red;'
+            style = "color: red;"
         else:  # recalcular restante, considerando que hay efectivo y necesario
             res = max(Moneda.cero, res)  # por el cambio a entregar
-            style = ''
+            style = ""
         if stack.pagosValidos:  # todo bien
-            style = 'color: green;'
+            style = "color: green;"
 
         self.ui.lbRestante.setStyleSheet(style)
-        self.ui.lbRestante.setText(f'Restante: ${res}')
+        self.ui.lbRestante.setText(f"Restante: ${res}")
 
-        self.ui.btListo.setEnabled(stack.pagosValidos
-                                   and 0. <= stack.total <= self.total)
+        self.ui.btListo.setEnabled(
+            stack.pagosValidos and 0.0 <= stack.total <= self.total
+        )
 
     def actualizarEstadoVenta(self) -> bool:
-        raise NotImplementedError('CLASE BASE BROU')
+        raise NotImplementedError("CLASE BASE BROU")
 
     def dialogoExito(self) -> None:
-        raise NotImplementedError('CLASE BASE BROU')
+        raise NotImplementedError("CLASE BASE BROU")
 
     def listo(self) -> None:
-        """ Concluye la venta de la siguiente forma:
-            1. Inserta pagos en tabla ventas_pagos.
-            2. Si actualizarEstadoVenta, entonces dialogoExito. """
+        """Concluye la venta de la siguiente forma:
+        1. Inserta pagos en tabla ventas_pagos.
+        2. Si actualizarEstadoVenta, entonces dialogoExito."""
         manejadorVentas = ManejadorVentas(self.conn)
 
         # registrar pagos en tabla ventas_pagos
         for wdg in self.stackPagos:
-            if wdg.metodoSeleccionado == 'Efectivo':
+            if wdg.metodoSeleccionado == "Efectivo":
                 monto = self.stackPagos.restanteEnEfectivo
                 recibido = wdg.montoPagado if monto else None
             else:
                 monto = wdg.montoPagado
                 recibido = None
 
-            if not manejadorVentas.insertarPago(self.id_ventas, wdg.metodoSeleccionado,
-                                                monto, recibido, self.user.id):
+            if not manejadorVentas.insertarPago(
+                self.id_ventas, wdg.metodoSeleccionado, monto, recibido, self.user.id
+            ):
                 return
 
         if self.actualizarEstadoVenta():
             self.dialogoExito()
 
     def abortar(self) -> None:
-        raise NotImplementedError('CLASE BASE BROU')
+        raise NotImplementedError("CLASE BASE BROU")
 
 
 class Base_VisualizarProductos(QtWidgets.QWidget):
@@ -175,8 +190,8 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
         self.warnings = True
 
-        LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
-        LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
+        LabelAdvertencia(self.ui.tabla_seleccionar, "¡No se encontró ningún producto!")
+        LabelAdvertencia(self.ui.tabla_granformato, "¡No se encontró ningún producto!")
 
         # guardar conexión, usuario y un manejador de DB como atributos
         self.conn = conn
@@ -186,7 +201,8 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         self.ui.searchBar.textChanged.connect(self.update_display)
         self.ui.groupFiltro.buttonClicked.connect(self.update_display)
         self.ui.tabWidget.currentChanged.connect(
-            lambda: self.tabla_actual.resizeRowsToContents())
+            lambda: self.tabla_actual.resizeRowsToContents()
+        )
         self.dataChanged.connect(self.rescan_display)
 
         self.ui.btIntercambiarProducto.clicked.connect(self.intercambiarProducto)
@@ -210,7 +226,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         self.ui.tabla_granformato.setSortingEnabled(True)
 
         # evento para leer cambios en tabla PRODUCTOS
-        self.event_conduit = self.conn.event_conduit(['cambio_productos'])
+        self.event_conduit = self.conn.event_conduit(["cambio_productos"])
         self.event_reader = Runner(self.startEvents)
         self.event_reader.start()
 
@@ -231,9 +247,11 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
     # ==================
     @property
     def tabla_actual(self):
-        return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][self.ui.tabWidget.currentIndex()]
+        return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][
+            self.ui.tabWidget.currentIndex()
+        ]
 
-    def startEvents(self):   # async
+    def startEvents(self):  # async
         # eventos de Firebird para escuchar cambios en tabla productos
         self.event_conduit.begin()
         while True:
@@ -242,11 +260,17 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
             self.event_conduit.flush()
 
     def medidasHandle(self):
-        raise NotImplementedError('BEIS CLASSSSSSS')
+        raise NotImplementedError("BEIS CLASSSSSSS")
 
-    def _intercambiarDimensiones(self, alto_textbox, ancho_textbox,
-                                 bt_alto_cm, bt_ancho_cm,
-                                 bt_alto_m, bt_ancho_m):
+    def _intercambiarDimensiones(
+        self,
+        alto_textbox,
+        ancho_textbox,
+        bt_alto_cm,
+        bt_ancho_cm,
+        bt_alto_m,
+        bt_ancho_m,
+    ):
         alto = alto_textbox.text()
         ancho = ancho_textbox.text()
         bt_alto = bt_alto_cm if bt_ancho_cm.isChecked() else bt_alto_m
@@ -260,17 +284,27 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
             self.medidasHandle()
 
     def intercambiarProducto(self):
-        self._intercambiarDimensiones(self.ui.txtAlto, self.ui.txtAncho,
-                                      self.ui.btAltoCm, self.ui.btAnchoCm,
-                                      self.ui.btAltoM, self.ui.btAnchoM)
+        self._intercambiarDimensiones(
+            self.ui.txtAlto,
+            self.ui.txtAncho,
+            self.ui.btAltoCm,
+            self.ui.btAnchoCm,
+            self.ui.btAltoM,
+            self.ui.btAnchoM,
+        )
 
     def intercambiarMaterial(self):
-        self._intercambiarDimensiones(self.ui.txtAltoMaterial, self.ui.txtAnchoMaterial,
-                                      self.ui.btAltoCm_2, self.ui.btAnchoCm_2,
-                                      self.ui.btAltoM_2, self.ui.btAnchoM_2)
+        self._intercambiarDimensiones(
+            self.ui.txtAltoMaterial,
+            self.ui.txtAnchoMaterial,
+            self.ui.btAltoCm_2,
+            self.ui.btAnchoCm_2,
+            self.ui.btAltoM_2,
+            self.ui.btAnchoM_2,
+        )
 
     def obtenerMedidasProducto(self):
-        """ Calcular medidas del producto, regresa tupla (ancho, alto). """
+        """Calcular medidas del producto, regresa tupla (ancho, alto)."""
         ancho_producto = self.ui.txtAncho.text()
         div_ancho = 100 if self.ui.btAnchoCm.isChecked() else 1
 
@@ -282,10 +316,10 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
             alto_producto = float(alto_producto) / div_alto
             return (ancho_producto, alto_producto)
         except ValueError:
-            return (0., 0.)
+            return (0.0, 0.0)
 
     def obtenerMedidasMaterial(self):
-        """ Calcular medidas del material, regresa tupla (ancho, alto). """
+        """Calcular medidas del material, regresa tupla (ancho, alto)."""
         ancho_material = self.ui.txtAnchoMaterial.text()
         div_ancho_material = 100 if self.ui.btAnchoCm_2.isChecked() else 1
 
@@ -297,7 +331,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
             alto_material = float(alto_material) / div_alto_material
             return (ancho_material, alto_material)
         except ValueError:
-            return (0., 0.)
+            return (0.0, 0.0)
 
     def generarSimple(self):
         if not (selected := self.ui.tabla_seleccionar.selectedItems()):
@@ -324,15 +358,24 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
         if not precio and self.warnings:
             QtWidgets.QMessageBox.warning(
-                self, 'Atención',
-                'No existe ningún precio de este producto '
-                'asociado a la cantidad proporcionada.')
+                self,
+                "Atención",
+                "No existe ningún precio de este producto "
+                "asociado a la cantidad proporcionada.",
+            )
             return
 
         # insertar información del producto con cantidad y especificaciones
         return ItemVenta(
-            idProducto, codigo, nombre_ticket, precio, 0.0, cantidad,
-            self.ui.txtNotas.text().strip(), duplex)
+            idProducto,
+            codigo,
+            nombre_ticket,
+            precio,
+            0.0,
+            cantidad,
+            self.ui.txtNotas.text().strip(),
+            duplex,
+        )
 
     def generarGranFormato(self):
         if not (selected := self.ui.tabla_granformato.selectedItems()):
@@ -343,10 +386,14 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
         if not all([ancho_producto, alto_producto, ancho_material, alto_material]):
             return
-        if (ancho_producto > ancho_material or alto_producto > alto_material) and self.warnings:
+        if (
+            ancho_producto > ancho_material or alto_producto > alto_material
+        ) and self.warnings:
             QtWidgets.QMessageBox.warning(
-                self, 'Atención',
-                'Las medidas del producto sobrepasan las medidas del material.')
+                self,
+                "Atención",
+                "Las medidas del producto sobrepasan las medidas del material.",
+            )
             return
 
         # obtener información del producto
@@ -359,7 +406,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
         # si el alto del producto sobrepasa el ancho del material, quiere decir
         # que no se pudo imprimir de forma normal; por lo tanto, cobrar sobrante.
-        desc_unit = 0.
+        desc_unit = 0.0
 
         if alto_producto > ancho_material:
             # sobrante_ancho = ancho_material - ancho_producto
@@ -369,26 +416,36 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
         # insertar información del producto con cantidad y especificaciones
         return ItemGranFormato(
-            idProducto, codigo, nombre_ticket, precio_m2, desc_unit, ancho_producto * alto_producto,
-            self.ui.txtNotas_2.text().strip(), min_m2)
+            idProducto,
+            codigo,
+            nombre_ticket,
+            precio_m2,
+            desc_unit,
+            ancho_producto * alto_producto,
+            self.ui.txtNotas_2.text().strip(),
+            min_m2,
+        )
 
     def rescan_display(self):
-        """ Lee de nuevo las tablas de productos y actualiza tablas. """
-        self.all_prod = self.manejador.obtener_vista('view_productos_simples')
-        self.all_gran = self.manejador.obtener_vista('view_gran_formato')
+        """Lee de nuevo las tablas de productos y actualiza tablas."""
+        self.all_prod = self.manejador.obtener_vista("view_productos_simples")
+        self.all_gran = self.manejador.obtener_vista("view_gran_formato")
         self.update_display()
 
     def update_display(self):
-        """ Actualiza la tabla y el contador de clientes.
-            Acepta una cadena de texto para la búsqueda de clientes. """
+        """Actualiza la tabla y el contador de clientes.
+        Acepta una cadena de texto para la búsqueda de clientes."""
         filtro = self.ui.btDescripcion.isChecked()
         txt_busqueda = self.ui.searchBar.text()
 
         # <tabla de productos normales>
         if txt_busqueda:
-            found = [prod for prod in self.all_prod
-                     if prod[filtro]
-                     if son_similar(txt_busqueda, prod[filtro])]
+            found = [
+                prod
+                for prod in self.all_prod
+                if prod[filtro]
+                if son_similar(txt_busqueda, prod[filtro])
+            ]
         else:
             found = self.all_prod
 
@@ -398,9 +455,12 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
         # <tabla de gran formato>
         if txt_busqueda:
-            found = [prod for prod in self.all_gran
-                     if prod[filtro]
-                     if son_similar(txt_busqueda, prod[filtro])]
+            found = [
+                prod
+                for prod in self.all_gran
+                if prod[filtro]
+                if son_similar(txt_busqueda, prod[filtro])
+            ]
         else:
             found = self.all_gran
 

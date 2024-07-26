@@ -14,7 +14,8 @@ from utils.mywidgets import LabelAdvertencia
 # VENTANA PRINCIPAL #
 #####################
 class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
-    """ Backend para la ventana de administración de inventario. """
+    """Backend para la ventana de administración de inventario."""
+
     rescanned = Signal()
 
     def crear(self, conn, user):
@@ -25,7 +26,7 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
 
         self.mutex = QMutex()
 
-        LabelAdvertencia(self.ui.tabla_inventario, '¡No se encontró ningún elemento!')
+        LabelAdvertencia(self.ui.tabla_inventario, "¡No se encontró ningún elemento!")
 
         # guardar conexión y usuarios como atributos
         self.conn = conn
@@ -58,18 +59,18 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
         if not self.mutex.try_lock():
             return
 
-        self.ui.lbContador.setText(f'Recuperando información...')
+        self.ui.lbContador.setText(f"Recuperando información...")
 
         manejador = ManejadorInventario(self.conn)
         self.all = manejador.obtenerTablaPrincipal() or []
-        self.ui.lbContador.setText(f'{len(self.all)} elementos en la base de datos.')
+        self.ui.lbContador.setText(f"{len(self.all)} elementos en la base de datos.")
 
         self.rescanned.emit()
 
     def update_display(self):
-        """ Actualiza la tabla y el contador de elementos.
-            Acepta una cadena de texto para la búsqueda de elementos.
-            También lee de nuevo la tabla de elementos, si se desea. """
+        """Actualiza la tabla y el contador de elementos.
+        Acepta una cadena de texto para la búsqueda de elementos.
+        También lee de nuevo la tabla de elementos, si se desea."""
         tabla = self.ui.tabla_inventario
         tabla.setRowCount(0)
 
@@ -77,9 +78,7 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
         bold.setBold(True)
 
         if txt_busqueda := self.ui.searchBar.text().strip():
-            found = [c for c in self.all
-                     if c[1]
-                     if son_similar(txt_busqueda, c[1])]
+            found = [c for c in self.all if c[1] if son_similar(txt_busqueda, c[1])]
         else:
             found = self.all
 
@@ -88,19 +87,21 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
         for row, item in enumerate(found):
             for col, dato in enumerate(item):
                 if isinstance(dato, int):
-                    cell = f'{dato:,d}'
+                    cell = f"{dato:,d}"
                 elif isinstance(dato, float):
-                    cell = f'{dato:,.2f}'
+                    cell = f"{dato:,.2f}"
                 else:
-                    cell = str(dato or '')
+                    cell = str(dato or "")
 
-                if col in {2, 5}: cell += ' unidades'
-                if col in {4, 6}: cell += ' lotes'
+                if col in {2, 5}:
+                    cell += " unidades"
+                if col in {4, 6}:
+                    cell += " lotes"
                 tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
 
             tabla.item(row, 1).setFont(bold)
 
-            btSurtir = QtWidgets.QPushButton('Surtir existencias')
+            btSurtir = QtWidgets.QPushButton("Surtir existencias")
             btSurtir.clicked.connect(self.surtirExistencias)
             tabla.setCellWidget(row, col + 1, btSurtir)
 
@@ -131,8 +132,8 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
             widget.success.connect(self.rescan_update)
 
     def quitarInventario(self):
-        """ Elimina un material de la base de datos.
-            Primero se verifica si hay productos que lo utilizan. """
+        """Elimina un material de la base de datos.
+        Primero se verifica si hay productos que lo utilizan."""
         try:
             id_inventario = self.ui.tabla_inventario.selectedItems()[0].text()
         except IndexError:
@@ -140,25 +141,31 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
 
         qm = QtWidgets.QMessageBox
 
-        manejador = ManejadorInventario(self.conn, '¡No se pudo eliminar el elemento!')
+        manejador = ManejadorInventario(self.conn, "¡No se pudo eliminar el elemento!")
         result = manejador.obtenerProdUtilizaInv(id_inventario)
 
         if result:
-            qm.warning(self, 'Atención',
-                       'No se puede eliminar este elemento debido '
-                       'a que hay productos que lo utilizan. Haga doble '
-                       'click en algún elemento para ver estos productos.')
+            qm.warning(
+                self,
+                "Atención",
+                "No se puede eliminar este elemento debido "
+                "a que hay productos que lo utilizan. Haga doble "
+                "click en algún elemento para ver estos productos.",
+            )
             return
 
         # abrir pregunta
-        ret = qm.question(self, 'Atención',
-                          'El elemento seleccionado se eliminará de la base de datos. '
-                          '¿Desea continuar?')
+        ret = qm.question(
+            self,
+            "Atención",
+            "El elemento seleccionado se eliminará de la base de datos. "
+            "¿Desea continuar?",
+        )
         if ret != qm.Yes:
             return
 
         if manejador.eliminarElemento(id_inventario):
-            qm.information(self, 'Éxito', 'Se eliminó el elemento seleccionado.')
+            qm.information(self, "Éxito", "Se eliminó el elemento seleccionado.")
             self.rescan_update()
 
 
@@ -167,7 +174,8 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
 #################################
 @fondo_oscuro
 class Base_EditarInventario(QtWidgets.QWidget):
-    """ Clase base para módulo de registrar o modificar elemento. """
+    """Clase base para módulo de registrar o modificar elemento."""
+
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
 
@@ -208,14 +216,14 @@ class Base_EditarInventario(QtWidgets.QWidget):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def agregarProductoALista(self, codigo: str = '', cantidad: int = 1):
+    def agregarProductoALista(self, codigo: str = "", cantidad: int = 1):
         # crear widget y agregar a la lista
         nuevo = WidgetProducto()
 
         # llenar caja de opciones con productos
         manejador = ManejadorProductos(self.conn)
         codigos = manejador.obtenerListaCodigos()
-        
+
         nuevo.boxProducto.addItems([codigo for codigo, in codigos])
         nuevo.productoSeleccionado = codigo
         nuevo.cantidadProducto = cantidad
@@ -223,24 +231,26 @@ class Base_EditarInventario(QtWidgets.QWidget):
         self.ui.layoutScroll.addWidget(nuevo)
 
     def obtenerParametrosInventario(self):
-        """ Parámetros para la tabla inventario. """
+        """Parámetros para la tabla inventario."""
         try:
             if not (tamanoLote := float(self.ui.txtTamano.text())):
                 return None
 
-            return (self.ui.txtNombre.text().strip() or None,
-                    tamanoLote,
-                    float(self.ui.txtPrecioCompra.text()),
-                    float(self.ui.txtMinimo.text()),
-                    float(self.ui.txtExistencia.text()))
+            return (
+                self.ui.txtNombre.text().strip() or None,
+                tamanoLote,
+                float(self.ui.txtPrecioCompra.text()),
+                float(self.ui.txtMinimo.text()),
+                float(self.ui.txtExistencia.text()),
+            )
         except ValueError:
             QtWidgets.QMessageBox.warning(
-                self, 'Atención',
-                '¡Verifique que los datos numéricos sean correctos!')
+                self, "Atención", "¡Verifique que los datos numéricos sean correctos!"
+            )
             return None
 
     def obtenerParametrosProdUtilizaInv(self):
-        """ Parámetros para la tabla productos_utiliza_inventario. """
+        """Parámetros para la tabla productos_utiliza_inventario."""
         productos: list[WidgetProducto] = self.ui.scrollAreaLista.children()[1:]
 
         PUI_db_parametros = []
@@ -257,7 +267,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
         return PUI_db_parametros
 
     def done(self):
-        """ Función donde se registrará o actualizará elemento del inventario. """
+        """Función donde se registrará o actualizará elemento del inventario."""
         #### obtención de parámetros ####
         inventario_db_parametros = self.obtenerParametrosInventario()
         PUI_db_parametros = self.obtenerParametrosProdUtilizaInv()
@@ -268,34 +278,34 @@ class Base_EditarInventario(QtWidgets.QWidget):
         # ejecuta internamente un fetchone, por lo que se desempaca luego
         if not (result := self.insertar_o_modificar(inventario_db_parametros)):
             return
-        idx, = result
+        (idx,) = result
         manejador = ManejadorInventario(self.conn, self.MENSAJE_ERROR)
 
         # transacción principal, se checa si cada operación fue exitosa
-        if (
-                manejador.eliminarProdUtilizaInv(idx)
-                and manejador.insertarProdUtilizaInv(idx, PUI_db_parametros)
+        if manejador.eliminarProdUtilizaInv(idx) and manejador.insertarProdUtilizaInv(
+            idx, PUI_db_parametros
         ):
-            QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)
+            QtWidgets.QMessageBox.information(self, "Éxito", self.MENSAJE_EXITO)
             self.success.emit()
             self.close()
 
     def insertar_o_modificar(self, inventario_db_parametros: tuple) -> tuple:
-        """ Devuelve tupla con índice del elemento registrado o editado. """
-        raise NotImplementedError('BEIS CLASSSSSSS')
+        """Devuelve tupla con índice del elemento registrado o editado."""
+        raise NotImplementedError("BEIS CLASSSSSSS")
 
 
 class App_RegistrarInventario(Base_EditarInventario):
-    """ Backend para la ventana para registrar un material del inventario. """
-    MENSAJE_EXITO = '¡Se registró el elemento!'
-    MENSAJE_ERROR = '¡No se pudo registrar el elemento!'
+    """Backend para la ventana para registrar un material del inventario."""
+
+    MENSAJE_EXITO = "¡Se registró el elemento!"
+    MENSAJE_ERROR = "¡No se pudo registrar el elemento!"
 
     def __init__(self, conn, parent=None):
         super().__init__(conn, parent)
 
-        self.ui.lbTitulo.setText('Registrar elemento')
-        self.ui.btAceptar.setText(' Registrar elemento')
-        self.ui.btAceptar.setIcon(QIcon(':/img/resources/images/plus.png'))
+        self.ui.lbTitulo.setText("Registrar elemento")
+        self.ui.btAceptar.setText(" Registrar elemento")
+        self.ui.btAceptar.setIcon(QIcon(":/img/resources/images/plus.png"))
 
     ####################
     # FUNCIONES ÚTILES #
@@ -306,9 +316,10 @@ class App_RegistrarInventario(Base_EditarInventario):
 
 
 class App_EditarInventario(Base_EditarInventario):
-    """ Backend para la ventana para editar un material del inventario. """
-    MENSAJE_EXITO = '¡Se editó el elemento!'
-    MENSAJE_ERROR = '¡No se pudo editar el elemento!'
+    """Backend para la ventana para editar un material del inventario."""
+
+    MENSAJE_EXITO = "¡Se editó el elemento!"
+    MENSAJE_ERROR = "¡No se pudo editar el elemento!"
 
     def __init__(self, idx: int, conn, parent=None):
         super().__init__(conn, parent)
@@ -318,14 +329,15 @@ class App_EditarInventario(Base_EditarInventario):
         manejador = ManejadorInventario(self.conn)
 
         # datos de la primera página
-        nombre, tamano, precio, minimo, existencia \
-            = manejador.obtenerInformacionPrincipal(idx)
+        nombre, tamano, precio, minimo, existencia = (
+            manejador.obtenerInformacionPrincipal(idx)
+        )
 
         self.ui.txtNombre.setText(nombre)
-        self.ui.txtTamano.setText(f'{tamano:.2f}')
-        self.ui.txtPrecioCompra.setText(f'{precio:.2f}')
-        self.ui.txtExistencia.setText(f'{existencia:.2f}')
-        self.ui.txtMinimo.setText(f'{minimo:.2f}')
+        self.ui.txtTamano.setText(f"{tamano:.2f}")
+        self.ui.txtPrecioCompra.setText(f"{precio:.2f}")
+        self.ui.txtExistencia.setText(f"{existencia:.2f}")
+        self.ui.txtMinimo.setText(f"{minimo:.2f}")
 
         # agregar productos de la segunda página
         productos = manejador.obtenerProdUtilizaInv(idx)
@@ -363,15 +375,15 @@ class WidgetProducto(QtWidgets.QWidget):
     @property
     def productoSeleccionado(self):
         return self.ui.boxElemento.currentText()
-    
+
     @productoSeleccionado.setter
     def productoSeleccionado(self, val: str):
         self.ui.boxElemento.setCurrentText(val)
-        
+
     @property
     def cantidadProducto(self):
         return self.ui.boxProductoUtiliza.value()
-    
+
     @cantidadProducto.setter
     def cantidadProducto(self, val: int):
         self.ui.boxProductoUtiliza.setValue(val)
@@ -411,7 +423,9 @@ class ExistenciasWidget(QtWidgets.QDialog):
         buttonBox = QtWidgets.QDialogButtonBox(self)
         buttonBox.setFont(font)
         buttonBox.setOrientation(Qt.Horizontal)
-        buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
+        buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
         buttonBox.setCenterButtons(True)
         gridLayout.addWidget(buttonBox, 1, 0, 1, 3, Qt.AlignBottom)
 
@@ -428,7 +442,7 @@ class ExistenciasWidget(QtWidgets.QDialog):
         try:
             return float(self.txtCantidad.text())
         except ValueError:
-            return 0.
+            return 0.0
 
     def accept(self):
         if not self.cantidadLotes:

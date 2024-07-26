@@ -14,12 +14,12 @@ class IDatabaseConnection:
 
 @base
 class IControllerWindow:
-    def crear(self, conn: IDatabaseConnection, user: 'mydataclasses.Usuario') -> None:
+    def crear(self, conn: IDatabaseConnection, user: "mydataclasses.Usuario") -> None:
         raise NotImplementedError
-    
+
     def go_home(self) -> None:
         raise NotImplementedError
-    
+
     def go_to(self, modulo: str) -> None:
         raise NotImplementedError
 
@@ -27,8 +27,8 @@ class IControllerWindow:
 @base
 class IModuloPrincipal:
     go_back: _SignalInstance = _Signal()
-    
-    def crear(self, conn: IDatabaseConnection, user: 'mydataclasses.Usuario') -> None:
+
+    def crear(self, conn: IDatabaseConnection, user: "mydataclasses.Usuario") -> None:
         raise NotImplementedError
 
 

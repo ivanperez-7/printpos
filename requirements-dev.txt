@@ -1,0 +1,4 @@
+black==24.4.2
+Nuitka==2.3.10
+ordered-set==4.1.0
+pyreadline3==3.4.1

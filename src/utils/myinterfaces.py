@@ -1,19 +1,27 @@
 """ Módulo para controladores de grupos de widgets y otras funciones. """
-from PySide6.QtWidgets import (QPushButton, QDateEdit, QTableWidget,
-                               QToolButton, QLineEdit, QMenu)
+
+from PySide6.QtWidgets import (
+    QPushButton,
+    QDateEdit,
+    QTableWidget,
+    QToolButton,
+    QLineEdit,
+    QMenu,
+)
 from PySide6.QtCore import QDate, QObject, Signal
 
 from core import DateRange
 from utils.mywidgets import TablaDatos
 
-__all__ = ['InterfazPaginas', 'InterfazFechas', 'InterfazFiltro']
+__all__ = ["InterfazPaginas", "InterfazFechas", "InterfazFiltro"]
 
 
 class InterfazPaginas(QObject):
-    """ Interfaz para manejar paginados en tablas. 
-        
-        Lo único que hace esta interfaz es manejar la propiedad 
-        `paginaActual` de la tabla asociada. """
+    """Interfaz para manejar paginados en tablas.
+
+    Lo único que hace esta interfaz es manejar la propiedad
+    `paginaActual` de la tabla asociada."""
+
     pagina_cambiada = Signal()
 
     def __init__(
@@ -22,7 +30,7 @@ class InterfazPaginas(QObject):
         btUltimo: QPushButton,
         btAtras: QPushButton,
         btPrimero: QPushButton,
-        tabla_display: TablaDatos
+        tabla_display: TablaDatos,
     ):
         super().__init__(tabla_display)
 
@@ -51,8 +59,9 @@ class InterfazPaginas(QObject):
 
 
 class InterfazFechas(QObject):
-    """ Interfaz para manejar widgets de fechas desde y hasta,
-        por medio de botones de 'Hoy', 'Esta semana' y 'Este mes'. """
+    """Interfaz para manejar widgets de fechas desde y hasta,
+    por medio de botones de 'Hoy', 'Esta semana' y 'Este mes'."""
+
     dateChanged = Signal()
 
     def __init__(
@@ -62,7 +71,7 @@ class InterfazFechas(QObject):
         btMes: QPushButton,
         dateDesde: QDateEdit,
         dateHasta: QDateEdit,
-        fechaMin: QDate = None
+        fechaMin: QDate = None,
     ):
         super().__init__(dateDesde)
 
@@ -83,13 +92,13 @@ class InterfazFechas(QObject):
         btHoy.clicked.connect(self.hoy_handle)
         btSemana.clicked.connect(self.semana_handle)
         btMes.clicked.connect(self.mes_handle)
-        
+
         emit = lambda: self.dateChanged.emit()
         dateDesde.dateChanged.connect(emit)
         dateHasta.dateChanged.connect(emit)
 
         self.hoy_handle()
-    
+
     @property
     def rango_fechas(self):
         return DateRange(self.dateDesde.date(), self.dateHasta.date())
@@ -120,8 +129,8 @@ class InterfazFechas(QObject):
 
 
 class InterfazFechasReportes(QObject):
-    """ Interfaz para manejar widgets de fechas desde y hasta,
-        por medio de botones de 'Hoy', 'Esta semana' y 'Este mes'. """
+    """Interfaz para manejar widgets de fechas desde y hasta,
+    por medio de botones de 'Hoy', 'Esta semana' y 'Este mes'."""
 
     def __init__(
         self,
@@ -130,7 +139,7 @@ class InterfazFechasReportes(QObject):
         btAnio: QPushButton,
         dateDesde: QDateEdit,
         dateHasta: QDateEdit,
-        fechaMin: QDate = None
+        fechaMin: QDate = None,
     ):
         super().__init__(dateDesde)
 
@@ -187,14 +196,17 @@ class InterfazFechasReportes(QObject):
 
 
 class InterfazFiltro(QObject):
-    """ Interfaz para manejar filtros de búsqueda.
+    """Interfaz para manejar filtros de búsqueda.
 
-        Recibe un widget QToolButton y una lista de opciones:
-        nombre de opción, texto en placeholder e índice de columna asociada. """
+    Recibe un widget QToolButton y una lista de opciones:
+    nombre de opción, texto en placeholder e índice de columna asociada."""
+
     cambiado = Signal()
     idx: int
 
-    def __init__(self, button: QToolButton, search_bar: QLineEdit, options: list[tuple]):
+    def __init__(
+        self, button: QToolButton, search_bar: QLineEdit, options: list[tuple]
+    ):
         super().__init__(search_bar)
 
         self.search_bar = search_bar
@@ -209,7 +221,7 @@ class InterfazFiltro(QObject):
         popup.setDefaultAction(default)
 
         self.idx = idx
-        search_bar.setPlaceholderText(f'Buscar por {nombre.lower()}...')
+        search_bar.setPlaceholderText(f"Buscar por {nombre.lower()}...")
 
         # resto de acciones
         for nombre, idx in options[1:]:
@@ -220,5 +232,6 @@ class InterfazFiltro(QObject):
     def cambiar_filtro(self, nombre: str, idx: int):
         self.idx = idx
         self.search_bar.setPlaceholderText(
-            f'Buscar por {nombre.lower() if nombre != "RFC" else nombre}...')
+            f'Buscar por {nombre.lower() if nombre != "RFC" else nombre}...'
+        )
         self.cambiado.emit()
