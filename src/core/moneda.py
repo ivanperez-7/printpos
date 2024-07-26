@@ -3,15 +3,16 @@ import re
 
 
 class _useless(type):
-    """ Para habilitar `Moneda.cero`. """
+    """Para habilitar `Moneda.cero`."""
 
     @property
-    def cero(cls) -> 'Moneda':
-        return cls(0.)
+    def cero(cls) -> "Moneda":
+        return cls(0.0)
+
 
 class Moneda(metaclass=_useless):
     r"""
-    Clase `Moneda` para manejar cantidades monetarias de forma segura 
+    Clase `Moneda` para manejar cantidades monetarias de forma segura
     con dos números decimales, eliminando errores de redondeo.
 
     Uso
@@ -20,10 +21,10 @@ class Moneda(metaclass=_useless):
     Crear un objeto Moneda:
 
     >>> importe = Moneda()
-    
+
     Se puede sumar, restar, multiplicar o dividir con cualquier
     tipo de dato que se pueda convertir a `float`.
-    
+
     >>> importe += 50.499999912378923
     >>> importe
     Moneda: 50.50 MXN
@@ -31,34 +32,35 @@ class Moneda(metaclass=_useless):
     Moneda: 16.83 MXN
     >>> importe + Moneda('$153.93')
     Moneda: 204.43 MXN
-    
+
     Para recuperar valor en tipo flotante, simplemente usar float.
     >>> float(importe)
     50.5
-    
+
     Su valor booleano es verdadero si la cantidad monetaria es mayor que cero.
     >>> if importe:
     ...     print('ayo!')
     ayo!
-    
+
     Soporta métodos de comparación entre cantidades numéricas y objetos de tipo Moneda.
     >>> importe > 100
     False
     >>> importe == 50.5
     True
-    
+
     Provee método `sum` para sumar iterador en objeto Moneda.
     >>> total = Moneda.sum((1,6,1,7,3,4))
     >>> total
     Moneda: 22.00 MXN
     """
+
     PRECISION = 2
 
     def __init__(self, inicial=None):
         if inicial is None:
             self.valor = 0.0
         elif isinstance(inicial, str):
-            self.valor = re.sub(r'[$, ]', '', inicial)
+            self.valor = re.sub(r"[$, ]", "", inicial)
         else:
             self.valor = inicial
 
@@ -71,12 +73,12 @@ class Moneda(metaclass=_useless):
         self._valor = round(float(arg), self.PRECISION)
 
     @staticmethod
-    def sum(iter_) -> 'Moneda':
-        """ Invoca función nativa `sum` con parámetro `start=Moneda.cero`. """
+    def sum(iter_) -> "Moneda":
+        """Invoca función nativa `sum` con parámetro `start=Moneda.cero`."""
         return sum(iter_, start=Moneda.cero)
 
     # =====================
-    #  Operaciones unarias 
+    #  Operaciones unarias
     # =====================
     def __bool__(self):
         return self.valor > 0.0
@@ -94,15 +96,15 @@ class Moneda(metaclass=_useless):
         return self.__class__(-self.valor)
 
     def __repr__(self):
-        return f'Moneda: {self.valor:,.{self.PRECISION}f} MXN'
+        return f"Moneda: {self.valor:,.{self.PRECISION}f} MXN"
 
     def __str__(self):
-        return f'{self.valor:,.{self.PRECISION}f}'
+        return f"{self.valor:,.{self.PRECISION}f}"
 
     # =========================
-    #  Operaciones aritméticas 
+    #  Operaciones aritméticas
     # =========================
-    def _arit_op(self, other, operation) -> 'Moneda':
+    def _arit_op(self, other, operation) -> "Moneda":
         if isinstance(other, Moneda):
             other = other.valor
         return self.__class__(operation(self.valor, other))
@@ -126,7 +128,7 @@ class Moneda(metaclass=_useless):
     __rmul__ = __mul__
 
     # =====================
-    #  Operaciones lógicas 
+    #  Operaciones lógicas
     # =====================
     def _bool_op(self, other, operation) -> bool:
         return operation(self.valor, round(other, self.PRECISION))

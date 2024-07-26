@@ -16,19 +16,20 @@ from utils.mywidgets import LabelAdvertencia
 # VENTANA PRINCIPAL #
 #####################
 class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
-    """ Backend para la ventana de movimientos de la caja. """
+    """Backend para la ventana de movimientos de la caja."""
+
     rescanned = Signal()
 
     def crear(self, conn, user):
         from ui.Ui_Caja import Ui_Caja
-        
+
         self.ui = Ui_Caja()
         self.ui.setupUi(self)
 
         self.mutex = QMutex()
 
-        LabelAdvertencia(self.ui.tabla_ingresos, '¡No se encontró ningún movimiento!')
-        LabelAdvertencia(self.ui.tabla_egresos, '¡No se encontró ningún movimiento!')
+        LabelAdvertencia(self.ui.tabla_ingresos, "¡No se encontró ningún movimiento!")
+        LabelAdvertencia(self.ui.tabla_egresos, "¡No se encontró ningún movimiento!")
 
         # guardar conexión y usuario como atributos
         self.conn = conn
@@ -41,8 +42,13 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         fechaMin = manejador.obtenerFechaPrimerMov()
 
         self.iFechas = InterfazFechas(
-            self.ui.btHoy, self.ui.btEstaSemana, self.ui.btEsteMes,
-            self.ui.dateDesde, self.ui.dateHasta, fechaMin)
+            self.ui.btHoy,
+            self.ui.btEstaSemana,
+            self.ui.btEsteMes,
+            self.ui.dateDesde,
+            self.ui.dateHasta,
+            fechaMin,
+        )
         self.iFechas.dateChanged.connect(self.rescan_update)
 
         # añade eventos para los botones
@@ -72,21 +78,21 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         if not self.mutex.try_lock():
             return
 
-        self.ui.lbTotal.setText('Recuperando información...')
-        
+        self.ui.lbTotal.setText("Recuperando información...")
+
         manejador = ManejadorCaja(self.conn)
         fechas = self.iFechas.rango_fechas
         movimientos = manejador.obtenerMovimientos(fechas) or []
-        
+
         self.all_movimientos = Caja(movimientos)
         self.rescanned.emit()
 
     def update_display(self):
-        """ Actualiza las tablas de ingresos y egresos.
+        """Actualiza las tablas de ingresos y egresos.
 
-            Relee base de datos en cualquier evento (en este caso, al mover fechas). """
+        Relee base de datos en cualquier evento (en este caso, al mover fechas)."""
         total = self.all_movimientos.totalCorte()
-        self.ui.lbTotal.setText(f'Total del corte: ${total}')
+        self.ui.lbTotal.setText(f"Total del corte: ${total}")
 
         self.llenar_ingresos()
         self.llenar_egresos()
@@ -99,13 +105,21 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         movimientos = self.all_movimientos
 
         self.ui.lbTotalIngresos.setText(
-            'Total de ingresos: ${}'.format(movimientos.totalIngresos()))
+            "Total de ingresos: ${}".format(movimientos.totalIngresos())
+        )
         self.ui.lbIngresosEfectivo.setText(
-            'Efectivo: ${}'.format(movimientos.totalIngresos('Efectivo')))
+            "Efectivo: ${}".format(movimientos.totalIngresos("Efectivo"))
+        )
         self.ui.lbIngresosTarjeta.setText(
-            'Tarjeta de crédito/débito: ${}'.format(movimientos.totalIngresos('Tarjeta')))
+            "Tarjeta de crédito/débito: ${}".format(
+                movimientos.totalIngresos("Tarjeta")
+            )
+        )
         self.ui.lbIngresosTransferencia.setText(
-            'Transferencias bancarias: ${}'.format(movimientos.totalIngresos('Transferencia')))
+            "Transferencias bancarias: ${}".format(
+                movimientos.totalIngresos("Transferencia")
+            )
+        )
 
         tabla = self.ui.tabla_ingresos
         tabla.modelo = tabla.Modelos.RESALTAR_SEGUNDA
@@ -119,13 +133,21 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         movimientos = self.all_movimientos
 
         self.ui.lbTotalEgresos.setText(
-            'Total de egresos: ${}'.format(-movimientos.totalEgresos()))
+            "Total de egresos: ${}".format(-movimientos.totalEgresos())
+        )
         self.ui.lbEgresosEfectivo.setText(
-            'Efectivo: ${}'.format(-movimientos.totalEgresos('Efectivo')))
+            "Efectivo: ${}".format(-movimientos.totalEgresos("Efectivo"))
+        )
         self.ui.lbEgresosTarjeta.setText(
-            'Tarjeta de crédito/débito: ${}'.format(-movimientos.totalEgresos('Tarjeta')))
+            "Tarjeta de crédito/débito: ${}".format(
+                -movimientos.totalEgresos("Tarjeta")
+            )
+        )
         self.ui.lbEgresosTransferencia.setText(
-            'Transferencias bancarias: ${}'.format(-movimientos.totalEgresos('Transferencia')))
+            "Transferencias bancarias: ${}".format(
+                -movimientos.totalEgresos("Transferencia")
+            )
+        )
 
         tabla = self.ui.tabla_egresos
         tabla.modelo = tabla.Modelos.RESALTAR_SEGUNDA
@@ -133,11 +155,14 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         tabla.resizeRowsToContents()
 
     def confirmar_imprimir(self):
-        """ Ventana de confirmación para imprimir corte. """
+        """Ventana de confirmación para imprimir corte."""
         qm = QtWidgets.QMessageBox
-        ret = qm.question(self, 'Atención',
-                          'Se procederá a imprimir el corte de caja entre '
-                          'las fechas proporcionadas.\n¿Desea continuar?')
+        ret = qm.question(
+            self,
+            "Atención",
+            "Se procederá a imprimir el corte de caja entre "
+            "las fechas proporcionadas.\n¿Desea continuar?",
+        )
 
         if ret == qm.Yes:
             impresora = ImpresoraTickets(self.conn)
@@ -147,12 +172,12 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def registrarIngreso(self):
-        """ Registrar ingreso en movimientos. """
+        """Registrar ingreso en movimientos."""
         self.Dialog = Dialog_Registrar(self.conn, self.user)
         self.Dialog.success.connect(self.rescan_update)
 
     def registrarEgreso(self):
-        """ Registrar egreso en movimientos. """
+        """Registrar egreso en movimientos."""
         self.Dialog = Dialog_Registrar(self.conn, self.user, egreso=True)
         self.Dialog.success.connect(self.rescan_update)
 
@@ -171,7 +196,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
 
-        ttl = 'Registrar ' + ('egreso' if egreso else 'ingreso')
+        ttl = "Registrar " + ("egreso" if egreso else "ingreso")
         self.setWindowTitle(ttl)
 
         self.egreso = egreso
@@ -187,27 +212,22 @@ class Dialog_Registrar(QtWidgets.QDialog):
         try:
             monto = float(self.ui.txtCantidad.text()) * (-1 if self.egreso else 1)
         except ValueError:
-            monto = 0.
+            monto = 0.0
         motivo = self.ui.txtMotivo.text()
-        
+
         if not (monto and motivo):
             return
-        manejador = ManejadorCaja(self.conn, '¡No se pudo registrar el movimiento!')
+        manejador = ManejadorCaja(self.conn, "¡No se pudo registrar el movimiento!")
         id_metodo = manejador.obtenerIdMetodoPago(self.metodo)
-        
-        caja_db_parametros = (
-            Moneda(monto),
-            motivo,
-            id_metodo,
-            self.user.id
-        )
+
+        caja_db_parametros = (Moneda(monto), motivo, id_metodo, self.user.id)
         if manejador.insertarMovimiento(caja_db_parametros):
             self.close()
-            QtWidgets.QMessageBox.information(self, 'Éxito', '¡Movimiento registrado!')
+            QtWidgets.QMessageBox.information(self, "Éxito", "¡Movimiento registrado!")
             self.success.emit()
 
     @property
     def metodo(self):
-        if (out := self.ui.groupMetodo.checkedButton().text()) == 'Transferencia':
-            out += ' bancaria'
+        if (out := self.ui.groupMetodo.checkedButton().text()) == "Transferencia":
+            out += " bancaria"
         return out

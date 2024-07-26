@@ -13,18 +13,18 @@ def crear_modulo(modulo: str) -> IModuloPrincipal:
     from backends.Login import App_Login
     from backends.Home import App_Home
     from backends.Reportes import App_Reportes
-    
+
     modulos = {
-        'App_AdministrarClientes': App_AdministrarClientes,
-        'App_AdministrarVentas': App_AdministrarVentas,
-        'App_AdministrarInventario': App_AdministrarInventario,
-        'App_AdministrarProductos': App_AdministrarProductos,
-        'App_AdministrarUsuarios': App_AdministrarUsuarios,
-        'App_Ajustes': App_Ajustes,
-        'App_Caja': App_Caja,
-        'App_CrearVenta': App_CrearVenta,
-        'App_Home': App_Home,
-        'App_Login': App_Login,
-        'App_Reportes': App_Reportes
+        "App_AdministrarClientes": App_AdministrarClientes,
+        "App_AdministrarVentas": App_AdministrarVentas,
+        "App_AdministrarInventario": App_AdministrarInventario,
+        "App_AdministrarProductos": App_AdministrarProductos,
+        "App_AdministrarUsuarios": App_AdministrarUsuarios,
+        "App_Ajustes": App_Ajustes,
+        "App_Caja": App_Caja,
+        "App_CrearVenta": App_CrearVenta,
+        "App_Home": App_Home,
+        "App_Login": App_Login,
+        "App_Reportes": App_Reportes,
     }
     return modulos[modulo]()

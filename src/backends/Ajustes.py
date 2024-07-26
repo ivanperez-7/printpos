@@ -9,8 +9,9 @@ from interfaces import IModuloPrincipal
 # VENTANA PRINCIPAL #
 #####################
 
+
 class App_Ajustes(QtWidgets.QWidget, IModuloPrincipal):
-    """ Backend para la ventana de administración de ventas. """
+    """Backend para la ventana de administración de ventas."""
 
     def crear(self, conn, user):
         from ui.Ui_Ajustes import Ui_Ajustes
@@ -21,7 +22,9 @@ class App_Ajustes(QtWidgets.QWidget, IModuloPrincipal):
         self.conn = conn
         self.user = user
 
-        self.ui.boxImpresoras.addItems(QtPrintSupport.QPrinterInfo.availablePrinterNames())
+        self.ui.boxImpresoras.addItems(
+            QtPrintSupport.QPrinterInfo.availablePrinterNames()
+        )
         self.ui.boxImpresoras.setCurrentText(INI.IMPRESORA)
 
         self.ui.txtCalle1.setText(INI.CALLE_1)
@@ -30,10 +33,10 @@ class App_Ajustes(QtWidgets.QWidget, IModuloPrincipal):
 
         # crear eventos para los botones
         self.ui.btRegresar.clicked.connect(self._salir)
-        #self.ui.btRespaldar.clicked.connect(self.respaldar_db)
+        # self.ui.btRespaldar.clicked.connect(self.respaldar_db)
 
     def _salir(self, _):
-        """ Cierra la ventana y regresa a Home. """
+        """Cierra la ventana y regresa a Home."""
         INI.IMPRESORA = self.ui.boxImpresoras.currentText()
         INI.CALLE_1 = self.ui.txtCalle1.text()
         INI.CALLE_2 = self.ui.txtCalle2.text()

@@ -9,12 +9,13 @@ from interfaces import IWarningLogger
 
 
 def _back_to_main(func):
-    """ Función para forzar función en hilo principal. """
+    """Función para forzar función en hilo principal."""
+
     class _InvokeMethod(_QObject):
         called = _Signal()
-        
+
         def __init__(self, method):
-            """ Invokes a method on the main thread. Taking care of garbage collection "bugs". """
+            """Invokes a method on the main thread. Taking care of garbage collection "bugs"."""
             super().__init__()
 
             main_thread = _QGuiApplication.instance().thread()
@@ -41,11 +42,11 @@ class WarningWidget(QMessageBox, IWarningLogger):
     @_back_to_main
     def __init__(self):
         super().__init__()
-    
+
     @_back_to_main
-    def display(self, title: str, body: str = '') -> None:
-        self.setWindowTitle('Atención')
-        self.setWindowIcon(QIcon(':img/icon.ico'))
+    def display(self, title: str, body: str = "") -> None:
+        self.setWindowTitle("Atención")
+        self.setWindowIcon(QIcon(":img/icon.ico"))
         self.setIcon(QMessageBox.Warning)
         self.setStandardButtons(QMessageBox.Ok)
         self.setText(title)

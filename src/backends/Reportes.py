@@ -8,7 +8,7 @@ from PySide6.QtCharts import (
     QBarSeries,
     QBarSet,
     QBarCategoryAxis,
-    QPieSeries
+    QPieSeries,
 )
 from PySide6.QtCore import Qt, QDate, QModelIndex
 from PySide6.QtGui import QPainter, QPen
@@ -20,7 +20,7 @@ from utils.myutils import stringify_float
 
 
 class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
-    """ Backend para la ventana de reportes varios. """
+    """Backend para la ventana de reportes varios."""
 
     def crear(self, conn, user):
         from ui.Ui_Reportes import Ui_Reportes
@@ -31,22 +31,29 @@ class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
         self.conn = conn
         self.user = user
 
-        for tbl in [self.ui.tableWidget,
-                    self.ui.tableWidget_2,
-                    self.ui.tableWidget_3,
-                    self.ui.tabla_prods,
-                    self.ui.tabla_intervalos]:
+        for tbl in [
+            self.ui.tableWidget,
+            self.ui.tableWidget_2,
+            self.ui.tableWidget_3,
+            self.ui.tabla_prods,
+            self.ui.tabla_intervalos,
+        ]:
             tbl.setSortingEnabled(True)
-            tbl.configurarCabecera(lambda col: col not in {0, 3, 4, 5},
-                                   Qt.AlignCenter | Qt.TextWordWrap)
+            tbl.configurarCabecera(
+                lambda col: col not in {0, 3, 4, 5}, Qt.AlignCenter | Qt.TextWordWrap
+            )
             tbl.tamanoCabecera(11)
             tbl.quitarBordeCabecera()
 
-        for i, bt in enumerate([self.ui.btTablero,
-                                self.ui.btVentas,
-                                self.ui.btVendedores,
-                                self.ui.btClientes,
-                                self.ui.btProductos]):
+        for i, bt in enumerate(
+            [
+                self.ui.btTablero,
+                self.ui.btVentas,
+                self.ui.btVendedores,
+                self.ui.btClientes,
+                self.ui.btProductos,
+            ]
+        ):
             bt.clicked.connect(partial(self.ui.stackedWidget.setCurrentIndex, i))
 
         # fechas por defecto
@@ -54,8 +61,13 @@ class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
         fechaMin = manejador.obtenerFechaPrimeraVenta()
 
         InterfazFechasReportes(
-            self.ui.btQuincena, self.ui.btMes, self.ui.btAnio,
-            self.ui.dateDesde, self.ui.dateHasta, fechaMin)
+            self.ui.btQuincena,
+            self.ui.btMes,
+            self.ui.btAnio,
+            self.ui.dateDesde,
+            self.ui.dateHasta,
+            fechaMin,
+        )
 
         self.ui.btRegresar.clicked.connect(self.go_back.emit)
         self.ui.stackedWidget.currentChanged.connect(self.actualizar_widget_activo)
@@ -82,7 +94,7 @@ class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
             self.actualizar_tablero,
             self.actualizar_vendedores,
             self.actualizar_clientes,
-            self.actualizar_productos
+            self.actualizar_productos,
         ]
         idx = self.ui.stackedWidget.currentIndex()
         funcs[idx]()
@@ -92,18 +104,18 @@ class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
         # alimentar QLabels
         man = ManejadorReportes(self.conn)
         brutos, num_ventas = man.obtenerIngresosBrutos()
-        self.ui.lbIngresosBrutos.setText('${:,.2f}'.format(brutos))
-        self.ui.lbCountVentas.setText('a través de {:,d} ventas'.format(num_ventas))
+        self.ui.lbIngresosBrutos.setText("${:,.2f}".format(brutos))
+        self.ui.lbCountVentas.setText("a través de {:,d} ventas".format(num_ventas))
 
         vendedor, cantidad = man.obtenerTopVendedor()
         self.ui.lbVendedorBrutos.setText(vendedor)
-        self.ui.lbVendedorTotal.setText('${:,.2f}'.format(cantidad))
+        self.ui.lbVendedorTotal.setText("${:,.2f}".format(cantidad))
 
         abreviado, codigo, count = man.obtenerTopProducto()
         self.ui.lbProdVendidos.setText(codigo)
-        self.ui.lbProdCount.setText(stringify_float(count) + ' unidades')
+        self.ui.lbProdCount.setText(stringify_float(count) + " unidades")
 
-        # gráficas 
+        # gráficas
         self.ui.bar_ventas.alimentar_datos(self.conn)
         self.ui.pie_prods.alimentar_productos(self.conn)
         self.ui.pie_metodos.alimentar_metodos(self.conn)
@@ -134,7 +146,9 @@ class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
         def handle(index: QModelIndex):
             codigo = index.siblingAtColumn(1).data()
             self.ui.ventas_prod_graph.alimentar_producto(self.conn, codigo)
-            tabla_intervalos.llenar(man.obtenerVentasIntervalos(codigo, self.fechaDesde, self.fechaHasta))
+            tabla_intervalos.llenar(
+                man.obtenerVentasIntervalos(codigo, self.fechaDesde, self.fechaHasta)
+            )
 
         man = ManejadorReportes(self.conn)
         tabla = self.ui.tabla_prods
@@ -185,8 +199,8 @@ class ChartView(QChartView):
         chart.createDefaultAxes()
         chart.setAxisX(categories_axis, series)
 
-        chart.layout().setContentsMargins(0, 0, 0, 0);
-        chart.setBackgroundRoundness(0);
+        chart.layout().setContentsMargins(0, 0, 0, 0)
+        chart.setBackgroundRoundness(0)
         self.setChart(chart)
 
     def alimentar_vendedor(self, conn, vendedor: str):
@@ -218,8 +232,8 @@ class ChartView(QChartView):
         chart.createDefaultAxes()
         chart.setAxisX(categories_axis, series)
 
-        chart.layout().setContentsMargins(0, 0, 0, 0);
-        chart.setBackgroundRoundness(0);
+        chart.layout().setContentsMargins(0, 0, 0, 0)
+        chart.setBackgroundRoundness(0)
         self.setChart(chart)
 
     def alimentar_producto(self, conn, codigo: str):
@@ -251,8 +265,8 @@ class ChartView(QChartView):
         chart.createDefaultAxes()
         chart.setAxisX(categories_axis, series)
 
-        chart.layout().setContentsMargins(0, 0, 0, 0);
-        chart.setBackgroundRoundness(0);
+        chart.layout().setContentsMargins(0, 0, 0, 0)
+        chart.setBackgroundRoundness(0)
         self.setChart(chart)
 
 
@@ -271,7 +285,7 @@ class ChartView2(QChartView):
         series = QPieSeries()
 
         for abrev, codigo, num in man.obtenerTopProducto(6)[1:]:
-            s = series.append(codigo + ' ({})'.format(stringify_float(num)), num)
+            s = series.append(codigo + " ({})".format(stringify_float(num)), num)
             s.hovered.connect(partial(self.handle_slice_hover, s))
 
         if not series.slices():
@@ -287,12 +301,12 @@ class ChartView2(QChartView):
         chart.setFont(self.font())
         chart.setTitleFont(self.font())
         chart.addSeries(series)
-        chart.setTitle('Los otros productos más vendidos')
+        chart.setTitle("Los otros productos más vendidos")
         chart.setAnimationOptions(QChart.SeriesAnimations)
         chart.legend().hide()
 
-        chart.layout().setContentsMargins(0, 0, 0, 0);
-        chart.setBackgroundRoundness(0);
+        chart.layout().setContentsMargins(0, 0, 0, 0)
+        chart.setBackgroundRoundness(0)
         self.setChart(chart)
 
     def alimentar_metodos(self, conn):
@@ -300,7 +314,7 @@ class ChartView2(QChartView):
         series = QPieSeries()
 
         for metodo, num in man.obtenerGraficaMetodos():
-            s = series.append(metodo + ' ({})'.format(num), num)
+            s = series.append(metodo + " ({})".format(num), num)
             s.hovered.connect(partial(self.handle_slice_hover, s))
 
         _slice = max(series.slices(), key=lambda s: s.value())
@@ -314,12 +328,12 @@ class ChartView2(QChartView):
         chart.setFont(self.font())
         chart.setTitleFont(self.font())
         chart.addSeries(series)
-        chart.setTitle('Métodos de pago más usados')
+        chart.setTitle("Métodos de pago más usados")
         chart.setAnimationOptions(QChart.SeriesAnimations)
         chart.legend().hide()
 
-        chart.layout().setContentsMargins(0, 0, 0, 0);
-        chart.setBackgroundRoundness(0);
+        chart.layout().setContentsMargins(0, 0, 0, 0)
+        chart.setBackgroundRoundness(0)
         self.setChart(chart)
 
     def handle_slice_hover(self, _slice, state):
