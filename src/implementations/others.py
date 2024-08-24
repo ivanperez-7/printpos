@@ -44,9 +44,9 @@ class WarningWidget(QMessageBox, IWarningLogger):
         super().__init__()
 
     @_back_to_main
-    def display(self, title: str, body: str = "") -> None:
-        self.setWindowTitle("Atención")
-        self.setWindowIcon(QIcon(":img/icon.ico"))
+    def display(self, title: str, body: str = '') -> None:
+        self.setWindowTitle('Atención')
+        self.setWindowIcon(QIcon(':img/icon.ico'))
         self.setIcon(QMessageBox.Warning)
         self.setStandardButtons(QMessageBox.Ok)
         self.setText(title)

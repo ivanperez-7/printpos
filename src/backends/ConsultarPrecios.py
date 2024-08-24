@@ -12,14 +12,14 @@ class App_ConsultarPrecios(Base_VisualizarProductos):
         super().__init__(conn)
 
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowMinimizeButtonHint)
-        self.setWindowTitle("Consultar precios")
-        self.setWindowIcon(QIcon(":img/icon.ico"))
+        self.setWindowTitle('Consultar precios')
+        self.setWindowIcon(QIcon(':img/icon.ico'))
 
         self.warnings = False
 
-        self.ui.label.setText("Consultar precios")
+        self.ui.label.setText('Consultar precios')
         self.ui.btRegresar.setCursor(Qt.CursorShape.ArrowCursor)
-        self.ui.btRegresar.setIcon(QIcon(":/img/resources/images/package.png"))
+        self.ui.btRegresar.setIcon(QIcon(':/img/resources/images/package.png'))
 
         self.ui.btAgregar.hide()
         self.ui.groupBoxEspecGran.hide()
@@ -49,12 +49,12 @@ class App_ConsultarPrecios(Base_VisualizarProductos):
     # ==================
     def mostrarSimple(self):
         if item := self.generarSimple():
-            self.ui.lbTotalSimple.setText(f"Total: ${item.importe:,.2f}")
+            self.ui.lbTotalSimple.setText(f'Total: ${item.importe:,.2f}')
         else:
-            self.ui.lbTotalSimple.setText("Total: ...")
+            self.ui.lbTotalSimple.setText('Total: ...')
 
     def medidasHandle(self):
         if item := self.generarGranFormato():
-            self.ui.lbTotalGran.setText(f"Total: ${item.importe:,.2f}")
+            self.ui.lbTotalGran.setText(f'Total: ${item.importe:,.2f}')
         else:
-            self.ui.lbTotalGran.setText("Total: ...")
+            self.ui.lbTotalGran.setText('Total: ...')

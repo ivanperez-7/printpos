@@ -13,7 +13,7 @@ from PySide6.QtCore import QDate, QObject, Signal
 from core import DateRange
 from utils.mywidgets import TablaDatos
 
-__all__ = ["InterfazPaginas", "InterfazFechas", "InterfazFiltro"]
+__all__ = ['InterfazPaginas', 'InterfazFechas', 'InterfazFiltro']
 
 
 class InterfazPaginas(QObject):
@@ -221,7 +221,7 @@ class InterfazFiltro(QObject):
         popup.setDefaultAction(default)
 
         self.idx = idx
-        search_bar.setPlaceholderText(f"Buscar por {nombre.lower()}...")
+        search_bar.setPlaceholderText(f'Buscar por {nombre.lower()}...')
 
         # resto de acciones
         for nombre, idx in options[1:]:

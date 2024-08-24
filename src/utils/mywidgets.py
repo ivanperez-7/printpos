@@ -18,7 +18,7 @@ class ClickableIcon(QtWidgets.QPushButton):
         super().__init__(parent)
 
         self.setStyleSheet(
-            """
+            '''
             /* Normal state */
             QPushButton {
                 background-color: transparent;
@@ -34,7 +34,7 @@ class ClickableIcon(QtWidgets.QPushButton):
                 border: none;
                 outline: none; /* Remove the dotted focus outline */
             }
-        """
+        '''
         )
         self.setFlat(True)
         self.setCursor(Qt.PointingHandCursor)
@@ -99,7 +99,7 @@ class StackPagos(QtWidgets.QStackedWidget):
     def restanteEnEfectivo(self):
         """Residuo del total menos lo ya pagado con moneda electrónica."""
         return self.total - sum(
-            wdg.montoPagado for wdg in self if wdg.metodoSeleccionado != "Efectivo"
+            wdg.montoPagado for wdg in self if wdg.metodoSeleccionado != 'Efectivo'
         )
 
     @property
@@ -120,7 +120,7 @@ class StackPagos(QtWidgets.QStackedWidget):
         ):
             return True
 
-        n_efec = [wdg.metodoSeleccionado for wdg in self].count("Efectivo")
+        n_efec = [wdg.metodoSeleccionado for wdg in self].count('Efectivo')
 
         if n_efec == 0:
             sumaCorrecta = montoPagado == self.total
@@ -167,7 +167,7 @@ class TablaDatos(QtWidgets.QTableWidget):
         self.modelo = self.Modelos.DEFAULT
 
         self.setStyleSheet(
-            """
+            '''
             QHeaderView::section {
                 font: bold 10pt;
                 color: white;
@@ -184,7 +184,7 @@ class TablaDatos(QtWidgets.QTableWidget):
             QTableWidget::item {
                 padding: 10px;
             }
-        """
+        '''
         )
         font = QtGui.QFont()
         font.setPointSize(10)
@@ -223,18 +223,18 @@ class TablaDatos(QtWidgets.QTableWidget):
 
     def tamanoCabecera(self, pt: int):
         qs = self.styleSheet()
-        header = "QHeaderView::section {font: bold %dpt;}" % pt
+        header = 'QHeaderView::section {font: bold %dpt;}' % pt
         self.setStyleSheet(qs + header)
 
     def quitarBordeCabecera(self):
         qs = self.styleSheet()
-        borde = "QHeaderView::section {border: 0px;}"
+        borde = 'QHeaderView::section {border: 0px;}'
         self.setStyleSheet(qs + borde)
 
     def cambiarColorCabecera(self, color):
         qs = self.styleSheet()
         color = QtGui.QColor(color)
-        color_qs = "QHeaderView::section {{ background-color: {} }};".format(
+        color_qs = 'QHeaderView::section {{ background-color: {} }};'.format(
             color.name()
         )
         self.setStyleSheet(qs + color_qs)
@@ -267,13 +267,13 @@ class TablaDatos(QtWidgets.QTableWidget):
             for col, dato in enumerate(prod):
                 sort_key = None
                 if isinstance(dato, float):
-                    cell = f"${dato:,.2f}"
+                    cell = f'${dato:,.2f}'
                     sort_key = Moneda(dato)
                 elif isinstance(dato, datetime):
                     cell = formatdate(dato)
                     sort_key = dato
                 else:
-                    cell = str(dato or "")
+                    cell = str(dato or '')
                 tableItem = MyTableItem(cell, sort_key)
                 self.setItem(row, col, tableItem)
 
@@ -291,11 +291,11 @@ class TablaDatos(QtWidgets.QTableWidget):
             for col, dato in enumerate(prod):
                 if isinstance(dato, float):
                     if col == 4 and not dato:
-                        cell = ""
+                        cell = ''
                     else:
-                        cell = f"{dato:,.2f}"
+                        cell = f'{dato:,.2f}'
                 else:
-                    cell = str(dato or "")
+                    cell = str(dato or '')
 
                 tableItem = MyTableItem(cell)
                 flags = tableItem.flags()
@@ -315,9 +315,9 @@ class TablaDatos(QtWidgets.QTableWidget):
                 if isinstance(dato, datetime):
                     cell = formatdate(dato)
                 elif isinstance(dato, float):
-                    cell = f"${dato:,.2f}"
+                    cell = f'${dato:,.2f}'
                 else:
-                    cell = str(dato or "")
+                    cell = str(dato or '')
                 self.setItem(row, col, MyTableItem(cell))
 
             self.item(row, 4).setFont(bold)
@@ -325,24 +325,24 @@ class TablaDatos(QtWidgets.QTableWidget):
 
             estado = self.item(row, 5).text()
 
-            if estado.startswith("Cancelada"):
+            if estado.startswith('Cancelada'):
                 self.item(row, 5).setBackground(QtGui.QColor(ROJO))
-            elif estado.startswith("Terminada"):
+            elif estado.startswith('Terminada'):
                 self.item(row, 5).setBackground(QtGui.QColor(VERDE))
 
     def _llenar_tabla_pedidos(self, data):
         bold = QtGui.QFont()
         bold.setBold(True)
-        icon = QtGui.QIcon(":/img/resources/images/whatsapp.png")
+        icon = QtGui.QIcon(':/img/resources/images/whatsapp.png')
 
         for row, compra in enumerate(data):
             for col, dato in enumerate(compra):
                 if isinstance(dato, datetime):
                     cell = formatdate(dato)
                 elif isinstance(dato, float):
-                    cell = f"${dato:,.2f}"
+                    cell = f'${dato:,.2f}'
                 else:
-                    cell = str(dato or "")
+                    cell = str(dato or '')
                 self.setItem(row, col, MyTableItem(cell))
 
             self.item(row, 5).setFont(bold)
@@ -351,14 +351,14 @@ class TablaDatos(QtWidgets.QTableWidget):
             estado_cell = self.item(row, 6)
             estado = estado_cell.text()
 
-            if estado.startswith("Cancelada"):
+            if estado.startswith('Cancelada'):
                 estado_cell.setBackground(QtGui.QColor(ROJO))
-            elif estado.startswith("Entregado") or estado.startswith("Terminada"):
+            elif estado.startswith('Entregado') or estado.startswith('Terminada'):
                 estado_cell.setBackground(QtGui.QColor(VERDE))
-            elif estado.startswith("Recibido"):
+            elif estado.startswith('Recibido'):
                 estado_cell.setBackground(QtGui.QColor(AMARILLO))
 
-                button_cell = QtWidgets.QPushButton(" Enviar recordatorio")
+                button_cell = QtWidgets.QPushButton(' Enviar recordatorio')
                 button_cell.setIcon(icon)
                 button_cell.setFlat(True)
 
@@ -381,7 +381,7 @@ class NumberEdit(QtWidgets.QLineEdit):
         self.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         # validadores para datos numéricos
-        self.setValidator(QtGui.QRegularExpressionValidator(r"\d{1,15}\.?\d{0,2}"))
+        self.setValidator(QtGui.QRegularExpressionValidator(r'\d{1,15}\.?\d{0,2}'))
 
     @property
     def cantidad(self):
@@ -392,7 +392,7 @@ class NumberEdit(QtWidgets.QLineEdit):
 
     @cantidad.setter
     def cantidad(self, val):
-        self.setText(f"{Moneda(val)}")
+        self.setText(f'{Moneda(val)}')
 
 
 class LabelAdvertencia(QtWidgets.QLabel):
@@ -432,14 +432,14 @@ class LabelAdvertencia(QtWidgets.QLabel):
         self.setFixedWidth(self.parent_.width())
 
     def actualizarLabel(self):
-        self.setText(self.msj if not self.parent_.rowCount() else "")
+        self.setText(self.msj if not self.parent_.rowCount() else '')
 
 
 class SpeechBubble(QtWidgets.QWidget):
     hiddenGeom = QtCore.QRect(610, 28, 0, 165)
     shownGeom = QtCore.QRect(610, 28, 345, 165)
 
-    def __init__(self, parent, txt=""):
+    def __init__(self, parent, txt=''):
         super().__init__(parent)
 
         self.setGeometry(self.shownGeom)
@@ -449,7 +449,7 @@ class SpeechBubble(QtWidgets.QWidget):
 
         self.text_browser = QtWidgets.QTextBrowser()
         self.text_browser.setStyleSheet(
-            """
+            '''
             QTextBrowser { 
                 border: none;
                 background-color: transparent;
@@ -479,7 +479,7 @@ class SpeechBubble(QtWidgets.QWidget):
             QScrollBar::add-page:vertical {
                 background: none;
             }
-        """
+        '''
         )
         self.text_browser.setPlainText(txt)
         font = QtGui.QFont()
@@ -528,7 +528,7 @@ class SpeechBubble(QtWidgets.QWidget):
         if not self.isVisible():
             # Create an animation to gradually change the height of the widget
             self.setVisible(True)
-            self.show_animation = QtCore.QPropertyAnimation(self, b"geometry")
+            self.show_animation = QtCore.QPropertyAnimation(self, b'geometry')
             self.show_animation.setDuration(200)
             self.show_animation.setStartValue(self.hiddenGeom)
             self.show_animation.setEndValue(self.shownGeom)
@@ -536,7 +536,7 @@ class SpeechBubble(QtWidgets.QWidget):
             self.show_animation.start()
         else:
             # Hide the widget
-            self.hide_animation = QtCore.QPropertyAnimation(self, b"geometry")
+            self.hide_animation = QtCore.QPropertyAnimation(self, b'geometry')
             self.hide_animation.setDuration(200)
             self.hide_animation.setStartValue(self.shownGeom)
             self.hide_animation.setEndValue(self.hiddenGeom)

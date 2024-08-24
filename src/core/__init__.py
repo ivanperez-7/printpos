@@ -9,8 +9,8 @@ from .runner import Runner
 
 
 # validadores
-IdFirebird = _QRegExpVal(r"[a-zA-Z0-9_$]+")
-NumeroDecimal = _QRegExpVal(r"(\d*\.\d+|\d+\.\d*|\d+)")
+IdFirebird = _QRegExpVal(r'[a-zA-Z0-9_$]+')
+NumeroDecimal = _QRegExpVal(r'(\d*\.\d+|\d+\.\d*|\d+)')
 
 # colores para GUI
 VERDE = 0xB2FFAE

@@ -28,7 +28,7 @@ from config import INI
 from core import Moneda
 from utils.myutils import chunkify, formatdate, stringify_float
 
-__all__ = ["generarOrdenCompra", "generarTicketPDF", "generarCortePDF"]
+__all__ = ['generarOrdenCompra', 'generarTicketPDF', 'generarCortePDF']
 
 
 def generarOrdenCompra(
@@ -54,15 +54,15 @@ def generarOrdenCompra(
         - Fecha de entrega"""
     assert isinstance(productos, list) and len(
         productos
-    ), f"Argumento {productos=} no valido."
-    assert anticipo is not None, f"Venta {folio=} es directa, no pedido."
+    ), f'Argumento {productos=} no valido.'
+    assert anticipo is not None, f'Venta {folio=} es directa, no pedido.'
 
     # objetos para PDF combinado y PDF base
     orden_writer = PdfWriter()
 
     estilos = getSampleStyleSheet()
-    estilos.add(ParagraphStyle(name="codigo", fontSize=10))
-    estilos.add(ParagraphStyle(name="especificaciones", fontSize=8, leading=11))
+    estilos.add(ParagraphStyle(name='codigo', fontSize=10))
+    estilos.add(ParagraphStyle(name='especificaciones', fontSize=8, leading=11))
 
     # divide en grupos de 6 productos e itera sobre ellos
     for chunk in chunkify(productos, 6):
@@ -71,11 +71,11 @@ def generarOrdenCompra(
         can = Canvas(packet)
 
         # <escribir datos en el canvas>
-        can.setFont("Helvetica-Bold", 10)
+        can.setFont('Helvetica-Bold', 10)
         can.drawRightString(373, 491, str(folio))
         can.drawCentredString(353, 192, str(total))
 
-        can.setFont("Helvetica", 12)
+        can.setFont('Helvetica', 12)
         can.drawRightString(373, 546, formatdate(fecha_creacion))
 
         can.setFontSize(10)
@@ -85,39 +85,42 @@ def generarOrdenCompra(
         can.drawCentredString(353, 148, str(total - anticipo))
         can.drawCentredString(353, 170, str(anticipo))
 
-        for i, (
-            prodCantidad,
-            prodNombre,
-            prodEspecificaciones,  # <tabla de productos>
-            prodPrecio,
-            prodImporte,
+        for (
+            i,
+            (
+                prodCantidad,
+                prodNombre,
+                prodEspecificaciones,  # <tabla de productos>
+                prodPrecio,
+                prodImporte,
+            ),
         ) in enumerate(chunk):
             y_sep = 32.4 * i  # separador por renglón de la tabla
 
             can.drawCentredString(49, 381 - y_sep, stringify_float(prodCantidad))
-            can.drawCentredString(306, 381 - y_sep, f"{prodPrecio:,.2f}")
-            can.drawCentredString(353, 381 - y_sep, f"{prodImporte:,.2f}")
+            can.drawCentredString(306, 381 - y_sep, f'{prodPrecio:,.2f}')
+            can.drawCentredString(353, 381 - y_sep, f'{prodImporte:,.2f}')
 
             # nombre de producto, tamaño de fuente variable
-            estilos["codigo"].fontSize = 10
-            while estilos["codigo"].fontSize > 1:
-                text = Paragraph(prodNombre, estilos["codigo"])
+            estilos['codigo'].fontSize = 10
+            while estilos['codigo'].fontSize > 1:
+                text = Paragraph(prodNombre, estilos['codigo'])
                 w, h = text.wrap(59, 24)
 
                 if h <= 24:
                     break
-                estilos["codigo"].fontSize -= 0.1
+                estilos['codigo'].fontSize -= 0.1
             text.drawOn(can, 78.4, 398 - y_sep - h)
 
             # especificaciones, tamaño de fuente variable
-            estilos["especificaciones"].fontSize = 9
-            while estilos["especificaciones"].fontSize > 1:
-                text = Paragraph(prodEspecificaciones, estilos["especificaciones"])
+            estilos['especificaciones'].fontSize = 9
+            while estilos['especificaciones'].fontSize > 1:
+                text = Paragraph(prodEspecificaciones, estilos['especificaciones'])
                 w, h = text.wrap(125, 24)
 
                 if h <= 24:
                     break
-                estilos["especificaciones"].fontSize -= 0.1
+                estilos['especificaciones'].fontSize -= 0.1
             text.drawOn(can, 151.2, 398 - y_sep - h)  # </tabla de productos>
         # </escribir datos en el canvas>
 
@@ -127,7 +130,7 @@ def generarOrdenCompra(
         # crear variable para nuevo PDF y leer plantilla
         text_pdf = PdfReader(packet)
         # agregar trazados en el PDF de la plantilla
-        base_pdf = PdfReader("resources/pdf/orden_compra2023.pdf")
+        base_pdf = PdfReader('resources/pdf/orden_compra2023.pdf')
         base_page = base_pdf.pages[0]
         base_page.merge_page(text_pdf.pages[0])
 
@@ -159,7 +162,7 @@ def generarTicketPDF(
         - Fecha y hora de creación"""
     assert isinstance(productos, list) and len(
         productos
-    ), f"Argumento {productos=} no valido."
+    ), f'Argumento {productos=} no valido.'
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -172,22 +175,22 @@ def generarTicketPDF(
     )
 
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name="Center", fontSize=8, alignment=TA_CENTER))
-    styles.add(ParagraphStyle(name="Center_desc", fontSize=11, alignment=TA_CENTER))
-    styles.add(ParagraphStyle(name="Left", fontSize=8, alignment=TA_LEFT))
+    styles.add(ParagraphStyle(name='Center', fontSize=8, alignment=TA_CENTER))
+    styles.add(ParagraphStyle(name='Center_desc', fontSize=11, alignment=TA_CENTER))
+    styles.add(ParagraphStyle(name='Left', fontSize=8, alignment=TA_LEFT))
 
     # <contenido del PDF>
-    data = [["CANT.", "PRODUCTO", "P/U", "DESC.", "TOTAL"]]
+    data = [['CANT.', 'PRODUCTO', 'P/U', 'DESC.', 'TOTAL']]
     total_desc = Moneda.sum(prod.total_descuentos for prod in productos)
 
     for prod in productos:
         data.append(
             [
                 stringify_float(prod.cantidad),
-                Paragraph(prod.nombre_ticket, styles["Center"]),
-                f"{prod.precio_unit:,.2f}",
-                f"{prod.descuento_unit:,.2f}" if prod.descuento_unit else "",
-                f"{prod.importe:,.2f}",
+                Paragraph(prod.nombre_ticket, styles['Center']),
+                f'{prod.precio_unit:,.2f}',
+                f'{prod.descuento_unit:,.2f}' if prod.descuento_unit else '',
+                f'{prod.importe:,.2f}',
             ]
         )
 
@@ -198,14 +201,14 @@ def generarTicketPDF(
     tabla_productos.setStyle(
         TableStyle(
             [  # ??? guatdefoq
-                ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-                ("TOPPADDING", (0, 0), (-1, -1), 3),
-                ("LINEBELOW", (0, 0), (-1, 0), 0.4, colors.black),
-                ("LINEBELOW", (0, -1), (-1, -1), 0.4, colors.black),
+                ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 8),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                ('TOPPADDING', (0, 0), (-1, -1), 3),
+                ('LINEBELOW', (0, 0), (-1, 0), 0.4, colors.black),
+                ('LINEBELOW', (0, -1), (-1, -1), 0.4, colors.black),
             ]
         )
     )
@@ -216,45 +219,45 @@ def generarTicketPDF(
     else:
         total = Moneda(total)
 
-    data = [["IMPORTE:", str(total)]]
+    data = [['IMPORTE:', str(total)]]
 
     if (
-        recibido and metodo_pago == "EFEC"
+        recibido and metodo_pago == 'EFEC'
     ):  # el único lugar donde sirve el dato 'recibido' xd
         recibido = Moneda(recibido)
-        data += [["Pagado:", str(recibido)], ["Cambio:", str(recibido - total)]]
+        data += [['Pagado:', str(recibido)], ['Cambio:', str(recibido - total)]]
 
-    tabla_importe = Table(data, hAlign="RIGHT")
+    tabla_importe = Table(data, hAlign='RIGHT')
     tabla_importe.setStyle(
         TableStyle(
             [
-                ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                ("ALIGN", (0, 0), (-1, -1), "RIGHT"),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 8),
+                ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
             ]
         )
     )
 
     # elementos dinámicos, según se requieran
     if folio:
-        titulo = "TICKET DE COMPRA"
-        pie = "¡Muchas gracias por su compra!"
+        titulo = 'TICKET DE COMPRA'
+        pie = '¡Muchas gracias por su compra!'
 
         folio = (
-            f"<b>Folio de venta</b>: {folio} "
-            + "&nbsp; " * 7
-            + f"<b>Método de pago</b>: {metodo_pago}"
+            f'<b>Folio de venta</b>: {folio} '
+            + '&nbsp; ' * 7
+            + f'<b>Método de pago</b>: {metodo_pago}'
         )
     else:
-        titulo = "COTIZACIÓN DE VENTA"
-        pie = "¡Muchas gracias por su visita!"
-        folio = ""
+        titulo = 'COTIZACIÓN DE VENTA'
+        pie = '¡Muchas gracias por su visita!'
+        folio = ''
 
     # convertir imagen en .qrc a imagen normal
-    loggg = QFile(":img/resources/images/logo.png")
-    assert loggg.open(QIODevice.ReadOnly), "cant open logo.png pls check"
+    loggg = QFile(':img/resources/images/logo.png')
+    assert loggg.open(QIODevice.ReadOnly), 'cant open logo.png pls check'
     baits = io.BytesIO(loggg.readAll().data())
 
     t = 0.017  # dimensiones del logo
@@ -264,16 +267,16 @@ def generarTicketPDF(
     elements = [
         Image(baits, width=w * mm, height=h * mm),
         Spacer(1, 6),
-        Paragraph(INI.CALLE_1, styles["Center"]),
-        Paragraph(INI.CALLE_2, styles["Center"]),
+        Paragraph(INI.CALLE_1, styles['Center']),
+        Paragraph(INI.CALLE_2, styles['Center']),
         Spacer(1, 6),
-        Paragraph(INI.TELEFONO, styles["Center"]),
+        Paragraph(INI.TELEFONO, styles['Center']),
         Spacer(1, 6),
-        Paragraph("* " * 40, styles["Center"]),
-        Paragraph(titulo, styles["Center"]),
-        Paragraph("* " * 40, styles["Center"]),
-        Paragraph(folio, styles["Left"]),
-        Paragraph("<b>Fecha</b>: " + formatdate(fecha_creacion), styles["Left"]),
+        Paragraph('* ' * 40, styles['Center']),
+        Paragraph(titulo, styles['Center']),
+        Paragraph('* ' * 40, styles['Center']),
+        Paragraph(folio, styles['Left']),
+        Paragraph('<b>Fecha</b>: ' + formatdate(fecha_creacion), styles['Left']),
         Spacer(1, 10),
         tabla_productos,
         Spacer(1, 7),
@@ -283,15 +286,15 @@ def generarTicketPDF(
     if total_desc:
         elements += [
             Spacer(1, 12),
-            Paragraph(f"¡Hoy se ahorró ${total_desc}!", styles["Center_desc"]),
+            Paragraph(f'¡Hoy se ahorró ${total_desc}!', styles['Center_desc']),
             Spacer(1, 25),
-            Paragraph("Autoriza descuentos: " + "_" * 24, styles["Left"]),
+            Paragraph('Autoriza descuentos: ' + '_' * 24, styles['Left']),
         ]
 
     elements += [
         Spacer(1, 15),
-        Paragraph(f"Le atendió: {vendedor}", styles["Center"]),
-        Paragraph(pie, styles["Center"]),
+        Paragraph(f'Le atendió: {vendedor}', styles['Center']),
+        Paragraph(pie, styles['Center']),
     ]
 
     doc.build(elements)
@@ -324,25 +327,25 @@ def generarCortePDF(caja: Caja, responsable: str):
     # estilos de párrafos
     styles = getSampleStyleSheet()
     styles.add(
-        ParagraphStyle(name="Left", fontName="Helvetica", fontSize=9, alignment=TA_LEFT)
+        ParagraphStyle(name='Left', fontName='Helvetica', fontSize=9, alignment=TA_LEFT)
     )
     styles.add(
         ParagraphStyle(
-            name="Foot", fontName="Helvetica", fontSize=11, alignment=TA_LEFT
+            name='Foot', fontName='Helvetica', fontSize=11, alignment=TA_LEFT
         )
     )
 
     # cálculos de ingresos
-    ingresos_efectivo = caja.totalIngresos("Efectivo")
-    ingresos_transferencia = caja.totalIngresos("Transferencia")
-    ingresos_credito = caja.totalIngresos("Tarjeta de crédito")
-    ingresos_debito = caja.totalIngresos("Tarjeta de débito")
+    ingresos_efectivo = caja.totalIngresos('Efectivo')
+    ingresos_transferencia = caja.totalIngresos('Transferencia')
+    ingresos_credito = caja.totalIngresos('Tarjeta de crédito')
+    ingresos_debito = caja.totalIngresos('Tarjeta de débito')
 
     # cálculos de egresos
-    egresos_efectivo = -caja.totalEgresos("Efectivo")
-    egresos_transferencia = -caja.totalEgresos("Transferencia")
-    egresos_credito = -caja.totalEgresos("Tarjeta de crédito")
-    egresos_debito = -caja.totalEgresos("Tarjeta de débito")
+    egresos_efectivo = -caja.totalEgresos('Efectivo')
+    egresos_transferencia = -caja.totalEgresos('Transferencia')
+    egresos_credito = -caja.totalEgresos('Tarjeta de crédito')
+    egresos_debito = -caja.totalEgresos('Tarjeta de débito')
 
     # totales (todos los métodos)
     total_efectivo = ingresos_efectivo - egresos_efectivo
@@ -356,60 +359,60 @@ def generarCortePDF(caja: Caja, responsable: str):
 
     # elementos para constuir el PDF
     elements = [
-        Paragraph("Resumen de movimientos de caja", styles["Heading1"]),
+        Paragraph('Resumen de movimientos de caja', styles['Heading1']),
         Spacer(1, 6),
-        Paragraph("Realizado por: " + responsable, styles["Left"]),
-        Paragraph("Fecha y hora: " + formatdate(), styles["Left"]),
+        Paragraph('Realizado por: ' + responsable, styles['Left']),
+        Paragraph('Fecha y hora: ' + formatdate(), styles['Left']),
         Spacer(1, 6),
-        Paragraph("Resumen de ingresos", styles["Heading3"]),
-        Paragraph(f"Efectivo: ${ingresos_efectivo}", styles["Left"], bulletText=" "),
+        Paragraph('Resumen de ingresos', styles['Heading3']),
+        Paragraph(f'Efectivo: ${ingresos_efectivo}', styles['Left'], bulletText=' '),
         Paragraph(
-            f"Tarjeta de crédito: ${ingresos_credito}", styles["Left"], bulletText=" "
+            f'Tarjeta de crédito: ${ingresos_credito}', styles['Left'], bulletText=' '
         ),
         Paragraph(
-            f"Tarjeta de débito: ${ingresos_debito}", styles["Left"], bulletText=" "
+            f'Tarjeta de débito: ${ingresos_debito}', styles['Left'], bulletText=' '
         ),
         Paragraph(
-            f"Transferencias bancarias: ${ingresos_transferencia}",
-            styles["Left"],
-            bulletText=" ",
-        ),
-        Spacer(1, 6),
-        Paragraph("Resumen de egresos", styles["Heading3"]),
-        Paragraph(f"Efectivo: ${egresos_efectivo}", styles["Left"], bulletText=" "),
-        Paragraph(
-            f"Tarjeta de crédito: ${egresos_credito}", styles["Left"], bulletText=" "
-        ),
-        Paragraph(
-            f"Tarjeta de débito: ${egresos_debito}", styles["Left"], bulletText=" "
-        ),
-        Paragraph(
-            f"Transferencias bancarias: ${egresos_transferencia}",
-            styles["Left"],
-            bulletText=" ",
+            f'Transferencias bancarias: ${ingresos_transferencia}',
+            styles['Left'],
+            bulletText=' ',
         ),
         Spacer(1, 6),
-        Paragraph("Esperado", styles["Heading3"]),
-        Paragraph(f"Efectivo: ${total_efectivo}", styles["Left"], bulletText=" "),
+        Paragraph('Resumen de egresos', styles['Heading3']),
+        Paragraph(f'Efectivo: ${egresos_efectivo}', styles['Left'], bulletText=' '),
         Paragraph(
-            f"Tarjeta de crédito: ${total_credito}", styles["Left"], bulletText=" "
+            f'Tarjeta de crédito: ${egresos_credito}', styles['Left'], bulletText=' '
         ),
         Paragraph(
-            f"Tarjeta de débito: ${total_debito}", styles["Left"], bulletText=" "
+            f'Tarjeta de débito: ${egresos_debito}', styles['Left'], bulletText=' '
         ),
         Paragraph(
-            f"Transferencias bancarias: ${total_transferencia}",
-            styles["Left"],
-            bulletText=" ",
+            f'Transferencias bancarias: ${egresos_transferencia}',
+            styles['Left'],
+            bulletText=' ',
+        ),
+        Spacer(1, 6),
+        Paragraph('Esperado', styles['Heading3']),
+        Paragraph(f'Efectivo: ${total_efectivo}', styles['Left'], bulletText=' '),
+        Paragraph(
+            f'Tarjeta de crédito: ${total_credito}', styles['Left'], bulletText=' '
+        ),
+        Paragraph(
+            f'Tarjeta de débito: ${total_debito}', styles['Left'], bulletText=' '
+        ),
+        Paragraph(
+            f'Transferencias bancarias: ${total_transferencia}',
+            styles['Left'],
+            bulletText=' ',
         ),
         Spacer(1, 20),
         Paragraph(
-            "<b>" + f"Total de ingresos: ${esperado_ingresos}" + "</b>", styles["Foot"]
+            '<b>' + f'Total de ingresos: ${esperado_ingresos}' + '</b>', styles['Foot']
         ),
         Paragraph(
-            "<b>" + f"Total de egresos: ${esperado_egresos}" + "</b>", styles["Foot"]
+            '<b>' + f'Total de egresos: ${esperado_egresos}' + '</b>', styles['Foot']
         ),
-        Paragraph(f"<b>Esperado en caja: ${esperado}</b>", styles["Foot"]),
+        Paragraph(f'<b>Esperado en caja: ${esperado}</b>', styles['Foot']),
     ]
 
     # Build the PDF document

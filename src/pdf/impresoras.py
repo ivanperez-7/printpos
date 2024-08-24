@@ -31,7 +31,7 @@ class ImpresoraPDF:
 
     def enviarAImpresora(self, data: io.BytesIO):
         """Convertir PDF a imagen y mandar a impresora."""
-        assert self.printer, "Impresora aún no inicializada."
+        assert self.printer, 'Impresora aún no inicializada.'
 
         painter = QPainter()
         if not painter.begin(self.printer):
@@ -42,7 +42,7 @@ class ImpresoraPDF:
             pix: pymupdf.Pixmap = page.get_pixmap(dpi=300, alpha=False)
             image = QImage(pix.samples, pix.w, pix.h, pix.stride, QImage.Format_RGB888)
             if INI.SAVE_PNG:
-                image.save(randFile("jpg"))
+                image.save(randFile('jpg'))
 
             rect = painter.viewport()
             qtImageScaled = image.scaled(
@@ -53,14 +53,14 @@ class ImpresoraPDF:
             if (
                 i < len(doc) - 1 and not self.printer.newPage()
             ):  # no se pudo crear nueva página
-                print(f"Failed to create a new page for page {i + 2}")
+                print(f'Failed to create a new page for page {i + 2}')
                 break
         painter.end()
 
     def __repr__(self):
         if self.printer is None:
-            return "Manejador de PDF sin impresora inicializada."
-        return f"Manejador de PDF con impresora {self.printer.printerName()}."
+            return 'Manejador de PDF sin impresora inicializada.'
+        return f'Manejador de PDF con impresora {self.printer.printerName()}.'
 
 
 class ImpresoraOrdenes(ImpresoraPDF):
@@ -104,7 +104,7 @@ class ImpresoraTickets(ImpresoraPDF):
 
         if not pInfo.printerName():
             self.warning_logger.display(
-                f"¡No se encontró la impresora {INI.IMPRESORA}!"
+                f'¡No se encontró la impresora {INI.IMPRESORA}!'
             )
             return None
         else:
@@ -124,10 +124,10 @@ class ImpresoraTickets(ImpresoraPDF):
 
         # cambiar método de pago (abreviatura)
         abrev = {
-            "Efectivo": "EFEC",
-            "Transferencia bancaria": "TRF",
-            "Tarjeta de crédito": "TVP",
-            "Tarjeta de débito": "TVP",
+            'Efectivo': 'EFEC',
+            'Transferencia bancaria': 'TRF',
+            'Tarjeta de crédito': 'TVP',
+            'Tarjeta de débito': 'TVP',
         }
 
         pagos = manejador.obtenerPagosVenta(idx)

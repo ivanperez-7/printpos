@@ -27,7 +27,7 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
 
         self.mutex = QMutex()
 
-        LabelAdvertencia(self.ui.tabla_productos, "¡No se encontró ningún producto!")
+        LabelAdvertencia(self.ui.tabla_productos, '¡No se encontró ningún producto!')
 
         # guardar conexión y usuario como atributos
         self.conn = conn
@@ -37,7 +37,7 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
 
         # añadir menú de opciones al botón para filtrar
         self.filtro = InterfazFiltro(
-            self.ui.btFiltrar, self.ui.searchBar, [("Código", 1), ("Descripción", 2)]
+            self.ui.btFiltrar, self.ui.searchBar, [('Código', 1), ('Descripción', 2)]
         )
         self.filtro.cambiado.connect(self.update_display)
 
@@ -67,11 +67,11 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
         if not self.mutex.try_lock():
             return
 
-        self.ui.lbContador.setText("Recuperando información...")
+        self.ui.lbContador.setText('Recuperando información...')
 
         manejador = ManejadorProductos(self.conn)
-        self.all = manejador.obtener_vista("view_all_productos") or []
-        self.ui.lbContador.setText(f"{len(self.all)} productos en la base de datos.")
+        self.all = manejador.obtener_vista('view_all_productos') or []
+        self.ui.lbContador.setText(f'{len(self.all)} productos en la base de datos.')
 
         self.rescanned.emit()
 
@@ -97,9 +97,9 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
         for row, item in enumerate(found):
             for col, dato in enumerate(item):
                 if isinstance(dato, float):
-                    cell = f"${dato:,.2f}"
+                    cell = f'${dato:,.2f}'
                 else:
-                    cell = str(dato or "")
+                    cell = str(dato or '')
 
                 widget = QtWidgets.QTableWidgetItem(cell)
                 tabla.setItem(row, col, widget)
@@ -135,27 +135,27 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
             return
 
         qm = QtWidgets.QMessageBox
-        manejador = ManejadorProductos(self.conn, "¡No se pudo eliminar el producto!")
+        manejador = ManejadorProductos(self.conn, '¡No se pudo eliminar el producto!')
 
         if manejador.obtenerRelacionVentas(id_productos):
             qm.warning(
                 self,
-                "Atención",
-                "No se puede eliminar este producto debido "
-                "a que hay ventas que lo incluyen.",
+                'Atención',
+                'No se puede eliminar este producto debido '
+                'a que hay ventas que lo incluyen.',
             )
             return
 
         # abrir pregunta
         ret = qm.question(
             self,
-            "Atención",
-            "El producto seleccionado se eliminará de la base de datos. "
-            "¿Desea continuar?",
+            'Atención',
+            'El producto seleccionado se eliminará de la base de datos. '
+            '¿Desea continuar?',
         )
 
         if ret == qm.Yes and manejador.eliminarProducto(id_productos):
-            qm.information(self, "Éxito", "Se eliminó el producto seleccionado.")
+            qm.information(self, 'Éxito', 'Se eliminó el producto seleccionado.')
             self.rescan_update()
 
 
@@ -213,7 +213,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
     ####################
     @property
     def categoriaActual(self):
-        return ["S", "G"][self.ui.tabWidget.currentIndex()]
+        return ['S', 'G'][self.ui.tabWidget.currentIndex()]
 
     def agregarIntervalo(
         self, row: int, desde: float = 0.0, precio: float = 0.0, duplex: bool = False
@@ -221,11 +221,11 @@ class Base_EditarProducto(QtWidgets.QWidget):
         """Agrega entrada a la tabla de precios."""
         self.ui.tabla_precios.insertRow(row)
 
-        cell = QtWidgets.QTableWidgetItem(f"{desde:,.2f}" if desde else "")
+        cell = QtWidgets.QTableWidgetItem(f'{desde:,.2f}' if desde else '')
         cell.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
         self.ui.tabla_precios.setItem(row, 0, cell)
 
-        cell = QtWidgets.QTableWidgetItem(f"{precio:,.2f}" if precio else "")
+        cell = QtWidgets.QTableWidgetItem(f'{precio:,.2f}' if precio else '')
         cell.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
         self.ui.tabla_precios.setItem(row, 1, cell)
 
@@ -240,7 +240,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
             row = tabla.rowCount() - 1
         tabla.removeRow(row)
 
-    def agregarProductoALista(self, nombre: str = "", cantidad: int = 1):
+    def agregarProductoALista(self, nombre: str = '', cantidad: int = 1):
         # crear widget y agregar a la lista
         nuevo = WidgetElemento()
 
@@ -290,13 +290,13 @@ class Base_EditarProducto(QtWidgets.QWidget):
 
         if not self.ui.tabla_precios.rowCount():
             QtWidgets.QMessageBox.warning(
-                self, "Atención", "¡La tabla de precios se encuentra vacía!"
+                self, 'Atención', '¡La tabla de precios se encuentra vacía!'
             )
             return None
 
         for row in range(tabla.rowCount()):
-            desde = tabla.item(row, 0).text().replace(",", "")
-            precio = tabla.item(row, 1).text().replace(",", "")
+            desde = tabla.item(row, 0).text().replace(',', '')
+            precio = tabla.item(row, 1).text().replace(',', '')
             duplex: ItemAuxiliar = tabla.cellWidget(row, 2)
 
             try:
@@ -306,8 +306,8 @@ class Base_EditarProducto(QtWidgets.QWidget):
             except ValueError:
                 QtWidgets.QMessageBox.warning(
                     self,
-                    "Atención",
-                    "¡Verifique que los datos numéricos sean correctos!",
+                    'Atención',
+                    '¡Verifique que los datos numéricos sean correctos!',
                 )
                 return None
 
@@ -319,7 +319,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
             return (float(self.ui.txtMinM2.text()), float(self.ui.txtPrecio.text()))
         except ValueError:
             QtWidgets.QMessageBox.warning(
-                self, "Atención", "¡Verifique que los datos numéricos sean correctos!"
+                self, 'Atención', '¡Verifique que los datos numéricos sean correctos!'
             )
             return None
 
@@ -329,7 +329,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
         productos_db_parametros = self.obtenerParametrosProductos()
         PUI_db_parametros = self.obtenerParametrosProdUtilizaInv()
 
-        if self.categoriaActual == "S":
+        if self.categoriaActual == 'S':
             precios_db_parametros = self.obtenerParametrosProdIntervalos()
         else:
             precios_db_parametros = self.obtenerParametrosProdGranFormato()
@@ -360,33 +360,33 @@ class Base_EditarProducto(QtWidgets.QWidget):
         ):
             return
 
-        if self.categoriaActual == "S":
+        if self.categoriaActual == 'S':
             result = manejador.insertarProductosIntervalos(idx, precios_db_parametros)
         else:
             result = manejador.insertarProductoGranFormato(idx, precios_db_parametros)
 
         if result:
-            QtWidgets.QMessageBox.information(self, "Éxito", self.MENSAJE_EXITO)
+            QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)
             self.success.emit()
             self.close()
 
     def insertar_o_modificar(self, productos_db_parametros: tuple) -> tuple:
         """Devuelve tupla con índice del producto registrado o editado."""
-        raise NotImplementedError("BEIS CLASSSSSSS")
+        raise NotImplementedError('BEIS CLASSSSSSS')
 
 
 class App_RegistrarProducto(Base_EditarProducto):
     """Backend para la ventana para insertar un producto a la base de datos."""
 
-    MENSAJE_EXITO = "¡Se registró el producto!"
-    MENSAJE_ERROR = "¡No se pudo registrar el producto!"
+    MENSAJE_EXITO = '¡Se registró el producto!'
+    MENSAJE_ERROR = '¡No se pudo registrar el producto!'
 
     def __init__(self, conn, user, parent=None):
         super().__init__(conn, user, parent)
 
-        self.ui.lbTitulo.setText("Registrar producto")
-        self.ui.btAceptar.setText(" Registrar producto")
-        self.ui.btAceptar.setIcon(QIcon(":/img/resources/images/plus.png"))
+        self.ui.lbTitulo.setText('Registrar producto')
+        self.ui.btAceptar.setText(' Registrar producto')
+        self.ui.btAceptar.setIcon(QIcon(':/img/resources/images/plus.png'))
 
     def insertar_o_modificar(self, productos_db_parametros):
         manejador = ManejadorProductos(self.conn, self.MENSAJE_ERROR)
@@ -396,8 +396,8 @@ class App_RegistrarProducto(Base_EditarProducto):
 class App_EditarProducto(Base_EditarProducto):
     """Backend para la ventana para editar un producto de la base de datos."""
 
-    MENSAJE_EXITO = "¡Se editó el producto!"
-    MENSAJE_ERROR = "¡No se pudo editar el producto!"
+    MENSAJE_EXITO = '¡Se editó el producto!'
+    MENSAJE_ERROR = '¡No se pudo editar el producto!'
 
     def __init__(self, idx: int, conn, user, parent=None):
         super().__init__(conn, user, parent)
@@ -411,7 +411,7 @@ class App_EditarProducto(Base_EditarProducto):
         self.ui.txtDescripcion.setPlainText(descripcion)
         self.ui.txtNombre.setText(abreviado)
 
-        if categoria == "S":
+        if categoria == 'S':
             self.ui.tabWidget.setCurrentIndex(0)
 
             # agregar intervalos de precios a la tabla
@@ -419,13 +419,13 @@ class App_EditarProducto(Base_EditarProducto):
 
             for row, (desde, precio, duplex) in enumerate(precios):
                 self.agregarIntervalo(row, desde, precio, duplex)
-        elif categoria == "G":
+        elif categoria == 'G':
             self.ui.tabWidget.setCurrentIndex(1)
 
             min_m2, precio = manejador.obtenerGranFormato(idx)
 
-            self.ui.txtMinM2.setText(f"{min_m2:,.2f}")
-            self.ui.txtPrecio.setText(f"{precio:,.2f}")
+            self.ui.txtMinM2.setText(f'{min_m2:,.2f}')
+            self.ui.txtPrecio.setText(f'{precio:,.2f}')
 
         # agregar elementos de la segunda página
         for nombre, cantidad in manejador.obtenerUtilizaInventario(idx):

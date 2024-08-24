@@ -36,8 +36,8 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
 
         self.mutex = QMutex()
 
-        LabelAdvertencia(self.ui.tabla_directas, "¡No se encontró ninguna venta!")
-        LabelAdvertencia(self.ui.tabla_pedidos, "¡No se encontró ningún pedido!")
+        LabelAdvertencia(self.ui.tabla_directas, '¡No se encontró ninguna venta!')
+        LabelAdvertencia(self.ui.tabla_pedidos, '¡No se encontró ningún pedido!')
 
         # otras variables importantes
         self.all_directas = []
@@ -65,7 +65,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         self.filtro = InterfazFiltro(
             self.ui.btFiltrar,
             self.ui.searchBar,
-            [("Folio", 0), ("Vendedor", 1), ("Cliente", 2)],
+            [('Folio', 0), ('Vendedor', 1), ('Cliente', 2)],
         )
         self.filtro.cambiado.connect(self.update_display)
 
@@ -122,17 +122,17 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         nuevo = nuevo or self.ui.tabWidget.currentIndex()
 
         if nuevo == 0:
-            label = "ventas directas"
+            label = 'ventas directas'
             num_compras = len(self.all_directas)
         else:
-            label = "pedidos"
+            label = 'pedidos'
             num_compras = len(self.all_pedidos)
 
         self.ui.lbContador.setText(
-            "{} {} en la base de datos.".format(num_compras, label)
+            '{} {} en la base de datos.'.format(num_compras, label)
         )
         self.ui.lbPagina.setText(
-            "{} de {}".format(
+            '{} de {}'.format(
                 self.tabla_actual.paginaActual, ceil(num_compras / CHUNK_SIZE) or 1
             )
         )
@@ -147,10 +147,10 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         if not self.mutex.try_lock():
             return
 
-        self.ui.lbContador.setText("Recuperando información...")
+        self.ui.lbContador.setText('Recuperando información...')
 
         manejador = ManejadorVentas(self.conn)
-        restrict = self.user.id if self.user.rol != "ADMINISTRADOR" else None
+        restrict = self.user.id if self.user.rol != 'ADMINISTRADOR' else None
         fechas = self.iFechas.rango_fechas
 
         self.all_directas = manejador.tablaVentas(fechas, restrict) or []
@@ -215,8 +215,8 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
     def enviarRecordatorio(self):
         ret = qm.question(
             self,
-            "Atención",
-            "¿Desea enviarle un recordatorio al cliente sobre " "este pedido?",
+            'Atención',
+            '¿Desea enviarle un recordatorio al cliente sobre ' 'este pedido?',
         )
         if ret != qm.Yes:
             return
@@ -230,11 +230,11 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
 
         # mensaje a enviar
         mensaje = (
-            "*Apreciable {}*:\n"
-            "Le informamos que ya puede pasar a Printcopy a recoger su pedido "
-            "con folio {}, que presenta un saldo de {} pesos. ¡Recuerde traer su "
-            "orden de compra para concretar el pedido!\n\n"
-            "¡Esperamos verle pronto! 😊"
+            '*Apreciable {}*:\n'
+            'Le informamos que ya puede pasar a Printcopy a recoger su pedido '
+            'con folio {}, que presenta un saldo de {} pesos. ¡Recuerde traer su '
+            'orden de compra para concretar el pedido!\n\n'
+            '¡Esperamos verle pronto! 😊'
         ).format(nombre, id_venta, saldo)
 
         enviarWhatsApp(celular, mensaje)
@@ -257,19 +257,19 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
 
         ret = qm.question(
             self,
-            "Atención",
-            "Este pedido no tiene saldo restante. "
-            "¿Desea marcar la venta como terminada?",
+            'Atención',
+            'Este pedido no tiene saldo restante. '
+            '¿Desea marcar la venta como terminada?',
         )
         if ret != qm.Yes:
             return
 
         # terminar venta directamente, al no tener saldo restante
         if manejador.actualizarEstadoVenta(
-            idVenta, "Entregado por " + self.user.nombre, commit=True
+            idVenta, 'Entregado por ' + self.user.nombre, commit=True
         ):
             qm.information(
-                self, "Éxito", "Se marcó como terminada la venta seleccionada."
+                self, 'Éxito', 'Se marcó como terminada la venta seleccionada.'
             )
             self.rescan_update()
 
@@ -278,16 +278,16 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         if not (selected := self.tabla_actual.selectedItems()):
             return
 
-        checar_estado = lambda i: selected[i].text().startswith("Cancelada")
+        checar_estado = lambda i: selected[i].text().startswith('Cancelada')
         if checar_estado(5) or checar_estado(6):
             return
 
         # abrir pregunta
         ret = qm.question(
             self,
-            "Atención",
-            "La venta seleccionada se marcará como cancelada.\n"
-            "Esta operación no se puede deshacer. ¿Desea continuar?",
+            'Atención',
+            'La venta seleccionada se marcará como cancelada.\n'
+            'Esta operación no se puede deshacer. ¿Desea continuar?',
         )
         if ret == qm.Yes:
             self._cancelarVenta(selected[0].text())
@@ -297,12 +297,12 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         # preguntar por devolución y manejar tabla ventas_pagos como corresponde
         ret = qm.question(
             self,
-            "Devolución de dinero",
-            "¿Desea registrar la devolución de los pagos realizados en esta venta?",
+            'Devolución de dinero',
+            '¿Desea registrar la devolución de los pagos realizados en esta venta?',
         )
 
         manejador = ManejadorVentas(conn)
-        estado = "Cancelada por " + manejador.nombreUsuarioActivo
+        estado = 'Cancelada por ' + manejador.nombreUsuarioActivo
 
         if ret == qm.Yes and not manejador.anularPagos(
             idVenta, manejador.idUsuarioActivo
@@ -310,7 +310,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             return
         if manejador.actualizarEstadoVenta(idVenta, estado, commit=True):
             qm.information(
-                self, "Éxito", "Se marcó como cancelada la venta seleccionada."
+                self, 'Éxito', 'Se marcó como cancelada la venta seleccionada.'
             )
             self.rescan_update()
 
@@ -319,7 +319,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         if not (selected := self.tabla_actual.selectedItems()):
             return
 
-        checar_estado = lambda i: selected[i].text().startswith("Cancelada")
+        checar_estado = lambda i: selected[i].text().startswith('Cancelada')
         if checar_estado(5) or checar_estado(6):
             return
 
@@ -333,9 +333,9 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         # abrir pregunta
         ret = qm.question(
             self,
-            "Atención",
-            "Se imprimirá el ticket de compra de la venta "
-            f"con folio {idVenta}. ¿Desea continuar?",
+            'Atención',
+            'Se imprimirá el ticket de compra de la venta '
+            f'con folio {idVenta}. ¿Desea continuar?',
         )
         if ret == qm.Yes:
             impresora = ImpresoraTickets()
@@ -347,7 +347,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         """Imprime orden de compra de un pedido dado el folio de esta."""
         if (selected := self.tabla_actual.selectedItems()) and selected[
             6
-        ].text().startswith("Recibido"):
+        ].text().startswith('Recibido'):
             impresora = ImpresoraOrdenes(self)
             impresora.imprimirOrdenCompra(
                 selected[0].text(), manejador=ManejadorVentas(self.conn)
@@ -447,11 +447,11 @@ class App_TerminarVenta(Base_PagarVenta):
         super().__init__(idx, conn, user, parent)
 
         self.ui.lbCincuenta.hide()
-        self.ui.label_17.setText("Abonar pago(s) a pedido")
-        self.ui.lbAnticipo1.setText("Abono")
-        self.ui.label_20.setText("Saldo restante")
-        self.ui.btCancelar.setText(" Regresar")
-        self.ui.btCancelar.setIcon(QIcon(":/img/resources/images/cancel.png"))
+        self.ui.label_17.setText('Abonar pago(s) a pedido')
+        self.ui.lbAnticipo1.setText('Abono')
+        self.ui.label_20.setText('Saldo restante')
+        self.ui.btCancelar.setText(' Regresar')
+        self.ui.btCancelar.setIcon(QIcon(':/img/resources/images/cancel.png'))
 
         self.show()
 
@@ -476,9 +476,14 @@ class App_TerminarVenta(Base_PagarVenta):
 
     def obtenerDatosGenerales(self):
         manejador = ManejadorVentas(self.conn)
-        nombreCliente, correo, telefono, fechaCreacion, fechaEntrega, *_ = (
-            manejador.obtenerDatosGeneralesVenta(self.id_ventas)
-        )
+        (
+            nombreCliente,
+            correo,
+            telefono,
+            fechaCreacion,
+            fechaEntrega,
+            *_,
+        ) = manejador.obtenerDatosGeneralesVenta(self.id_ventas)
         return (nombreCliente, correo, telefono, fechaCreacion, fechaEntrega)
 
     def pagoPredeterminado(self):
@@ -488,21 +493,21 @@ class App_TerminarVenta(Base_PagarVenta):
         manejador = ManejadorVentas(self.conn)
 
         if self.para_pagar == self.total:
-            estado = "Entregado por " + self.user.nombre
+            estado = 'Entregado por ' + self.user.nombre
         else:
             anticipo = manejador.obtenerAnticipo(self.id_ventas)
-            estado = f"Recibido ${anticipo + self.para_pagar}"
+            estado = f'Recibido ${anticipo + self.para_pagar}'
 
         return manejador.actualizarEstadoVenta(self.id_ventas, estado, commit=True)
 
     def dialogoExito(self):
         if self.para_pagar == self.total:
-            prompt = "La venta ha sido marcada como terminada."
+            prompt = 'La venta ha sido marcada como terminada.'
         else:
-            prompt = "Pago(s) abonado(s) al pedido."
+            prompt = 'Pago(s) abonado(s) al pedido.'
 
         ret = qm.question(
-            self, "Éxito", prompt + "\n¿Desea imprimir los tickets de los pagos?"
+            self, 'Éxito', prompt + '\n¿Desea imprimir los tickets de los pagos?'
         )
 
         if ret == qm.Yes:
@@ -548,12 +553,12 @@ class App_ImprimirTickets(QtWidgets.QWidget):
 
         for i, (fecha, metodo, monto, r, v) in enumerate(pagos):
             txt = (
-                f"  Pago {i + 1}: ${monto:.2f}, {metodo.lower()} ({formatdate(fecha)})"
+                f'  Pago {i + 1}: ${monto:.2f}, {metodo.lower()} ({formatdate(fecha)})'
             )
             checkbox = QtWidgets.QCheckBox(txt)
             checkbox.setFont(font)
             checkbox.setChecked(True)
-            checkbox.setProperty("pago_idx", i)
+            checkbox.setProperty('pago_idx', i)
             self.ui.layoutScroll.addWidget(checkbox, 0, Qt.AlignTop)
 
         self.show()
@@ -575,7 +580,7 @@ class App_ImprimirTickets(QtWidgets.QWidget):
 
     def done(self):
         idxs = [
-            wdg.property("pago_idx") for wdg in self.checkboxes() if wdg.isChecked()
+            wdg.property('pago_idx') for wdg in self.checkboxes() if wdg.isChecked()
         ]
 
         if idxs:

@@ -34,11 +34,15 @@ class Base_PagarVenta(QtWidgets.QWidget):
 
         # llenar labels y campos de texto
         self.total = self.calcularTotal()
-        self.ui.lbTotal.setText(f"{self.total}")
+        self.ui.lbTotal.setText(f'{self.total}')
 
-        nombreCliente, correo, telefono, fechaCreacion, fechaEntrega = (
-            self.obtenerDatosGenerales()
-        )
+        (
+            nombreCliente,
+            correo,
+            telefono,
+            fechaCreacion,
+            fechaEntrega,
+        ) = self.obtenerDatosGenerales()
 
         self.ui.txtCliente.setText(nombreCliente)
         self.ui.txtCorreo.setText(correo)
@@ -77,16 +81,16 @@ class Base_PagarVenta(QtWidgets.QWidget):
     # FUNCIONES ÚTILES #
     ####################
     def calcularTotal(self) -> Moneda:
-        raise NotImplementedError("CLASE BASE BROU")
+        raise NotImplementedError('CLASE BASE BROU')
 
     def obtenerDatosGenerales(self) -> tuple:
-        raise NotImplementedError("CLASE BASE BROU")
+        raise NotImplementedError('CLASE BASE BROU')
 
     def pagoPredeterminado(self) -> Moneda:
-        raise NotImplementedError("CLASE BASE BROU")
+        raise NotImplementedError('CLASE BASE BROU')
 
     def obtenerIdVenta(self) -> int:
-        raise NotImplementedError("CLASE BASE BROU")
+        raise NotImplementedError('CLASE BASE BROU')
 
     @property
     def para_pagar(self) -> Moneda:
@@ -99,7 +103,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
 
     def modificar_contador(self) -> None:
         self.ui.lbContador.setText(
-            "Pago {}/{}".format(
+            'Pago {}/{}'.format(
                 self.stackPagos.currentIndex() + 1, self.stackPagos.count()
             )
         )
@@ -108,18 +112,18 @@ class Base_PagarVenta(QtWidgets.QWidget):
         """Seguir las mismas reglas de `StackPagos.pagosValidos`
         para actualizar y colorear contadores."""
         stack = self.stackPagos
-        n_efec = [wdg.metodoSeleccionado for wdg in stack].count("Efectivo")
+        n_efec = [wdg.metodoSeleccionado for wdg in stack].count('Efectivo')
 
         if n_efec:  # hay pagos en efectivo
             m = sum(
                 wdg.montoPagado
                 for wdg in stack  # pagado en efectivo
-                if wdg.metodoSeleccionado == "Efectivo"
+                if wdg.metodoSeleccionado == 'Efectivo'
             )
             m = max(
                 Moneda.cero, m - stack.restanteEnEfectivo
             )  # pagado - restante (en efectivo)
-            self.ui.lbCambio.setText(f"Cambio: ${m}")
+            self.ui.lbCambio.setText(f'Cambio: ${m}')
         else:
             self.ui.lbCambio.clear()  # ignorar cambio
 
@@ -129,25 +133,25 @@ class Base_PagarVenta(QtWidgets.QWidget):
 
         if res < 0.0 and (not n_efec or stack.restanteEnEfectivo <= 0.0):
             # sobra dinero y sin efectivo, o efectivo no necesario
-            style = "color: red;"
+            style = 'color: red;'
         else:  # recalcular restante, considerando que hay efectivo y necesario
             res = max(Moneda.cero, res)  # por el cambio a entregar
-            style = ""
+            style = ''
         if stack.pagosValidos:  # todo bien
-            style = "color: green;"
+            style = 'color: green;'
 
         self.ui.lbRestante.setStyleSheet(style)
-        self.ui.lbRestante.setText(f"Restante: ${res}")
+        self.ui.lbRestante.setText(f'Restante: ${res}')
 
         self.ui.btListo.setEnabled(
             stack.pagosValidos and 0.0 <= stack.total <= self.total
         )
 
     def actualizarEstadoVenta(self) -> bool:
-        raise NotImplementedError("CLASE BASE BROU")
+        raise NotImplementedError('CLASE BASE BROU')
 
     def dialogoExito(self) -> None:
-        raise NotImplementedError("CLASE BASE BROU")
+        raise NotImplementedError('CLASE BASE BROU')
 
     def listo(self) -> None:
         """Concluye la venta de la siguiente forma:
@@ -157,7 +161,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
 
         # registrar pagos en tabla ventas_pagos
         for wdg in self.stackPagos:
-            if wdg.metodoSeleccionado == "Efectivo":
+            if wdg.metodoSeleccionado == 'Efectivo':
                 monto = self.stackPagos.restanteEnEfectivo
                 recibido = wdg.montoPagado if monto else None
             else:
@@ -173,7 +177,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
             self.dialogoExito()
 
     def abortar(self) -> None:
-        raise NotImplementedError("CLASE BASE BROU")
+        raise NotImplementedError('CLASE BASE BROU')
 
 
 class Base_VisualizarProductos(QtWidgets.QWidget):
@@ -190,8 +194,8 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
         self.warnings = True
 
-        LabelAdvertencia(self.ui.tabla_seleccionar, "¡No se encontró ningún producto!")
-        LabelAdvertencia(self.ui.tabla_granformato, "¡No se encontró ningún producto!")
+        LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
+        LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
 
         # guardar conexión, usuario y un manejador de DB como atributos
         self.conn = conn
@@ -226,7 +230,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         self.ui.tabla_granformato.setSortingEnabled(True)
 
         # evento para leer cambios en tabla PRODUCTOS
-        self.event_conduit = self.conn.event_conduit(["cambio_productos"])
+        self.event_conduit = self.conn.event_conduit(['cambio_productos'])
         self.event_reader = Runner(self.startEvents)
         self.event_reader.start()
 
@@ -260,7 +264,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
             self.event_conduit.flush()
 
     def medidasHandle(self):
-        raise NotImplementedError("BEIS CLASSSSSSS")
+        raise NotImplementedError('BEIS CLASSSSSSS')
 
     def _intercambiarDimensiones(
         self,
@@ -359,9 +363,9 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         if not precio and self.warnings:
             QtWidgets.QMessageBox.warning(
                 self,
-                "Atención",
-                "No existe ningún precio de este producto "
-                "asociado a la cantidad proporcionada.",
+                'Atención',
+                'No existe ningún precio de este producto '
+                'asociado a la cantidad proporcionada.',
             )
             return
 
@@ -391,8 +395,8 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         ) and self.warnings:
             QtWidgets.QMessageBox.warning(
                 self,
-                "Atención",
-                "Las medidas del producto sobrepasan las medidas del material.",
+                'Atención',
+                'Las medidas del producto sobrepasan las medidas del material.',
             )
             return
 
@@ -428,8 +432,8 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
     def rescan_display(self):
         """Lee de nuevo las tablas de productos y actualiza tablas."""
-        self.all_prod = self.manejador.obtener_vista("view_productos_simples")
-        self.all_gran = self.manejador.obtener_vista("view_gran_formato")
+        self.all_prod = self.manejador.obtener_vista('view_productos_simples')
+        self.all_gran = self.manejador.obtener_vista('view_gran_formato')
         self.update_display()
 
     def update_display(self):

@@ -29,7 +29,7 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
 
         self.mutex = QMutex()
 
-        LabelAdvertencia(self.ui.tabla_clientes, "¡No se encontró ningún cliente!")
+        LabelAdvertencia(self.ui.tabla_clientes, '¡No se encontró ningún cliente!')
 
         # guardar conexión y usuarios como atributos
         self.conn = conn
@@ -42,17 +42,17 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
             self.ui.btFiltrar,
             self.ui.searchBar,
             [
-                ("Nombre", 1),
-                ("Teléfono", 2),
-                ("Correo", 3),
-                ("Dirección", 4),
-                ("RFC", 5),
+                ('Nombre', 1),
+                ('Teléfono', 2),
+                ('Correo', 3),
+                ('Dirección', 4),
+                ('RFC', 5),
             ],
         )
         self.filtro.cambiado.connect(self.update_display)
 
         # restringir botón de eliminar cliente
-        if not self.user.rol == "ADMINISTRADOR":
+        if not self.user.rol == 'ADMINISTRADOR':
             self.ui.btEliminar.hide()
 
         # añade eventos para los botones
@@ -90,11 +90,11 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
         if not self.mutex.try_lock():
             return
 
-        self.ui.lbContador.setText("Recuperando información...")
+        self.ui.lbContador.setText('Recuperando información...')
 
         manejador = ManejadorClientes(self.conn)
-        self.all = manejador.obtener_vista("view_all_clientes") or []
-        self.ui.lbContador.setText(f"{len(self.all)} clientes en la base de datos.")
+        self.all = manejador.obtener_vista('view_all_clientes') or []
+        self.ui.lbContador.setText(f'{len(self.all)} clientes en la base de datos.')
 
         self.rescanned.emit()
 
@@ -126,9 +126,9 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
             for col, dato in enumerate(cliente):
                 if isinstance(dato, datetime):
                     delta = QDate(dato).daysTo(timestamp_now)
-                    cell = "{} ({})".format(formatdate(dato), daysTo(delta))
+                    cell = '{} ({})'.format(formatdate(dato), daysTo(delta))
                 else:
-                    cell = str(dato or "")
+                    cell = str(dato or '')
                 tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
 
             tabla.item(row, 1).setFont(bold)
@@ -147,7 +147,7 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
         """Exportar clientes a un archivo .xlsx."""
         # abrir widget para determinar ubicación de archivo
         fileName, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, "Guardar archivo...", filter="Libro de Excel (*.xlsx)"
+            self, 'Guardar archivo...', filter='Libro de Excel (*.xlsx)'
         )
         if fileName:
             self.generar_xlsx(fileName)
@@ -167,7 +167,7 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
                 if isinstance(dato, datetime):
                     cell = formatdate(dato)
                 else:
-                    cell = str(dato or "")
+                    cell = str(dato or '')
                 cliente[col] = cell
             datos.append(cliente)
 
@@ -185,7 +185,7 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
         """Abre ventana para editar un cliente seleccionado."""
         if (
             not (selected := self.ui.tabla_clientes.selectedItems())
-            or selected[0].text() == "1"
+            or selected[0].text() == '1'
         ):
             return
 
@@ -196,23 +196,23 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
         """Pide confirmación para eliminar clientes de la base de datos."""
         if (
             not (selected := self.ui.tabla_clientes.selectedItems())
-            or selected[0].text() == "1"
+            or selected[0].text() == '1'
         ):
             return
 
         # abrir pregunta
         qm = QtWidgets.QMessageBox
-        manejador = ManejadorClientes(self.conn, "¡No se pudo eliminar el cliente!")
+        manejador = ManejadorClientes(self.conn, '¡No se pudo eliminar el cliente!')
 
         ret = qm.question(
             self,
-            "Atención",
-            "Los clientes seleccionados se eliminarán de la base de datos. "
-            "¿Desea continuar?",
+            'Atención',
+            'Los clientes seleccionados se eliminarán de la base de datos. '
+            '¿Desea continuar?',
         )
 
         if ret == qm.Yes and manejador.eliminarCliente(selected[0].text()):
-            qm.information(self, "Éxito", "Se eliminaron los clientes seleccionados.")
+            qm.information(self, 'Éxito', 'Se eliminaron los clientes seleccionados.')
             self.rescan_update()
 
 
@@ -243,7 +243,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
         self.user = user
 
         # validador clave de país
-        self.ui.txtLada.setValidator(QRegularExpressionValidator(r"[0-9]{1,}"))
+        self.ui.txtLada.setValidator(QRegularExpressionValidator(r'[0-9]{1,}'))
 
         # crear eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)
@@ -267,18 +267,18 @@ class Base_EditarCliente(QtWidgets.QWidget):
     # FUNCIONES ÚTILES #
     ####################
     def numeroTelefono(self):
-        return "+{} {}".format(
+        return '+{} {}'.format(
             self.ui.txtLada.displayText(), self.ui.txtCelular.displayText()
         )
 
     def agregarDatosPorDefecto(self, nombre: str, celular: str, correo: str):
         """Datos por defecto, proveído por ambas clases heredadas."""
-        if correo and correo.startswith("N/A"):
-            correo = ""
-        celular = celular.replace(" ", "")
+        if correo and correo.startswith('N/A'):
+            correo = ''
+        celular = celular.replace(' ', '')
 
         self.ui.txtNombre.setText(nombre)
-        self.ui.txtLada.setText(celular[1:-10] or "52")
+        self.ui.txtLada.setText(celular[1:-10] or '52')
         self.ui.txtCelular.setText(celular[-10:])
         self.ui.txtCorreo.setText(correo)
 
@@ -298,7 +298,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
         )
 
         if self.insertar_o_modificar(clientes_db_parametros):
-            QtWidgets.QMessageBox.information(self, "Éxito", self.MENSAJE_EXITO)
+            QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)
 
             self.success.emit(
                 self.ui.txtNombre.text(),
@@ -309,23 +309,23 @@ class Base_EditarCliente(QtWidgets.QWidget):
 
     def insertar_o_modificar(self, clientes_db_parametros: tuple):
         """Función a sobreescribir donde se realiza consulta SQL."""
-        raise NotImplementedError("BEIS CLASSSSSSS")
+        raise NotImplementedError('BEIS CLASSSSSSS')
 
 
 class App_RegistrarCliente(Base_EditarCliente):
     """Backend para la función de registrar cliente."""
 
-    MENSAJE_EXITO = "¡Se registró el cliente!"
-    MENSAJE_ERROR = "¡No se pudo registrar el cliente!"
+    MENSAJE_EXITO = '¡Se registró el cliente!'
+    MENSAJE_ERROR = '¡No se pudo registrar el cliente!'
 
     def __init__(self, conn, user, parent=None):
         super().__init__(conn, user, parent)
 
-        self.ui.lbTitulo.setText("Registrar cliente")
-        self.ui.btRegistrar.setText(" Registrar cliente")
-        self.ui.btRegistrar.setIcon(QIcon(":/img/resources/images/plus.png"))
+        self.ui.lbTitulo.setText('Registrar cliente')
+        self.ui.btRegistrar.setText(' Registrar cliente')
+        self.ui.btRegistrar.setIcon(QIcon(':/img/resources/images/plus.png'))
 
-        self.agregarDatosPorDefecto("", "999", "")
+        self.agregarDatosPorDefecto('', '999', '')
 
     ####################
     # FUNCIONES ÚTILES #
@@ -339,8 +339,8 @@ class App_RegistrarCliente(Base_EditarCliente):
 class App_EditarCliente(Base_EditarCliente):
     """Backend para la función de editar cliente."""
 
-    MENSAJE_EXITO = "¡Se editó el cliente!"
-    MENSAJE_ERROR = "¡No se pudo editar el cliente!"
+    MENSAJE_EXITO = '¡Se editó el cliente!'
+    MENSAJE_ERROR = '¡No se pudo editar el cliente!'
 
     def __init__(self, idx: int, conn, user, parent=None):
         super().__init__(conn, user, parent)

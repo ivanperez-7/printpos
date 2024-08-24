@@ -11,10 +11,10 @@ from time import sleep as _sleep
 
 import config as _config
 
-BASE_URL = "https://api.lemonsqueezy.com"
+BASE_URL = 'https://api.lemonsqueezy.com'
 POST_HEADERS = {
-    "Accept": "application/json",
-    "Content-Type": "application/x-www-form-urlencoded",
+    'Accept': 'application/json',
+    'Content-Type': 'application/x-www-form-urlencoded',
 }
 
 
@@ -39,9 +39,9 @@ def activar_licencia(license_key: str):
     try:
         # datos para solicitud POST
         r = requests.post(
-            BASE_URL + "/v1/licenses/activate",
+            BASE_URL + '/v1/licenses/activate',
             headers=POST_HEADERS,
-            data={"license_key": license_key, "instance_name": _config.INSTANCE_NAME},
+            data={'license_key': license_key, 'instance_name': _config.INSTANCE_NAME},
         )
         r = r.json()
         activated = False
@@ -49,7 +49,7 @@ def activar_licencia(license_key: str):
         _sleep(0.2)
         return False, Errores.ACTIVACION_FALLIDA
 
-    if r["activated"] == True:
+    if r['activated'] == True:
         # crear carpeta appdata
         if not _config.APPDATA_DIR.exists():
             _config.APPDATA_DIR.mkdir(parents=True)
@@ -57,13 +57,13 @@ def activar_licencia(license_key: str):
         if _config.LICENSE_PATH.exists() and _config.LICENSE_PATH.is_dir():
             shutil.rmtree(_config.LICENSE_PATH, ignore_errors=True)
 
-        with open(_config.LICENSE_PATH, "wb") as license_file:
+        with open(_config.LICENSE_PATH, 'wb') as license_file:
             f = _Fernet(_config.FERNET_KEY)
             license_data = {
-                "license_key": license_key,
-                "instance_id": r["instance"]["id"],
+                'license_key': license_key,
+                'instance_id': r['instance']['id'],
             }
-            license_file.write(f.encrypt(bytes(json.dumps(license_data), "utf-8")))
+            license_file.write(f.encrypt(bytes(json.dumps(license_data), 'utf-8')))
         activated = True
         flag = None
     else:
@@ -83,27 +83,27 @@ def desactivar_licencia():
     if not _config.LICENSE_PATH.exists():
         return False
 
-    with open(_config.LICENSE_PATH, "rb") as license_file:
+    with open(_config.LICENSE_PATH, 'rb') as license_file:
         f = _Fernet(_config.FERNET_KEY)
         data = f.decrypt(license_file.read())
 
-        license_data = json.loads(data.decode("utf-8"))
-        license_key = license_data["license_key"]
-        instance_id = license_data["instance_id"]
+        license_data = json.loads(data.decode('utf-8'))
+        license_key = license_data['license_key']
+        instance_id = license_data['instance_id']
 
     if license_key is None or instance_id is None:
         return False
 
     # datos para solicitud POST
     r = requests.post(
-        BASE_URL + "/v1/licenses/deactivate",
+        BASE_URL + '/v1/licenses/deactivate',
         headers=POST_HEADERS,
-        data={"license_key": license_key, "instance_id": instance_id},
+        data={'license_key': license_key, 'instance_id': instance_id},
     )
     r = r.json()
     desactivada = False
 
-    if r["deactivated"] == True:
+    if r['deactivated'] == True:
         desactivada = True
         _config.LICENSE_PATH.unlink(missing_ok=True)
     else:
@@ -120,13 +120,13 @@ def validar_licencia():
     if not _config.LICENSE_PATH.exists():
         return False, Errores.LICENCIA_NO_EXISTENTE
 
-    with open(_config.LICENSE_PATH, "rb") as license_file:
+    with open(_config.LICENSE_PATH, 'rb') as license_file:
         f = _Fernet(_config.FERNET_KEY)
         data = f.decrypt(license_file.read())
 
-        license_data = json.loads(data.decode("utf-8"))
-        license_key = license_data["license_key"]
-        instance_id = license_data["instance_id"]
+        license_data = json.loads(data.decode('utf-8'))
+        license_key = license_data['license_key']
+        instance_id = license_data['instance_id']
 
     if license_key is None or instance_id is None:
         return False, Errores.LICENCIA_NO_EXISTENTE
@@ -134,9 +134,9 @@ def validar_licencia():
     try:
         # datos para solicitud POST
         r = requests.post(
-            BASE_URL + "/v1/licenses/validate",
+            BASE_URL + '/v1/licenses/validate',
             headers=POST_HEADERS,
-            data={"license_key": license_key, "instance_id": instance_id},
+            data={'license_key': license_key, 'instance_id': instance_id},
         )
         r = r.json()
     except requests.exceptions.ConnectionError:
@@ -144,10 +144,10 @@ def validar_licencia():
         return False, Errores.VERIFICACION_FALLIDA
 
     if (
-        r["valid"] == True
-        and r["license_key"]["status"] == "active"
-        and r["instance"]["id"] == instance_id
-        and r["meta"]["product_name"] == "Licencia PrintPOS"
+        r['valid'] == True
+        and r['license_key']['status'] == 'active'
+        and r['instance']['id'] == instance_id
+        and r['meta']['product_name'] == 'Licencia PrintPOS'
     ):
         return True, None
     else:

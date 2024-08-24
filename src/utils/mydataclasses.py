@@ -18,9 +18,9 @@ class Usuario:
     id: int
     usuario: str
     nombre: str
-    permisos: str = "Vendedor"
+    permisos: str = 'Vendedor'
     foto_perfil: bytes = None
-    rol: str = "Vendedor"
+    rol: str = 'Vendedor'
 
     def __post_init__(self):
         self.usuario = self.usuario.upper()
@@ -30,7 +30,7 @@ class Usuario:
     @property
     def administrador(self):
         """Regresa un booleano que dice si el usuario es administrador."""
-        return self.permisos == "ADMINISTRADOR"
+        return self.permisos == 'ADMINISTRADOR'
 
     @classmethod
     def generarUsuarioActivo(cls, manejador: ManejadorUsuarios):
@@ -55,12 +55,12 @@ class BaseItem:
     @property
     def importe(self) -> float:
         """Costo total del producto."""
-        raise NotImplementedError("BEIS CLASSSS")
+        raise NotImplementedError('BEIS CLASSSS')
 
     @property
     def total_descuentos(self) -> float:
         """Regresa el total de descuentos (descuento * cantidad)."""
-        raise NotImplementedError("BEIS CLASSSS")
+        raise NotImplementedError('BEIS CLASSSS')
 
 
 @dataclass
@@ -71,7 +71,7 @@ class ItemVenta(BaseItem):
 
     def __post_init__(self):
         if self.duplex:
-            self.nombre_ticket += " (a doble cara)"
+            self.nombre_ticket += ' (a doble cara)'
 
     @property
     def importe(self):
@@ -88,7 +88,7 @@ class ItemVenta(BaseItem):
         Cantidad | Código | Especificaciones | Precio | Descuento | Importe"""
         yield from (
             self.cantidad,
-            self.codigo + (" (a doble cara)" if self.duplex else ""),
+            self.codigo + (' (a doble cara)' if self.duplex else ''),
             self.notas,
             self.precio_unit,
             self.descuento_unit,
@@ -137,9 +137,9 @@ class Venta:
     fechaCreacion: QDateTime = QDateTime.currentDateTime()
     fechaEntrega: QDateTime = QDateTime(fechaCreacion)
     requiere_factura: bool = False
-    comentarios: str = ""
+    comentarios: str = ''
     id_cliente: int = 1
-    metodo_pago: str = "Efectivo"
+    metodo_pago: str = 'Efectivo'
 
     @property
     def total(self):
@@ -239,14 +239,16 @@ class Caja:
     movimientos: list[Movimiento]
 
     @overload
-    def __init__(self, movimientos: list[tuple]) -> None: ...
+    def __init__(self, movimientos: list[tuple]) -> None:
+        ...
 
     @overload
-    def __init__(self, movimientos: list[Movimiento]) -> None: ...
+    def __init__(self, movimientos: list[Movimiento]) -> None:
+        ...
 
     def __init__(self, movimientos: list[tuple] | list[Movimiento] = None):
         if movimientos is not None and not isinstance(movimientos, list):
-            raise TypeError("Esperada lista de tuplas o Movimiento.")
+            raise TypeError('Esperada lista de tuplas o Movimiento.')
         if not movimientos:
             self.movimientos = []
             return
@@ -258,7 +260,7 @@ class Caja:
         elif isinstance(mov, tuple):
             self.movimientos = [Movimiento(*m) for m in movimientos]
         else:
-            raise TypeError("Lista debe ser de tuplas o Movimiento.")
+            raise TypeError('Lista debe ser de tuplas o Movimiento.')
 
     @property
     def todoIngresos(self):
@@ -285,4 +287,4 @@ class Caja:
         return self._total(self.movimientos, metodo)
 
     def __repr__(self):
-        return f"Caja(movimientos={self.movimientos})"
+        return f'Caja(movimientos={self.movimientos})'
