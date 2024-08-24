@@ -29,7 +29,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
         self.ui = Ui_AdministrarUsuarios()
         self.ui.setupUi(self)
 
-        LabelAdvertencia(self.ui.tabla_usuarios, "¡No se encontró ningún usuario!")
+        LabelAdvertencia(self.ui.tabla_usuarios, '¡No se encontró ningún usuario!')
 
         # guardar conexión y usuario como atributos
         self.conn = conn
@@ -37,7 +37,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
 
         # añadir menú de opciones al botón para filtrar
         self.filtro = InterfazFiltro(
-            self.ui.btFiltrar, self.ui.searchBar, [("Nombre", 1), ("Usuario", 0)]
+            self.ui.btFiltrar, self.ui.searchBar, [('Nombre', 1), ('Usuario', 0)]
         )
         self.filtro.cambiado.connect(self.update_display)
 
@@ -68,7 +68,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
         También lee de nuevo la tabla de usuarios, si se desea."""
         if rescan:
             manejador = ManejadorUsuarios(self.conn)
-            self.all = manejador.obtener_vista("view_all_usuarios")
+            self.all = manejador.obtener_vista('view_all_usuarios')
 
         if txt_busqueda := self.ui.searchBar.text().strip():
             found = [
@@ -79,7 +79,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
         if not self.ui.mostrarCheck.isChecked():
             found = [c for c in found if c[2]]
 
-        self.ui.lbContador.setText(f"{len(found)} usuarios en la base de datos.")
+        self.ui.lbContador.setText(f'{len(found)} usuarios en la base de datos.')
 
         tabla = self.ui.tabla_usuarios
         tabla.modelo = tabla.Modelos.RESALTAR_SEGUNDA
@@ -104,7 +104,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
         """Pide confirmación para eliminar usuarios de la base de datos."""
         if (
             not (selected := self.ui.tabla_usuarios.selectedItems())
-            or (usuario := selected[0].text()) in ["SYSDBA", self.user.usuario]
+            or (usuario := selected[0].text()) in ['SYSDBA', self.user.usuario]
             or not selected[2].text()
         ):
             return
@@ -115,14 +115,14 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
 
         ret = qm.question(
             self,
-            "Atención",
-            "Los usuarios seleccionados se darán "
-            "de baja del sistema. ¿Desea continuar?",
+            'Atención',
+            'Los usuarios seleccionados se darán '
+            'de baja del sistema. ¿Desea continuar?',
         )
 
         if ret == qm.Yes and manejador.eliminarUsuario(usuario):
             qm.information(
-                self, "Éxito", "Se dieron de baja los usuarios seleccionados."
+                self, 'Éxito', 'Se dieron de baja los usuarios seleccionados.'
             )
             self.update_display(rescan=True)
 
@@ -157,7 +157,7 @@ class Base_EditarUsuario(QtWidgets.QWidget):
 
         # deshabilita eventos del mouse para los textos en los botones
         for name, item in vars(self.ui).items():
-            if "label_" in name:
+            if 'label_' in name:
                 item.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         # crear eventos para los botones
@@ -176,7 +176,7 @@ class Base_EditarUsuario(QtWidgets.QWidget):
     @property
     def cambioContrasena(self) -> bool:
         """Cada clase tiene su manera de decidir si hay cambio de contraseña."""
-        raise NotImplementedError("BEIS CLASSSSSSS")
+        raise NotImplementedError('BEIS CLASSSSSSS')
 
     def editar(self):
         """Intenta editar datos de la tabla Usuarios y
@@ -190,7 +190,7 @@ class Base_EditarUsuario(QtWidgets.QWidget):
                 return
             if psswd != psswd_conf:
                 QtWidgets.QMessageBox.warning(
-                    self, "Atención", "¡Las contraseñas no coinciden!"
+                    self, 'Atención', '¡Las contraseñas no coinciden!'
                 )
                 return
 
@@ -206,26 +206,26 @@ class Base_EditarUsuario(QtWidgets.QWidget):
 
         manejador = ManejadorUsuarios(self.conn)
 
-        if permisos == "Administrador":
+        if permisos == 'Administrador':
             result = manejador.otorgarRolAdministrador(usuario)
         else:
             result = manejador.otorgarRolVendedor(usuario)
 
         if result:
-            QtWidgets.QMessageBox.information(self, "Éxito", self.MENSAJE_EXITO)
+            QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)
             self.success.emit()
             self.close()
 
     def insertar_o_modificar(self, usuarios_db_parametros: tuple) -> bool:
         """Método que insertará o modificará usuario."""
-        raise NotImplementedError("BEIS CLASSSSSSS")
+        raise NotImplementedError('BEIS CLASSSSSSS')
 
 
 class App_RegistrarUsuario(Base_EditarUsuario):
     """Backend para la ventana de registrar usuario."""
 
-    MENSAJE_EXITO = "¡Se registró el usuario!"
-    MENSAJE_ERROR = "¡No se pudo registrar el usuario!"
+    MENSAJE_EXITO = '¡Se registró el usuario!'
+    MENSAJE_ERROR = '¡No se pudo registrar el usuario!'
 
     def __init__(self, conn, parent=None):
         super().__init__(conn, parent)
@@ -234,9 +234,9 @@ class App_RegistrarUsuario(Base_EditarUsuario):
         self.ui.groupPsswd.setEnabled(True)
         self.ui.groupPsswdConf.setEnabled(True)
 
-        self.ui.lbTitulo.setText("Registrar usuario")
-        self.ui.label_aceptar.setText("Registrar")
-        self.ui.label_icono.setPixmap(QPixmap(":/img/resources/images/plus.png"))
+        self.ui.lbTitulo.setText('Registrar usuario')
+        self.ui.label_aceptar.setText('Registrar')
+        self.ui.label_icono.setPixmap(QPixmap(':/img/resources/images/plus.png'))
 
     # ==================
     #  FUNCIONES ÚTILES
@@ -260,8 +260,8 @@ class App_RegistrarUsuario(Base_EditarUsuario):
 class App_EditarUsuario(Base_EditarUsuario):
     """Backend para la ventana de editar usuario."""
 
-    MENSAJE_EXITO = "¡Se editó el usuario!"
-    MENSAJE_ERROR = "¡No se pudo editar el usuario!"
+    MENSAJE_EXITO = '¡Se editó el usuario!'
+    MENSAJE_ERROR = '¡No se pudo editar el usuario!'
 
     def __init__(self, usuario_: str, conn, user, parent=None):
         super().__init__(conn, parent)
@@ -276,7 +276,7 @@ class App_EditarUsuario(Base_EditarUsuario):
             self.ui.cambiarPsswd.setChecked(True)
             self.ui.cambiarPsswd.setEnabled(False)
             self.cambiarTrigger(True)
-        if usuario_ in ["SYSDBA", user.usuario]:
+        if usuario_ in ['SYSDBA', user.usuario]:
             self.ui.boxPermisos.setEnabled(False)
         self.ui.txtUsuario.setText(usuario_)
         self.ui.txtNombre.setText(usuario.nombre)

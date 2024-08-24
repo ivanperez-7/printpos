@@ -16,8 +16,8 @@ class VentanaPrincipal(QMainWindow, IControllerWindow):  # TODO: clase App -> In
 
     def crear(self, conn, user):
         self.resize(1500, 800)
-        self.setWindowTitle("PrintPOS")
-        self.setWindowIcon(QIcon(":img/icon.ico"))
+        self.setWindowTitle('PrintPOS')
+        self.setWindowIcon(QIcon(':img/icon.ico'))
 
         self.conn = conn
         self.user = user
@@ -30,7 +30,7 @@ class VentanaPrincipal(QMainWindow, IControllerWindow):  # TODO: clase App -> In
     def go_home(self):
         """Regresar al menú principal.
         Crea módulo Home y establece como widget principal."""
-        home = crear_modulo("App_Home")
+        home = crear_modulo('App_Home')
 
         home.crear(self.conn, self.user)
         home.go_back.connect(self.close)
@@ -45,7 +45,7 @@ class VentanaPrincipal(QMainWindow, IControllerWindow):  # TODO: clase App -> In
         new.go_back.connect(self.go_home)
 
         self.setCentralWidget(new)
-        self.en_venta = modulo == "App_CrearVenta"
+        self.en_venta = modulo == 'App_CrearVenta'
 
     def closeEvent(self, event):
         """En eventos específicos, restringimos el cerrado del sistema."""
@@ -53,10 +53,10 @@ class VentanaPrincipal(QMainWindow, IControllerWindow):  # TODO: clase App -> In
             event.ignore()
             return
 
-        for j in glob.glob("auto-*"):
+        for j in glob.glob('auto-*'):
             os.remove(j)
         self.conn.close()
 
         if self.consultarPrecios:
             self.consultarPrecios.close()
-        login = crear_modulo("App_Login")
+        login = crear_modulo('App_Login')

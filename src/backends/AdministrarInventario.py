@@ -26,7 +26,7 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
 
         self.mutex = QMutex()
 
-        LabelAdvertencia(self.ui.tabla_inventario, "¡No se encontró ningún elemento!")
+        LabelAdvertencia(self.ui.tabla_inventario, '¡No se encontró ningún elemento!')
 
         # guardar conexión y usuarios como atributos
         self.conn = conn
@@ -59,11 +59,11 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
         if not self.mutex.try_lock():
             return
 
-        self.ui.lbContador.setText(f"Recuperando información...")
+        self.ui.lbContador.setText(f'Recuperando información...')
 
         manejador = ManejadorInventario(self.conn)
         self.all = manejador.obtenerTablaPrincipal() or []
-        self.ui.lbContador.setText(f"{len(self.all)} elementos en la base de datos.")
+        self.ui.lbContador.setText(f'{len(self.all)} elementos en la base de datos.')
 
         self.rescanned.emit()
 
@@ -87,21 +87,21 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
         for row, item in enumerate(found):
             for col, dato in enumerate(item):
                 if isinstance(dato, int):
-                    cell = f"{dato:,d}"
+                    cell = f'{dato:,d}'
                 elif isinstance(dato, float):
-                    cell = f"{dato:,.2f}"
+                    cell = f'{dato:,.2f}'
                 else:
-                    cell = str(dato or "")
+                    cell = str(dato or '')
 
                 if col in {2, 5}:
-                    cell += " unidades"
+                    cell += ' unidades'
                 if col in {4, 6}:
-                    cell += " lotes"
+                    cell += ' lotes'
                 tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
 
             tabla.item(row, 1).setFont(bold)
 
-            btSurtir = QtWidgets.QPushButton("Surtir existencias")
+            btSurtir = QtWidgets.QPushButton('Surtir existencias')
             btSurtir.clicked.connect(self.surtirExistencias)
             tabla.setCellWidget(row, col + 1, btSurtir)
 
@@ -141,31 +141,31 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
 
         qm = QtWidgets.QMessageBox
 
-        manejador = ManejadorInventario(self.conn, "¡No se pudo eliminar el elemento!")
+        manejador = ManejadorInventario(self.conn, '¡No se pudo eliminar el elemento!')
         result = manejador.obtenerProdUtilizaInv(id_inventario)
 
         if result:
             qm.warning(
                 self,
-                "Atención",
-                "No se puede eliminar este elemento debido "
-                "a que hay productos que lo utilizan. Haga doble "
-                "click en algún elemento para ver estos productos.",
+                'Atención',
+                'No se puede eliminar este elemento debido '
+                'a que hay productos que lo utilizan. Haga doble '
+                'click en algún elemento para ver estos productos.',
             )
             return
 
         # abrir pregunta
         ret = qm.question(
             self,
-            "Atención",
-            "El elemento seleccionado se eliminará de la base de datos. "
-            "¿Desea continuar?",
+            'Atención',
+            'El elemento seleccionado se eliminará de la base de datos. '
+            '¿Desea continuar?',
         )
         if ret != qm.Yes:
             return
 
         if manejador.eliminarElemento(id_inventario):
-            qm.information(self, "Éxito", "Se eliminó el elemento seleccionado.")
+            qm.information(self, 'Éxito', 'Se eliminó el elemento seleccionado.')
             self.rescan_update()
 
 
@@ -216,7 +216,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
     ####################
     # FUNCIONES ÚTILES #
     ####################
-    def agregarProductoALista(self, codigo: str = "", cantidad: int = 1):
+    def agregarProductoALista(self, codigo: str = '', cantidad: int = 1):
         # crear widget y agregar a la lista
         nuevo = WidgetProducto()
 
@@ -245,7 +245,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
             )
         except ValueError:
             QtWidgets.QMessageBox.warning(
-                self, "Atención", "¡Verifique que los datos numéricos sean correctos!"
+                self, 'Atención', '¡Verifique que los datos numéricos sean correctos!'
             )
             return None
 
@@ -285,27 +285,27 @@ class Base_EditarInventario(QtWidgets.QWidget):
         if manejador.eliminarProdUtilizaInv(idx) and manejador.insertarProdUtilizaInv(
             idx, PUI_db_parametros
         ):
-            QtWidgets.QMessageBox.information(self, "Éxito", self.MENSAJE_EXITO)
+            QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)
             self.success.emit()
             self.close()
 
     def insertar_o_modificar(self, inventario_db_parametros: tuple) -> tuple:
         """Devuelve tupla con índice del elemento registrado o editado."""
-        raise NotImplementedError("BEIS CLASSSSSSS")
+        raise NotImplementedError('BEIS CLASSSSSSS')
 
 
 class App_RegistrarInventario(Base_EditarInventario):
     """Backend para la ventana para registrar un material del inventario."""
 
-    MENSAJE_EXITO = "¡Se registró el elemento!"
-    MENSAJE_ERROR = "¡No se pudo registrar el elemento!"
+    MENSAJE_EXITO = '¡Se registró el elemento!'
+    MENSAJE_ERROR = '¡No se pudo registrar el elemento!'
 
     def __init__(self, conn, parent=None):
         super().__init__(conn, parent)
 
-        self.ui.lbTitulo.setText("Registrar elemento")
-        self.ui.btAceptar.setText(" Registrar elemento")
-        self.ui.btAceptar.setIcon(QIcon(":/img/resources/images/plus.png"))
+        self.ui.lbTitulo.setText('Registrar elemento')
+        self.ui.btAceptar.setText(' Registrar elemento')
+        self.ui.btAceptar.setIcon(QIcon(':/img/resources/images/plus.png'))
 
     ####################
     # FUNCIONES ÚTILES #
@@ -318,8 +318,8 @@ class App_RegistrarInventario(Base_EditarInventario):
 class App_EditarInventario(Base_EditarInventario):
     """Backend para la ventana para editar un material del inventario."""
 
-    MENSAJE_EXITO = "¡Se editó el elemento!"
-    MENSAJE_ERROR = "¡No se pudo editar el elemento!"
+    MENSAJE_EXITO = '¡Se editó el elemento!'
+    MENSAJE_ERROR = '¡No se pudo editar el elemento!'
 
     def __init__(self, idx: int, conn, parent=None):
         super().__init__(conn, parent)
@@ -329,15 +329,19 @@ class App_EditarInventario(Base_EditarInventario):
         manejador = ManejadorInventario(self.conn)
 
         # datos de la primera página
-        nombre, tamano, precio, minimo, existencia = (
-            manejador.obtenerInformacionPrincipal(idx)
-        )
+        (
+            nombre,
+            tamano,
+            precio,
+            minimo,
+            existencia,
+        ) = manejador.obtenerInformacionPrincipal(idx)
 
         self.ui.txtNombre.setText(nombre)
-        self.ui.txtTamano.setText(f"{tamano:.2f}")
-        self.ui.txtPrecioCompra.setText(f"{precio:.2f}")
-        self.ui.txtExistencia.setText(f"{existencia:.2f}")
-        self.ui.txtMinimo.setText(f"{minimo:.2f}")
+        self.ui.txtTamano.setText(f'{tamano:.2f}')
+        self.ui.txtPrecioCompra.setText(f'{precio:.2f}')
+        self.ui.txtExistencia.setText(f'{existencia:.2f}')
+        self.ui.txtMinimo.setText(f'{minimo:.2f}')
 
         # agregar productos de la segunda página
         productos = manejador.obtenerProdUtilizaInv(idx)
@@ -365,7 +369,7 @@ class WidgetProducto(QtWidgets.QWidget):
         self.ui.setupUi(self)
         self.setMinimumSize(self.size())
 
-        self.ui.label.setPixmap(QPixmap(":/img/resources/images/package_2.png"))
+        self.ui.label.setPixmap(QPixmap(':/img/resources/images/package_2.png'))
 
         self.ui.btEliminar.clicked.connect(lambda: self.setParent(None))
 
@@ -400,7 +404,7 @@ class ExistenciasWidget(QtWidgets.QDialog):
         self.idx = idx
 
         self.resize(340, 80)
-        self.setWindowTitle("Surtir existencias")
+        self.setWindowTitle('Surtir existencias')
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setModal(True)
         self.setWindowModality(Qt.ApplicationModal)
@@ -410,7 +414,7 @@ class ExistenciasWidget(QtWidgets.QDialog):
         font = QFont()
         font.setPointSize(9)
         label.setFont(font)
-        label.setText("Suministrar ")
+        label.setText('Suministrar ')
         gridLayout.addWidget(label, 0, 0, 1, 1)
         txtCantidad = QtWidgets.QLineEdit(self)
         txtCantidad.setFont(font)
@@ -418,7 +422,7 @@ class ExistenciasWidget(QtWidgets.QDialog):
         gridLayout.addWidget(txtCantidad, 0, 1, 1, 1)
         label_2 = QtWidgets.QLabel(self)
         label_2.setFont(font)
-        label_2.setText(" lotes para este elemento.")
+        label_2.setText(' lotes para este elemento.')
         gridLayout.addWidget(label_2, 0, 2, 1, 1)
         buttonBox = QtWidgets.QDialogButtonBox(self)
         buttonBox.setFont(font)

@@ -27,7 +27,7 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
             qp = QPixmap()
             qp.loadFromData(self.user.foto_perfil)
         else:
-            qp = QPixmap(":/img/resources/images/user.png")
+            qp = QPixmap(':/img/resources/images/user.png')
 
         self.ui.btFotoPerfil.setIcon(qp)
 
@@ -45,11 +45,11 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
 
         # deshabilita eventos del mouse para los textos en los botones
         for name, item in vars(self.ui).items():
-            if "label_" in name:
+            if 'label_' in name:
                 item.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         # deshabilitar funciones para usuarios normales
-        if self.user.rol != "ADMINISTRADOR":
+        if self.user.rol != 'ADMINISTRADOR':
             for w in [
                 self.ui.frameInventario,
                 self.ui.frameCaja,
@@ -65,15 +65,15 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
             lab.setGeometry(392, 5, 26, 26)
 
         button_class_mapping = {
-            self.ui.btClientes: "App_AdministrarClientes",
-            self.ui.btInventario: "App_AdministrarInventario",
-            self.ui.btProductos: "App_AdministrarProductos",
-            self.ui.btUsuarios: "App_AdministrarUsuarios",
-            self.ui.btVentas: "App_AdministrarVentas",
-            self.ui.btAjustes: "App_Ajustes",
-            self.ui.btCaja: "App_Caja",
-            self.ui.btCrearVenta: "App_CrearVenta",
-            self.ui.btReportes: "App_Reportes",
+            self.ui.btClientes: 'App_AdministrarClientes',
+            self.ui.btInventario: 'App_AdministrarInventario',
+            self.ui.btProductos: 'App_AdministrarProductos',
+            self.ui.btUsuarios: 'App_AdministrarUsuarios',
+            self.ui.btVentas: 'App_AdministrarVentas',
+            self.ui.btAjustes: 'App_Ajustes',
+            self.ui.btCaja: 'App_Caja',
+            self.ui.btCrearVenta: 'App_CrearVenta',
+            self.ui.btReportes: 'App_Reportes',
         }
 
         # conectar botones con acciones
@@ -113,7 +113,7 @@ class ListaNotificaciones(QtWidgets.QListWidget):
         super().__init__(parent)
 
         self.setStyleSheet(
-            """
+            '''
             QListWidget {
                 alternate-background-color: %s;
             }
@@ -123,7 +123,7 @@ class ListaNotificaciones(QtWidgets.QListWidget):
             QFrame {
                 border: 2px solid;
             }
-        """
+        '''
             % QColor(225, 225, 225).name()
         )
 
@@ -135,16 +135,16 @@ class ListaNotificaciones(QtWidgets.QListWidget):
         numPendientes = manejador.obtenerNumPendientes(user.id)
 
         if numPendientes:
-            items.append(f"Tiene {numPendientes} pedidos pendientes.")
+            items.append(f'Tiene {numPendientes} pedidos pendientes.')
 
         manejador = ManejadorInventario(conn)
 
         for nombre, stock, minimo in manejador.obtenerInventarioFaltante():
             items.append(
-                f"¡Hay que surtir el material {nombre}! "
-                + f"Faltan {minimo - stock} lotes para cubrir el mínimo."
+                f'¡Hay que surtir el material {nombre}! '
+                + f'Faltan {minimo - stock} lotes para cubrir el mínimo.'
             )
-        items = items or ["¡No hay nuevas notificaciones!"]
+        items = items or ['¡No hay nuevas notificaciones!']
 
         for item in items:
             self.addItem(item)
@@ -158,7 +158,7 @@ class ListaNotificaciones(QtWidgets.QListWidget):
         if not self.isVisible():
             # Create an animation to gradually change the height of the widget
             self.setVisible(True)
-            self.show_animation = QPropertyAnimation(self, b"geometry")
+            self.show_animation = QPropertyAnimation(self, b'geometry')
             self.show_animation.setDuration(200)
             self.show_animation.setStartValue(hiddenGeom)
             self.show_animation.setEndValue(shownGeom)
@@ -166,7 +166,7 @@ class ListaNotificaciones(QtWidgets.QListWidget):
             self.show_animation.start()
         else:
             # Hide the widget
-            self.hide_animation = QPropertyAnimation(self, b"geometry")
+            self.hide_animation = QPropertyAnimation(self, b'geometry')
             self.hide_animation.setDuration(200)
             self.hide_animation.setStartValue(shownGeom)
             self.hide_animation.setEndValue(hiddenGeom)
@@ -176,4 +176,4 @@ class ListaNotificaciones(QtWidgets.QListWidget):
 
     @property
     def sinNotificaciones(self):
-        return self.item(0).text().startswith("¡No hay nuevas")
+        return self.item(0).text().startswith('¡No hay nuevas')

@@ -17,7 +17,7 @@ class PdfTests(TestCase):
 
         printer = ImpresoraTickets()
         man = sql.ManejadorVentas(
-            sql.core.conectar_firebird("ivanperez", "123", "administrador")
+            sql.core.conectar_firebird('ivanperez', '123', 'administrador')
         )
         self.assertEqual(printer.printer.printerName(), INI.IMPRESORA)
 
@@ -33,24 +33,24 @@ class PdfTests(TestCase):
         prods = [
             ItemVenta(
                 1,
-                "IMP B/N 1",
-                "Impresión ByN",
+                'IMP B/N 1',
+                'Impresión ByN',
                 0.7,
                 0.0,
                 random.randint(10, 200),
-                "",
+                '',
                 False,
             )
         ]
-        res4 = printer.imprimirTicketPresupuesto(prods * 3, "yo merengues")
+        res4 = printer.imprimirTicketPresupuesto(prods * 3, 'yo merengues')
 
         caja = Caja(
             [
-                (datetime.now(), 500.0, "renta lol", "Efectivo", "ivan p."),
-                (datetime.now(), -40.0, "pago", "Tarjeta de débito", "ivan p."),
+                (datetime.now(), 500.0, 'renta lol', 'Efectivo', 'ivan p.'),
+                (datetime.now(), -40.0, 'pago', 'Tarjeta de débito', 'ivan p.'),
             ]
         )
-        res5 = printer.imprimirCorteCaja(caja, "io menregues")
+        res5 = printer.imprimirCorteCaja(caja, 'io menregues')
 
         QThreadPool.globalInstance().waitForDone()  # <- porque las impresoras usan run_in_thread
 
@@ -61,11 +61,11 @@ class PdfTests(TestCase):
         res1 = printer.imprimirOrdenCompra(
             693,
             manejador=sql.ManejadorVentas(
-                sql.core.conectar_firebird("ivanperez", "123", "administrador")
+                sql.core.conectar_firebird('ivanperez', '123', 'administrador')
             ),
         )
         QThreadPool.globalInstance().waitForDone()  # <- porque las impresoras usan run_in_thread
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

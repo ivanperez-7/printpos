@@ -104,16 +104,16 @@ class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
         # alimentar QLabels
         man = ManejadorReportes(self.conn)
         brutos, num_ventas = man.obtenerIngresosBrutos()
-        self.ui.lbIngresosBrutos.setText("${:,.2f}".format(brutos))
-        self.ui.lbCountVentas.setText("a través de {:,d} ventas".format(num_ventas))
+        self.ui.lbIngresosBrutos.setText('${:,.2f}'.format(brutos))
+        self.ui.lbCountVentas.setText('a través de {:,d} ventas'.format(num_ventas))
 
         vendedor, cantidad = man.obtenerTopVendedor()
         self.ui.lbVendedorBrutos.setText(vendedor)
-        self.ui.lbVendedorTotal.setText("${:,.2f}".format(cantidad))
+        self.ui.lbVendedorTotal.setText('${:,.2f}'.format(cantidad))
 
         abreviado, codigo, count = man.obtenerTopProducto()
         self.ui.lbProdVendidos.setText(codigo)
-        self.ui.lbProdCount.setText(stringify_float(count) + " unidades")
+        self.ui.lbProdCount.setText(stringify_float(count) + ' unidades')
 
         # gráficas
         self.ui.bar_ventas.alimentar_datos(self.conn)
@@ -173,7 +173,7 @@ class ChartView(QChartView):
     def alimentar_datos(self, conn):
         chart = QChart()
         series = QBarSeries()
-        set0 = QBarSet("Ventas brutas")
+        set0 = QBarSet('Ventas brutas')
 
         # Replace this with your sales data for each month
         man = ManejadorReportes(conn)
@@ -189,7 +189,7 @@ class ChartView(QChartView):
         series.append(set0)
         chart.addSeries(series)
 
-        chart.setTitle(f"Ventas por mes del año {current_year}")
+        chart.setTitle(f'Ventas por mes del año {current_year}')
         chart.setFont(self.font())
         chart.setTitleFont(self.font())
         chart.setAnimationOptions(QChart.AllAnimations)
@@ -206,7 +206,7 @@ class ChartView(QChartView):
     def alimentar_vendedor(self, conn, vendedor: str):
         chart = QChart()
         series = QBarSeries()
-        set0 = QBarSet("Ventas brutas")
+        set0 = QBarSet('Ventas brutas')
 
         # Replace this with your sales data for each month
         man = ManejadorReportes(conn)
@@ -222,7 +222,7 @@ class ChartView(QChartView):
         series.append(set0)
         chart.addSeries(series)
 
-        chart.setTitle(f"Ventas de {vendedor} en el año {current_year}")
+        chart.setTitle(f'Ventas de {vendedor} en el año {current_year}')
         chart.setFont(self.font())
         chart.setTitleFont(self.font())
         chart.setAnimationOptions(QChart.AllAnimations)
@@ -239,7 +239,7 @@ class ChartView(QChartView):
     def alimentar_producto(self, conn, codigo: str):
         chart = QChart()
         series = QBarSeries()
-        set0 = QBarSet("Ventas brutas")
+        set0 = QBarSet('Ventas brutas')
 
         # Replace this with your sales data for each month
         man = ManejadorReportes(conn)
@@ -255,7 +255,7 @@ class ChartView(QChartView):
         series.append(set0)
         chart.addSeries(series)
 
-        chart.setTitle(f"Ventas de {codigo} en el año {current_year}")
+        chart.setTitle(f'Ventas de {codigo} en el año {current_year}')
         chart.setFont(self.font())
         chart.setTitleFont(self.font())
         chart.setAnimationOptions(QChart.AllAnimations)
@@ -285,7 +285,7 @@ class ChartView2(QChartView):
         series = QPieSeries()
 
         for abrev, codigo, num in man.obtenerTopProducto(6)[1:]:
-            s = series.append(codigo + " ({})".format(stringify_float(num)), num)
+            s = series.append(codigo + ' ({})'.format(stringify_float(num)), num)
             s.hovered.connect(partial(self.handle_slice_hover, s))
 
         if not series.slices():
@@ -301,7 +301,7 @@ class ChartView2(QChartView):
         chart.setFont(self.font())
         chart.setTitleFont(self.font())
         chart.addSeries(series)
-        chart.setTitle("Los otros productos más vendidos")
+        chart.setTitle('Los otros productos más vendidos')
         chart.setAnimationOptions(QChart.SeriesAnimations)
         chart.legend().hide()
 
@@ -314,7 +314,7 @@ class ChartView2(QChartView):
         series = QPieSeries()
 
         for metodo, num in man.obtenerGraficaMetodos():
-            s = series.append(metodo + " ({})".format(num), num)
+            s = series.append(metodo + ' ({})'.format(num), num)
             s.hovered.connect(partial(self.handle_slice_hover, s))
 
         _slice = max(series.slices(), key=lambda s: s.value())
@@ -328,7 +328,7 @@ class ChartView2(QChartView):
         chart.setFont(self.font())
         chart.setTitleFont(self.font())
         chart.addSeries(series)
-        chart.setTitle("Métodos de pago más usados")
+        chart.setTitle('Métodos de pago más usados')
         chart.setAnimationOptions(QChart.SeriesAnimations)
         chart.legend().hide()
 

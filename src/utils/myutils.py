@@ -12,16 +12,16 @@ from openpyxl.styles import Font
 from PySide6.QtCore import QDateTime, QLocale
 
 __all__ = [
-    "clamp",
-    "chunkify",
-    "daysTo",
-    "unidecode",
-    "randFile",
-    "son_similar",
-    "stringify_float",
-    "formatdate",
-    "exportarXlsx",
-    "enviarWhatsApp",
+    'clamp',
+    'chunkify',
+    'daysTo',
+    'unidecode',
+    'randFile',
+    'son_similar',
+    'stringify_float',
+    'formatdate',
+    'exportarXlsx',
+    'enviarWhatsApp',
 ]
 
 
@@ -40,19 +40,19 @@ def chunkify(array: list, size: int):
 def daysTo(num_days: int):
     """Dar formato a un número de días a 'hace {} días/semanas/años'."""
     if num_days < 0:
-        return "Invalid input"
+        return 'Invalid input'
 
     if num_days < 1:
-        return "hoy"
+        return 'hoy'
     elif num_days == 1:
-        return "hace un día"
+        return 'hace un día'
     elif num_days < 7:
-        return f"hace {num_days} días"
+        return f'hace {num_days} días'
     elif num_days < 14:
-        return "hace una semana"
+        return 'hace una semana'
     elif num_days < 30:
         weeks_ago = num_days // 7
-        return f"hace {weeks_ago} semanas"
+        return f'hace {weeks_ago} semanas'
     elif num_days < 365:
         months_ago = num_days // 30
         return f"hace {months_ago} mes{'es' if months_ago > 1 else ''}"
@@ -68,30 +68,30 @@ def formatdate(date=None):
     formatted = locale.toString(
         date or QDateTime.currentDateTime(), "d 'de' MMMM yyyy, h:mm ap"
     )
-    return unicodedata.normalize("NFKD", formatted)
+    return unicodedata.normalize('NFKD', formatted)
 
 
 def unidecode(input_str: str):
     """Elimina (normaliza) los acentos en una cadena de texto y
     convierte a minúsculas. Ejemplo: 'Pérez' -> 'perez'."""
-    nfkd_form = unicodedata.normalize("NFKD", input_str)
-    normalized = "".join(c for c in nfkd_form if not unicodedata.combining(c))
+    nfkd_form = unicodedata.normalize('NFKD', input_str)
+    normalized = ''.join(c for c in nfkd_form if not unicodedata.combining(c))
     return normalized.lower()
 
 
-def randFile(ext: str = ""):
+def randFile(ext: str = ''):
     """Genera archivo de extensión dada con nombre aleatorio."""
-    ext = re.sub("[^a-zA-Z]*", "", ext)
+    ext = re.sub('[^a-zA-Z]*', '', ext)
     chars = string.ascii_letters + string.digits
-    rand = "".join(random.choice(chars) for _ in range(8))
-    return f"auto-{rand}.{ext}"
+    rand = ''.join(random.choice(chars) for _ in range(8))
+    return f'auto-{rand}.{ext}'
 
 
 def stringify_float(f):
     try:
-        return f"{int(f):,}" if f.is_integer() else f"{f:,.2f}"
+        return f'{int(f):,}' if f.is_integer() else f'{f:,.2f}'
     except AttributeError:
-        return f"{f:,}"
+        return f'{f:,}'
 
 
 def son_similar(obj1, obj2):
@@ -99,8 +99,8 @@ def son_similar(obj1, obj2):
     if not obj1 or not obj2:
         return False
 
-    str1_clean = unidecode(re.sub(r"\W+", " ", str(obj1)))
-    str2_clean = unidecode(re.sub(r"\W+", " ", str(obj2)))
+    str1_clean = unidecode(re.sub(r'\W+', ' ', str(obj1)))
+    str2_clean = unidecode(re.sub(r'\W+', ' ', str(obj2)))
 
     return str1_clean in str2_clean
 
@@ -120,7 +120,7 @@ def exportarXlsx(rutaArchivo, titulos, datos):
         ws.append(row)
 
     # cambiar fuente (agregar negritas)
-    for cell in ws["1"]:
+    for cell in ws['1']:
         cell.font = Font(bold=True)
 
     wb.save(rutaArchivo)
@@ -130,8 +130,8 @@ def enviarWhatsApp(phone_no: str, message: str):
     """Enviar mensaje por WhatsApp abriendo el navegador de internet.
     TODO:
         - open("https://web.whatsapp.com/accept?code=" + receiver)"""
-    if "+" not in phone_no:  # agregar código de país de México
-        phone_no = "+52" + phone_no
+    if '+' not in phone_no:  # agregar código de país de México
+        phone_no = '+52' + phone_no
     return web.open_new_tab(
-        f"https://web.whatsapp.com/send?phone={phone_no}&text={quote(message)}"
+        f'https://web.whatsapp.com/send?phone={phone_no}&text={quote(message)}'
     )

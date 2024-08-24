@@ -24,14 +24,14 @@ def conectar_firebird(usuario: str, psswd: str, rol: str = None) -> FirebirdConn
     """
     try:
         return fdb.connect(
-            dsn="{}/3050:PrintPOS.fdb".format(INI.NOMBRE_SERVIDOR),
+            dsn='{}/3050:PrintPOS.fdb'.format(INI.NOMBRE_SERVIDOR),
             user=usuario,
             password=psswd,
-            charset="UTF8",
+            charset='UTF8',
             role=rol,
             connection_class=FirebirdConnection,
         )
     except FirebirdError as err:
         txt, sqlcode, gdscode = err.args
-        print("\nconectar_db() {\n", sqlcode, gdscode, "\n" + txt + "\n}")
+        print('\nconectar_db() {\n', sqlcode, gdscode, '\n' + txt + '\n}')
         raise err

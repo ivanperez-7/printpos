@@ -12,4 +12,4 @@ class DateRange:
         self.hasta: date = hasta.toPython()
 
     def __repr__(self):
-        return f"DateRange({self.desde}, {self.hasta})"
+        return f'DateRange({self.desde}, {self.hasta})'

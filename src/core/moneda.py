@@ -6,7 +6,7 @@ class _useless(type):
     """Para habilitar `Moneda.cero`."""
 
     @property
-    def cero(cls) -> "Moneda":
+    def cero(cls) -> 'Moneda':
         return cls(0.0)
 
 
@@ -60,7 +60,7 @@ class Moneda(metaclass=_useless):
         if inicial is None:
             self.valor = 0.0
         elif isinstance(inicial, str):
-            self.valor = re.sub(r"[$, ]", "", inicial)
+            self.valor = re.sub(r'[$, ]', '', inicial)
         else:
             self.valor = inicial
 
@@ -73,7 +73,7 @@ class Moneda(metaclass=_useless):
         self._valor = round(float(arg), self.PRECISION)
 
     @staticmethod
-    def sum(iter_) -> "Moneda":
+    def sum(iter_) -> 'Moneda':
         """Invoca función nativa `sum` con parámetro `start=Moneda.cero`."""
         return sum(iter_, start=Moneda.cero)
 
@@ -96,15 +96,15 @@ class Moneda(metaclass=_useless):
         return self.__class__(-self.valor)
 
     def __repr__(self):
-        return f"Moneda: {self.valor:,.{self.PRECISION}f} MXN"
+        return f'Moneda: {self.valor:,.{self.PRECISION}f} MXN'
 
     def __str__(self):
-        return f"{self.valor:,.{self.PRECISION}f}"
+        return f'{self.valor:,.{self.PRECISION}f}'
 
     # =========================
     #  Operaciones aritméticas
     # =========================
-    def _arit_op(self, other, operation) -> "Moneda":
+    def _arit_op(self, other, operation) -> 'Moneda':
         if isinstance(other, Moneda):
             other = other.valor
         return self.__class__(operation(self.valor, other))

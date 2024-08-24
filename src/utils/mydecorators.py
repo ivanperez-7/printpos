@@ -9,7 +9,7 @@ from PySide6.QtCore import QThreadPool, QRunnable, Signal
 from sql import DatabaseManager
 from sql.core import conectar_firebird, FirebirdError
 
-__all__ = ["requiere_admin", "run_in_thread", "fondo_oscuro", "function_details"]
+__all__ = ['requiere_admin', 'run_in_thread', 'fondo_oscuro', 'function_details']
 
 
 def function_details(func):
@@ -19,17 +19,17 @@ def function_details(func):
     fname = func.__name__
 
     def inner_func(*args, **kwargs):
-        print(f"{fname}(", end="")
+        print(f'{fname}(', end='')
         # printing the function arguments
         print(
-            *("{} = {}".format(name, val) for name, val in zip(argnames, args)),
-            sep=", ",
-            end=", ",
+            *('{} = {}'.format(name, val) for name, val in zip(argnames, args)),
+            sep=', ',
+            end=', ',
         )
         # printing the variable length Arguments
-        print("args =", list(args[len(argnames) :]), end=", ")
+        print('args =', list(args[len(argnames) :]), end=', ')
         # printing the variable length keyword arguments
-        print(f"kwargs = {kwargs})")
+        print(f'kwargs = {kwargs})')
         return func(*args, **kwargs)
 
     return inner_func
@@ -47,32 +47,32 @@ class Dialog_ObtenerAdmin(QDialog):
         super().__init__(parent)
 
         self.setFixedSize(380, 120)
-        self.setWindowTitle("Requiere administrador")
-        self.setWindowIcon(QIcon(":img/icon.ico"))
+        self.setWindowTitle('Requiere administrador')
+        self.setWindowIcon(QIcon(':img/icon.ico'))
         self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.formLayout = QtWidgets.QFormLayout(self)
-        self.formLayout.setObjectName("formLayout")
+        self.formLayout.setObjectName('formLayout')
         self.label = QtWidgets.QLabel(self)
-        self.label.setObjectName("label")
-        self.label.setText("Esta acción requiere de una cuenta de administrador.")
+        self.label.setObjectName('label')
+        self.label.setText('Esta acción requiere de una cuenta de administrador.')
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.SpanningRole, self.label)
         self.label_2 = QtWidgets.QLabel(self)
-        self.label_2.setObjectName("label_2")
-        self.label_2.setText("Usuario:")
+        self.label_2.setObjectName('label_2')
+        self.label_2.setText('Usuario:')
         self.formLayout.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.label_2)
         self.txtUsuario = QtWidgets.QLineEdit(self)
-        self.txtUsuario.setObjectName("txtUsuario")
+        self.txtUsuario.setObjectName('txtUsuario')
         self.formLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.txtUsuario)
         self.label_3 = QtWidgets.QLabel(self)
-        self.label_3.setObjectName("label_3")
-        self.label_3.setText("Contraseña:")
+        self.label_3.setObjectName('label_3')
+        self.label_3.setText('Contraseña:')
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.label_3)
         self.txtPsswd = QtWidgets.QLineEdit(self)
-        self.txtPsswd.setObjectName("txtPsswd")
+        self.txtPsswd.setObjectName('txtPsswd')
         self.txtPsswd.setEchoMode(QtWidgets.QLineEdit.Password)
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.txtPsswd)
         self.buttonBox = QtWidgets.QDialogButtonBox(self)
-        self.buttonBox.setObjectName("buttonBox")
+        self.buttonBox.setObjectName('buttonBox')
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
         self.buttonBox.setStandardButtons(
             QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
@@ -91,16 +91,16 @@ class Dialog_ObtenerAdmin(QDialog):
         if not (usuario and psswd):
             return
         try:
-            conn = conectar_firebird(usuario, psswd, "ADMINISTRADOR")
+            conn = conectar_firebird(usuario, psswd, 'ADMINISTRADOR')
             manejador = DatabaseManager(conn)
         except (FirebirdError, AssertionError):
             self.close()
             wdg = QMessageBox(
                 QMessageBox.Warning,
-                "Permiso denegado",
-                "Las credenciales no son válidas para una cuenta de administrador.",
+                'Permiso denegado',
+                'Las credenciales no son válidas para una cuenta de administrador.',
             )
-            wdg.setWindowIcon(QIcon(":img/icon.ico"))
+            wdg.setWindowIcon(QIcon(':img/icon.ico'))
             wdg.exec()
         else:
             self.close()
@@ -204,11 +204,11 @@ def fondo_oscuro(widget):
             if self.bg_parent:
                 wdg = QWidget(self.bg_parent)  # widget padre (módulo actual)
                 wdg.setFixedSize(self.bg_parent.size())
-                wdg.setStyleSheet("background: rgba(64, 64, 64, 64);")
+                wdg.setStyleSheet('background: rgba(64, 64, 64, 64);')
                 wdg.show()
                 self.bg = wdg
         except TypeError as err:
-            print("fondo_oscuro error !!\n", str(err))
+            print('fondo_oscuro error !!\n', str(err))
             self.bg = None
 
     def closeEvent(self, event):

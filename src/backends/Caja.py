@@ -28,8 +28,8 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
 
         self.mutex = QMutex()
 
-        LabelAdvertencia(self.ui.tabla_ingresos, "¡No se encontró ningún movimiento!")
-        LabelAdvertencia(self.ui.tabla_egresos, "¡No se encontró ningún movimiento!")
+        LabelAdvertencia(self.ui.tabla_ingresos, '¡No se encontró ningún movimiento!')
+        LabelAdvertencia(self.ui.tabla_egresos, '¡No se encontró ningún movimiento!')
 
         # guardar conexión y usuario como atributos
         self.conn = conn
@@ -78,7 +78,7 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         if not self.mutex.try_lock():
             return
 
-        self.ui.lbTotal.setText("Recuperando información...")
+        self.ui.lbTotal.setText('Recuperando información...')
 
         manejador = ManejadorCaja(self.conn)
         fechas = self.iFechas.rango_fechas
@@ -92,7 +92,7 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
 
         Relee base de datos en cualquier evento (en este caso, al mover fechas)."""
         total = self.all_movimientos.totalCorte()
-        self.ui.lbTotal.setText(f"Total del corte: ${total}")
+        self.ui.lbTotal.setText(f'Total del corte: ${total}')
 
         self.llenar_ingresos()
         self.llenar_egresos()
@@ -105,19 +105,19 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         movimientos = self.all_movimientos
 
         self.ui.lbTotalIngresos.setText(
-            "Total de ingresos: ${}".format(movimientos.totalIngresos())
+            'Total de ingresos: ${}'.format(movimientos.totalIngresos())
         )
         self.ui.lbIngresosEfectivo.setText(
-            "Efectivo: ${}".format(movimientos.totalIngresos("Efectivo"))
+            'Efectivo: ${}'.format(movimientos.totalIngresos('Efectivo'))
         )
         self.ui.lbIngresosTarjeta.setText(
-            "Tarjeta de crédito/débito: ${}".format(
-                movimientos.totalIngresos("Tarjeta")
+            'Tarjeta de crédito/débito: ${}'.format(
+                movimientos.totalIngresos('Tarjeta')
             )
         )
         self.ui.lbIngresosTransferencia.setText(
-            "Transferencias bancarias: ${}".format(
-                movimientos.totalIngresos("Transferencia")
+            'Transferencias bancarias: ${}'.format(
+                movimientos.totalIngresos('Transferencia')
             )
         )
 
@@ -133,19 +133,19 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         movimientos = self.all_movimientos
 
         self.ui.lbTotalEgresos.setText(
-            "Total de egresos: ${}".format(-movimientos.totalEgresos())
+            'Total de egresos: ${}'.format(-movimientos.totalEgresos())
         )
         self.ui.lbEgresosEfectivo.setText(
-            "Efectivo: ${}".format(-movimientos.totalEgresos("Efectivo"))
+            'Efectivo: ${}'.format(-movimientos.totalEgresos('Efectivo'))
         )
         self.ui.lbEgresosTarjeta.setText(
-            "Tarjeta de crédito/débito: ${}".format(
-                -movimientos.totalEgresos("Tarjeta")
+            'Tarjeta de crédito/débito: ${}'.format(
+                -movimientos.totalEgresos('Tarjeta')
             )
         )
         self.ui.lbEgresosTransferencia.setText(
-            "Transferencias bancarias: ${}".format(
-                -movimientos.totalEgresos("Transferencia")
+            'Transferencias bancarias: ${}'.format(
+                -movimientos.totalEgresos('Transferencia')
             )
         )
 
@@ -159,9 +159,9 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         qm = QtWidgets.QMessageBox
         ret = qm.question(
             self,
-            "Atención",
-            "Se procederá a imprimir el corte de caja entre "
-            "las fechas proporcionadas.\n¿Desea continuar?",
+            'Atención',
+            'Se procederá a imprimir el corte de caja entre '
+            'las fechas proporcionadas.\n¿Desea continuar?',
         )
 
         if ret == qm.Yes:
@@ -196,7 +196,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
 
-        ttl = "Registrar " + ("egreso" if egreso else "ingreso")
+        ttl = 'Registrar ' + ('egreso' if egreso else 'ingreso')
         self.setWindowTitle(ttl)
 
         self.egreso = egreso
@@ -217,17 +217,17 @@ class Dialog_Registrar(QtWidgets.QDialog):
 
         if not (monto and motivo):
             return
-        manejador = ManejadorCaja(self.conn, "¡No se pudo registrar el movimiento!")
+        manejador = ManejadorCaja(self.conn, '¡No se pudo registrar el movimiento!')
         id_metodo = manejador.obtenerIdMetodoPago(self.metodo)
 
         caja_db_parametros = (Moneda(monto), motivo, id_metodo, self.user.id)
         if manejador.insertarMovimiento(caja_db_parametros):
             self.close()
-            QtWidgets.QMessageBox.information(self, "Éxito", "¡Movimiento registrado!")
+            QtWidgets.QMessageBox.information(self, 'Éxito', '¡Movimiento registrado!')
             self.success.emit()
 
     @property
     def metodo(self):
-        if (out := self.ui.groupMetodo.checkedButton().text()) == "Transferencia":
-            out += " bancaria"
+        if (out := self.ui.groupMetodo.checkedButton().text()) == 'Transferencia':
+            out += ' bancaria'
         return out

@@ -31,7 +31,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         self.ui = Ui_CrearVenta()
         self.ui.setupUi(self)
 
-        LabelAdvertencia(self.ui.tabla_productos, "¡Aún no hay productos!")
+        LabelAdvertencia(self.ui.tabla_productos, '¡Aún no hay productos!')
 
         # VARIABLE DE LA VENTA ACTIVA ACTUAL
         self.ventaDatos = ventaDatos = Venta()
@@ -125,7 +125,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         # </calcular precios y mostrar>
 
         self.ui.txtNumProds.setText(
-            f"{(l := len(self.ventaDatos))} producto" + ("s" if l != 1 else "")
+            f'{(l := len(self.ventaDatos))} producto' + ('s' if l != 1 else '')
         )
 
     # ====================================
@@ -155,7 +155,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         self.ui.btDescuentosCliente.setVisible(cliente.cliente_especial)
 
         if cliente.descuentos is None or not (txt := cliente.descuentos.strip()):
-            txt = "El cliente aún no tiene descuentos."
+            txt = 'El cliente aún no tiene descuentos.'
         self.dialogoDescuentos.setText(txt)
 
     def cambiarFechaEntrega(self, fechaEntrega: QDateTime):
@@ -177,8 +177,8 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
 
         ret = qm.question(
             self,
-            "Atención",
-            "¿Desea descartar de la venta los productos seleccionados?",
+            'Atención',
+            '¿Desea descartar de la venta los productos seleccionados?',
         )
         if ret == qm.Yes:
             self._quitarProducto(selected)
@@ -224,11 +224,11 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         telefono = self.ui.txtTelefono.text().strip()
         cliente = manejador.obtenerCliente(nombre, telefono)
 
-        warning = lambda txt: QtWidgets.QMessageBox.warning(self, "¡Atención!", txt)
+        warning = lambda txt: QtWidgets.QMessageBox.warning(self, '¡Atención!', txt)
 
         if not cliente:
             warning(
-                "No se encontró el cliente en la base de datos.\n"
+                'No se encontró el cliente en la base de datos.\n'
                 'Por favor, regístrelo como un nuevo cliente o seleccione "Público general".'
             )
             return
@@ -236,7 +236,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         if not self.ventaDatos.esVentaDirecta and cliente.id == 1:
             warning(
                 'No se puede generar un pedido a nombre de "Público general".\n'
-                "Por favor, seleccione un cliente y/o regístrelo."
+                'Por favor, seleccione un cliente y/o regístrelo.'
             )
             return
 
@@ -244,7 +244,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
             if cliente.id == 1:
                 warning(
                     'No se puede generar una factura a nombre de "Público general".\n'
-                    "Por favor, verifique que los datos del cliente sean correctos."
+                    'Por favor, verifique que los datos del cliente sean correctos.'
                 )
                 return
 
@@ -253,8 +253,8 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
                 modulo.success.connect(self.establecerCliente)
 
                 warning(
-                    "El cliente no tiene completos sus datos para la factura.\n"
-                    "Por favor, llene los datos como corresponde."
+                    'El cliente no tiene completos sus datos para la factura.\n'
+                    'Por favor, llene los datos como corresponde.'
                 )
                 return
         return cliente.id
@@ -269,8 +269,8 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
 
         ret = qm.question(
             self,
-            "Concluir venta",
-            "Verifique todos los datos ingresados.\n" "¿Desea concluir la venta?",
+            'Concluir venta',
+            'Verifique todos los datos ingresados.\n' '¿Desea concluir la venta?',
         )
         if ret != qm.Yes:
             return
@@ -333,13 +333,13 @@ class App_AgregarProducto(Base_VisualizarProductos):
     def medidasHandle(self):
         """Especificar medidas en producto."""
         ancho = self.ui.txtAncho.text()
-        anchoMedida = "cm" if self.ui.btAnchoCm.isChecked() else "m"
+        anchoMedida = 'cm' if self.ui.btAnchoCm.isChecked() else 'm'
 
         alto = self.ui.txtAlto.text()
-        altoMedida = "cm" if self.ui.btAltoCm.isChecked() else "m"
+        altoMedida = 'cm' if self.ui.btAltoCm.isChecked() else 'm'
 
         if all([ancho, anchoMedida, alto, altoMedida]):
-            spec = f"Medidas: {ancho} {anchoMedida} por {alto} {altoMedida}. "
+            spec = f'Medidas: {ancho} {anchoMedida} por {alto} {altoMedida}. '
             self.ui.txtNotas_2.setText(spec)
 
     def done(self):
@@ -372,11 +372,11 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
-        LabelAdvertencia(self.ui.tabla_seleccionar, "¡No se encontró ningún cliente!")
+        LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún cliente!')
 
         # llena la tabla con todos los clientes existentes
         manejador = ManejadorClientes(conn)
-        self.all = [datos[1:] for datos in manejador.obtener_vista("view_all_clientes")]
+        self.all = [datos[1:] for datos in manejador.obtener_vista('view_all_clientes')]
 
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)
@@ -400,7 +400,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    def update_display(self, txt_busqueda: str = ""):
+    def update_display(self, txt_busqueda: str = ''):
         """Actualiza la tabla y el contador de clientes.
         Acepta una cadena de texto para la búsqueda de clientes.
         También lee de nuevo la tabla de clientes, si se desea."""
@@ -568,7 +568,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
 
         # deshabilita eventos del mouse para los textos en los botones
         for name, item in vars(self.ui).items():
-            if "label_" in name:
+            if 'label_' in name:
                 item.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         self.show()
@@ -582,24 +582,24 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
     # ================ #
     def enviarWhatsApp(self):
         mensaje = [
-            "*COTIZACIÓN DE VENTA*",
-            f"Cliente: *{self.txtCliente}*",
-            "-------------------------------------------",
-            f"Fecha: *{formatdate()}*",
-            "-------------------------------------------",
+            '*COTIZACIÓN DE VENTA*',
+            f'Cliente: *{self.txtCliente}*',
+            '-------------------------------------------',
+            f'Fecha: *{formatdate()}*',
+            '-------------------------------------------',
         ]
 
         for prod in self.ventaDatos:
             mensaje.extend(
                 [
-                    f"{prod.nombre_ticket} || {prod.cantidad} unidades",
-                    f"Importe: ${prod.importe:,.2f}",
-                    "",
+                    f'{prod.nombre_ticket} || {prod.cantidad} unidades',
+                    f'Importe: ${prod.importe:,.2f}',
+                    '',
                 ]
             )
 
-        mensaje.append(f"*Total a pagar: ${self.ventaDatos.total}*")
-        mensaje = "\n".join(mensaje)
+        mensaje.append(f'*Total a pagar: ${self.ventaDatos.total}*')
+        mensaje = '\n'.join(mensaje)
 
         if enviarWhatsApp(self.txtTelefono, mensaje):
             self.close()
@@ -625,7 +625,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         wdg = self.stackPagos[0]
         wdg.metodoSeleccionado = ventaDatos.metodo_pago
 
-        if ventaDatos.metodo_pago != "Efectivo":
+        if ventaDatos.metodo_pago != 'Efectivo':
             self._handleCounters()
 
         # si la venta es directa, ocultar los widgets para apartados
@@ -647,7 +647,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         ventaDatos.fechaCreacion = now  # tiene que ser después del if
 
         # llenar total y monto a pagar
-        self.ui.lbCincuenta.setText(f"(${ventaDatos.total / 2})")
+        self.ui.lbCincuenta.setText(f'(${ventaDatos.total / 2})')
         # permitir pago vacío
         self.stackPagos.permitir_nulo = True
 
@@ -711,7 +711,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
             self.ventaDatos.fechaEntrega.toPython(),
             self.ventaDatos.comentarios.strip(),
             self.ventaDatos.requiere_factura,
-            "No terminada",
+            'No terminada',
         )
 
     def obtenerParametrosVentasDetallado(self) -> list[tuple]:
@@ -735,9 +735,9 @@ class App_ConfirmarVenta(Base_PagarVenta):
         if not self.ventaDatos.total / 2 <= self.para_pagar:
             ret = qm.question(
                 self,
-                "Atención",
-                "El anticipo está por debajo del 50% del total de compra.\n"
-                "¿Desea continuar?",
+                'Atención',
+                'El anticipo está por debajo del 50% del total de compra.\n'
+                '¿Desea continuar?',
             )
             if ret == qm.Yes:
                 self.listoAdmin()
@@ -754,9 +754,9 @@ class App_ConfirmarVenta(Base_PagarVenta):
         registrarla en la base de datos."""
         manejadorVentas = ManejadorVentas(self.conn)
         estado = (
-            "Terminada"
+            'Terminada'
             if self.ventaDatos.esVentaDirecta
-            else f"Recibido ${self.para_pagar}"
+            else f'Recibido ${self.para_pagar}'
         )
         return manejadorVentas.actualizarEstadoVenta(
             self.id_ventas, estado, commit=True
@@ -766,7 +766,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         manejador = ManejadorVentas(self.conn)
         if not self.ventaDatos.esVentaDirecta:
             qm.information(
-                self, "Éxito", "Venta terminada. Se imprimirá ahora la orden de compra."
+                self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.'
             )
 
             impresora = ImpresoraOrdenes(self)
@@ -774,9 +774,9 @@ class App_ConfirmarVenta(Base_PagarVenta):
         else:
             ret = qm.question(
                 self,
-                "Éxito",
-                "Venta terminada. ¡Recuerde ofrecer el ticket de compra! "
-                "¿Desea imprimirlo?",
+                'Éxito',
+                'Venta terminada. ¡Recuerde ofrecer el ticket de compra! '
+                '¿Desea imprimirlo?',
             )
             if ret == qm.Yes:
                 impresora = ImpresoraTickets()
@@ -788,8 +788,8 @@ class App_ConfirmarVenta(Base_PagarVenta):
         """Función para abortar la venta y actualizar estado a 'Cancelada'."""
         ret = qm.question(
             self,
-            "Atención",
-            "¿Desea cancelar la venta? Esta acción no puede deshacerse.",
+            'Atención',
+            '¿Desea cancelar la venta? Esta acción no puede deshacerse.',
         )
         if ret == qm.Yes:
             self._abortar()
@@ -797,7 +797,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
     @requiere_admin
     def _abortar(self, conn) -> None:
         manejadorAdmin = ManejadorVentas(conn)
-        estado = "Cancelada por " + manejadorAdmin.nombreUsuarioActivo
+        estado = 'Cancelada por ' + manejadorAdmin.nombreUsuarioActivo
 
         if manejadorAdmin.actualizarEstadoVenta(self.id_ventas, estado, commit=True):
             self.success.emit()

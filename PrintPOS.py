@@ -4,7 +4,7 @@
 from pathlib import Path
 import sys
 
-sys.path += [str(Path("src/").resolve())]
+sys.path += [str(Path('src/').resolve())]
 
 from haps import Container as IoC
 from PySide6.QtWidgets import QApplication
@@ -21,7 +21,7 @@ class PrintPOS(QApplication):
     def __init__(self):
         super().__init__()
 
-        self.setStyle("Fusion")
+        self.setStyle('Fusion')
         self.configurarPaleta()
         self.instalarTraductor()
 
@@ -52,22 +52,22 @@ class PrintPOS(QApplication):
     def instalarTraductor(self):
         """Instala traductor para idioma español."""
         tr = QTranslator(self)
-        tr.load("resources/translations/qtbase_es.qm")
+        tr.load('resources/translations/qtbase_es.qm')
         return self.installTranslator(tr)
 
     def __call__(self):
         return self.iniciar()
 
     def __repr__(self):
-        return "QApplication afitriona de PrintPOS."
+        return 'QApplication afitriona de PrintPOS.'
 
 
 app: PrintPOS = QApplication.instance() or PrintPOS()
 
-IoC.autodiscover(["src.implementations"])
+IoC.autodiscover(['src.implementations'])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # este módulo genera mucho tiempo de espera, por alguna razón
     import pdf
 
