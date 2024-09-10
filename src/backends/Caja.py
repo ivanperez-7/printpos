@@ -2,6 +2,7 @@ from PySide6 import QtWidgets
 from PySide6.QtCore import QMutex, Signal
 from PySide6.QtGui import QFont
 
+from context import user_context
 from core import Moneda, NumeroDecimal
 from interfaces import IModuloPrincipal
 from pdf import ImpresoraTickets
@@ -20,7 +21,7 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
 
     rescanned = Signal()
 
-    def crear(self, conn, user):
+    def crear(self):
         from ui.Ui_Caja import Ui_Caja
 
         self.ui = Ui_Caja()
@@ -32,8 +33,8 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         LabelAdvertencia(self.ui.tabla_egresos, '¡No se encontró ningún movimiento!')
 
         # guardar conexión y usuario como atributos
-        self.conn = conn
-        self.user = user
+        self.conn = user_context.conn
+        self.user = user_context.user
 
         self.all_movimientos = Caja()
 
@@ -111,14 +112,10 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
             'Efectivo: ${}'.format(movimientos.totalIngresos('Efectivo'))
         )
         self.ui.lbIngresosTarjeta.setText(
-            'Tarjeta de crédito/débito: ${}'.format(
-                movimientos.totalIngresos('Tarjeta')
-            )
+            'Tarjeta de crédito/débito: ${}'.format(movimientos.totalIngresos('Tarjeta'))
         )
         self.ui.lbIngresosTransferencia.setText(
-            'Transferencias bancarias: ${}'.format(
-                movimientos.totalIngresos('Transferencia')
-            )
+            'Transferencias bancarias: ${}'.format(movimientos.totalIngresos('Transferencia'))
         )
 
         tabla = self.ui.tabla_ingresos
@@ -132,21 +129,15 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
 
         movimientos = self.all_movimientos
 
-        self.ui.lbTotalEgresos.setText(
-            'Total de egresos: ${}'.format(-movimientos.totalEgresos())
-        )
+        self.ui.lbTotalEgresos.setText('Total de egresos: ${}'.format(-movimientos.totalEgresos()))
         self.ui.lbEgresosEfectivo.setText(
             'Efectivo: ${}'.format(-movimientos.totalEgresos('Efectivo'))
         )
         self.ui.lbEgresosTarjeta.setText(
-            'Tarjeta de crédito/débito: ${}'.format(
-                -movimientos.totalEgresos('Tarjeta')
-            )
+            'Tarjeta de crédito/débito: ${}'.format(-movimientos.totalEgresos('Tarjeta'))
         )
         self.ui.lbEgresosTransferencia.setText(
-            'Transferencias bancarias: ${}'.format(
-                -movimientos.totalEgresos('Transferencia')
-            )
+            'Transferencias bancarias: ${}'.format(-movimientos.totalEgresos('Transferencia'))
         )
 
         tabla = self.ui.tabla_egresos
@@ -173,12 +164,12 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
     # ====================================
     def registrarIngreso(self):
         """Registrar ingreso en movimientos."""
-        self.Dialog = Dialog_Registrar(self.conn, self.user)
+        self.Dialog = Dialog_Registrar()
         self.Dialog.success.connect(self.rescan_update)
 
     def registrarEgreso(self):
         """Registrar egreso en movimientos."""
-        self.Dialog = Dialog_Registrar(self.conn, self.user, egreso=True)
+        self.Dialog = Dialog_Registrar(egreso=True)
         self.Dialog.success.connect(self.rescan_update)
 
 
@@ -188,7 +179,7 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
 class Dialog_Registrar(QtWidgets.QDialog):
     success = Signal()
 
-    def __init__(self, conn, user, *, egreso=False):
+    def __init__(self, *, egreso=False):
         from ui.Ui_RegistrarMovimiento import Ui_RegistrarMovimiento
 
         super().__init__()
@@ -200,8 +191,8 @@ class Dialog_Registrar(QtWidgets.QDialog):
         self.setWindowTitle(ttl)
 
         self.egreso = egreso
-        self.conn = conn
-        self.user = user
+        self.conn = user_context.conn
+        self.user = user_context.user
 
         # validadores para datos numéricos
         self.ui.txtCantidad.setValidator(NumeroDecimal)

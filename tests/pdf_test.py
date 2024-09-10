@@ -16,9 +16,7 @@ class PdfTests(TestCase):
         from utils.mydataclasses import Caja, ItemVenta
 
         printer = ImpresoraTickets()
-        man = sql.ManejadorVentas(
-            sql.core.conectar_firebird('ivanperez', '123', 'administrador')
-        )
+        man = sql.ManejadorVentas(sql.core.conectar_firebird('ivanperez', '123', 'administrador'))
         self.assertEqual(printer.printer.printerName(), INI.IMPRESORA)
 
         res1 = printer.imprimirTicketCompra(670, manejador=man)  # varios pagos
@@ -32,14 +30,7 @@ class PdfTests(TestCase):
 
         prods = [
             ItemVenta(
-                1,
-                'IMP B/N 1',
-                'Impresión ByN',
-                0.7,
-                0.0,
-                random.randint(10, 200),
-                '',
-                False,
+                1, 'IMP B/N 1', 'Impresión ByN', 0.7, 0.0, random.randint(10, 200), '', False,
             )
         ]
         res4 = printer.imprimirTicketPresupuesto(prods * 3, 'yo merengues')

@@ -8,8 +8,8 @@ class App_ConsultarPrecios(Base_VisualizarProductos):
     """Backend para el módulo de consultar precios.
     No se puede cerrar hasta cerrar por completo el sistema."""
 
-    def __init__(self, conn):
-        super().__init__(conn)
+    def __init__(self):
+        super().__init__()
 
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowMinimizeButtonHint)
         self.setWindowTitle('Consultar precios')

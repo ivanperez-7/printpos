@@ -5,6 +5,7 @@ from haps import egg
 from PySide6.QtWidgets import QMainWindow
 from PySide6.QtGui import QIcon
 
+from context import user_context
 from backends.ConsultarPrecios import App_ConsultarPrecios
 from factorias import crear_modulo
 from interfaces import IControllerWindow
@@ -14,15 +15,15 @@ from interfaces import IControllerWindow
 class VentanaPrincipal(QMainWindow, IControllerWindow):  # TODO: clase App -> Inject()
     en_venta = False
 
-    def crear(self, conn, user):
+    def crear(self):
         self.resize(1500, 800)
         self.setWindowTitle('PrintPOS')
         self.setWindowIcon(QIcon(':img/icon.ico'))
 
-        self.conn = conn
-        self.user = user
+        self.conn = user_context.conn
+        self.user = user_context.user
 
-        self.consultarPrecios = App_ConsultarPrecios(conn)
+        self.consultarPrecios = App_ConsultarPrecios()
 
         self.go_home()
         self.show()
@@ -32,7 +33,7 @@ class VentanaPrincipal(QMainWindow, IControllerWindow):  # TODO: clase App -> In
         Crea módulo Home y establece como widget principal."""
         home = crear_modulo('App_Home')
 
-        home.crear(self.conn, self.user)
+        home.crear()
         home.go_back.connect(self.close)
         home.new_module.connect(self.go_to)
 
@@ -41,7 +42,7 @@ class VentanaPrincipal(QMainWindow, IControllerWindow):  # TODO: clase App -> In
 
     def go_to(self, modulo: str):
         new = crear_modulo(modulo)
-        new.crear(self.conn, self.user)
+        new.crear()
         new.go_back.connect(self.go_home)
 
         self.setCentralWidget(new)

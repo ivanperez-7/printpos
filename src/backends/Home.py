@@ -4,6 +4,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap, QColor
 from PySide6.QtCore import QDate, Qt, QRect, QPropertyAnimation, QEasingCurve, Signal
 
+from context import user_context
 from interfaces import IModuloPrincipal
 from sql import ManejadorVentas, ManejadorInventario
 
@@ -13,14 +14,14 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
 
     new_module = Signal(type)
 
-    def crear(self, conn, user):
+    def crear(self):
         from ui.Ui_Home import Ui_Home
 
         self.ui = Ui_Home()
         self.ui.setupUi(self)
 
-        self.conn = conn
-        self.user = user
+        self.conn = user_context.conn
+        self.user = user_context.user
 
         # foto de perfil del usuario
         if self.user.foto_perfil:
@@ -33,10 +34,8 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
 
         # ocultar lista y proporcionar eventos
         self.ui.listaNotificaciones.setVisible(False)
-        self.ui.btFotoPerfil.clicked.connect(
-            self.ui.listaNotificaciones.alternarNotificaciones
-        )
-        self.ui.listaNotificaciones.agregarNotificaciones(conn, user)
+        self.ui.btFotoPerfil.clicked.connect(self.ui.listaNotificaciones.alternarNotificaciones)
+        self.ui.listaNotificaciones.agregarNotificaciones()
 
         # configurar texto dinámico
         self.ui.fechaHoy.setDate(QDate.currentDate())
@@ -90,9 +89,7 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
         rect.adjust(1, 1, -1, -1)
         pixmap.fill(QtCore.Qt.transparent)
         painter = QtGui.QPainter(pixmap)
-        painter.setRenderHints(
-            QtGui.QPainter.Antialiasing | QtGui.QPainter.TextAntialiasing
-        )
+        painter.setRenderHints(QtGui.QPainter.Antialiasing | QtGui.QPainter.TextAntialiasing)
 
         pen = painter.pen()
         pen.setColor(QtCore.Qt.white)
@@ -127,17 +124,17 @@ class ListaNotificaciones(QtWidgets.QListWidget):
             % QColor(225, 225, 225).name()
         )
 
-    def agregarNotificaciones(self, conn, user):
+    def agregarNotificaciones(self):
         """Llena la caja de notificaciones."""
         items = []
-        manejador = ManejadorVentas(conn)
+        manejador = ManejadorVentas(user_context.conn)
 
-        numPendientes = manejador.obtenerNumPendientes(user.id)
+        numPendientes = manejador.obtenerNumPendientes(user_context.user.id)
 
         if numPendientes:
             items.append(f'Tiene {numPendientes} pedidos pendientes.')
 
-        manejador = ManejadorInventario(conn)
+        manejador = ManejadorInventario(user_context.conn)
 
         for nombre, stock, minimo in manejador.obtenerInventarioFaltante():
             items.append(

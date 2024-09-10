@@ -65,9 +65,7 @@ def formatdate(date=None):
     """Da formato en texto a un dato QDateTime o datetime de Python.
     Ejemplo: 08 de febrero 2023, 4:56 p. m."""
     locale = QLocale(QLocale.Spanish, QLocale.Mexico)
-    formatted = locale.toString(
-        date or QDateTime.currentDateTime(), "d 'de' MMMM yyyy, h:mm ap"
-    )
+    formatted = locale.toString(date or QDateTime.currentDateTime(), "d 'de' MMMM yyyy, h:mm ap")
     return unicodedata.normalize('NFKD', formatted)
 
 
@@ -132,6 +130,4 @@ def enviarWhatsApp(phone_no: str, message: str):
         - open("https://web.whatsapp.com/accept?code=" + receiver)"""
     if '+' not in phone_no:  # agregar código de país de México
         phone_no = '+52' + phone_no
-    return web.open_new_tab(
-        f'https://web.whatsapp.com/send?phone={phone_no}&text={quote(message)}'
-    )
+    return web.open_new_tab(f'https://web.whatsapp.com/send?phone={phone_no}&text={quote(message)}')

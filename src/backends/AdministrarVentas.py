@@ -6,6 +6,7 @@ from PySide6.QtGui import QFont, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
 from backends.shared_widgets import Base_PagarVenta
+from context import user_context
 from interfaces import IModuloPrincipal
 from pdf import ImpresoraOrdenes, ImpresoraTickets
 from sql import ManejadorVentas
@@ -28,7 +29,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
 
     rescanned = Signal()
 
-    def crear(self, conn, user):
+    def crear(self):
         from ui.Ui_AdministrarVentas import Ui_AdministrarVentas
 
         self.ui = Ui_AdministrarVentas()
@@ -44,11 +45,11 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         self.all_pedidos = []
 
         # guardar conexión y usuario como atributos
-        self.conn = conn
-        self.user = user
+        self.conn = user_context.conn
+        self.user = user_context.user
 
         # fechas por defecto
-        manejador = ManejadorVentas(conn)
+        manejador = ManejadorVentas(self.conn)
         fechaMin = manejador.obtenerFechaPrimeraVenta()
 
         self.iFechas = InterfazFechas(
@@ -63,9 +64,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
 
         # añadir menú de opciones al botón para filtrar
         self.filtro = InterfazFiltro(
-            self.ui.btFiltrar,
-            self.ui.searchBar,
-            [('Folio', 0), ('Vendedor', 1), ('Cliente', 2)],
+            self.ui.btFiltrar, self.ui.searchBar, [('Folio', 0), ('Vendedor', 1), ('Cliente', 2)],
         )
         self.filtro.cambiado.connect(self.update_display)
 
@@ -79,9 +78,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
 
         self.rescanned.connect(self.update_display)
 
-        detallesVenta = lambda idxs: App_DetallesVenta(
-            idxs.siblingAtColumn(0).data(), conn, self
-        )
+        detallesVenta = lambda idxs: App_DetallesVenta(idxs.siblingAtColumn(0).data(), self)
         self.ui.tabla_directas.doubleClicked.connect(detallesVenta)
         self.ui.tabla_pedidos.doubleClicked.connect(detallesVenta)
         self.ui.tabWidget.currentChanged.connect(self.cambiar_pestana)
@@ -111,9 +108,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
     # ==================
     @property
     def tabla_actual(self):
-        return [self.ui.tabla_directas, self.ui.tabla_pedidos][
-            self.ui.tabWidget.currentIndex()
-        ]
+        return [self.ui.tabla_directas, self.ui.tabla_pedidos][self.ui.tabWidget.currentIndex()]
 
     def cambiar_pestana(self, nuevo=None):
         """Cambia el label con el contador de ventas, según la pestaña,
@@ -128,13 +123,9 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             label = 'pedidos'
             num_compras = len(self.all_pedidos)
 
-        self.ui.lbContador.setText(
-            '{} {} en la base de datos.'.format(num_compras, label)
-        )
+        self.ui.lbContador.setText('{} {} en la base de datos.'.format(num_compras, label))
         self.ui.lbPagina.setText(
-            '{} de {}'.format(
-                self.tabla_actual.paginaActual, ceil(num_compras / CHUNK_SIZE) or 1
-            )
+            '{} de {}'.format(self.tabla_actual.paginaActual, ceil(num_compras / CHUNK_SIZE) or 1)
         )
 
         self.tabla_actual.resizeRowsToContents()
@@ -168,15 +159,11 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         compras = self.all_directas
 
         if txt_busqueda := self.ui.searchBar.text().strip():
-            compras = [
-                c for c in compras if son_similar(txt_busqueda, c[self.filtro.idx])
-            ]
+            compras = [c for c in compras if son_similar(txt_busqueda, c[self.filtro.idx])]
 
         tabla = self.ui.tabla_directas
         currentPage = clamp(tabla.paginaActual, 1, ceil(len(compras) / CHUNK_SIZE))
-        tabla.paginaActual = (
-            currentPage  # truncar valor de la página si se sale del rango
-        )
+        tabla.paginaActual = currentPage  # truncar valor de la página si se sale del rango
 
         chunks = chunkify(compras, CHUNK_SIZE) or [[]]
         data = chunks[currentPage - 1]  # TODO: usar FIRST y SKIP
@@ -189,15 +176,11 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         compras = self.all_pedidos
 
         if txt_busqueda := self.ui.searchBar.text().strip():
-            compras = [
-                c for c in compras if son_similar(txt_busqueda, c[self.filtro.idx])
-            ]
+            compras = [c for c in compras if son_similar(txt_busqueda, c[self.filtro.idx])]
 
         tabla = self.ui.tabla_pedidos
         currentPage = clamp(tabla.paginaActual, 1, ceil(len(compras) / CHUNK_SIZE))
-        tabla.paginaActual = (
-            currentPage  # truncar valor de la página si se sale del rango
-        )
+        tabla.paginaActual = currentPage  # truncar valor de la página si se sale del rango
 
         chunks = chunkify(compras, CHUNK_SIZE) or [[]]
         data = chunks[currentPage - 1]  # TODO: usar FIRST y SKIP
@@ -214,9 +197,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
     # ====================================
     def enviarRecordatorio(self):
         ret = qm.question(
-            self,
-            'Atención',
-            '¿Desea enviarle un recordatorio al cliente sobre ' 'este pedido?',
+            self, 'Atención', '¿Desea enviarle un recordatorio al cliente sobre ' 'este pedido?',
         )
         if ret != qm.Yes:
             return
@@ -251,15 +232,14 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             return
 
         if manejador.obtenerSaldoRestante(idVenta):
-            widget = App_TerminarVenta(idVenta, self.conn, self.user, self)
+            widget = App_TerminarVenta(idVenta, self)
             widget.success.connect(self.rescan_update)
             return
 
         ret = qm.question(
             self,
             'Atención',
-            'Este pedido no tiene saldo restante. '
-            '¿Desea marcar la venta como terminada?',
+            'Este pedido no tiene saldo restante. ' '¿Desea marcar la venta como terminada?',
         )
         if ret != qm.Yes:
             return
@@ -268,9 +248,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         if manejador.actualizarEstadoVenta(
             idVenta, 'Entregado por ' + self.user.nombre, commit=True
         ):
-            qm.information(
-                self, 'Éxito', 'Se marcó como terminada la venta seleccionada.'
-            )
+            qm.information(self, 'Éxito', 'Se marcó como terminada la venta seleccionada.')
             self.rescan_update()
 
     def cancelarVenta(self):
@@ -304,14 +282,10 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         manejador = ManejadorVentas(conn)
         estado = 'Cancelada por ' + manejador.nombreUsuarioActivo
 
-        if ret == qm.Yes and not manejador.anularPagos(
-            idVenta, manejador.idUsuarioActivo
-        ):
+        if ret == qm.Yes and not manejador.anularPagos(idVenta, manejador.idUsuarioActivo):
             return
         if manejador.actualizarEstadoVenta(idVenta, estado, commit=True):
-            qm.information(
-                self, 'Éxito', 'Se marcó como cancelada la venta seleccionada.'
-            )
+            qm.information(self, 'Éxito', 'Se marcó como cancelada la venta seleccionada.')
             self.rescan_update()
 
     def imprimirTicket(self):
@@ -327,7 +301,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         man = ManejadorVentas(self.conn)
 
         if man.verificarPagos(idVenta) > 1:
-            wdg = App_ImprimirTickets(idVenta, self.conn, self)
+            wdg = App_ImprimirTickets(idVenta, self)
             return
 
         # abrir pregunta
@@ -339,19 +313,15 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         )
         if ret == qm.Yes:
             impresora = ImpresoraTickets()
-            impresora.imprimirTicketCompra(
-                idVenta, manejador=ManejadorVentas(self.conn)
-            )
+            impresora.imprimirTicketCompra(idVenta, manejador=ManejadorVentas(self.conn))
 
     def imprimirOrden(self):
         """Imprime orden de compra de un pedido dado el folio de esta."""
-        if (selected := self.tabla_actual.selectedItems()) and selected[
-            6
-        ].text().startswith('Recibido'):
+        if (selected := self.tabla_actual.selectedItems()) and selected[6].text().startswith(
+            'Recibido'
+        ):
             impresora = ImpresoraOrdenes(self)
-            impresora.imprimirOrdenCompra(
-                selected[0].text(), manejador=ManejadorVentas(self.conn)
-            )
+            impresora.imprimirOrdenCompra(selected[0].text(), manejador=ManejadorVentas(self.conn))
 
 
 #################################
@@ -361,7 +331,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
 class App_DetallesVenta(QtWidgets.QWidget):
     """Backend para la ventana que muestra los detalles de una venta."""
 
-    def __init__(self, idx: int, conn, parent=None):
+    def __init__(self, idx: int, parent=None):
         from ui.Ui_DetallesVenta import Ui_DetallesVenta
 
         super().__init__(parent)
@@ -371,7 +341,7 @@ class App_DetallesVenta(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         # total de la venta, anticipo y saldo
-        manejador = ManejadorVentas(conn)
+        manejador = ManejadorVentas(user_context.conn)
 
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
@@ -421,8 +391,7 @@ class App_DetallesVenta(QtWidgets.QWidget):
         tabla = self.ui.tabla_productos
         tabla.quitarBordeCabecera()
         tabla.configurarCabecera(
-            lambda col: col != 2,
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+            lambda col: col != 2, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
         )
 
         productos = manejador.obtenerTablaProductosVenta(idx)
@@ -443,8 +412,8 @@ class App_TerminarVenta(Base_PagarVenta):
 
     success = Signal()
 
-    def __init__(self, idx: int, conn, user, parent=None):
-        super().__init__(idx, conn, user, parent)
+    def __init__(self, idx: int, parent=None):
+        super().__init__(idx, parent)
 
         self.ui.lbCincuenta.hide()
         self.ui.label_17.setText('Abonar pago(s) a pedido')
@@ -506,9 +475,7 @@ class App_TerminarVenta(Base_PagarVenta):
         else:
             prompt = 'Pago(s) abonado(s) al pedido.'
 
-        ret = qm.question(
-            self, 'Éxito', prompt + '\n¿Desea imprimir los tickets de los pagos?'
-        )
+        ret = qm.question(self, 'Éxito', prompt + '\n¿Desea imprimir los tickets de los pagos?')
 
         if ret == qm.Yes:
             slais = slice(-self.ui.stackPagos.count(), None)
@@ -528,7 +495,7 @@ class App_TerminarVenta(Base_PagarVenta):
 class App_ImprimirTickets(QtWidgets.QWidget):
     """Backend para seleccionar tickets a imprimir de una venta/pedido."""
 
-    def __init__(self, idVenta: int, conn, parent=None):
+    def __init__(self, idVenta: int, parent=None):
         from ui.Ui_ImprimirTickets import Ui_ImprimirTickets
 
         super().__init__(parent)
@@ -538,7 +505,7 @@ class App_ImprimirTickets(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         self.setFixedSize(self.size())
 
-        self.conn = conn
+        self.conn = user_context.conn
         self.idVenta = idVenta
 
         self.ui.btRegresar.clicked.connect(self.close)
@@ -549,12 +516,10 @@ class App_ImprimirTickets(QtWidgets.QWidget):
         font = QFont()
         font.setPointSize(12)
 
-        pagos = ManejadorVentas(conn).obtenerPagosVenta(idVenta)
+        pagos = ManejadorVentas(self.conn).obtenerPagosVenta(idVenta)
 
         for i, (fecha, metodo, monto, r, v) in enumerate(pagos):
-            txt = (
-                f'  Pago {i + 1}: ${monto:.2f}, {metodo.lower()} ({formatdate(fecha)})'
-            )
+            txt = f'  Pago {i + 1}: ${monto:.2f}, {metodo.lower()} ({formatdate(fecha)})'
             checkbox = QtWidgets.QCheckBox(txt)
             checkbox.setFont(font)
             checkbox.setChecked(True)
@@ -579,13 +544,9 @@ class App_ImprimirTickets(QtWidgets.QWidget):
             wdg.setChecked(True)
 
     def done(self):
-        idxs = [
-            wdg.property('pago_idx') for wdg in self.checkboxes() if wdg.isChecked()
-        ]
+        idxs = [wdg.property('pago_idx') for wdg in self.checkboxes() if wdg.isChecked()]
 
         if idxs:
             impresora = ImpresoraTickets()
-            impresora.imprimirTicketCompra(
-                self.idVenta, idxs, manejador=ManejadorVentas(self.conn)
-            )
+            impresora.imprimirTicketCompra(self.idVenta, idxs, manejador=ManejadorVentas(self.conn))
             self.close()

@@ -14,9 +14,7 @@ APPDATA_DIR = Path(os.environ['APPDATA']) / 'PrintPOS'
 LICENSE_PATH = APPDATA_DIR / 'printpos.lic'
 
 INSTANCE_NAME = machineid.id().split('-')[-1]
-FERNET_KEY = base64.urlsafe_b64encode(
-    bytes(machineid.hashed_id('PrintPOS'), 'utf-8')[-32:]
-)
+FERNET_KEY = base64.urlsafe_b64encode(bytes(machineid.hashed_id('PrintPOS'), 'utf-8')[-32:])
 
 
 #################################

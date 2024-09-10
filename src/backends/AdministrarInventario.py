@@ -2,6 +2,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QPixmap, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
+from context import user_context
 from core import ROJO, NumeroDecimal
 from interfaces import IModuloPrincipal
 from sql import ManejadorInventario, ManejadorProductos
@@ -18,7 +19,7 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
 
     rescanned = Signal()
 
-    def crear(self, conn, user):
+    def crear(self):
         from ui.Ui_AdministrarInventario import Ui_AdministrarInventario
 
         self.ui = Ui_AdministrarInventario()
@@ -29,8 +30,8 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
         LabelAdvertencia(self.ui.tabla_inventario, '¡No se encontró ningún elemento!')
 
         # guardar conexión y usuarios como atributos
-        self.conn = conn
-        self.user = user
+        self.conn = user_context.conn
+        self.user = user_context.user
 
         self.all = []
 
@@ -119,16 +120,16 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
     def surtirExistencias(self):
         idx = self.ui.tabla_inventario.selectedItems()[0].text()
 
-        self.Dialog = ExistenciasWidget(idx, self.conn, self)
+        self.Dialog = ExistenciasWidget(idx, self)
         self.Dialog.success.connect(self.rescan_update)
 
     def agregarInventario(self):
-        widget = App_RegistrarInventario(self.conn, self)
+        widget = App_RegistrarInventario(self)
         widget.success.connect(self.rescan_update)
 
     def editarInventario(self):
         if selected := self.ui.tabla_inventario.selectedItems():
-            widget = App_EditarInventario(selected[0].text(), self.conn, self)
+            widget = App_EditarInventario(selected[0].text(), self)
             widget.success.connect(self.rescan_update)
 
     def quitarInventario(self):
@@ -158,8 +159,7 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
         ret = qm.question(
             self,
             'Atención',
-            'El elemento seleccionado se eliminará de la base de datos. '
-            '¿Desea continuar?',
+            'El elemento seleccionado se eliminará de la base de datos. ' '¿Desea continuar?',
         )
         if ret != qm.Yes:
             return
@@ -181,7 +181,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
 
     success = Signal()
 
-    def __init__(self, conn, parent=None):
+    def __init__(self, parent=None):
         from ui.Ui_EditarInventario import Ui_EditarInventario
 
         super().__init__(parent)
@@ -192,7 +192,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         # guardar conexión como atributo
-        self.conn = conn
+        self.conn = user_context.conn
 
         # validadores para datos numéricos
         validador = NumeroDecimal
@@ -300,8 +300,8 @@ class App_RegistrarInventario(Base_EditarInventario):
     MENSAJE_EXITO = '¡Se registró el elemento!'
     MENSAJE_ERROR = '¡No se pudo registrar el elemento!'
 
-    def __init__(self, conn, parent=None):
-        super().__init__(conn, parent)
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         self.ui.lbTitulo.setText('Registrar elemento')
         self.ui.btAceptar.setText(' Registrar elemento')
@@ -321,21 +321,15 @@ class App_EditarInventario(Base_EditarInventario):
     MENSAJE_EXITO = '¡Se editó el elemento!'
     MENSAJE_ERROR = '¡No se pudo editar el elemento!'
 
-    def __init__(self, idx: int, conn, parent=None):
-        super().__init__(conn, parent)
+    def __init__(self, idx: int, parent=None):
+        super().__init__(parent)
 
         self.idx = idx  # id del elemento a editar
 
         manejador = ManejadorInventario(self.conn)
 
         # datos de la primera página
-        (
-            nombre,
-            tamano,
-            precio,
-            minimo,
-            existencia,
-        ) = manejador.obtenerInformacionPrincipal(idx)
+        (nombre, tamano, precio, minimo, existencia,) = manejador.obtenerInformacionPrincipal(idx)
 
         self.ui.txtNombre.setText(nombre)
         self.ui.txtTamano.setText(f'{tamano:.2f}')
@@ -396,11 +390,11 @@ class WidgetProducto(QtWidgets.QWidget):
 class ExistenciasWidget(QtWidgets.QDialog):
     success = Signal()
 
-    def __init__(self, idx: int, conn, parent=None):
+    def __init__(self, idx: int, parent=None):
         from PySide6 import QtCore
 
         super().__init__(parent)
-        self.conn = conn
+        self.conn = user_context.conn
         self.idx = idx
 
         self.resize(340, 80)

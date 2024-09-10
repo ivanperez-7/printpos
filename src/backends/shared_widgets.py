@@ -1,6 +1,7 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal, Qt
 
+from context import user_context
 from core import Moneda, NumeroDecimal, Runner
 from sql import ManejadorProductos, ManejadorVentas
 from utils.mydataclasses import ItemVenta, ItemGranFormato
@@ -9,7 +10,7 @@ from utils.myutils import son_similar, formatdate
 
 
 class Base_PagarVenta(QtWidgets.QWidget):
-    def __init__(self, idx: int, conn, user, parent=None) -> None:
+    def __init__(self, idx: int, parent=None) -> None:
         from ui.Ui_ConfirmarVenta import Ui_ConfirmarVenta
 
         super().__init__(parent)
@@ -22,8 +23,8 @@ class Base_PagarVenta(QtWidgets.QWidget):
         self.stackPagos = self.ui.stackPagos
 
         # guardar conexión y usuario como atributos
-        self.conn = conn
-        self.user = user
+        self.conn = user_context.conn
+        self.user = user_context.user
 
         if idx is None:
             self.id_ventas = self.obtenerIdVenta()
@@ -54,8 +55,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
         # configurar tabla de productos
         self.ui.tabla_productos.quitarBordeCabecera()
         self.ui.tabla_productos.configurarCabecera(
-            lambda col: col != 2,
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+            lambda col: col != 2, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
         )
 
         # eventos para widgets
@@ -103,9 +103,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
 
     def modificar_contador(self) -> None:
         self.ui.lbContador.setText(
-            'Pago {}/{}'.format(
-                self.stackPagos.currentIndex() + 1, self.stackPagos.count()
-            )
+            'Pago {}/{}'.format(self.stackPagos.currentIndex() + 1, self.stackPagos.count())
         )
 
     def _handleCounters(self) -> None:
@@ -120,16 +118,12 @@ class Base_PagarVenta(QtWidgets.QWidget):
                 for wdg in stack  # pagado en efectivo
                 if wdg.metodoSeleccionado == 'Efectivo'
             )
-            m = max(
-                Moneda.cero, m - stack.restanteEnEfectivo
-            )  # pagado - restante (en efectivo)
+            m = max(Moneda.cero, m - stack.restanteEnEfectivo)  # pagado - restante (en efectivo)
             self.ui.lbCambio.setText(f'Cambio: ${m}')
         else:
             self.ui.lbCambio.clear()  # ignorar cambio
 
-        res = stack.total - sum(
-            wdg.montoPagado for wdg in stack
-        )  # total - pagado (cualquiera)
+        res = stack.total - sum(wdg.montoPagado for wdg in stack)  # total - pagado (cualquiera)
 
         if res < 0.0 and (not n_efec or stack.restanteEnEfectivo <= 0.0):
             # sobra dinero y sin efectivo, o efectivo no necesario
@@ -143,9 +137,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
         self.ui.lbRestante.setStyleSheet(style)
         self.ui.lbRestante.setText(f'Restante: ${res}')
 
-        self.ui.btListo.setEnabled(
-            stack.pagosValidos and 0.0 <= stack.total <= self.total
-        )
+        self.ui.btListo.setEnabled(stack.pagosValidos and 0.0 <= stack.total <= self.total)
 
     def actualizarEstadoVenta(self) -> bool:
         raise NotImplementedError('CLASE BASE BROU')
@@ -183,7 +175,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
 class Base_VisualizarProductos(QtWidgets.QWidget):
     dataChanged = Signal()  # señal para actualizar tabla en hilo principal
 
-    def __init__(self, conn, parent=None):
+    def __init__(self, parent=None):
         from ui.Ui_VisualizadorProductos import Ui_VisualizadorProductos
 
         super().__init__(parent)
@@ -198,15 +190,13 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
 
         # guardar conexión, usuario y un manejador de DB como atributos
-        self.conn = conn
-        self.manejador = ManejadorProductos(conn)
+        self.conn = user_context.conn
+        self.manejador = ManejadorProductos(self.conn)
 
         # eventos para widgets
         self.ui.searchBar.textChanged.connect(self.update_display)
         self.ui.groupFiltro.buttonClicked.connect(self.update_display)
-        self.ui.tabWidget.currentChanged.connect(
-            lambda: self.tabla_actual.resizeRowsToContents()
-        )
+        self.ui.tabWidget.currentChanged.connect(lambda: self.tabla_actual.resizeRowsToContents())
         self.dataChanged.connect(self.rescan_display)
 
         self.ui.btIntercambiarProducto.clicked.connect(self.intercambiarProducto)
@@ -267,13 +257,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         raise NotImplementedError('BEIS CLASSSSSSS')
 
     def _intercambiarDimensiones(
-        self,
-        alto_textbox,
-        ancho_textbox,
-        bt_alto_cm,
-        bt_ancho_cm,
-        bt_alto_m,
-        bt_ancho_m,
+        self, alto_textbox, ancho_textbox, bt_alto_cm, bt_ancho_cm, bt_alto_m, bt_ancho_m,
     ):
         alto = alto_textbox.text()
         ancho = ancho_textbox.text()
@@ -364,8 +348,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
             QtWidgets.QMessageBox.warning(
                 self,
                 'Atención',
-                'No existe ningún precio de este producto '
-                'asociado a la cantidad proporcionada.',
+                'No existe ningún precio de este producto ' 'asociado a la cantidad proporcionada.',
             )
             return
 
@@ -390,13 +373,9 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
         if not all([ancho_producto, alto_producto, ancho_material, alto_material]):
             return
-        if (
-            ancho_producto > ancho_material or alto_producto > alto_material
-        ) and self.warnings:
+        if (ancho_producto > ancho_material or alto_producto > alto_material) and self.warnings:
             QtWidgets.QMessageBox.warning(
-                self,
-                'Atención',
-                'Las medidas del producto sobrepasan las medidas del material.',
+                self, 'Atención', 'Las medidas del producto sobrepasan las medidas del material.',
             )
             return
 

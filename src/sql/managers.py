@@ -35,11 +35,7 @@ class DatabaseManager:
     warning_logger: IWarningLogger = Inject()
 
     def __init__(
-        self,
-        conn: IDatabaseConnection,
-        error_txt: str = None,
-        *,
-        handle_exceptions: bool = True,
+        self, conn: IDatabaseConnection, error_txt: str = None, *, handle_exceptions: bool = True,
     ):
         assert isinstance(conn, IDatabaseConnection), 'Conexión a DB no válida.'
 
@@ -216,9 +212,7 @@ class ManejadorClientes(DatabaseManager):
                         FROM    Clientes 
                         WHERE   id_clientes = ?; '''
         else:
-            raise ValueError(
-                'Argumentos inválidos: esperado (id_cliente,) o (nombre, teléfono).'
-            )
+            raise ValueError('Argumentos inválidos: esperado (id_cliente,) o (nombre, teléfono).')
 
         try:
             return self.Cliente(*self.fetchone(query, args))
@@ -500,9 +494,7 @@ class ManejadorProductos(DatabaseManager):
             (id_productos,),
         )
 
-    def obtenerPrecioSimple(
-        self, id_productos: int, cantidad: int, duplex: bool = False
-    ):
+    def obtenerPrecioSimple(self, id_productos: int, cantidad: int, duplex: bool = False):
         """Obtener precio de producto categoría simple."""
         if result := self.fetchone(
             f'''
@@ -840,8 +832,7 @@ class ManejadorReportes(DatabaseManager):
 
     def obtenerReporteClientes(self, fechaDesde: QDate, fechaHasta: QDate):
         restr = (
-            self.restr_ventas_terminadas
-            + 'AND CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?'
+            self.restr_ventas_terminadas + 'AND CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?'
         )
 
         return self.fetchall(
@@ -927,9 +918,7 @@ class ManejadorReportes(DatabaseManager):
             (year, codigo),
         )
 
-    def obtenerVentasIntervalos(
-        self, codigo: str, fechaDesde: QDate, fechaHasta: QDate
-    ):
+    def obtenerVentasIntervalos(self, codigo: str, fechaDesde: QDate, fechaHasta: QDate):
         return self.fetchall(
             '''
             SELECT  P_Inv.desde,
@@ -1179,9 +1168,7 @@ class ManejadorVentas(DatabaseManager):
         Se puede restringir a cierto usuario."""
         restrict = f'WHERE id_usuarios = {id_usuario}' if id_usuario else ''
 
-        if result := self.fetchone(
-            f'SELECT MIN(fecha_hora_creacion) FROM Ventas {restrict};'
-        ):
+        if result := self.fetchone(f'SELECT MIN(fecha_hora_creacion) FROM Ventas {restrict};'):
             return result[0]
 
     def obtenerPagosVenta(self, id_venta: int):
@@ -1241,9 +1228,7 @@ class ManejadorVentas(DatabaseManager):
         ):
             return result[0]
 
-    def insertarDetallesVenta(
-        self, id_ventas: int, params: list[tuple], commit: bool = True
-    ):
+    def insertarDetallesVenta(self, id_ventas: int, params: list[tuple], commit: bool = True):
         """Insertar detalles de venta en tabla ventas_detallado e intenta
         regresar tupla con índice de venta recién insertada:
 
@@ -1316,9 +1301,7 @@ class ManejadorVentas(DatabaseManager):
 class ManejadorUsuarios(DatabaseManager):
     """Clase para manejar sentencias hacia/desde la tabla Usuarios."""
 
-    Usuario = namedtuple(
-        'Usuario', ['id', 'usuario', 'nombre', 'permisos', 'foto_perfil']
-    )
+    Usuario = namedtuple('Usuario', ['id', 'usuario', 'nombre', 'permisos', 'foto_perfil'])
 
     def obtenerUsuario(self, usuario: str):
         """Obtener tupla de usuario dado el identificador de usuario."""
@@ -1404,9 +1387,9 @@ class ManejadorUsuarios(DatabaseManager):
         Aparentemente no regresa error si el usuario no existe.
 
         No hace commit."""
-        return self.execute(
-            f'REVOKE ADMINISTRADOR, VENDEDOR FROM {usuario};'
-        ) and self.execute(f'ALTER USER {usuario} REVOKE ADMIN ROLE;')
+        return self.execute(f'REVOKE ADMINISTRADOR, VENDEDOR FROM {usuario};') and self.execute(
+            f'ALTER USER {usuario} REVOKE ADMIN ROLE;'
+        )
 
     def cambiarPsswd(self, usuario: str, psswd: str):
         """Cambiar contraseña del usuario.

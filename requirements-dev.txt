@@ -1,4 +1,5 @@
 axblack==20220330
 Nuitka==2.3.10
 ordered-set==4.1.0
+pdbp==1.5.4
 pyreadline3==3.4.1
