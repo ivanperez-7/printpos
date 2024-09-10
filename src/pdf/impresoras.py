@@ -45,14 +45,10 @@ class ImpresoraPDF:
                 image.save(randFile('jpg'))
 
             rect = painter.viewport()
-            qtImageScaled = image.scaled(
-                rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
-            )
+            qtImageScaled = image.scaled(rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
             painter.drawImage(rect, qtImageScaled)
 
-            if (
-                i < len(doc) - 1 and not self.printer.newPage()
-            ):  # no se pudo crear nueva página
+            if i < len(doc) - 1 and not self.printer.newPage():  # no se pudo crear nueva página
                 print(f'Failed to create a new page for page {i + 2}')
                 break
         painter.end()
@@ -103,19 +99,14 @@ class ImpresoraTickets(ImpresoraPDF):
         pInfo = QPrinterInfo.printerInfo(INI.IMPRESORA)
 
         if not pInfo.printerName():
-            self.warning_logger.display(
-                f'¡No se encontró la impresora {INI.IMPRESORA}!'
-            )
+            self.warning_logger.display(f'¡No se encontró la impresora {INI.IMPRESORA}!')
             return None
         else:
             return QPrinter(pInfo, QPrinter.HighResolution)
 
     @run_in_thread
     def imprimirTicketCompra(
-        self,
-        idx: int,
-        nums: list[int] | slice = None,
-        manejador: ManejadorVentas = None,
+        self, idx: int, nums: list[int] | slice = None, manejador: ManejadorVentas = None,
     ):
         """Genera el ticket de compra a partir de un identificador en la base de datos.
         Recibe un arreglo de índices para imprimir pagos específicos."""
@@ -138,9 +129,7 @@ class ImpresoraTickets(ImpresoraPDF):
             pagos = pagos[nums]
 
         for fecha, metodo, monto, pagado, vendedor in pagos:
-            data = generarTicketPDF(
-                productos, vendedor, idx, monto, pagado, abrev[metodo], fecha
-            )
+            data = generarTicketPDF(productos, vendedor, idx, monto, pagado, abrev[metodo], fecha)
             self.enviarAImpresora(data)
 
     @run_in_thread

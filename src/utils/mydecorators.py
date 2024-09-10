@@ -22,9 +22,7 @@ def function_details(func):
         print(f'{fname}(', end='')
         # printing the function arguments
         print(
-            *('{} = {}'.format(name, val) for name, val in zip(argnames, args)),
-            sep=', ',
-            end=', ',
+            *('{} = {}'.format(name, val) for name, val in zip(argnames, args)), sep=', ', end=', ',
         )
         # printing the variable length Arguments
         print('args =', list(args[len(argnames) :]), end=', ')

@@ -5,6 +5,7 @@ from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt, QMutex, Signal
 
 from config import INI
+from context import user_context
 from core import IdFirebird
 from interfaces import IWarningLogger, IControllerWindow, IDatabaseConnection
 import licensing
@@ -153,7 +154,10 @@ class App_Login(QtWidgets.QWidget):
         self.warning_logger.display("No se pudo acceder al servidor.", txt)
 
     def crearVentanaPrincipal(self, conn, user):
-        self.ventana_principal.crear(conn, user)
+        user_context.conn = conn
+        user_context.user = user
+        
+        self.ventana_principal.crear()
         self.close()
 
 

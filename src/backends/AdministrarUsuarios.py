@@ -2,6 +2,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, Signal
 
+from context import user_context
 from core import IdFirebird
 from interfaces import IModuloPrincipal
 from sql import ManejadorUsuarios
@@ -23,7 +24,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
         - registros de acciones: inicios de sesión, modificación de ajustes y usuarios, acciones en general
         - personalización: foto de perfil y colores del UI"""
 
-    def crear(self, conn, user):
+    def crear(self):
         from ui.Ui_AdministrarUsuarios import Ui_AdministrarUsuarios
 
         self.ui = Ui_AdministrarUsuarios()
@@ -32,8 +33,8 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
         LabelAdvertencia(self.ui.tabla_usuarios, '¡No se encontró ningún usuario!')
 
         # guardar conexión y usuario como atributos
-        self.conn = conn
-        self.user = user
+        self.conn = user_context.conn
+        self.user = user_context.user
 
         # añadir menú de opciones al botón para filtrar
         self.filtro = InterfazFiltro(
@@ -71,9 +72,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
             self.all = manejador.obtener_vista('view_all_usuarios')
 
         if txt_busqueda := self.ui.searchBar.text().strip():
-            found = [
-                c for c in self.all if son_similar(txt_busqueda, c[self.filtro.idx])
-            ]
+            found = [c for c in self.all if son_similar(txt_busqueda, c[self.filtro.idx])]
         else:
             found = self.all
         if not self.ui.mostrarCheck.isChecked():
@@ -91,13 +90,13 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
     # ====================================
     def registrarUsuario(self):
         """Abre ventana para registrar un usuario."""
-        widget = App_RegistrarUsuario(self.conn, self)
+        widget = App_RegistrarUsuario(self)
         widget.success.connect(lambda: self.update_display(rescan=True))
 
     def editarUsuario(self):
         """Abre ventana para editar un usuario seleccionado."""
         if selected := self.ui.tabla_usuarios.selectedItems():
-            widget = App_EditarUsuario(selected[0].text(), self.conn, self.user, self)
+            widget = App_EditarUsuario(selected[0].text(), self)
             widget.success.connect(lambda: self.update_display(rescan=True))
 
     def quitarUsuario(self):
@@ -116,14 +115,11 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
         ret = qm.question(
             self,
             'Atención',
-            'Los usuarios seleccionados se darán '
-            'de baja del sistema. ¿Desea continuar?',
+            'Los usuarios seleccionados se darán ' 'de baja del sistema. ¿Desea continuar?',
         )
 
         if ret == qm.Yes and manejador.eliminarUsuario(usuario):
-            qm.information(
-                self, 'Éxito', 'Se dieron de baja los usuarios seleccionados.'
-            )
+            qm.information(self, 'Éxito', 'Se dieron de baja los usuarios seleccionados.')
             self.update_display(rescan=True)
 
 
@@ -139,7 +135,7 @@ class Base_EditarUsuario(QtWidgets.QWidget):
 
     success = Signal()
 
-    def __init__(self, conn, parent=None):
+    def __init__(self, parent=None):
         from ui.Ui_EditarUsuario import Ui_EditarUsuario
 
         super().__init__(parent)
@@ -150,7 +146,7 @@ class Base_EditarUsuario(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         # guardar conexión como atributo
-        self.conn = conn
+        self.conn = user_context.conn
 
         # validador para nombre de usuario
         self.ui.txtUsuario.setValidator(IdFirebird)
@@ -189,9 +185,7 @@ class Base_EditarUsuario(QtWidgets.QWidget):
             if not (psswd and psswd_conf):
                 return
             if psswd != psswd_conf:
-                QtWidgets.QMessageBox.warning(
-                    self, 'Atención', '¡Las contraseñas no coinciden!'
-                )
+                QtWidgets.QMessageBox.warning(self, 'Atención', '¡Las contraseñas no coinciden!')
                 return
 
         usuario = self.ui.txtUsuario.text().upper()
@@ -227,8 +221,8 @@ class App_RegistrarUsuario(Base_EditarUsuario):
     MENSAJE_EXITO = '¡Se registró el usuario!'
     MENSAJE_ERROR = '¡No se pudo registrar el usuario!'
 
-    def __init__(self, conn, parent=None):
-        super().__init__(conn, parent)
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         self.ui.cambiarPsswd.hide()
         self.ui.groupPsswd.setEnabled(True)
@@ -252,9 +246,9 @@ class App_RegistrarUsuario(Base_EditarUsuario):
         usuario = usuarios_db_parametros[0]
         psswd = self.ui.txtPsswd.text()
 
-        return manejador.insertarUsuario(
-            usuarios_db_parametros
-        ) and manejador.crearUsuarioServidor(usuario, psswd)
+        return manejador.insertarUsuario(usuarios_db_parametros) and manejador.crearUsuarioServidor(
+            usuario, psswd
+        )
 
 
 class App_EditarUsuario(Base_EditarUsuario):
@@ -263,10 +257,10 @@ class App_EditarUsuario(Base_EditarUsuario):
     MENSAJE_EXITO = '¡Se editó el usuario!'
     MENSAJE_ERROR = '¡No se pudo editar el usuario!'
 
-    def __init__(self, usuario_: str, conn, user, parent=None):
-        super().__init__(conn, parent)
+    def __init__(self, usuario_: str, parent=None):
+        super().__init__(parent)
 
-        manejador = ManejadorUsuarios(conn)
+        manejador = ManejadorUsuarios(user_context.conn)
         usuario = manejador.obtenerUsuario(usuario_)
 
         self.usuario = usuario_  # usuario a editar
@@ -276,7 +270,7 @@ class App_EditarUsuario(Base_EditarUsuario):
             self.ui.cambiarPsswd.setChecked(True)
             self.ui.cambiarPsswd.setEnabled(False)
             self.cambiarTrigger(True)
-        if usuario_ in ['SYSDBA', user.usuario]:
+        if usuario_ in ['SYSDBA', user_context.user.usuario]:
             self.ui.boxPermisos.setEnabled(False)
         self.ui.txtUsuario.setText(usuario_)
         self.ui.txtNombre.setText(usuario.nombre)
@@ -315,9 +309,7 @@ class App_EditarUsuario(Base_EditarUsuario):
         retirarRoles = lambda: True
 
         if not self.permisos:
-            actualizarFirebird = lambda: manejador.crearUsuarioServidor(
-                self.usuario, psswd
-            )
+            actualizarFirebird = lambda: manejador.crearUsuarioServidor(self.usuario, psswd)
         elif self.ui.cambiarPsswd.isChecked():
             actualizarFirebird = lambda: manejador.cambiarPsswd(self.usuario, psswd)
 

@@ -37,16 +37,12 @@ class RandomTests(TestCase, ConnectionsMixin):
         con = self.con_user
         user = Usuario.generarUsuarioActivo(sql.ManejadorUsuarios(con))
 
-        self.assertTrue(
-            isinstance(con, IDatabaseConnection) and isinstance(user, Usuario)
-        )
+        self.assertTrue(isinstance(con, IDatabaseConnection) and isinstance(user, Usuario))
         self.assertFalse(user.administrador)
         self.assertEqual(user.usuario, 'PABLO')
 
         with self.assertRaises(sql.core.FirebirdError):
-            nah = sql.core.conectar_firebird(
-                'pablo', '123', 'vendedor'
-            )  # cuenta no existente
+            nah = sql.core.conectar_firebird('pablo', '123', 'vendedor')  # cuenta no existente
             self.assertIsNone(nah)
 
     def test_db_handlers(self):
@@ -54,16 +50,12 @@ class RandomTests(TestCase, ConnectionsMixin):
         man = sql.DatabaseManager(con, handle_exceptions=False)
         self.assertIsNotNone(man.fetchall('SELECT * FROM clientes;'))
 
-        with self.assertRaises(
-            AssertionError
-        ) as cm:  # conexión válida pero con rol inválido
+        with self.assertRaises(AssertionError) as cm:  # conexión válida pero con rol inválido
             nah = sql.core.conectar_firebird('pablo', '1', 'administrador')
             man2 = sql.DatabaseManager(nah, handle_exceptions=False)
             self.assertIsNone(man2.nombreUsuarioActivo)
 
-        with self.assertRaises(
-            AssertionError
-        ) as cm:  # manejador con argumento inválido
+        with self.assertRaises(AssertionError) as cm:  # manejador con argumento inválido
             man2 = sql.DatabaseManager(None)
             self.assertIsNone(man2)
 
@@ -110,16 +102,7 @@ class RandomTests(TestCase, ConnectionsMixin):
 
         venta = Venta()
         venta.agregarProducto(
-            ItemVenta(
-                1,
-                'IMP B/N 1',
-                'Impresión ByN',
-                0.7,
-                0.1,
-                random.randint(1, 99),
-                '',
-                False,
-            )
+            ItemVenta(1, 'IMP B/N 1', 'Impresión ByN', 0.7, 0.1, random.randint(1, 99), '', False,)
         )
         venta.fechaEntrega = QDateTime(QDate(2024, 6, 29), QTime(13, 27, 2))
         venta.id_cliente = 1
@@ -128,14 +111,7 @@ class RandomTests(TestCase, ConnectionsMixin):
 
         venta.agregarProducto(
             ItemVenta(
-                1,
-                'IMP B/N 1',
-                'Impresión ByN',
-                0.7,
-                0.1,
-                random.randint(10, 200),
-                '',
-                False,
+                1, 'IMP B/N 1', 'Impresión ByN', 0.7, 0.1, random.randint(10, 200), '', False,
             )
         )
         venta.reajustarPrecios(sql.ManejadorProductos(self.con_user))
@@ -166,9 +142,7 @@ class RandomTests(TestCase, ConnectionsMixin):
         )
         self.assertTrue(res1)
 
-        res2 = man.insertarPago(
-            idx, 'Tarjeta de débito', 50.0, None, man.idUsuarioActivo
-        )
+        res2 = man.insertarPago(idx, 'Tarjeta de débito', 50.0, None, man.idUsuarioActivo)
         res3 = man.insertarPago(idx, 'Efectivo', tot - 50.0, 150.0, man.idUsuarioActivo)
         self.assertTrue(res2 and res3)
 
@@ -203,9 +177,7 @@ class RandomTests(TestCase, ConnectionsMixin):
         )
         self.assertTrue(res1)
 
-        res2 = man.insertarPago(
-            idx, 'Tarjeta de crédito', tot, pago, man.idUsuarioActivo
-        )
+        res2 = man.insertarPago(idx, 'Tarjeta de crédito', tot, pago, man.idUsuarioActivo)
         self.assertTrue(res2)
 
         self.assertIsNotNone(man.obtenerDatosGeneralesVenta(idx))

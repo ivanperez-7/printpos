@@ -3,7 +3,6 @@
 from PySide6.QtWidgets import (
     QPushButton,
     QDateEdit,
-    QTableWidget,
     QToolButton,
     QLineEdit,
     QMenu,
@@ -204,9 +203,7 @@ class InterfazFiltro(QObject):
     cambiado = Signal()
     idx: int
 
-    def __init__(
-        self, button: QToolButton, search_bar: QLineEdit, options: list[tuple]
-    ):
+    def __init__(self, button: QToolButton, search_bar: QLineEdit, options: list[tuple]):
         super().__init__(search_bar)
 
         self.search_bar = search_bar

@@ -13,6 +13,7 @@ from PySide6.QtCharts import (
 from PySide6.QtCore import Qt, QDate, QModelIndex
 from PySide6.QtGui import QPainter, QPen
 
+from context import user_context
 from interfaces import IModuloPrincipal
 from sql import ManejadorReportes, ManejadorVentas
 from utils.myinterfaces import InterfazFechasReportes
@@ -22,14 +23,14 @@ from utils.myutils import stringify_float
 class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
     """Backend para la ventana de reportes varios."""
 
-    def crear(self, conn, user):
+    def crear(self):
         from ui.Ui_Reportes import Ui_Reportes
 
         self.ui = Ui_Reportes()
         self.ui.setupUi(self)
 
-        self.conn = conn
-        self.user = user
+        self.conn = user_context.conn
+        self.user = user_context.user
 
         for tbl in [
             self.ui.tableWidget,

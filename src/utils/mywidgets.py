@@ -113,11 +113,7 @@ class StackPagos(QtWidgets.QStackedWidget):
            permitir que el efectivo exceda lo necesario)
         5. Al no haber efectivo, verificar que lo pagado sea exactamente lo debido."""
         montoPagado = sum(wdg.montoPagado for wdg in self)
-        if (
-            self.permitir_nulo
-            and self.total == montoPagado == 0.0
-            and self.count() == 1
-        ):
+        if self.permitir_nulo and self.total == montoPagado == 0.0 and self.count() == 1:
             return True
 
         n_efec = [wdg.metodoSeleccionado for wdg in self].count('Efectivo')
@@ -234,14 +230,10 @@ class TablaDatos(QtWidgets.QTableWidget):
     def cambiarColorCabecera(self, color):
         qs = self.styleSheet()
         color = QtGui.QColor(color)
-        color_qs = 'QHeaderView::section {{ background-color: {} }};'.format(
-            color.name()
-        )
+        color_qs = 'QHeaderView::section {{ background-color: {} }};'.format(color.name())
         self.setStyleSheet(qs + color_qs)
 
-    def configurarCabecera(
-        self, resize_cols: Callable[[int], bool] = None, align_flags=None
-    ):
+    def configurarCabecera(self, resize_cols: Callable[[int], bool] = None, align_flags=None):
         """Configurar tamaño de cabeceras de tabla. En particular,
         establece `ResizeToContents` en las columnas especificadas.
 
@@ -485,13 +477,9 @@ class SpeechBubble(QtWidgets.QWidget):
         font = QtGui.QFont()
         font.setPointSize(11)
         self.text_browser.setFont(font)
-        self.text_browser.setLineWrapMode(
-            QtWidgets.QTextBrowser.LineWrapMode.FixedPixelWidth
-        )
+        self.text_browser.setLineWrapMode(QtWidgets.QTextBrowser.LineWrapMode.FixedPixelWidth)
         self.text_browser.setLineWrapColumnOrWidth(295)
-        self.text_browser.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )
+        self.text_browser.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         layout.addWidget(self.text_browser)
 

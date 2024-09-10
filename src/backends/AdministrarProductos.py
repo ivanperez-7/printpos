@@ -2,6 +2,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
+from context import user_context
 from core import ROJO
 from interfaces import IModuloPrincipal
 from sql import ManejadorInventario, ManejadorProductos
@@ -19,7 +20,7 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
 
     rescanned = Signal()
 
-    def crear(self, conn, user):
+    def crear(self):
         from ui.Ui_AdministrarProductos import Ui_AdministrarProductos
 
         self.ui = Ui_AdministrarProductos()
@@ -30,8 +31,8 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
         LabelAdvertencia(self.ui.tabla_productos, '¡No se encontró ningún producto!')
 
         # guardar conexión y usuario como atributos
-        self.conn = conn
-        self.user = user
+        self.conn = user_context.conn
+        self.user = user_context.user
 
         self.all = []
 
@@ -86,9 +87,7 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
         bold.setBold(True)
 
         if txt_busqueda := self.ui.searchBar.text().strip():
-            found = [
-                c for c in self.all if son_similar(txt_busqueda, c[self.filtro.idx])
-            ]
+            found = [c for c in self.all if son_similar(txt_busqueda, c[self.filtro.idx])]
         else:
             found = self.all
 
@@ -118,12 +117,12 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def agregarProducto(self):
-        widget = App_RegistrarProducto(self.conn, self.user, self)
+        widget = App_RegistrarProducto(self)
         widget.success.connect(self.rescan_update)
 
     def editarProducto(self):
         if selected := self.ui.tabla_productos.selectedItems():
-            widget = App_EditarProducto(selected[0].text(), self.conn, self.user, self)
+            widget = App_EditarProducto(selected[0].text(), self)
             widget.success.connect(self.rescan_update)
 
     def quitarProducto(self):
@@ -141,8 +140,7 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
             qm.warning(
                 self,
                 'Atención',
-                'No se puede eliminar este producto debido '
-                'a que hay ventas que lo incluyen.',
+                'No se puede eliminar este producto debido ' 'a que hay ventas que lo incluyen.',
             )
             return
 
@@ -150,8 +148,7 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
         ret = qm.question(
             self,
             'Atención',
-            'El producto seleccionado se eliminará de la base de datos. '
-            '¿Desea continuar?',
+            'El producto seleccionado se eliminará de la base de datos. ' '¿Desea continuar?',
         )
 
         if ret == qm.Yes and manejador.eliminarProducto(id_productos):
@@ -171,7 +168,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
 
     success = Signal()
 
-    def __init__(self, conn, user, parent=None):
+    def __init__(self, parent=None):
         from ui.Ui_EditarProducto import Ui_EditarProducto
 
         super().__init__(parent)
@@ -182,8 +179,8 @@ class Base_EditarProducto(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         # guardar conexión y usuario como atributos
-        self.conn = conn
-        self.user = user
+        self.conn = user_context.conn
+        self.user = user_context.user
 
         # formato tabla de precios
         header = self.ui.tabla_precios.horizontalHeader()
@@ -300,14 +297,10 @@ class Base_EditarProducto(QtWidgets.QWidget):
             duplex: ItemAuxiliar = tabla.cellWidget(row, 2)
 
             try:
-                Prod_db_parametros.append(
-                    (float(desde), float(precio), duplex.isChecked)
-                )
+                Prod_db_parametros.append((float(desde), float(precio), duplex.isChecked))
             except ValueError:
                 QtWidgets.QMessageBox.warning(
-                    self,
-                    'Atención',
-                    '¡Verifique que los datos numéricos sean correctos!',
+                    self, 'Atención', '¡Verifique que los datos numéricos sean correctos!',
                 )
                 return None
 
@@ -336,11 +329,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
 
         if any(
             params is None
-            for params in (
-                productos_db_parametros,
-                PUI_db_parametros,
-                precios_db_parametros,
-            )
+            for params in (productos_db_parametros, PUI_db_parametros, precios_db_parametros,)
         ):
             return
 
@@ -381,8 +370,8 @@ class App_RegistrarProducto(Base_EditarProducto):
     MENSAJE_EXITO = '¡Se registró el producto!'
     MENSAJE_ERROR = '¡No se pudo registrar el producto!'
 
-    def __init__(self, conn, user, parent=None):
-        super().__init__(conn, user, parent)
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         self.ui.lbTitulo.setText('Registrar producto')
         self.ui.btAceptar.setText(' Registrar producto')
@@ -399,8 +388,8 @@ class App_EditarProducto(Base_EditarProducto):
     MENSAJE_EXITO = '¡Se editó el producto!'
     MENSAJE_ERROR = '¡No se pudo editar el producto!'
 
-    def __init__(self, idx: int, conn, user, parent=None):
-        super().__init__(conn, user, parent)
+    def __init__(self, idx: int, parent=None):
+        super().__init__(parent)
 
         self.idx = idx  # id del elemento a editar
 
