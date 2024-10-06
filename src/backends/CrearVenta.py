@@ -517,9 +517,7 @@ class App_AgregarDescuento(QtWidgets.QWidget):
 class App_EnviarCotizacion(QtWidgets.QWidget):
     """Backend para agregar descuento a la orden."""
 
-    def __init__(
-        self, ventaDatos: Venta, txtCliente: str, txtTelefono: str, txtVendedor: str, parent=None,
-    ):
+    def __init__(self, ventaDatos: Venta, txtCliente: str, txtTelefono: str, txtVendedor: str, parent=None):
         from ui.Ui_Cotizacion import Ui_EnviarCotizacion
 
         super().__init__(parent)

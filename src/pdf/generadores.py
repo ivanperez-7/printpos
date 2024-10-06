@@ -83,17 +83,9 @@ def generarOrdenCompra(
         can.drawCentredString(353, 148, str(total - anticipo))
         can.drawCentredString(353, 170, str(anticipo))
 
-        for (
-            i,
-            (
-                prodCantidad,
-                prodNombre,
-                prodEspecificaciones,  # <tabla de productos>
-                prodPrecio,
-                prodImporte,
-            ),
-        ) in enumerate(chunk):
-            y_sep = 32.4 * i  # separador por renglón de la tabla
+        for (idx, producto) in enumerate(chunk):  # <tabla de productos>
+            prodCantidad, prodNombre, prodEspecificaciones, prodPrecio, prodImporte = producto
+            y_sep = 32.4 * idx  # separador por renglón de la tabla
 
             can.drawCentredString(49, 381 - y_sep, stringify_float(prodCantidad))
             can.drawCentredString(306, 381 - y_sep, f'{prodPrecio:,.2f}')
