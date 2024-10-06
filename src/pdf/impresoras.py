@@ -84,9 +84,7 @@ class ImpresoraOrdenes(ImpresoraPDF):
         nombre, telefono = manejador.obtenerClienteAsociado(idx)
         creacion, entrega = manejador.obtenerFechas(idx)
 
-        data = generarOrdenCompra(
-            productos, idx, nombre, telefono, total, anticipo, creacion, entrega
-        )
+        data = generarOrdenCompra(productos, idx, nombre, telefono, total, anticipo, creacion, entrega)
         self.enviarAImpresora(data)
 
 
