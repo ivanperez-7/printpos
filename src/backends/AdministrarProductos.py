@@ -134,25 +134,17 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
             return
 
         qm = QtWidgets.QMessageBox
-        manejador = ManejadorProductos(self.conn, '¡No se pudo eliminar el producto!')
-
-        if manejador.obtenerRelacionVentas(id_productos):
-            qm.warning(
-                self,
-                'Atención',
-                'No se puede eliminar este producto debido ' 'a que hay ventas que lo incluyen.',
-            )
-            return
+        manejador = ManejadorProductos(self.conn, '¡No se pudo descontinuar el producto!')
 
         # abrir pregunta
         ret = qm.question(
             self,
             'Atención',
-            'El producto seleccionado se eliminará de la base de datos. ' '¿Desea continuar?',
+            '¿Desea descontinuar este producto?',
         )
 
-        if ret == qm.Yes and manejador.eliminarProducto(id_productos):
-            qm.information(self, 'Éxito', 'Se eliminó el producto seleccionado.')
+        if ret == qm.Yes and manejador.descontinuarProducto(id_productos):
+            qm.information(self, 'Éxito', 'Se descontinuó el producto seleccionado.')
             self.rescan_update()
 
 

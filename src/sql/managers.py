@@ -588,16 +588,13 @@ class ManejadorProductos(DatabaseManager):
             params + (id_productos,),
         )
 
-    def eliminarProducto(self, id_productos: int):
-        """Elimina el producto y sus relaciones con las tablas productos_intervalos,
-        productos_gran_formato, productos_utiliza_inventario y productos.
-        Hace commit automáticamente."""
-        query = 'DELETE FROM productos WHERE id_productos = ?;'
-        return (
-            self.eliminarPrecios(id_productos)
-            and self.eliminarProdUtilizaInv(id_productos)
-            and self.execute(query, (id_productos,), commit=True)
-        )
+    def descontinuarProducto(self, id_productos: int):
+        """Descontinuar producto cambiando campo is_active a falso. Hace commit automáticamente."""
+        return self.execute("""
+            UPDATE  productos
+            SET     is_active = ?
+            WHERE   id_productos = ?;
+        """, (False, id_productos), commit=True)
 
     def eliminarProdUtilizaInv(self, id_productos: int):
         """Elimina producto de la tabla productos_utiliza_inventario.
