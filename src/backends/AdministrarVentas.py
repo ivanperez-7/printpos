@@ -192,9 +192,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def enviarRecordatorio(self):
-        ret = qm.question(
-            self, 'Atención', '¿Desea enviarle un recordatorio al cliente sobre este pedido?',
-        )
+        ret = qm.question(self, 'Atención', '¿Desea enviarle un recordatorio al cliente sobre este pedido?')
         if ret != qm.Yes:
             return
 
@@ -233,9 +231,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             return
 
         ret = qm.question(
-            self,
-            'Atención',
-            'Este pedido no tiene saldo restante. ¿Desea marcar la venta como terminada?',
+            self, 'Atención', 'Este pedido no tiene saldo restante. ¿Desea marcar la venta como terminada?',
         )
         if ret != qm.Yes:
             return

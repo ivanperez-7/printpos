@@ -257,7 +257,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
         """Datos por defecto, proveído por ambas clases heredadas."""
         if correo and correo.startswith('N/A'):
             correo = ''
-        celular = celular.replace(' ', '') # quitar espacios
+        celular = celular.replace(' ', '')  # quitar espacios
 
         self.ui.txtNombre.setText(nombre)
         self.ui.txtLada.setText(celular[1:-10] or '52')
