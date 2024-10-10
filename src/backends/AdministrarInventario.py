@@ -157,9 +157,7 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
 
         # abrir pregunta
         ret = qm.question(
-            self,
-            'Atención',
-            'El elemento seleccionado se eliminará de la base de datos. ¿Desea continuar?',
+            self, 'Atención', 'El elemento seleccionado se eliminará de la base de datos. ¿Desea continuar?',
         )
         if ret != qm.Yes:
             return

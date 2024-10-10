@@ -717,9 +717,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
             impresora.imprimirOrdenCompra(self.id_ventas, manejador=manejador)
         else:
             ret = qm.question(
-                self,
-                'Éxito',
-                'Venta terminada. ¡Recuerde ofrecer el ticket de compra! ¿Desea imprimirlo?',
+                self, 'Éxito', 'Venta terminada. ¡Recuerde ofrecer el ticket de compra! ¿Desea imprimirlo?',
             )
             if ret == qm.Yes:
                 impresora = ImpresoraTickets()
