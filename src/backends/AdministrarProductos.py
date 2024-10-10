@@ -137,11 +137,7 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
         manejador = ManejadorProductos(self.conn, '¡No se pudo descontinuar el producto!')
 
         # abrir pregunta
-        ret = qm.question(
-            self,
-            'Atención',
-            '¿Desea descontinuar este producto?',
-        )
+        ret = qm.question(self, 'Atención', '¿Desea descontinuar este producto?',)
 
         if ret == qm.Yes and manejador.descontinuarProducto(id_productos):
             qm.information(self, 'Éxito', 'Se descontinuó el producto seleccionado.')
@@ -204,9 +200,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
     def categoriaActual(self):
         return ['S', 'G'][self.ui.tabWidget.currentIndex()]
 
-    def agregarIntervalo(
-        self, row: int, desde: float = 0.0, precio: float = 0.0, duplex: bool = False
-    ):
+    def agregarIntervalo(self, row: int, desde: float = 0.0, precio: float = 0.0, duplex: bool = False):
         """Agrega entrada a la tabla de precios."""
         self.ui.tabla_precios.insertRow(row)
 
@@ -278,9 +272,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
         Prod_db_parametros = []
 
         if not self.ui.tabla_precios.rowCount():
-            QtWidgets.QMessageBox.warning(
-                self, 'Atención', '¡La tabla de precios se encuentra vacía!'
-            )
+            QtWidgets.QMessageBox.warning(self, 'Atención', '¡La tabla de precios se encuentra vacía!')
             return None
 
         for row in range(tabla.rowCount()):
@@ -320,8 +312,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
             precios_db_parametros = self.obtenerParametrosProdGranFormato()
 
         if any(
-            params is None
-            for params in (productos_db_parametros, PUI_db_parametros, precios_db_parametros,)
+            params is None for params in (productos_db_parametros, PUI_db_parametros, precios_db_parametros,)
         ):
             return
 

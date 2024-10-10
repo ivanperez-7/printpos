@@ -234,9 +234,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
         # crear eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)
         self.ui.btRegistrar.clicked.connect(self.done)
-        self.ui.checkDescuentos.clicked.connect(
-            lambda estado: self.ui.txtDescuentos.setEnabled(estado)
-        )
+        self.ui.checkDescuentos.clicked.connect(lambda estado: self.ui.txtDescuentos.setEnabled(estado))
 
         # deshabilitar modificación de descuentos para usuarios normales
         if not self.user.administrador:
@@ -277,9 +275,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
             self.ui.checkDescuentos.isChecked(),
             self.ui.txtDescuentos.toPlainText(),
         )
-        clientes_db_parametros = tuple(
-            v.strip() or None if isinstance(v, str) else v for v in params
-        )
+        clientes_db_parametros = tuple(v.strip() or None if isinstance(v, str) else v for v in params)
 
         if self.insertar_o_modificar(clientes_db_parametros):
             QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)

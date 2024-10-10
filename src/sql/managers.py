@@ -180,16 +180,7 @@ class ManejadorClientes(DatabaseManager):
 
     Cliente = namedtuple(
         'Cliente',
-        [
-            'id',
-            'nombre',
-            'telefono',
-            'correo',
-            'direccion',
-            'rfc',
-            'cliente_especial',
-            'descuentos',
-        ],
+        ['id', 'nombre', 'telefono', 'correo', 'direccion', 'rfc', 'cliente_especial', 'descuentos',],
     )
 
     @overload
@@ -590,11 +581,15 @@ class ManejadorProductos(DatabaseManager):
 
     def descontinuarProducto(self, id_productos: int):
         """Descontinuar producto cambiando campo is_active a falso. Hace commit automáticamente."""
-        return self.execute("""
+        return self.execute(
+            '''
             UPDATE  productos
             SET     is_active = ?
             WHERE   id_productos = ?;
-        """, (False, id_productos), commit=True)
+        ''',
+            (False, id_productos),
+            commit=True,
+        )
 
     def eliminarProdUtilizaInv(self, id_productos: int):
         """Elimina producto de la tabla productos_utiliza_inventario.
@@ -828,9 +823,7 @@ class ManejadorReportes(DatabaseManager):
         )
 
     def obtenerReporteClientes(self, fechaDesde: QDate, fechaHasta: QDate):
-        restr = (
-            self.restr_ventas_terminadas + 'AND CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?'
-        )
+        restr = self.restr_ventas_terminadas + 'AND CAST(V.fecha_hora_creacion AS DATE) BETWEEN ? AND ?'
 
         return self.fetchall(
             f'''

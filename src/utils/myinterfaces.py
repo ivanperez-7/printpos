@@ -228,7 +228,5 @@ class InterfazFiltro(QObject):
 
     def cambiar_filtro(self, nombre: str, idx: int):
         self.idx = idx
-        self.search_bar.setPlaceholderText(
-            f'Buscar por {nombre.lower() if nombre != "RFC" else nombre}...'
-        )
+        self.search_bar.setPlaceholderText(f'Buscar por {nombre.lower() if nombre != "RFC" else nombre}...')
         self.cambiado.emit()

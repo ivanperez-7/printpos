@@ -98,9 +98,7 @@ class StackPagos(QtWidgets.QStackedWidget):
     @property
     def restanteEnEfectivo(self):
         """Residuo del total menos lo ya pagado con moneda electrónica."""
-        return self.total - sum(
-            wdg.montoPagado for wdg in self if wdg.metodoSeleccionado != 'Efectivo'
-        )
+        return self.total - sum(wdg.montoPagado for wdg in self if wdg.metodoSeleccionado != 'Efectivo')
 
     @property
     def pagosValidos(self):

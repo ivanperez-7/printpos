@@ -40,9 +40,7 @@ class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
             self.ui.tabla_intervalos,
         ]:
             tbl.setSortingEnabled(True)
-            tbl.configurarCabecera(
-                lambda col: col not in {0, 3, 4, 5}, Qt.AlignCenter | Qt.TextWordWrap
-            )
+            tbl.configurarCabecera(lambda col: col not in {0, 3, 4, 5}, Qt.AlignCenter | Qt.TextWordWrap)
             tbl.tamanoCabecera(11)
             tbl.quitarBordeCabecera()
 
@@ -62,12 +60,7 @@ class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
         fechaMin = manejador.obtenerFechaPrimeraVenta()
 
         InterfazFechasReportes(
-            self.ui.btQuincena,
-            self.ui.btMes,
-            self.ui.btAnio,
-            self.ui.dateDesde,
-            self.ui.dateHasta,
-            fechaMin,
+            self.ui.btQuincena, self.ui.btMes, self.ui.btAnio, self.ui.dateDesde, self.ui.dateHasta, fechaMin,
         )
 
         self.ui.btRegresar.clicked.connect(self.go_back.emit)
@@ -147,9 +140,7 @@ class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
         def handle(index: QModelIndex):
             codigo = index.siblingAtColumn(1).data()
             self.ui.ventas_prod_graph.alimentar_producto(self.conn, codigo)
-            tabla_intervalos.llenar(
-                man.obtenerVentasIntervalos(codigo, self.fechaDesde, self.fechaHasta)
-            )
+            tabla_intervalos.llenar(man.obtenerVentasIntervalos(codigo, self.fechaDesde, self.fechaHasta))
 
         man = ManejadorReportes(self.conn)
         tabla = self.ui.tabla_prods

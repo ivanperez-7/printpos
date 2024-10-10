@@ -154,12 +154,7 @@ def generarTicketPDF(
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
-        buffer,
-        pagesize=(80 * mm, 297 * mm),
-        rightMargin=0,
-        leftMargin=0,
-        topMargin=0,
-        bottomMargin=0,
+        buffer, pagesize=(80 * mm, 297 * mm), rightMargin=0, leftMargin=0, topMargin=0, bottomMargin=0,
     )
 
     styles = getSampleStyleSheet()
@@ -229,11 +224,7 @@ def generarTicketPDF(
         titulo = 'TICKET DE COMPRA'
         pie = '¡Muchas gracias por su compra!'
 
-        folio = (
-            f'<b>Folio de venta</b>: {folio} '
-            + '&nbsp; ' * 7
-            + f'<b>Método de pago</b>: {metodo_pago}'
-        )
+        folio = f'<b>Folio de venta</b>: {folio} ' + '&nbsp; ' * 7 + f'<b>Método de pago</b>: {metodo_pago}'
     else:
         titulo = 'COTIZACIÓN DE VENTA'
         pie = '¡Muchas gracias por su visita!'
@@ -346,25 +337,19 @@ def generarCortePDF(caja: Caja, responsable: str):
         Paragraph(f'Efectivo: ${ingresos_efectivo}', styles['Left'], bulletText=' '),
         Paragraph(f'Tarjeta de crédito: ${ingresos_credito}', styles['Left'], bulletText=' '),
         Paragraph(f'Tarjeta de débito: ${ingresos_debito}', styles['Left'], bulletText=' '),
-        Paragraph(
-            f'Transferencias bancarias: ${ingresos_transferencia}', styles['Left'], bulletText=' ',
-        ),
+        Paragraph(f'Transferencias bancarias: ${ingresos_transferencia}', styles['Left'], bulletText=' ',),
         Spacer(1, 6),
         Paragraph('Resumen de egresos', styles['Heading3']),
         Paragraph(f'Efectivo: ${egresos_efectivo}', styles['Left'], bulletText=' '),
         Paragraph(f'Tarjeta de crédito: ${egresos_credito}', styles['Left'], bulletText=' '),
         Paragraph(f'Tarjeta de débito: ${egresos_debito}', styles['Left'], bulletText=' '),
-        Paragraph(
-            f'Transferencias bancarias: ${egresos_transferencia}', styles['Left'], bulletText=' ',
-        ),
+        Paragraph(f'Transferencias bancarias: ${egresos_transferencia}', styles['Left'], bulletText=' ',),
         Spacer(1, 6),
         Paragraph('Esperado', styles['Heading3']),
         Paragraph(f'Efectivo: ${total_efectivo}', styles['Left'], bulletText=' '),
         Paragraph(f'Tarjeta de crédito: ${total_credito}', styles['Left'], bulletText=' '),
         Paragraph(f'Tarjeta de débito: ${total_debito}', styles['Left'], bulletText=' '),
-        Paragraph(
-            f'Transferencias bancarias: ${total_transferencia}', styles['Left'], bulletText=' ',
-        ),
+        Paragraph(f'Transferencias bancarias: ${total_transferencia}', styles['Left'], bulletText=' ',),
         Spacer(1, 20),
         Paragraph('<b>' + f'Total de ingresos: ${esperado_ingresos}' + '</b>', styles['Foot']),
         Paragraph('<b>' + f'Total de egresos: ${esperado_egresos}' + '</b>', styles['Foot']),

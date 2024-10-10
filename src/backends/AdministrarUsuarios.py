@@ -37,9 +37,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
         self.user = user_context.user
 
         # añadir menú de opciones al botón para filtrar
-        self.filtro = InterfazFiltro(
-            self.ui.btFiltrar, self.ui.searchBar, [('Nombre', 1), ('Usuario', 0)]
-        )
+        self.filtro = InterfazFiltro(self.ui.btFiltrar, self.ui.searchBar, [('Nombre', 1), ('Usuario', 0)])
         self.filtro.cambiado.connect(self.update_display)
 
         # añade eventos para los botones
@@ -113,9 +111,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
         manejador = ManejadorUsuarios(self.conn)
 
         ret = qm.question(
-            self,
-            'Atención',
-            'Los usuarios seleccionados se darán ' 'de baja del sistema. ¿Desea continuar?',
+            self, 'Atención', 'Los usuarios seleccionados se darán ' 'de baja del sistema. ¿Desea continuar?',
         )
 
         if ret == qm.Yes and manejador.eliminarUsuario(usuario):
@@ -302,9 +298,7 @@ class App_EditarUsuario(Base_EditarUsuario):
         manejador = ManejadorUsuarios(self.conn)
         psswd = self.ui.txtPsswd.text()
 
-        actualizarUsuario = lambda: manejador.actualizarUsuario(
-            self.usuario, usuarios_db_parametros
-        )
+        actualizarUsuario = lambda: manejador.actualizarUsuario(self.usuario, usuarios_db_parametros)
         actualizarFirebird = lambda: True  # crear usuario o actualizar contraseña
         retirarRoles = lambda: True
 

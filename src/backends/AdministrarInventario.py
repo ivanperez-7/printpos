@@ -282,9 +282,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
         manejador = ManejadorInventario(self.conn, self.MENSAJE_ERROR)
 
         # transacción principal, se checa si cada operación fue exitosa
-        if manejador.eliminarProdUtilizaInv(idx) and manejador.insertarProdUtilizaInv(
-            idx, PUI_db_parametros
-        ):
+        if manejador.eliminarProdUtilizaInv(idx) and manejador.insertarProdUtilizaInv(idx, PUI_db_parametros):
             QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)
             self.success.emit()
             self.close()
@@ -421,9 +419,7 @@ class ExistenciasWidget(QtWidgets.QDialog):
         buttonBox = QtWidgets.QDialogButtonBox(self)
         buttonBox.setFont(font)
         buttonBox.setOrientation(Qt.Horizontal)
-        buttonBox.setStandardButtons(
-            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
-        )
+        buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
         buttonBox.setCenterButtons(True)
         gridLayout.addWidget(buttonBox, 1, 0, 1, 3, Qt.AlignBottom)
 

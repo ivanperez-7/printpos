@@ -28,9 +28,7 @@ class App_Login(QtWidgets.QWidget):
     logged_in = Signal(IDatabaseConnection, Usuario)
 
     @inject
-    def __init__(
-        self, ventana_principal: IControllerWindow, warning_logger: IWarningLogger
-    ):
+    def __init__(self, ventana_principal: IControllerWindow, warning_logger: IWarningLogger):
         from ui.Ui_Login import Ui_Login
 
         super().__init__()
@@ -67,7 +65,7 @@ class App_Login(QtWidgets.QWidget):
     # ==================
     @run_in_thread
     def validar_licencia(self):
-        self.ui.lbEstado.setText("Verificando licencia...")
+        self.ui.lbEstado.setText('Verificando licencia...')
 
         activado, error = licensing.validar_licencia()
         if activado:
@@ -83,20 +81,15 @@ class App_Login(QtWidgets.QWidget):
     def error_verificacion(self, error: licensing.Errores):
         """En método separado para regresar al hilo principal."""
         match error:
-            case (
-                licensing.Errores.LICENCIA_NO_EXISTENTE
-                | licensing.Errores.LICENCIA_NO_VALIDA
-            ):
-                self.ui.btIngresar.clicked.connect(
-                    lambda: self.crear_widget_activacion(error)
-                )
+            case licensing.Errores.LICENCIA_NO_EXISTENTE | licensing.Errores.LICENCIA_NO_VALIDA:
+                self.ui.btIngresar.clicked.connect(lambda: self.crear_widget_activacion(error))
 
             case licensing.Errores.VERIFICACION_FALLIDA:
                 QtWidgets.QMessageBox.warning(
                     self,
-                    "Error al validar licencia",
-                    "Ha ocurrido un error al validar su licencia en línea.\n"
-                    "Por favor, verifique su acceso a internet e intente nuevamente.",
+                    'Error al validar licencia',
+                    'Ha ocurrido un error al validar su licencia en línea.\n'
+                    'Por favor, verifique su acceso a internet e intente nuevamente.',
                 )
 
     def crear_widget_activacion(self, error):
@@ -109,7 +102,7 @@ class App_Login(QtWidgets.QWidget):
         )
 
         if error == licensing.Errores.LICENCIA_NO_VALIDA:
-            wdg.ui.label.setText("¡Su licencia ha expirado!")
+            wdg.ui.label.setText('¡Su licencia ha expirado!')
 
     @run_in_thread
     def verificar_info(self):
@@ -126,8 +119,8 @@ class App_Login(QtWidgets.QWidget):
             self.mutex.unlock()
             return
 
-        self.ui.lbEstado.setStyleSheet("color: black;")
-        self.ui.lbEstado.setText("Conectando al servidor...")
+        self.ui.lbEstado.setStyleSheet('color: black;')
+        self.ui.lbEstado.setText('Conectando al servidor...')
         try:
             conn = conectar_firebird(usuario, psswd, rol)
             manejador = ManejadorUsuarios(conn, handle_exceptions=False)
@@ -135,13 +128,13 @@ class App_Login(QtWidgets.QWidget):
 
             self.logged_in.emit(conn, user)  # crearVentanaPrincipal
         except AssertionError:
-            self.ui.lbEstado.setStyleSheet("color: red;")
-            self.ui.lbEstado.setText(f"¡Usuario sin permisos para {rol}!")
+            self.ui.lbEstado.setStyleSheet('color: red;')
+            self.ui.lbEstado.setText(f'¡Usuario sin permisos para {rol}!')
         except FirebirdError as err:
             txt, sqlcode, gdscode = err.args
             if gdscode in [335544472, 335544352]:
-                self.ui.lbEstado.setStyleSheet("color: red;")
-                self.ui.lbEstado.setText("¡El usuario y contraseña no son válidos!")
+                self.ui.lbEstado.setStyleSheet('color: red;')
+                self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
             else:
                 self.crearWarningDialog(txt)
         except Exception as err:  # arrojado por fdb al no encontrarse librería Firebird
@@ -151,12 +144,12 @@ class App_Login(QtWidgets.QWidget):
 
     def crearWarningDialog(self, txt: str):
         self.ui.lbEstado.clear()
-        self.warning_logger.display("No se pudo acceder al servidor.", txt)
+        self.warning_logger.display('No se pudo acceder al servidor.', txt)
 
     def crearVentanaPrincipal(self, conn, user):
         user_context.conn = conn
         user_context.user = user
-        
+
         self.ventana_principal.crear()
         self.close()
 
@@ -232,9 +225,8 @@ class DialogoActivacion(QtWidgets.QWidget):
         self.close()
         QtWidgets.QMessageBox.information(
             self,
-            "Licencia activada",
-            "¡Muchas gracias por adquirir PrintPOS!\n"
-            "Su licencia ha sido activada con éxito.",
+            'Licencia activada',
+            '¡Muchas gracias por adquirir PrintPOS!\n' 'Su licencia ha sido activada con éxito.',
         )
 
     def error_verificacion(self, error: licensing.Errores):
@@ -242,16 +234,16 @@ class DialogoActivacion(QtWidgets.QWidget):
         match error:
             case licensing.Errores.ACTIVACION_FALLIDA:
                 txt = (
-                    "Ha ocurrido un error al activar su licencia en línea.\n"
-                    "Por favor, verifique su acceso a internet e intente nuevamente."
+                    'Ha ocurrido un error al activar su licencia en línea.\n'
+                    'Por favor, verifique su acceso a internet e intente nuevamente.'
                 )
 
             case licensing.Errores.ACTIVACION_NO_VALIDA:
                 txt = (
-                    "La clave ingresada no es válida. Por favor, verifique este dato.\n"
-                    "Si el problema persiste, será necesario que contacte a soporte."
+                    'La clave ingresada no es válida. Por favor, verifique este dato.\n'
+                    'Si el problema persiste, será necesario que contacte a soporte.'
                 )
-        QtWidgets.QMessageBox.warning(self, "Activación fallida", txt)
+        QtWidgets.QMessageBox.warning(self, 'Activación fallida', txt)
 
 
 class LoginButton(QtWidgets.QPushButton):
@@ -262,27 +254,23 @@ class LoginButton(QtWidgets.QPushButton):
         self.color2 = QtGui.QColor(61, 217, 245)
 
         self._animation = QtCore.QVariantAnimation(
-            self,
-            valueChanged=self._animate,
-            startValue=0.00001,
-            endValue=0.9999,
-            duration=250,
+            self, valueChanged=self._animate, startValue=0.00001, endValue=0.9999, duration=250,
         )
 
     def _animate(self, value):
-        qss = """
+        qss = '''
             font: 75 10pt "Segoe UI";
             font-weight: bold;
             color: #fff;
             border-style: solid;
             border-radius: 15px;
             outline: 0px;
-        """
-        grad = """
+        '''
+        grad = '''
             background-color: qlineargradient(
                 spread:pad, x1:0, y1:0, x2:1, y2:0,
                 stop:0 {color1}, stop:{value} {color2}, stop: 1.0 {color1});
-        """.format(
+        '''.format(
             color1=self.color1.name(), color2=self.color2.name(), value=value
         )
 
