@@ -194,7 +194,7 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
         ret = qm.question(
             self,
             'Atención',
-            'Los clientes seleccionados se eliminarán de la base de datos. ' '¿Desea continuar?',
+            'Los clientes seleccionados se eliminarán de la base de datos. ¿Desea continuar?',
         )
 
         if ret == qm.Yes and manejador.eliminarCliente(selected[0].text()):
@@ -257,7 +257,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
         """Datos por defecto, proveído por ambas clases heredadas."""
         if correo and correo.startswith('N/A'):
             correo = ''
-        celular = celular.replace(' ', '')
+        celular = celular.replace(' ', '') # quitar espacios
 
         self.ui.txtNombre.setText(nombre)
         self.ui.txtLada.setText(celular[1:-10] or '52')

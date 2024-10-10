@@ -245,7 +245,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
             return
 
         ret = qm.question(
-            self, 'Concluir venta', 'Verifique todos los datos ingresados.\n' '¿Desea concluir la venta?',
+            self, 'Concluir venta', 'Verifique todos los datos ingresados.\n¿Desea concluir la venta?',
         )
         if ret != qm.Yes:
             return
@@ -689,7 +689,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
             ret = qm.question(
                 self,
                 'Atención',
-                'El anticipo está por debajo del 50% del total de compra.\n' '¿Desea continuar?',
+                'El anticipo está por debajo del 50% del total de compra.\n¿Desea continuar?',
             )
             if ret == qm.Yes:
                 self.listoAdmin()
@@ -719,7 +719,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
             ret = qm.question(
                 self,
                 'Éxito',
-                'Venta terminada. ¡Recuerde ofrecer el ticket de compra! ' '¿Desea imprimirlo?',
+                'Venta terminada. ¡Recuerde ofrecer el ticket de compra! ¿Desea imprimirlo?',
             )
             if ret == qm.Yes:
                 impresora = ImpresoraTickets()

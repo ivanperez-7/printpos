@@ -111,7 +111,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
         manejador = ManejadorUsuarios(self.conn)
 
         ret = qm.question(
-            self, 'Atención', 'Los usuarios seleccionados se darán ' 'de baja del sistema. ¿Desea continuar?',
+            self, 'Atención', 'Los usuarios seleccionados se darán de baja del sistema. ¿Desea continuar?',
         )
 
         if ret == qm.Yes and manejador.eliminarUsuario(usuario):

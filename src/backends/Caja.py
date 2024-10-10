@@ -145,7 +145,7 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         ret = qm.question(
             self,
             'Atención',
-            'Se procederá a imprimir el corte de caja entre ' 'las fechas proporcionadas.\n¿Desea continuar?',
+            'Se procederá a imprimir el corte de caja entre las fechas proporcionadas.\n¿Desea continuar?',
         )
 
         if ret == qm.Yes:
