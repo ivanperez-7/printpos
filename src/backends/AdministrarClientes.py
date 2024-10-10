@@ -266,16 +266,18 @@ class Base_EditarCliente(QtWidgets.QWidget):
 
     def done(self):
         """Método en el que se modificará o insertará un cliente."""
-        params = (
-            self.ui.txtNombre.text(),
-            self.numeroTelefono(),
-            self.ui.txtCorreo.text(),
-            self.ui.txtDireccion.toPlainText(),
-            self.ui.txtRFC.text(),
-            self.ui.checkDescuentos.isChecked(),
-            self.ui.txtDescuentos.toPlainText(),
+        clientes_db_parametros = tuple(
+            db_param.strip() or None if isinstance(db_param, str) else db_param
+            for db_param in (
+                self.ui.txtNombre.text(),
+                self.numeroTelefono(),
+                self.ui.txtCorreo.text(),
+                self.ui.txtDireccion.toPlainText(),
+                self.ui.txtRFC.text(),
+                self.ui.checkDescuentos.isChecked(),
+                self.ui.txtDescuentos.toPlainText(),
+            )
         )
-        clientes_db_parametros = tuple(v.strip() or None if isinstance(v, str) else v for v in params)
 
         if self.insertar_o_modificar(clientes_db_parametros):
             QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)

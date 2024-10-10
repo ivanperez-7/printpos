@@ -581,7 +581,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         super().__init__(None, parent)
 
         # seleccionar método para WidgetPago
-        wdg = self.stackPagos[0]
+        wdg = self.stack_pagos[0]
         wdg.metodoSeleccionado = ventaDatos.metodo_pago
 
         if ventaDatos.metodo_pago != 'Efectivo':
@@ -608,7 +608,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         # llenar total y monto a pagar
         self.ui.lbCincuenta.setText(f'(${ventaDatos.total / 2})')
         # permitir pago vacío
-        self.stackPagos.permitir_nulo = True
+        self.stack_pagos.permitir_nulo = True
 
     def showEvent(self, event) -> None:
         tabla = self.ui.tabla_productos

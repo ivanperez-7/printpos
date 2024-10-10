@@ -20,7 +20,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         self.setFixedSize(833, 795)
 
-        self.stackPagos = self.ui.stackPagos
+        self.stack_pagos = self.ui.stackPagos
 
         # guardar conexión y usuario como atributos
         self.conn = user_context.conn
@@ -37,7 +37,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
         self.total = self.calcularTotal()
         self.ui.lbTotal.setText(f'{self.total}')
 
-        (nombreCliente, correo, telefono, fechaCreacion, fechaEntrega,) = self.obtenerDatosGenerales()
+        nombreCliente, correo, telefono, fechaCreacion, fechaEntrega, = self.obtenerDatosGenerales()
 
         self.ui.txtCliente.setText(nombreCliente)
         self.ui.txtCorreo.setText(correo)
@@ -56,20 +56,20 @@ class Base_PagarVenta(QtWidgets.QWidget):
         self.ui.btListo.clicked.connect(self.listo)
         self.ui.btCancelar.clicked.connect(self.abortar)
         self.ui.txtAnticipo.textChanged.connect(self.cambiarAnticipo)
-        self.stackPagos.cambio_pagos.connect(self._handleCounters)
+        self.stack_pagos.cambio_pagos.connect(self._handleCounters)
 
         # interfaz de botones para stackPagos
-        self.ui.btAgregar.clicked.connect(self.stackPagos.agregarPago)
+        self.ui.btAgregar.clicked.connect(self.stack_pagos.agregarPago)
         self.ui.btAgregar.clicked.connect(self.modificar_contador)
-        self.ui.btQuitar.clicked.connect(self.stackPagos.quitarPago)
+        self.ui.btQuitar.clicked.connect(self.stack_pagos.quitarPago)
         self.ui.btQuitar.clicked.connect(self.modificar_contador)
-        self.ui.btAnterior.clicked.connect(self.stackPagos.retroceder)
+        self.ui.btAnterior.clicked.connect(self.stack_pagos.retroceder)
         self.ui.btAnterior.clicked.connect(self.modificar_contador)
-        self.ui.btSiguiente.clicked.connect(self.stackPagos.avanzar)
+        self.ui.btSiguiente.clicked.connect(self.stack_pagos.avanzar)
         self.ui.btSiguiente.clicked.connect(self.modificar_contador)
 
-        self.stackPagos.total = self.ui.txtAnticipo.cantidad = self.pagoPredeterminado()
-        self.stackPagos.agregarPago()
+        self.stack_pagos.total = self.ui.txtAnticipo.cantidad = self.pagoPredeterminado()
+        self.stack_pagos.agregarPago()
 
     ####################
     # FUNCIONES ÚTILES #
@@ -92,25 +92,25 @@ class Base_PagarVenta(QtWidgets.QWidget):
 
     def cambiarAnticipo(self) -> None:
         """Cambiar el anticipo pagado por el cliente."""
-        self.stackPagos.total = self.ui.txtAnticipo.cantidad
+        self.stack_pagos.total = self.ui.txtAnticipo.cantidad
         self._handleCounters()
 
     def modificar_contador(self) -> None:
         self.ui.lbContador.setText(
-            'Pago {}/{}'.format(self.stackPagos.currentIndex() + 1, self.stackPagos.count())
+            'Pago {}/{}'.format(self.stack_pagos.currentIndex() + 1, self.stack_pagos.count())
         )
 
     def _handleCounters(self) -> None:
         """Seguir las mismas reglas de `StackPagos.pagosValidos`
         para actualizar y colorear contadores."""
-        stack = self.stackPagos
+        stack = self.stack_pagos
         n_efec = [wdg.metodoSeleccionado for wdg in stack].count('Efectivo')
 
         if n_efec:  # hay pagos en efectivo
-            m = sum(
-                wdg.montoPagado for wdg in stack if wdg.metodoSeleccionado == 'Efectivo'  # pagado en efectivo
-            )
-            m = max(Moneda.cero, m - stack.restanteEnEfectivo)  # pagado - restante (en efectivo)
+            # pagado en efectivo
+            m = sum(wdg.montoPagado for wdg in stack if wdg.metodoSeleccionado == 'Efectivo')
+            # pagado - restante (en efectivo)
+            m = max(Moneda.cero, m - stack.restanteEnEfectivo)
             self.ui.lbCambio.setText(f'Cambio: ${m}')
         else:
             self.ui.lbCambio.clear()  # ignorar cambio
@@ -144,9 +144,9 @@ class Base_PagarVenta(QtWidgets.QWidget):
         manejadorVentas = ManejadorVentas(self.conn)
 
         # registrar pagos en tabla ventas_pagos
-        for wdg in self.stackPagos:
+        for wdg in self.stack_pagos:
             if wdg.metodoSeleccionado == 'Efectivo':
-                monto = self.stackPagos.restanteEnEfectivo
+                monto = self.stack_pagos.restanteEnEfectivo
                 recibido = wdg.montoPagado if monto else None
             else:
                 monto = wdg.montoPagado
