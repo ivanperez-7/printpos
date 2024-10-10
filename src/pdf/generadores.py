@@ -242,32 +242,40 @@ def generarTicketPDF(
     elements = [
         Image(baits, width=w * mm, height=h * mm),
         Spacer(1, 6),
+        
         Paragraph(INI.CALLE_1, styles['Center']),
         Paragraph(INI.CALLE_2, styles['Center']),
         Spacer(1, 6),
+        
         Paragraph(INI.TELEFONO, styles['Center']),
         Spacer(1, 6),
+        
         Paragraph('* ' * 40, styles['Center']),
         Paragraph(titulo, styles['Center']),
         Paragraph('* ' * 40, styles['Center']),
         Paragraph(folio, styles['Left']),
         Paragraph('<b>Fecha</b>: ' + formatdate(fecha_creacion), styles['Left']),
         Spacer(1, 10),
+        
         tabla_productos,
         Spacer(1, 7),
+        
         tabla_importe,
     ]
 
     if total_desc:
         elements += [
             Spacer(1, 12),
+            
             Paragraph(f'¡Hoy se ahorró ${total_desc}!', styles['Center_desc']),
             Spacer(1, 25),
+            
             Paragraph('Autoriza descuentos: ' + '_' * 24, styles['Left']),
         ]
 
     elements += [
         Spacer(1, 15),
+        
         Paragraph(f'Le atendió: {vendedor}', styles['Center']),
         Paragraph(pie, styles['Center']),
     ]
