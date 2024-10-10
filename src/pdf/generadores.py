@@ -242,40 +242,40 @@ def generarTicketPDF(
     elements = [
         Image(baits, width=w * mm, height=h * mm),
         Spacer(1, 6),
-        
+
         Paragraph(INI.CALLE_1, styles['Center']),
         Paragraph(INI.CALLE_2, styles['Center']),
         Spacer(1, 6),
-        
+
         Paragraph(INI.TELEFONO, styles['Center']),
         Spacer(1, 6),
-        
+
         Paragraph('* ' * 40, styles['Center']),
         Paragraph(titulo, styles['Center']),
         Paragraph('* ' * 40, styles['Center']),
         Paragraph(folio, styles['Left']),
         Paragraph('<b>Fecha</b>: ' + formatdate(fecha_creacion), styles['Left']),
         Spacer(1, 10),
-        
+
         tabla_productos,
         Spacer(1, 7),
-        
+
         tabla_importe,
     ]
 
     if total_desc:
         elements += [
             Spacer(1, 12),
-            
+
             Paragraph(f'¡Hoy se ahorró ${total_desc}!', styles['Center_desc']),
             Spacer(1, 25),
-            
+
             Paragraph('Autoriza descuentos: ' + '_' * 24, styles['Left']),
         ]
 
     elements += [
         Spacer(1, 15),
-        
+
         Paragraph(f'Le atendió: {vendedor}', styles['Center']),
         Paragraph(pie, styles['Center']),
     ]
@@ -338,27 +338,32 @@ def generarCortePDF(caja: Caja, responsable: str):
     elements = [
         Paragraph('Resumen de movimientos de caja', styles['Heading1']),
         Spacer(1, 6),
+        
         Paragraph('Realizado por: ' + responsable, styles['Left']),
         Paragraph('Fecha y hora: ' + formatdate(), styles['Left']),
         Spacer(1, 6),
+        
         Paragraph('Resumen de ingresos', styles['Heading3']),
         Paragraph(f'Efectivo: ${ingresos_efectivo}', styles['Left'], bulletText=' '),
         Paragraph(f'Tarjeta de crédito: ${ingresos_credito}', styles['Left'], bulletText=' '),
         Paragraph(f'Tarjeta de débito: ${ingresos_debito}', styles['Left'], bulletText=' '),
         Paragraph(f'Transferencias bancarias: ${ingresos_transferencia}', styles['Left'], bulletText=' ',),
         Spacer(1, 6),
+        
         Paragraph('Resumen de egresos', styles['Heading3']),
         Paragraph(f'Efectivo: ${egresos_efectivo}', styles['Left'], bulletText=' '),
         Paragraph(f'Tarjeta de crédito: ${egresos_credito}', styles['Left'], bulletText=' '),
         Paragraph(f'Tarjeta de débito: ${egresos_debito}', styles['Left'], bulletText=' '),
         Paragraph(f'Transferencias bancarias: ${egresos_transferencia}', styles['Left'], bulletText=' ',),
         Spacer(1, 6),
+        
         Paragraph('Esperado', styles['Heading3']),
         Paragraph(f'Efectivo: ${total_efectivo}', styles['Left'], bulletText=' '),
         Paragraph(f'Tarjeta de crédito: ${total_credito}', styles['Left'], bulletText=' '),
         Paragraph(f'Tarjeta de débito: ${total_debito}', styles['Left'], bulletText=' '),
         Paragraph(f'Transferencias bancarias: ${total_transferencia}', styles['Left'], bulletText=' ',),
         Spacer(1, 20),
+        
         Paragraph('<b>' + f'Total de ingresos: ${esperado_ingresos}' + '</b>', styles['Foot']),
         Paragraph('<b>' + f'Total de egresos: ${esperado_egresos}' + '</b>', styles['Foot']),
         Paragraph(f'<b>Esperado en caja: ${esperado}</b>', styles['Foot']),
