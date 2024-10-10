@@ -226,7 +226,7 @@ class DialogoActivacion(QtWidgets.QWidget):
         QtWidgets.QMessageBox.information(
             self,
             'Licencia activada',
-            '¡Muchas gracias por adquirir PrintPOS!\n' 'Su licencia ha sido activada con éxito.',
+            '¡Muchas gracias por adquirir PrintPOS!\nSu licencia ha sido activada con éxito.',
         )
 
     def error_verificacion(self, error: licensing.Errores):

@@ -338,7 +338,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
             QtWidgets.QMessageBox.warning(
                 self,
                 'Atención',
-                'No existe ningún precio de este producto ' 'asociado a la cantidad proporcionada.',
+                'No existe ningún precio de este producto asociado a la cantidad proporcionada.',
             )
             return
 
