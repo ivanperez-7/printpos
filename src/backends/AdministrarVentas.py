@@ -432,15 +432,11 @@ class App_TerminarVenta(Base_PagarVenta):
 
     def obtenerDatosGenerales(self):
         manejador = ManejadorVentas(self.conn)
-        (
-            nombreCliente,
-            correo,
-            telefono,
-            fechaCreacion,
-            fechaEntrega,
-            *_,
-        ) = manejador.obtenerDatosGeneralesVenta(self.id_ventas)
-        return (nombreCliente, correo, telefono, fechaCreacion, fechaEntrega)
+
+        venta_data = manejador.obtenerDatosGeneralesVenta(self.id_ventas)
+        nombre_cliente, correo, telefono, fecha_creacion, fecha_entrega, *_, = venta_data
+        
+        return (nombre_cliente, correo, telefono, fecha_creacion, fecha_entrega)
 
     def pagoPredeterminado(self):
         return self.total
