@@ -105,12 +105,8 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
 
         movimientos = self.all_movimientos
 
-        self.ui.lbTotalIngresos.setText(
-            'Total de ingresos: ${}'.format(movimientos.totalIngresos())
-        )
-        self.ui.lbIngresosEfectivo.setText(
-            'Efectivo: ${}'.format(movimientos.totalIngresos('Efectivo'))
-        )
+        self.ui.lbTotalIngresos.setText('Total de ingresos: ${}'.format(movimientos.totalIngresos()))
+        self.ui.lbIngresosEfectivo.setText('Efectivo: ${}'.format(movimientos.totalIngresos('Efectivo')))
         self.ui.lbIngresosTarjeta.setText(
             'Tarjeta de crédito/débito: ${}'.format(movimientos.totalIngresos('Tarjeta'))
         )
@@ -130,9 +126,7 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         movimientos = self.all_movimientos
 
         self.ui.lbTotalEgresos.setText('Total de egresos: ${}'.format(-movimientos.totalEgresos()))
-        self.ui.lbEgresosEfectivo.setText(
-            'Efectivo: ${}'.format(-movimientos.totalEgresos('Efectivo'))
-        )
+        self.ui.lbEgresosEfectivo.setText('Efectivo: ${}'.format(-movimientos.totalEgresos('Efectivo')))
         self.ui.lbEgresosTarjeta.setText(
             'Tarjeta de crédito/débito: ${}'.format(-movimientos.totalEgresos('Tarjeta'))
         )
@@ -151,8 +145,7 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         ret = qm.question(
             self,
             'Atención',
-            'Se procederá a imprimir el corte de caja entre '
-            'las fechas proporcionadas.\n¿Desea continuar?',
+            'Se procederá a imprimir el corte de caja entre ' 'las fechas proporcionadas.\n¿Desea continuar?',
         )
 
         if ret == qm.Yes:

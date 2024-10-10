@@ -84,11 +84,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         self.ui.tabWidget.currentChanged.connect(self.cambiar_pestana)
 
         self.paginado = InterfazPaginas(
-            self.ui.btAdelante,
-            self.ui.btUltimo,
-            self.ui.btAtras,
-            self.ui.btPrimero,
-            self.ui.tabla_directas,
+            self.ui.btAdelante, self.ui.btUltimo, self.ui.btAtras, self.ui.btPrimero, self.ui.tabla_directas,
         )
         self.paginado.pagina_cambiada.connect(self.update_display)
 
@@ -245,9 +241,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             return
 
         # terminar venta directamente, al no tener saldo restante
-        if manejador.actualizarEstadoVenta(
-            idVenta, 'Entregado por ' + self.user.nombre, commit=True
-        ):
+        if manejador.actualizarEstadoVenta(idVenta, 'Entregado por ' + self.user.nombre, commit=True):
             qm.information(self, 'Éxito', 'Se marcó como terminada la venta seleccionada.')
             self.rescan_update()
 
@@ -308,8 +302,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         ret = qm.question(
             self,
             'Atención',
-            'Se imprimirá el ticket de compra de la venta '
-            f'con folio {idVenta}. ¿Desea continuar?',
+            'Se imprimirá el ticket de compra de la venta ' f'con folio {idVenta}. ¿Desea continuar?',
         )
         if ret == qm.Yes:
             impresora = ImpresoraTickets()
@@ -317,9 +310,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
 
     def imprimirOrden(self):
         """Imprime orden de compra de un pedido dado el folio de esta."""
-        if (selected := self.tabla_actual.selectedItems()) and selected[6].text().startswith(
-            'Recibido'
-        ):
+        if (selected := self.tabla_actual.selectedItems()) and selected[6].text().startswith('Recibido'):
             impresora = ImpresoraOrdenes(self)
             impresora.imprimirOrdenCompra(selected[0].text(), manejador=ManejadorVentas(self.conn))
 
@@ -480,9 +471,7 @@ class App_TerminarVenta(Base_PagarVenta):
         if ret == qm.Yes:
             slais = slice(-self.ui.stackPagos.count(), None)
             impresora = ImpresoraTickets()
-            impresora.imprimirTicketCompra(
-                self.id_ventas, slais, manejador=ManejadorVentas(self.conn)
-            )
+            impresora.imprimirTicketCompra(self.id_ventas, slais, manejador=ManejadorVentas(self.conn))
 
         self.success.emit()
         self.close()

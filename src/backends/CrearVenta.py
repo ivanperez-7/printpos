@@ -53,9 +53,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
 
         # crear eventos para los botones
         self.ui.btCalendario.clicked.connect(
-            lambda: App_FechaEntrega(ventaDatos.fechaEntrega, self).success.connect(
-                self.cambiarFechaEntrega
-            )
+            lambda: App_FechaEntrega(ventaDatos.fechaEntrega, self).success.connect(self.cambiarFechaEntrega)
         )
         self.ui.btAgregar.clicked.connect(
             lambda: App_AgregarProducto(self).success.connect(self.agregarProducto)
@@ -118,9 +116,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         self.ui.lbDescuento.setText(str(self.ventaDatos.total_descuentos))
         # </calcular precios y mostrar>
 
-        self.ui.txtNumProds.setText(
-            f'{(l := len(self.ventaDatos))} producto' + ('s' if l != 1 else '')
-        )
+        self.ui.txtNumProds.setText(f'{(l := len(self.ventaDatos))} producto' + ('s' if l != 1 else ''))
 
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES
@@ -165,9 +161,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         if not (selected := {i.row() for i in self.ui.tabla_productos.selectedIndexes()}):
             return
 
-        ret = qm.question(
-            self, 'Atención', '¿Desea descartar de la venta los productos seleccionados?',
-        )
+        ret = qm.question(self, 'Atención', '¿Desea descartar de la venta los productos seleccionados?',)
         if ret == qm.Yes:
             self._quitarProducto(selected)
 
@@ -251,9 +245,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
             return
 
         ret = qm.question(
-            self,
-            'Concluir venta',
-            'Verifique todos los datos ingresados.\n' '¿Desea concluir la venta?',
+            self, 'Concluir venta', 'Verifique todos los datos ingresados.\n' '¿Desea concluir la venta?',
         )
         if ret != qm.Yes:
             return
@@ -562,11 +554,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
 
         for prod in self.ventaDatos:
             mensaje.extend(
-                [
-                    f'{prod.nombre_ticket} || {prod.cantidad} unidades',
-                    f'Importe: ${prod.importe:,.2f}',
-                    '',
-                ]
+                [f'{prod.nombre_ticket} || {prod.cantidad} unidades', f'Importe: ${prod.importe:,.2f}', '',]
             )
 
         mensaje.append(f'*Total a pagar: ${self.ventaDatos.total}*')
@@ -652,9 +640,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         )
 
     def pagoPredeterminado(self) -> Moneda:
-        return (
-            self.ventaDatos.total if self.ventaDatos.esVentaDirecta else self.ventaDatos.total / 2
-        )
+        return self.ventaDatos.total if self.ventaDatos.esVentaDirecta else self.ventaDatos.total / 2
 
     def obtenerIdVenta(self) -> int:
         """Registra datos principales de venta en DB
@@ -743,9 +729,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
 
     def abortar(self) -> None:
         """Función para abortar la venta y actualizar estado a 'Cancelada'."""
-        ret = qm.question(
-            self, 'Atención', '¿Desea cancelar la venta? Esta acción no puede deshacerse.',
-        )
+        ret = qm.question(self, 'Atención', '¿Desea cancelar la venta? Esta acción no puede deshacerse.',)
         if ret == qm.Yes:
             self._abortar()
 

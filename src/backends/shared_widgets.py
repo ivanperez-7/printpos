@@ -37,13 +37,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
         self.total = self.calcularTotal()
         self.ui.lbTotal.setText(f'{self.total}')
 
-        (
-            nombreCliente,
-            correo,
-            telefono,
-            fechaCreacion,
-            fechaEntrega,
-        ) = self.obtenerDatosGenerales()
+        (nombreCliente, correo, telefono, fechaCreacion, fechaEntrega,) = self.obtenerDatosGenerales()
 
         self.ui.txtCliente.setText(nombreCliente)
         self.ui.txtCorreo.setText(correo)
@@ -114,9 +108,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
 
         if n_efec:  # hay pagos en efectivo
             m = sum(
-                wdg.montoPagado
-                for wdg in stack  # pagado en efectivo
-                if wdg.metodoSeleccionado == 'Efectivo'
+                wdg.montoPagado for wdg in stack if wdg.metodoSeleccionado == 'Efectivo'  # pagado en efectivo
             )
             m = max(Moneda.cero, m - stack.restanteEnEfectivo)  # pagado - restante (en efectivo)
             self.ui.lbCambio.setText(f'Cambio: ${m}')
@@ -241,9 +233,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
     # ==================
     @property
     def tabla_actual(self):
-        return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][
-            self.ui.tabWidget.currentIndex()
-        ]
+        return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][self.ui.tabWidget.currentIndex()]
 
     def startEvents(self):  # async
         # eventos de Firebird para escuchar cambios en tabla productos
@@ -354,14 +344,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
         # insertar información del producto con cantidad y especificaciones
         return ItemVenta(
-            idProducto,
-            codigo,
-            nombre_ticket,
-            precio,
-            0.0,
-            cantidad,
-            self.ui.txtNotas.text().strip(),
-            duplex,
+            idProducto, codigo, nombre_ticket, precio, 0.0, cantidad, self.ui.txtNotas.text().strip(), duplex,
         )
 
     def generarGranFormato(self):
@@ -424,10 +407,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         # <tabla de productos normales>
         if txt_busqueda:
             found = [
-                prod
-                for prod in self.all_prod
-                if prod[filtro]
-                if son_similar(txt_busqueda, prod[filtro])
+                prod for prod in self.all_prod if prod[filtro] if son_similar(txt_busqueda, prod[filtro])
             ]
         else:
             found = self.all_prod
@@ -439,10 +419,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         # <tabla de gran formato>
         if txt_busqueda:
             found = [
-                prod
-                for prod in self.all_gran
-                if prod[filtro]
-                if son_similar(txt_busqueda, prod[filtro])
+                prod for prod in self.all_gran if prod[filtro] if son_similar(txt_busqueda, prod[filtro])
             ]
         else:
             found = self.all_gran
