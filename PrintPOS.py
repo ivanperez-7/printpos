@@ -1,11 +1,6 @@
 """ ARCHIVO PRINCIPAL.
     Inicia una QApplication y abre la ventana de iniciar sesión. """
 
-from pathlib import Path
-import sys
-
-sys.path += [str(Path('src/').resolve())]
-
 from haps import Container as IoC
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTranslator
