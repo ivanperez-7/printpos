@@ -1,62 +1,95 @@
 from datetime import datetime
-import random
-from unittest import TestCase, main, mock
+import io
+import unittest
 
-from PySide6.QtCore import QThreadPool
+from reportlab.pdfgen import canvas
+
+from pdf.generadores import generarOrdenCompra, generarTicketPDF, generarCortePDF
+from pdf.impresoras import ImpresoraPDF, ImpresoraTickets, ImpresoraOrdenes
+import PrintPOS
+from utils.mydataclasses import ItemVenta, Caja
 from ui import resources_rc
 
-from config import INI
-from pdf import ImpresoraOrdenes, ImpresoraTickets
-import PrintPOS
-import sql.core
 
+class TestPDFGenerators(unittest.TestCase):
+    def setUp(self):
+        self.folio = 1
+        self.nombre = 'John Doe'
+        self.telefono = '1234567890'
+        self.total = 50.0  # Assuming Moneda is handled properly
+        self.anticipo = 5.0  # Assuming Moneda is handled properly
+        self.fecha_creacion = datetime.now()
+        self.fecha_entrega = datetime.now()
 
-class PdfTests(TestCase):
-    def test_async_pdf_printer_tickets(self):
-        from utils.mydataclasses import Caja, ItemVenta
-
-        printer = ImpresoraTickets()
-        man = sql.ManejadorVentas(sql.core.conectar_firebird('ivanperez', '123', 'administrador'))
-        self.assertEqual(printer.printer.printerName(), INI.IMPRESORA)
-
-        res1 = printer.imprimirTicketCompra(670, manejador=man)  # varios pagos
-        QThreadPool.globalInstance().waitForDone()  # <- porque las impresoras usan run_in_thread
-        res2 = printer.imprimirTicketCompra(671, manejador=man)  # un solo pago
-        QThreadPool.globalInstance().waitForDone()  # <- porque las impresoras usan run_in_thread
-        res3 = printer.imprimirTicketCompra(
-            670, [0, 2], manejador=man
-        )  # varios pagos, pero seleccionados
-        QThreadPool.globalInstance().waitForDone()  # <- porque las impresoras usan run_in_thread
-
-        prods = [
-            ItemVenta(
-                1, 'IMP B/N 1', 'Impresión ByN', 0.7, 0.0, random.randint(10, 200), '', False,
-            )
+    def test_generarOrdenCompra(self):
+        productos = [
+            (15, 'Product A', 'Spec A', 10.0, 0.0),
+            (15, 'Product B', 'Spec B', 20.0, 0.0),
         ]
-        res4 = printer.imprimirTicketPresupuesto(prods * 3, 'yo merengues')
-
-        caja = Caja(
-            [
-                (datetime.now(), 500.0, 'renta lol', 'Efectivo', 'ivan p.'),
-                (datetime.now(), -40.0, 'pago', 'Tarjeta de débito', 'ivan p.'),
-            ]
+        pdf_bytes = generarOrdenCompra(
+            productos,
+            self.folio,
+            self.nombre,
+            self.telefono,
+            self.total,
+            self.anticipo,
+            self.fecha_creacion,
+            self.fecha_entrega,
         )
-        res5 = printer.imprimirCorteCaja(caja, 'io menregues')
+        self.assertGreater(pdf_bytes.getbuffer().nbytes, 0, 'PDF should not be empty')
 
-        QThreadPool.globalInstance().waitForDone()  # <- porque las impresoras usan run_in_thread
-
-    def test_async_pdf_printer_ordenes(self):
-        printer = ImpresoraOrdenes()
-        self.assertEqual(printer.printer.printerName(), INI.IMPRESORA)
-
-        res1 = printer.imprimirOrdenCompra(
-            693,
-            manejador=sql.ManejadorVentas(
-                sql.core.conectar_firebird('ivanperez', '123', 'administrador')
-            ),
+    def test_generarTicketPDF(self):
+        productos = [ItemVenta(1, 'Product A', 'Spec A', 10.0, 0, 15, '')]
+        pdf_bytes = generarTicketPDF(
+            productos,
+            vendedor='Jane Doe',
+            folio=self.folio,
+            total=self.total,
+            recibido=10.0,
+            metodo_pago='EFEC',
+            fecha_creacion=self.fecha_creacion,
         )
-        QThreadPool.globalInstance().waitForDone()  # <- porque las impresoras usan run_in_thread
+        self.assertGreater(pdf_bytes.getbuffer().nbytes, 0, 'PDF should not be empty')
+
+    def test_generarCortePDF(self):
+        caja = Caja()  # Mock or create an instance of Caja as needed
+        pdf_bytes = generarCortePDF(caja, responsable='Manager')
+        self.assertGreater(pdf_bytes.getbuffer().nbytes, 0, 'PDF should not be empty')
+
+
+class TestPDFPrinters(unittest.TestCase):
+    def setUp(self):
+        self.impresora_ordenes = ImpresoraOrdenes()
+        self.impresora_tickets = ImpresoraTickets()
+
+    def create_dummy_pdf(self):
+        """Create a simple PDF in memory for testing."""
+        buffer = io.BytesIO()
+        c = canvas.Canvas(buffer)
+        c.drawString(100, 750, 'This is a test PDF.')
+        c.showPage()
+        c.save()
+        buffer.seek(0)
+        return buffer
+
+    def test_obtenerImpresora_ordenes(self):
+        printer = self.impresora_ordenes.obtenerImpresora()
+        self.assertIsNotNone(printer, 'Impresora for orders should not be None')
+
+    def test_obtenerImpresora_tickets(self):
+        printer = self.impresora_tickets.obtenerImpresora()
+        self.assertIsNotNone(printer, 'Impresora for tickets should not be None')
+
+    def test_enviarAImpresora(self):
+        # Create a dummy PDF byte stream for testing
+        dummy_pdf = self.create_dummy_pdf()
+        try:
+            self.impresora_ordenes.enviarAImpresora(dummy_pdf)
+            # If no exception, it should be fine
+            self.assertTrue(True)
+        except Exception as e:
+            self.fail(f'Sending to printer failed with exception: {e}')
 
 
 if __name__ == '__main__':
-    main()
+    unittest.main()

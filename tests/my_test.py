@@ -110,36 +110,26 @@ class RandomTests(TestCase, ConnectionsMixin):
         self.assertFalse(venta.ventaVacia or venta.esVentaDirecta)
 
         venta.agregarProducto(
-            ItemVenta(
-                1, 'IMP B/N 1', 'Impresión ByN', 0.7, 0.1, random.randint(10, 200), '', False,
-            )
+            ItemVenta(1, 'IMP B/N 1', 'Impresión ByN', 0.7, 0.1, random.randint(10, 200), '', False,)
         )
         venta.reajustarPrecios(sql.ManejadorProductos(self.con_user))
 
         self.assertFalse(venta[1].precio_unit == 0.7)
         self.assertGreater(venta.total_descuentos, 0.0)
 
-        venta.agregarProducto(
-            p1 := ItemGranFormato(4, 'METRO2', 'Metro lona', 90.0, 0.0, 2, '', 1.0)
-        )
+        venta.agregarProducto(p1 := ItemGranFormato(4, 'METRO2', 'Metro lona', 90.0, 0.0, 2, '', 1.0))
         self.assertEqual(p1.importe, p1.precio_unit * p1.cantidad)
-        venta.agregarProducto(
-            p2 := ItemGranFormato(4, 'METRO3', 'Metro algo', 110.0, 0.0, 1.5, '', 2.0)
-        )
+        venta.agregarProducto(p2 := ItemGranFormato(4, 'METRO3', 'Metro algo', 110.0, 0.0, 1.5, '', 2.0))
         self.assertEqual(p2.importe, p2.precio_unit * p2.min_m2)
 
     def test_registrar_venta_detalles_y_pagos(self):
         con = self.con_user
         man = sql.ManejadorVentas(con)
 
-        idx = man.insertarVenta(
-            (1, man.idUsuarioActivo, n := datetime.now(), n, None, False, 'Terminada')
-        )
+        idx = man.insertarVenta((1, man.idUsuarioActivo, n := datetime.now(), n, None, False, 'Terminada'))
         self.assertIsInstance(idx, int)
 
-        res1 = man.insertarDetallesVenta(
-            idx, [(1, 151, 0.7, 0.0, '', False, tot := 151 * 0.7)], commit=False
-        )
+        res1 = man.insertarDetallesVenta(idx, [(1, 151, 0.7, 0.0, '', False, tot := 151 * 0.7)], commit=False)
         self.assertTrue(res1)
 
         res2 = man.insertarPago(idx, 'Tarjeta de débito', 50.0, None, man.idUsuarioActivo)
@@ -172,9 +162,7 @@ class RandomTests(TestCase, ConnectionsMixin):
         )
         self.assertIsInstance(idx, int)
 
-        res1 = man.insertarDetallesVenta(
-            idx, [(1, 200, 0.7, 0.0, '', False, tot := 200 * 0.7)], commit=False
-        )
+        res1 = man.insertarDetallesVenta(idx, [(1, 200, 0.7, 0.0, '', False, tot := 200 * 0.7)], commit=False)
         self.assertTrue(res1)
 
         res2 = man.insertarPago(idx, 'Tarjeta de crédito', tot, pago, man.idUsuarioActivo)
