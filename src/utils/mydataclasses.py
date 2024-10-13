@@ -67,7 +67,7 @@ class BaseItem:
 class ItemVenta(BaseItem):
     """Clase para mantener registro de un producto simple de la venta."""
 
-    duplex: bool  # dicta si el producto es duplex
+    duplex: bool = False  # dicta si el producto es duplex
 
     def __post_init__(self):
         if self.duplex:
