@@ -21,7 +21,7 @@ from utils.myutils import stringify_float
 
 
 class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
-    """Backend para la ventana de reportes varios."""
+    """ Backend para la ventana de reportes varios. """
 
     def crear(self):
         from ui.Ui_Reportes import Ui_Reportes

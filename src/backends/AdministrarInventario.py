@@ -15,7 +15,7 @@ from utils.mywidgets import LabelAdvertencia
 # VENTANA PRINCIPAL #
 #####################
 class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
-    """Backend para la ventana de administración de inventario."""
+    """ Backend para la ventana de administración de inventario. """
 
     rescanned = Signal()
 
@@ -69,9 +69,9 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
         self.rescanned.emit()
 
     def update_display(self):
-        """Actualiza la tabla y el contador de elementos.
+        """ Actualiza la tabla y el contador de elementos.
         Acepta una cadena de texto para la búsqueda de elementos.
-        También lee de nuevo la tabla de elementos, si se desea."""
+        También lee de nuevo la tabla de elementos, si se desea. """
         tabla = self.ui.tabla_inventario
         tabla.setRowCount(0)
 
@@ -133,8 +133,8 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
             widget.success.connect(self.rescan_update)
 
     def quitarInventario(self):
-        """Elimina un material de la base de datos.
-        Primero se verifica si hay productos que lo utilizan."""
+        """ Elimina un material de la base de datos.
+        Primero se verifica si hay productos que lo utilizan. """
         try:
             id_inventario = self.ui.tabla_inventario.selectedItems()[0].text()
         except IndexError:
@@ -172,7 +172,7 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
 #################################
 @fondo_oscuro
 class Base_EditarInventario(QtWidgets.QWidget):
-    """Clase base para módulo de registrar o modificar elemento."""
+    """ Clase base para módulo de registrar o modificar elemento. """
 
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
@@ -229,7 +229,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
         self.ui.layoutScroll.addWidget(nuevo)
 
     def obtenerParametrosInventario(self):
-        """Parámetros para la tabla inventario."""
+        """ Parámetros para la tabla inventario. """
         try:
             if not (tamanoLote := float(self.ui.txtTamano.text())):
                 return None
@@ -248,7 +248,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
             return None
 
     def obtenerParametrosProdUtilizaInv(self):
-        """Parámetros para la tabla productos_utiliza_inventario."""
+        """ Parámetros para la tabla productos_utiliza_inventario. """
         productos: list[WidgetProducto] = self.ui.scrollAreaLista.children()[1:]
 
         PUI_db_parametros = []
@@ -265,7 +265,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
         return PUI_db_parametros
 
     def done(self):
-        """Función donde se registrará o actualizará elemento del inventario."""
+        """ Función donde se registrará o actualizará elemento del inventario. """
         #### obtención de parámetros ####
         inventario_db_parametros = self.obtenerParametrosInventario()
         PUI_db_parametros = self.obtenerParametrosProdUtilizaInv()
@@ -286,12 +286,12 @@ class Base_EditarInventario(QtWidgets.QWidget):
             self.close()
 
     def insertar_o_modificar(self, inventario_db_parametros: tuple) -> tuple:
-        """Devuelve tupla con índice del elemento registrado o editado."""
+        """ Devuelve tupla con índice del elemento registrado o editado. """
         raise NotImplementedError('BEIS CLASSSSSSS')
 
 
 class App_RegistrarInventario(Base_EditarInventario):
-    """Backend para la ventana para registrar un material del inventario."""
+    """ Backend para la ventana para registrar un material del inventario. """
 
     MENSAJE_EXITO = '¡Se registró el elemento!'
     MENSAJE_ERROR = '¡No se pudo registrar el elemento!'
@@ -312,7 +312,7 @@ class App_RegistrarInventario(Base_EditarInventario):
 
 
 class App_EditarInventario(Base_EditarInventario):
-    """Backend para la ventana para editar un material del inventario."""
+    """ Backend para la ventana para editar un material del inventario. """
 
     MENSAJE_EXITO = '¡Se editó el elemento!'
     MENSAJE_ERROR = '¡No se pudo editar el elemento!'

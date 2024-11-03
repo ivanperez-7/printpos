@@ -3,7 +3,7 @@ import re
 
 
 class _useless(type):
-    """Para habilitar `Moneda.cero`."""
+    """ Para habilitar `Moneda.cero`. """
 
     @property
     def cero(cls) -> 'Moneda':
@@ -74,7 +74,7 @@ class Moneda(metaclass=_useless):
 
     @staticmethod
     def sum(iter_) -> 'Moneda':
-        """Invoca función nativa `sum` con parámetro `start=Moneda.cero`."""
+        """ Invoca función nativa `sum` con parámetro `start=Moneda.cero`. """
         return sum(iter_, start=Moneda.cero)
 
     # =====================

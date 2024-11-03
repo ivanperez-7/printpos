@@ -18,11 +18,11 @@ from utils.mywidgets import LabelAdvertencia
 
 
 class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
-    """Backend para la ventana de administración de usuarios.
+    """ Backend para la ventana de administración de usuarios.
     TODO:
         - mecanismo de reseteo de contraseña (sin permisos de admin)
         - registros de acciones: inicios de sesión, modificación de ajustes y usuarios, acciones en general
-        - personalización: foto de perfil y colores del UI"""
+        - personalización: foto de perfil y colores del UI """
 
     def crear(self):
         from ui.Ui_AdministrarUsuarios import Ui_AdministrarUsuarios
@@ -62,9 +62,9 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
     #  FUNCIONES ÚTILES
     # ==================
     def update_display(self, rescan: bool = False):
-        """Actualiza la tabla y el contador de usuarios.
+        """ Actualiza la tabla y el contador de usuarios.
         Acepta una cadena de texto para la búsqueda de usuarios.
-        También lee de nuevo la tabla de usuarios, si se desea."""
+        También lee de nuevo la tabla de usuarios, si se desea. """
         if rescan:
             manejador = ManejadorUsuarios(self.conn)
             self.all = manejador.obtener_vista('view_all_usuarios')
@@ -87,18 +87,18 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def registrarUsuario(self):
-        """Abre ventana para registrar un usuario."""
+        """ Abre ventana para registrar un usuario. """
         widget = App_RegistrarUsuario(self)
         widget.success.connect(lambda: self.update_display(rescan=True))
 
     def editarUsuario(self):
-        """Abre ventana para editar un usuario seleccionado."""
+        """ Abre ventana para editar un usuario seleccionado. """
         if selected := self.ui.tabla_usuarios.selectedItems():
             widget = App_EditarUsuario(selected[0].text(), self)
             widget.success.connect(lambda: self.update_display(rescan=True))
 
     def quitarUsuario(self):
-        """Pide confirmación para eliminar usuarios de la base de datos."""
+        """ Pide confirmación para eliminar usuarios de la base de datos. """
         if (
             not (selected := self.ui.tabla_usuarios.selectedItems())
             or (usuario := selected[0].text()) in ['SYSDBA', self.user.usuario]
@@ -124,7 +124,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
 #################################
 @fondo_oscuro
 class Base_EditarUsuario(QtWidgets.QWidget):
-    """Clase base para la ventana de registrar o editar usuario."""
+    """ Clase base para la ventana de registrar o editar usuario. """
 
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
@@ -167,12 +167,12 @@ class Base_EditarUsuario(QtWidgets.QWidget):
     # ==================
     @property
     def cambioContrasena(self) -> bool:
-        """Cada clase tiene su manera de decidir si hay cambio de contraseña."""
+        """ Cada clase tiene su manera de decidir si hay cambio de contraseña. """
         raise NotImplementedError('BEIS CLASSSSSSS')
 
     def editar(self):
-        """Intenta editar datos de la tabla Usuarios y
-        se notifica al usuario del resultado de la operación."""
+        """ Intenta editar datos de la tabla Usuarios y
+        se notifica al usuario del resultado de la operación. """
         if self.cambioContrasena:
             psswd = self.ui.txtPsswd.text()
             psswd_conf = self.ui.txtPsswdConf.text()
@@ -207,12 +207,12 @@ class Base_EditarUsuario(QtWidgets.QWidget):
             self.close()
 
     def insertar_o_modificar(self, usuarios_db_parametros: tuple) -> bool:
-        """Método que insertará o modificará usuario."""
+        """ Método que insertará o modificará usuario. """
         raise NotImplementedError('BEIS CLASSSSSSS')
 
 
 class App_RegistrarUsuario(Base_EditarUsuario):
-    """Backend para la ventana de registrar usuario."""
+    """ Backend para la ventana de registrar usuario. """
 
     MENSAJE_EXITO = '¡Se registró el usuario!'
     MENSAJE_ERROR = '¡No se pudo registrar el usuario!'
@@ -233,11 +233,11 @@ class App_RegistrarUsuario(Base_EditarUsuario):
     # ==================
     @property
     def cambioContrasena(self):
-        """Siempre hay cambio de contraseña."""
+        """ Siempre hay cambio de contraseña. """
         return True
 
     def insertar_o_modificar(self, usuarios_db_parametros):
-        """Insertar en DB y crear en Firebird."""
+        """ Insertar en DB y crear en Firebird. """
         manejador = ManejadorUsuarios(self.conn)
         usuario = usuarios_db_parametros[0]
         psswd = self.ui.txtPsswd.text()
@@ -248,7 +248,7 @@ class App_RegistrarUsuario(Base_EditarUsuario):
 
 
 class App_EditarUsuario(Base_EditarUsuario):
-    """Backend para la ventana de editar usuario."""
+    """ Backend para la ventana de editar usuario. """
 
     MENSAJE_EXITO = '¡Se editó el usuario!'
     MENSAJE_ERROR = '¡No se pudo editar el usuario!'
@@ -280,21 +280,21 @@ class App_EditarUsuario(Base_EditarUsuario):
     # ==================
     @property
     def cambioContrasena(self):
-        """Hay cambio de contraseña si se solicita o si el usuario
-        no tiene permisos en la DB (fue dado de baja)."""
+        """ Hay cambio de contraseña si se solicita o si el usuario
+        no tiene permisos en la DB (fue dado de baja). """
         return self.ui.cambiarPsswd.isChecked() or not self.permisos
 
     def cambiarTrigger(self, state):
-        """Indica si se desea cambiar la contraseña en la operación."""
+        """ Indica si se desea cambiar la contraseña en la operación. """
         self.ui.groupPsswd.setEnabled(state)
         self.ui.groupPsswdConf.setEnabled(state)
 
     def insertar_o_modificar(self, usuarios_db_parametros):
-        """Modifica datos del usuario y cambia contraseña y/o permisos.
+        """ Modifica datos del usuario y cambia contraseña y/o permisos.
         1. Actualiza usuario en tabla usuarios
         2. Al haberse dado de baja, intenta crear usuario
         3. Si no, y si se desea, cambiar contraseña en servidor Firebird
-        4. Si se desea, retirar roles ADMINISTRADOR y VENDEDOR para cambiar de rol"""
+        4. Si se desea, retirar roles ADMINISTRADOR y VENDEDOR para cambiar de rol """
         manejador = ManejadorUsuarios(self.conn)
         psswd = self.ui.txtPsswd.text()
 

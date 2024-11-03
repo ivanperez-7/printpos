@@ -105,7 +105,7 @@ class Dialog_ObtenerAdmin(QDialog):
 
 
 def requiere_admin(func):
-    """Decorador para solicitar contraseña de administrador
+    """ Decorador para solicitar contraseña de administrador
     antes de ejecutar alguna función.
 
     >>> @requiere_admin
@@ -121,7 +121,7 @@ def requiere_admin(func):
     ...     man = sql.ManejadorVentas(conn)
     ...     print(man.nombreUsuarioActivo)
 
-    Por el momento, no se puede usar un return en una función envuelta."""
+    Por el momento, no se puede usar un return en una función envuelta. """
 
     @wraps(func)
     def wrapper_decorator(*args, **kwargs):
@@ -167,7 +167,7 @@ class _Runnable(QRunnable):
 
 
 def run_in_thread(func):
-    """Decorador para ejecutar alguna función dada en otro hilo."""
+    """ Decorador para ejecutar alguna función dada en otro hilo. """
 
     @wraps(func)
     def async_func(*args, **kwargs):
@@ -183,9 +183,9 @@ def run_in_thread(func):
 
 
 def fondo_oscuro(widget):
-    """Decorador para crear un fondo oscurecedor en la ventana principal.
+    """ Decorador para crear un fondo oscurecedor en la ventana principal.
     Requiere widget padre que, por convención para este proyecto, al ser requerido
-    en el constructor, siempre se pasa como último parámetro del widget hijo."""
+    en el constructor, siempre se pasa como último parámetro del widget hijo. """
     orig_init = widget.__init__
     orig_show = widget.showEvent
     orig_close = widget.closeEvent

@@ -13,7 +13,7 @@ from core import Moneda
 
 @dataclass
 class Usuario:
-    """Clase para mantener registro de un usuario."""
+    """ Clase para mantener registro de un usuario. """
 
     id: int
     usuario: str
@@ -29,12 +29,12 @@ class Usuario:
 
     @property
     def administrador(self):
-        """Regresa un booleano que dice si el usuario es administrador."""
+        """ Regresa un booleano que dice si el usuario es administrador. """
         return self.permisos == 'ADMINISTRADOR'
 
     @classmethod
     def generarUsuarioActivo(cls, manejador: ManejadorUsuarios):
-        """Genera clase Usuario dada una conexión válida a la DB."""
+        """ Genera clase Usuario dada una conexión válida a la DB. """
         usuario = manejador.usuarioActivo
         result = manejador.obtenerUsuario(usuario)
         return cls(*result, manejador.rolActivo)
@@ -42,7 +42,7 @@ class Usuario:
 
 @dataclass
 class BaseItem:
-    """Clase para mantener registro de un producto simple de la venta."""
+    """ Clase para mantener registro de un producto simple de la venta. """
 
     id: int  # identificador interno en la base de datos
     codigo: str  # nombre del producto
@@ -54,18 +54,18 @@ class BaseItem:
 
     @property
     def importe(self) -> float:
-        """Costo total del producto."""
+        """ Costo total del producto. """
         raise NotImplementedError('BEIS CLASSSS')
 
     @property
     def total_descuentos(self) -> float:
-        """Regresa el total de descuentos (descuento * cantidad)."""
+        """ Regresa el total de descuentos (descuento * cantidad). """
         raise NotImplementedError('BEIS CLASSSS')
 
 
 @dataclass
 class ItemVenta(BaseItem):
-    """Clase para mantener registro de un producto simple de la venta."""
+    """ Clase para mantener registro de un producto simple de la venta. """
 
     duplex: bool = False  # dicta si el producto es duplex
 
@@ -75,17 +75,17 @@ class ItemVenta(BaseItem):
 
     @property
     def importe(self):
-        """Costo total del producto."""
+        """ Costo total del producto. """
         return (self.precio_unit - self.descuento_unit) * self.cantidad
 
     @property
     def total_descuentos(self):
-        """Regresa el total de descuentos (descuento * cantidad)."""
+        """ Regresa el total de descuentos (descuento * cantidad). """
         return self.descuento_unit * self.cantidad
 
     def __iter__(self):
-        """Regresa iterable para alimentar las tablas de productos.
-        Cantidad | Código | Especificaciones | Precio | Descuento | Importe"""
+        """ Regresa iterable para alimentar las tablas de productos.
+        Cantidad | Código | Especificaciones | Precio | Descuento | Importe """
         yield from (
             self.cantidad,
             self.codigo + (' (a doble cara)' if self.duplex else ''),
@@ -98,8 +98,8 @@ class ItemVenta(BaseItem):
 
 @dataclass
 class ItemGranFormato(BaseItem):
-    """Clase para un producto de tipo gran formato.
-    Reimplementa métodos `importe` y `total_descuentos`."""
+    """ Clase para un producto de tipo gran formato.
+    Reimplementa métodos `importe` y `total_descuentos`. """
 
     min_m2: float
 
@@ -117,8 +117,8 @@ class ItemGranFormato(BaseItem):
         return self.descuento_unit * cantidad
 
     def __iter__(self):
-        """Regresa iterable para alimentar las tablas de productos.
-        Cantidad | Código | Especificaciones | Precio | Descuento | Importe"""
+        """ Regresa iterable para alimentar las tablas de productos.
+        Cantidad | Código | Especificaciones | Precio | Descuento | Importe """
         yield from (
             self.cantidad,
             self.codigo,
@@ -131,7 +131,7 @@ class ItemGranFormato(BaseItem):
 
 @dataclass
 class Venta:
-    """Clase para mantener registro de una venta."""
+    """ Clase para mantener registro de una venta. """
 
     _productos: list[BaseItem] = field(default_factory=list)
     fechaCreacion: QDateTime = QDateTime.currentDateTime()
@@ -151,7 +151,7 @@ class Venta:
 
     @property
     def esVentaDirecta(self):
-        """Compara fechas de creación y entrega para determinar si la venta será un pedido."""
+        """ Compara fechas de creación y entrega para determinar si la venta será un pedido. """
         return self.fechaCreacion == self.fechaEntrega
 
     @property
@@ -165,7 +165,7 @@ class Venta:
         self._productos.pop(idx)
 
     def reajustarPrecios(self, manejador: ManejadorProductos):
-        """Algoritmo para reajustar precios de productos simples al haber cambios de cantidad.
+        """ Algoritmo para reajustar precios de productos simples al haber cambios de cantidad.
         Por cada grupo de productos idénticos:
             1. Calcular cantidad de todos los productos y solo duplex.
             2. Obtener precio NO DUPLEX con el total de ambas cantidades.
@@ -185,7 +185,7 @@ class Venta:
                 p.precio_unit = nuevoPrecio
 
     def _obtenerGruposProductos(self) -> Iterator[list[ItemVenta]]:
-        """Obtiene un generador con listas de productos, separadas por identificador."""
+        """ Obtiene un generador con listas de productos, separadas por identificador. """
         out = dict()
         for prod in self._productos:
             if not isinstance(prod, ItemVenta):
@@ -208,7 +208,7 @@ class Venta:
 
 @dataclass
 class Movimiento:
-    """Clase para mantener registro de un movimiento en la caja."""
+    """ Clase para mantener registro de un movimiento en la caja. """
 
     fecha_hora: datetime
     monto: float
@@ -221,9 +221,9 @@ class Movimiento:
         return self.monto > 0
 
     def __iter__(self):
-        """Alimenta las tablas principales:
+        """ Alimenta las tablas principales:
 
-        Fecha y hora | Monto | Descripción | Método | Usuario."""
+        Fecha y hora | Monto | Descripción | Método | Usuario. """
         yield from (
             self.fecha_hora,
             self.monto,
@@ -234,7 +234,7 @@ class Movimiento:
 
 
 class Caja:
-    """Clase para manejar todos los movimientos en caja."""
+    """ Clase para manejar todos los movimientos en caja. """
 
     movimientos: list[Movimiento]
 
@@ -264,12 +264,12 @@ class Caja:
 
     @property
     def todoIngresos(self):
-        """Regresa objeto `filter` de movimientos que son ingresos."""
+        """ Regresa objeto `filter` de movimientos que son ingresos. """
         return filter(lambda m: m.esIngreso, self.movimientos)
 
     @property
     def todoEgresos(self):
-        """Regresa objeto `filter` de movimientos que son egresos."""
+        """ Regresa objeto `filter` de movimientos que son egresos. """
         return filter(lambda m: not m.esIngreso, self.movimientos)
 
     def _total(self, _iter: Iterable[Movimiento], metodo: str = None):

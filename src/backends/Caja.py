@@ -17,7 +17,7 @@ from utils.mywidgets import LabelAdvertencia
 # VENTANA PRINCIPAL #
 #####################
 class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
-    """Backend para la ventana de movimientos de la caja."""
+    """ Backend para la ventana de movimientos de la caja. """
 
     rescanned = Signal()
 
@@ -89,9 +89,9 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         self.rescanned.emit()
 
     def update_display(self):
-        """Actualiza las tablas de ingresos y egresos.
+        """ Actualiza las tablas de ingresos y egresos.
 
-        Relee base de datos en cualquier evento (en este caso, al mover fechas)."""
+        Relee base de datos en cualquier evento (en este caso, al mover fechas). """
         total = self.all_movimientos.totalCorte()
         self.ui.lbTotal.setText(f'Total del corte: ${total}')
 
@@ -140,7 +140,7 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         tabla.resizeRowsToContents()
 
     def confirmar_imprimir(self):
-        """Ventana de confirmación para imprimir corte."""
+        """ Ventana de confirmación para imprimir corte. """
         qm = QtWidgets.QMessageBox
         ret = qm.question(
             self,
@@ -156,12 +156,12 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def registrarIngreso(self):
-        """Registrar ingreso en movimientos."""
+        """ Registrar ingreso en movimientos. """
         self.Dialog = Dialog_Registrar()
         self.Dialog.success.connect(self.rescan_update)
 
     def registrarEgreso(self):
-        """Registrar egreso en movimientos."""
+        """ Registrar egreso en movimientos. """
         self.Dialog = Dialog_Registrar(egreso=True)
         self.Dialog.success.connect(self.rescan_update)
 

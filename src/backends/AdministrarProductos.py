@@ -16,7 +16,7 @@ from utils.mywidgets import LabelAdvertencia
 # VENTANA PRINCIPAL #
 #####################
 class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
-    """Backend para la ventana de administración de productos."""
+    """ Backend para la ventana de administración de productos. """
 
     rescanned = Signal()
 
@@ -77,9 +77,9 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
         self.rescanned.emit()
 
     def update_display(self):
-        """Actualiza la tabla y el contador de productos.
+        """ Actualiza la tabla y el contador de productos.
         Acepta una cadena de texto para la búsqueda de productos.
-        También lee de nuevo la tabla de productos, si se desea."""
+        También lee de nuevo la tabla de productos, si se desea. """
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
 
@@ -126,8 +126,8 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
             widget.success.connect(self.rescan_update)
 
     def quitarProducto(self):
-        """Elimina un producto de la base de datos.
-        Primero se verifica si hay elementos que este utilizan."""
+        """ Elimina un producto de la base de datos.
+        Primero se verifica si hay elementos que este utilizan. """
         try:
             id_productos = self.ui.tabla_productos.selectedItems()[0].text()
         except IndexError:
@@ -149,7 +149,7 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
 #################################
 @fondo_oscuro
 class Base_EditarProducto(QtWidgets.QWidget):
-    """Backend para la ventana para editar un producto de la base de datos."""
+    """ Backend para la ventana para editar un producto de la base de datos. """
 
     MENSAJE_EXITO: str
     MENSAJE_ERROR: str
@@ -201,7 +201,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
         return ['S', 'G'][self.ui.tabWidget.currentIndex()]
 
     def agregarIntervalo(self, row: int, desde: float = 0.0, precio: float = 0.0, duplex: bool = False):
-        """Agrega entrada a la tabla de precios."""
+        """ Agrega entrada a la tabla de precios. """
         self.ui.tabla_precios.insertRow(row)
 
         cell = QtWidgets.QTableWidgetItem(f'{desde:,.2f}' if desde else '')
@@ -238,7 +238,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
         self.ui.layoutScroll.addWidget(nuevo)
 
     def obtenerParametrosProductos(self):
-        """Parámetros para la tabla productos."""
+        """ Parámetros para la tabla productos. """
         return tuple(
             v or None
             for v in (
@@ -250,7 +250,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
         )
 
     def obtenerParametrosProdUtilizaInv(self):
-        """Parámetros para la tabla productos_utiliza_inventario."""
+        """ Parámetros para la tabla productos_utiliza_inventario. """
         wdg: list[WidgetElemento] = self.ui.scrollAreaLista.children()[1:]
 
         PUI_db_parametros = []
@@ -267,7 +267,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
         return PUI_db_parametros
 
     def obtenerParametrosProdIntervalos(self):
-        """Parámetros para la tabla productos_intervalos."""
+        """ Parámetros para la tabla productos_intervalos. """
         tabla = self.ui.tabla_precios
         Prod_db_parametros = []
 
@@ -291,7 +291,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
         return Prod_db_parametros
 
     def obtenerParametrosProdGranFormato(self):
-        """Parámetros para la tabla productos_gran_formato."""
+        """ Parámetros para la tabla productos_gran_formato. """
         try:
             return (float(self.ui.txtMinM2.text()), float(self.ui.txtPrecio.text()))
         except ValueError:
@@ -301,7 +301,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
             return None
 
     def done(self):
-        """Función donde se registrará o actualizará producto."""
+        """ Función donde se registrará o actualizará producto. """
         #### obtención de parámetros ####
         productos_db_parametros = self.obtenerParametrosProductos()
         PUI_db_parametros = self.obtenerParametrosProdUtilizaInv()
@@ -343,12 +343,12 @@ class Base_EditarProducto(QtWidgets.QWidget):
             self.close()
 
     def insertar_o_modificar(self, productos_db_parametros: tuple) -> tuple:
-        """Devuelve tupla con índice del producto registrado o editado."""
+        """ Devuelve tupla con índice del producto registrado o editado. """
         raise NotImplementedError('BEIS CLASSSSSSS')
 
 
 class App_RegistrarProducto(Base_EditarProducto):
-    """Backend para la ventana para insertar un producto a la base de datos."""
+    """ Backend para la ventana para insertar un producto a la base de datos. """
 
     MENSAJE_EXITO = '¡Se registró el producto!'
     MENSAJE_ERROR = '¡No se pudo registrar el producto!'
@@ -366,7 +366,7 @@ class App_RegistrarProducto(Base_EditarProducto):
 
 
 class App_EditarProducto(Base_EditarProducto):
-    """Backend para la ventana para editar un producto de la base de datos."""
+    """ Backend para la ventana para editar un producto de la base de datos. """
 
     MENSAJE_EXITO = '¡Se editó el producto!'
     MENSAJE_ERROR = '¡No se pudo editar el producto!'

@@ -10,7 +10,7 @@ from sql import ManejadorVentas, ManejadorInventario
 
 
 class App_Home(QtWidgets.QWidget, IModuloPrincipal):
-    """Backend para la pantalla principal."""
+    """ Backend para la pantalla principal. """
 
     new_module = Signal(type)
 
@@ -125,7 +125,7 @@ class ListaNotificaciones(QtWidgets.QListWidget):
         )
 
     def agregarNotificaciones(self):
-        """Llena la caja de notificaciones."""
+        """ Llena la caja de notificaciones. """
         items = []
         manejador = ManejadorVentas(user_context.conn)
 
@@ -147,8 +147,8 @@ class ListaNotificaciones(QtWidgets.QListWidget):
             self.addItem(item)
 
     def alternarNotificaciones(self):
-        """Se llama a esta función al hacer click en la foto de perfil
-        del usuario. Anima el tamaño de la caja de notificaciones."""
+        """ Se llama a esta función al hacer click en la foto de perfil
+        del usuario. Anima el tamaño de la caja de notificaciones. """
         hiddenGeom = QRect(0, 0, 400, 0)
         shownGeom = QRect(0, 0, 400, 120)
 

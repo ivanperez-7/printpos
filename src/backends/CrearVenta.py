@@ -22,7 +22,7 @@ TASA_IVA = 0.16
 
 
 class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
-    """Backend para la función de crear ventas.
+    """ Backend para la función de crear ventas.
     TODO:
         - mandar ticket por whatsapp o imprimir, sí o sí"""
 
@@ -97,14 +97,14 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
             self.ventaDatos[item.row()].notas = item.text()
 
     def establecerCliente(self, nombre: str, telefono: str, correo: str):
-        """Atajo para modificar datos del cliente seleccionado."""
+        """ Atajo para modificar datos del cliente seleccionado. """
         self.ui.txtCliente.setText(nombre)
         self.ui.txtTelefono.setText(telefono)
         self.ui.txtCorreo.setText(correo)
 
     def colorearActualizar(self):
-        """Llenar tabla con los productos seleccionados,
-        luego calcular precios y actualizar los QLabel."""
+        """ Llenar tabla con los productos seleccionados,
+        luego calcular precios y actualizar los QLabel. """
         tabla = self.ui.tabla_productos
         tabla.modelo = tabla.Modelos.CREAR_VENTA
         tabla.llenar(self.ventaDatos)
@@ -122,7 +122,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
     #  VENTANAS INVOCADAS POR LOS BOTONES
     # ====================================
     def insertarCliente(self):
-        """Abre ventana para registrar un cliente."""
+        """ Abre ventana para registrar un cliente. """
         modulo = App_RegistrarCliente(self)
         modulo.agregarDatosPorDefecto(
             nombre=self.ui.txtCliente.text(),
@@ -157,7 +157,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         self.colorearActualizar()
 
     def quitarProducto(self):
-        """Pide confirmación para eliminar un producto de la tabla."""
+        """ Pide confirmación para eliminar un producto de la tabla. """
         if not (selected := {i.row() for i in self.ui.tabla_productos.selectedIndexes()}):
             return
 
@@ -167,7 +167,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
 
     @requiere_admin
     def _quitarProducto(self, selected):
-        """En método separado para solicitar contraseña."""
+        """ En método separado para solicitar contraseña. """
         for row in sorted(selected, reverse=True):
             self.ventaDatos.quitarProducto(row)
 
@@ -176,7 +176,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         self.colorearActualizar()
 
     def agregarDescuento(self):
-        """Abre ventana para agregar un descuento a la orden si el cliente es especial."""
+        """ Abre ventana para agregar un descuento a la orden si el cliente es especial. """
         if not self.ventaDatos.ventaVacia:
             modulo = App_AgregarDescuento(self.ventaDatos, self)
             modulo.success.connect(
@@ -240,7 +240,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         return cliente.id
 
     def confirmarVenta(self):
-        """Abre ventana para confirmar y terminar la venta."""
+        """ Abre ventana para confirmar y terminar la venta. """
         if self.ventaDatos.ventaVacia or (id_cliente := self.verificarCliente()) is None:
             return
 
@@ -266,7 +266,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
 
     @requiere_admin
     def _salir(self):
-        """Cierra la ventana y regresa al inicio."""
+        """ Cierra la ventana y regresa al inicio. """
         self.go_back.emit()
 
 
@@ -275,7 +275,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
 #################################
 @fondo_oscuro
 class App_AgregarProducto(Base_VisualizarProductos):
-    """Backend para la función de agregar un producto a la venta."""
+    """ Backend para la función de agregar un producto a la venta. """
 
     success = Signal(object)
 
@@ -306,7 +306,7 @@ class App_AgregarProducto(Base_VisualizarProductos):
     #  FUNCIONES ÚTILES
     # ==================
     def medidasHandle(self):
-        """Especificar medidas en producto."""
+        """ Especificar medidas en producto. """
         ancho = self.ui.txtAncho.text()
         anchoMedida = 'cm' if self.ui.btAnchoCm.isChecked() else 'm'
 
@@ -318,7 +318,7 @@ class App_AgregarProducto(Base_VisualizarProductos):
             self.ui.txtNotas_2.setText(spec)
 
     def done(self):
-        """Determina la rutina a ejecutar basándose en la pestaña actual."""
+        """ Determina la rutina a ejecutar basándose en la pestaña actual. """
         current = self.ui.tabWidget.currentIndex()
 
         if current == 0:
@@ -333,7 +333,7 @@ class App_AgregarProducto(Base_VisualizarProductos):
 
 @fondo_oscuro
 class App_SeleccionarCliente(QtWidgets.QWidget):
-    """Backend para la función de seleccionar un cliente de la base de datos."""
+    """ Backend para la función de seleccionar un cliente de la base de datos. """
 
     success = Signal(list)
 
@@ -376,9 +376,9 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
     #  FUNCIONES ÚTILES
     # ==================
     def update_display(self, txt_busqueda: str = ''):
-        """Actualiza la tabla y el contador de clientes.
+        """ Actualiza la tabla y el contador de clientes.
         Acepta una cadena de texto para la búsqueda de clientes.
-        También lee de nuevo la tabla de clientes, si se desea."""
+        También lee de nuevo la tabla de clientes, si se desea. """
         if txt_busqueda:
             found = [cliente for cliente in self.all if son_similar(txt_busqueda, cliente[0])]
         else:
@@ -389,7 +389,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
         tabla.resizeRowsToContents()
 
     def done(self):
-        """Modifica datos de cliente en la ventana principal (CrearVenta)."""
+        """ Modifica datos de cliente en la ventana principal (CrearVenta). """
         if selected := self.ui.tabla_seleccionar.selectedItems():
             self.success.emit(selected)
             self.close()
@@ -397,7 +397,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
 
 @fondo_oscuro
 class App_FechaEntrega(QtWidgets.QWidget):
-    """Backend para la función de cambiar fecha de entrega."""
+    """ Backend para la función de cambiar fecha de entrega. """
 
     success = Signal(QDateTime)
 
@@ -432,8 +432,8 @@ class App_FechaEntrega(QtWidgets.QWidget):
             self.close()
 
     def done(self):
-        """Acepta los cambios y modifica la fecha seleccionada
-        en la ventana principal (CrearVenta)."""
+        """ Acepta los cambios y modifica la fecha seleccionada
+        en la ventana principal (CrearVenta). """
         dateTime = QDateTime(self.ui.calendario.selectedDate(), self.ui.horaEdit.time())
 
         self.success.emit(dateTime)
@@ -442,7 +442,7 @@ class App_FechaEntrega(QtWidgets.QWidget):
 
 @fondo_oscuro
 class App_AgregarDescuento(QtWidgets.QWidget):
-    """Backend para agregar descuento a la orden."""
+    """ Backend para agregar descuento a la orden. """
 
     success = Signal()
 
@@ -491,7 +491,7 @@ class App_AgregarDescuento(QtWidgets.QWidget):
     # ================ #
     @requiere_admin
     def done(self):
-        """Acepta los cambios e inserta descuento en la lista de productos."""
+        """ Acepta los cambios e inserta descuento en la lista de productos. """
         try:
             row = self.ui.tabla_productos.selectedItems()[0].row()
             nuevo_precio = float(self.ui.txtPrecio.text())
@@ -507,7 +507,7 @@ class App_AgregarDescuento(QtWidgets.QWidget):
 
 @fondo_oscuro
 class App_EnviarCotizacion(QtWidgets.QWidget):
-    """Backend para agregar descuento a la orden."""
+    """ Backend para agregar descuento a la orden. """
 
     def __init__(self, ventaDatos: Venta, txtCliente: str, txtTelefono: str, txtVendedor: str, parent=None):
         from ui.Ui_Cotizacion import Ui_EnviarCotizacion
@@ -571,7 +571,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
 
 @fondo_oscuro
 class App_ConfirmarVenta(Base_PagarVenta):
-    """Backend para la ventana de finalización de venta."""
+    """ Backend para la ventana de finalización de venta. """
 
     success = Signal()
 
@@ -643,8 +643,8 @@ class App_ConfirmarVenta(Base_PagarVenta):
         return self.ventaDatos.total if self.ventaDatos.esVentaDirecta else self.ventaDatos.total / 2
 
     def obtenerIdVenta(self) -> int:
-        """Registra datos principales de venta en DB
-        y regresa folio de venta insertada."""
+        """ Registra datos principales de venta en DB
+        y regresa folio de venta insertada. """
         manejadorVentas = ManejadorVentas(self.conn)
         ventas_db_parametros = self.obtenerParametrosVentas()
         ventas_detallado_db_parametros = self.obtenerParametrosVentasDetallado()
@@ -656,7 +656,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         return None
 
     def obtenerParametrosVentas(self) -> tuple:
-        """Parámetros para tabla ventas (datos generales)."""
+        """ Parámetros para tabla ventas (datos generales). """
         return (
             self.ventaDatos.id_cliente,
             self.user.id,
@@ -668,7 +668,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         )
 
     def obtenerParametrosVentasDetallado(self) -> list[tuple]:
-        """Parámetros para tabla ventas_detallado (datos de productos)."""
+        """ Parámetros para tabla ventas_detallado (datos de productos). """
         return [
             (
                 prod.id,
@@ -683,8 +683,8 @@ class App_ConfirmarVenta(Base_PagarVenta):
         ]
 
     def listo(self) -> None:
-        """Intenta finalizar la compra o pedido, actualizando el estado
-        e insertando los correspondientes movimientos en la tabla Caja."""
+        """ Intenta finalizar la compra o pedido, actualizando el estado
+        e insertando los correspondientes movimientos en la tabla Caja. """
         if not self.ventaDatos.total / 2 <= self.para_pagar:
             ret = qm.question(
                 self,
@@ -698,12 +698,12 @@ class App_ConfirmarVenta(Base_PagarVenta):
 
     @requiere_admin
     def listoAdmin(self) -> None:
-        """Saltar verificación con cuenta de administrador."""
+        """ Saltar verificación con cuenta de administrador. """
         super().listo()
 
     def actualizarEstadoVenta(self) -> bool:
-        """Tras verificar todas las condiciones, finalizar venta y
-        registrarla en la base de datos."""
+        """ Tras verificar todas las condiciones, finalizar venta y
+        registrarla en la base de datos. """
         manejadorVentas = ManejadorVentas(self.conn)
         estado = 'Terminada' if self.ventaDatos.esVentaDirecta else f'Recibido ${self.para_pagar}'
         return manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True)
@@ -726,7 +726,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         self.close()
 
     def abortar(self) -> None:
-        """Función para abortar la venta y actualizar estado a 'Cancelada'."""
+        """ Función para abortar la venta y actualizar estado a 'Cancelada'. """
         ret = qm.question(self, 'Atención', '¿Desea cancelar la venta? Esta acción no puede deshacerse.',)
         if ret == qm.Yes:
             self._abortar()

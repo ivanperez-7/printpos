@@ -2,8 +2,8 @@ from PySide6.QtCore import QThread
 
 
 class Runner(QThread):
-    """Clase derivada de QThread para manejar manualmente cuándo un hilo comienza y termina.
-    Para manejo automático, usar decorador `run_in_thread`."""
+    """ Clase derivada de QThread para manejar manualmente cuándo un hilo comienza y termina.
+    Para manejo automático, usar decorador `run_in_thread`. """
 
     def __init__(self, target, *args, **kwargs):
         super().__init__()

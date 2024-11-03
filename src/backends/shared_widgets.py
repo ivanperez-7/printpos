@@ -91,7 +91,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
         return self.ui.txtAnticipo.cantidad
 
     def cambiarAnticipo(self) -> None:
-        """Cambiar el anticipo pagado por el cliente."""
+        """ Cambiar el anticipo pagado por el cliente. """
         self.stack_pagos.total = self.ui.txtAnticipo.cantidad
         self._handleCounters()
 
@@ -101,8 +101,8 @@ class Base_PagarVenta(QtWidgets.QWidget):
         )
 
     def _handleCounters(self) -> None:
-        """Seguir las mismas reglas de `StackPagos.pagosValidos`
-        para actualizar y colorear contadores."""
+        """ Seguir las mismas reglas de `StackPagos.pagosValidos`
+        para actualizar y colorear contadores. """
         stack = self.stack_pagos
         n_efec = [wdg.metodoSeleccionado for wdg in stack].count('Efectivo')
 
@@ -138,9 +138,9 @@ class Base_PagarVenta(QtWidgets.QWidget):
         raise NotImplementedError('CLASE BASE BROU')
 
     def listo(self) -> None:
-        """Concluye la venta de la siguiente forma:
+        """ Concluye la venta de la siguiente forma:
         1. Inserta pagos en tabla ventas_pagos.
-        2. Si actualizarEstadoVenta, entonces dialogoExito."""
+        2. Si actualizarEstadoVenta, entonces dialogoExito. """
         manejadorVentas = ManejadorVentas(self.conn)
 
         # registrar pagos en tabla ventas_pagos
@@ -282,7 +282,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         )
 
     def obtenerMedidasProducto(self):
-        """Calcular medidas del producto, regresa tupla (ancho, alto)."""
+        """ Calcular medidas del producto, regresa tupla (ancho, alto). """
         ancho_producto = self.ui.txtAncho.text()
         div_ancho = 100 if self.ui.btAnchoCm.isChecked() else 1
 
@@ -297,7 +297,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
             return (0.0, 0.0)
 
     def obtenerMedidasMaterial(self):
-        """Calcular medidas del material, regresa tupla (ancho, alto)."""
+        """ Calcular medidas del material, regresa tupla (ancho, alto). """
         ancho_material = self.ui.txtAnchoMaterial.text()
         div_ancho_material = 100 if self.ui.btAnchoCm_2.isChecked() else 1
 
@@ -393,14 +393,14 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         )
 
     def rescan_display(self):
-        """Lee de nuevo las tablas de productos y actualiza tablas."""
+        """ Lee de nuevo las tablas de productos y actualiza tablas. """
         self.all_prod = self.manejador.obtener_vista('view_productos_simples')
         self.all_gran = self.manejador.obtener_vista('view_gran_formato')
         self.update_display()
 
     def update_display(self):
-        """Actualiza la tabla y el contador de clientes.
-        Acepta una cadena de texto para la búsqueda de clientes."""
+        """ Actualiza la tabla y el contador de clientes.
+        Acepta una cadena de texto para la búsqueda de clientes. """
         filtro = self.ui.btDescripcion.isChecked()
         txt_busqueda = self.ui.searchBar.text()
 

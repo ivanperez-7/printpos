@@ -16,10 +16,10 @@ __all__ = ['InterfazPaginas', 'InterfazFechas', 'InterfazFiltro']
 
 
 class InterfazPaginas(QObject):
-    """Interfaz para manejar paginados en tablas.
+    """ Interfaz para manejar paginados en tablas.
 
     Lo único que hace esta interfaz es manejar la propiedad
-    `paginaActual` de la tabla asociada."""
+    `paginaActual` de la tabla asociada. """
 
     pagina_cambiada = Signal()
 
@@ -58,8 +58,8 @@ class InterfazPaginas(QObject):
 
 
 class InterfazFechas(QObject):
-    """Interfaz para manejar widgets de fechas desde y hasta,
-    por medio de botones de 'Hoy', 'Esta semana' y 'Este mes'."""
+    """ Interfaz para manejar widgets de fechas desde y hasta,
+    por medio de botones de 'Hoy', 'Esta semana' y 'Este mes'. """
 
     dateChanged = Signal()
 
@@ -128,8 +128,8 @@ class InterfazFechas(QObject):
 
 
 class InterfazFechasReportes(QObject):
-    """Interfaz para manejar widgets de fechas desde y hasta,
-    por medio de botones de 'Hoy', 'Esta semana' y 'Este mes'."""
+    """ Interfaz para manejar widgets de fechas desde y hasta,
+    por medio de botones de 'Hoy', 'Esta semana' y 'Este mes'. """
 
     def __init__(
         self,
@@ -195,10 +195,10 @@ class InterfazFechasReportes(QObject):
 
 
 class InterfazFiltro(QObject):
-    """Interfaz para manejar filtros de búsqueda.
+    """ Interfaz para manejar filtros de búsqueda.
 
     Recibe un widget QToolButton y una lista de opciones:
-    nombre de opción, texto en placeholder e índice de columna asociada."""
+    nombre de opción, texto en placeholder e índice de columna asociada. """
 
     cambiado = Signal()
     idx: int

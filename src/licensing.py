@@ -28,11 +28,11 @@ class Errores(_Enum):
 
 
 def activar_licencia(license_key: str):
-    """Activar licencia pasando solamente la llave. Al activarse correctamente,
+    """ Activar licencia pasando solamente la llave. Al activarse correctamente,
     se creará un archivo encriptado donde se guardarán la llave de la licencia
     y el ID de instancia devuelto por la API.
 
-    Regresa un booleano que dicta si la operación fue exitosa o no."""
+    Regresa un booleano que dicta si la operación fue exitosa o no. """
     if not license_key:
         return False, Errores.ACTIVACION_NO_VALIDA
 
@@ -75,10 +75,10 @@ def activar_licencia(license_key: str):
 
 
 def desactivar_licencia():
-    """Intenta desactivar la licencia para esta máquina leyendo el archivo
+    """ Intenta desactivar la licencia para esta máquina leyendo el archivo
     de licencia que se obtiene durante la activación.
 
-    Regresa un booleano que dicta si la operación fue exitosa o no."""
+    Regresa un booleano que dicta si la operación fue exitosa o no. """
     # leer archivo .lic
     if not _config.LICENSE_PATH.exists():
         return False
@@ -112,11 +112,11 @@ def desactivar_licencia():
 
 
 def validar_licencia():
-    """Validar licencia proporcionando llave e instancia, o bien, leyendo
+    """ Validar licencia proporcionando llave e instancia, o bien, leyendo
     el archivo de licencia que se obtiene durante la activación.
 
     Regresa un booleano que dicta si la licencia es válida y está activa.
-    Al no ser el caso, regresa también LICENCIA_NO_EXISTENTE o VERIFICACION_FALLIDA."""
+    Al no ser el caso, regresa también LICENCIA_NO_EXISTENTE o VERIFICACION_FALLIDA. """
     if not _config.LICENSE_PATH.exists():
         return False, Errores.LICENCIA_NO_EXISTENTE
 

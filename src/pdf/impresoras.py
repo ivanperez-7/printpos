@@ -18,7 +18,7 @@ from utils.myutils import randFile
 
 
 class ImpresoraPDF:
-    """Clase general para manejar impresoras y enviar archivos a estas."""
+    """ Clase general para manejar impresoras y enviar archivos a estas. """
 
     warning_logger: IWarningLogger = Inject()
 
@@ -30,7 +30,7 @@ class ImpresoraPDF:
         return None
 
     def enviarAImpresora(self, data: io.BytesIO):
-        """Convertir PDF a imagen y mandar a impresora."""
+        """ Convertir PDF a imagen y mandar a impresora. """
         assert self.printer, 'Impresora aún no inicializada.'
 
         painter = QPainter()
@@ -60,11 +60,11 @@ class ImpresoraPDF:
 
 
 class ImpresoraOrdenes(ImpresoraPDF):
-    """Impresora para órdenes de compra.
-    Siempre crea diálogo para escoger impresora."""
+    """ Impresora para órdenes de compra.
+    Siempre crea diálogo para escoger impresora. """
 
     def obtenerImpresora(self):
-        """Diálogo para escoger impresora. En hilo principal."""
+        """ Diálogo para escoger impresora. En hilo principal. """
         printer = QPrinter(QPrinter.HighResolution)
 
         dialog = QPrintDialog(printer, self.parent)
@@ -89,11 +89,11 @@ class ImpresoraOrdenes(ImpresoraPDF):
 
 
 class ImpresoraTickets(ImpresoraPDF):
-    """Impresora para tickets.
-    Intenta leer impresora por defecto del archivo config."""
+    """ Impresora para tickets.
+    Intenta leer impresora por defecto del archivo config. """
 
     def obtenerImpresora(self):
-        """Lee impresora de tickets en archivo config. En hilo principal."""
+        """ Lee impresora de tickets en archivo config. En hilo principal. """
         pInfo = QPrinterInfo.printerInfo(INI.IMPRESORA)
 
         if not pInfo.printerName():
@@ -106,8 +106,8 @@ class ImpresoraTickets(ImpresoraPDF):
     def imprimirTicketCompra(
         self, idx: int, nums: list[int] | slice = None, manejador: ManejadorVentas = None,
     ):
-        """Genera el ticket de compra a partir de un identificador en la base de datos.
-        Recibe un arreglo de índices para imprimir pagos específicos."""
+        """ Genera el ticket de compra a partir de un identificador en la base de datos.
+        Recibe un arreglo de índices para imprimir pagos específicos. """
         # obtener datos de la compra, de la base de datos
         productos = list(manejador.obtenerTablaTicket(idx))
 
@@ -132,12 +132,12 @@ class ImpresoraTickets(ImpresoraPDF):
 
     @run_in_thread
     def imprimirTicketPresupuesto(self, productos: list, vendedor: str):
-        """Genera un ticket para el presupuesto de una compra."""
+        """ Genera un ticket para el presupuesto de una compra. """
         data = generarTicketPDF(productos, vendedor)
         self.enviarAImpresora(data)
 
     @run_in_thread
     def imprimirCorteCaja(self, caja, responsable: str):
-        """Genera un ticket para el presupuesto de una compra."""
+        """ Genera un ticket para el presupuesto de una compra. """
         data = generarCortePDF(caja, responsable)
         self.enviarAImpresora(data)

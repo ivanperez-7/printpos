@@ -41,7 +41,7 @@ def generarOrdenCompra(
     fecha_creacion: datetime,
     fecha_entrega: datetime,
 ):
-    """Genera un PDF con el orden de compra correspondiente a
+    """ Genera un PDF con el orden de compra correspondiente a
     la venta con índice `folio` en la base de datos.
 
     La orden de compra contiene:
@@ -51,7 +51,7 @@ def generarOrdenCompra(
             Máx. 6 por página
         - Total a pagar, anticipo recibido y saldo restante
         - Fecha de creación
-        - Fecha de entrega"""
+        - Fecha de entrega """
     assert isinstance(productos, list) and len(productos), f'Argumento {productos=} no valido.'
     assert anticipo is not None, f'Venta {folio=} es directa, no pedido.'
 
@@ -142,14 +142,14 @@ def generarTicketPDF(
     metodo_pago: str = None,
     fecha_creacion=datetime.now(),
 ):
-    """Función general para generar el ticket de compra o presupuesto.
+    """ Función general para generar el ticket de compra o presupuesto.
     Contiene:
         - Logo
         - Tabla de productos [Cantidad | Producto | Precio | Descuento | Importe]
         - Precio total
         - Nombre del vendedor
         - Folio de venta
-        - Fecha y hora de creación"""
+        - Fecha y hora de creación """
     assert isinstance(productos, list) and len(productos), f'Argumento {productos=} no valido.'
 
     buffer = io.BytesIO()
@@ -280,7 +280,7 @@ def generarTicketPDF(
 
 
 def generarCortePDF(caja: Caja, responsable: str):
-    """Función para generar el corte de caja, comprendido entre fechas dadas.
+    """ Función para generar el corte de caja, comprendido entre fechas dadas.
     Contiene:
         - Realizado el: (fecha)
         - Nombre del usuario activo
@@ -289,7 +289,7 @@ def generarCortePDF(caja: Caja, responsable: str):
         - Tabla de movimientos
             Fecha y hora | Descripción | Método de pago | Cantidad
         - Tabla de resumen de movimientos
-            Método de pago -> Ingresos | Egresos"""
+            Método de pago -> Ingresos | Egresos """
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,

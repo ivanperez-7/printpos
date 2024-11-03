@@ -22,7 +22,7 @@ licencia_validada = True
 
 
 class App_Login(QtWidgets.QWidget):
-    """Backend para la pantalla de inicio de sesión."""
+    """ Backend para la pantalla de inicio de sesión. """
 
     failure = Signal(licensing.Errores)
     logged_in = Signal(IDatabaseConnection, Usuario)
@@ -79,7 +79,7 @@ class App_Login(QtWidgets.QWidget):
 
     @function_details
     def error_verificacion(self, error: licensing.Errores):
-        """En método separado para regresar al hilo principal."""
+        """ En método separado para regresar al hilo principal. """
         match error:
             case licensing.Errores.LICENCIA_NO_EXISTENTE | licensing.Errores.LICENCIA_NO_VALIDA:
                 self.ui.btIngresar.clicked.connect(lambda: self.crear_widget_activacion(error))
@@ -106,7 +106,7 @@ class App_Login(QtWidgets.QWidget):
 
     @run_in_thread
     def verificar_info(self):
-        """Verifica datos ingresados consultando la tabla Usuarios."""
+        """ Verifica datos ingresados consultando la tabla Usuarios. """
         if not self.mutex.try_lock():
             return
         usuario, psswd, rol = (
@@ -221,7 +221,7 @@ class DialogoActivacion(QtWidgets.QWidget):
         self.mutex.unlock()
 
     def exito_verificacion(self):
-        """En método separado para regresar al hilo principal."""
+        """ En método separado para regresar al hilo principal. """
         self.close()
         QtWidgets.QMessageBox.information(
             self,
@@ -230,7 +230,7 @@ class DialogoActivacion(QtWidgets.QWidget):
         )
 
     def error_verificacion(self, error: licensing.Errores):
-        """En método separado para regresar al hilo principal."""
+        """ En método separado para regresar al hilo principal. """
         match error:
             case licensing.Errores.ACTIVACION_FALLIDA:
                 txt = (

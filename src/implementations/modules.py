@@ -29,8 +29,8 @@ class VentanaPrincipal(QMainWindow, IControllerWindow):  # TODO: clase App -> In
         self.show()
 
     def go_home(self):
-        """Regresar al menú principal.
-        Crea módulo Home y establece como widget principal."""
+        """ Regresar al menú principal.
+        Crea módulo Home y establece como widget principal. """
         home = crear_modulo('App_Home')
 
         home.crear()
@@ -49,7 +49,7 @@ class VentanaPrincipal(QMainWindow, IControllerWindow):  # TODO: clase App -> In
         self.en_venta = modulo == 'App_CrearVenta'
 
     def closeEvent(self, event):
-        """En eventos específicos, restringimos el cerrado del sistema."""
+        """ En eventos específicos, restringimos el cerrado del sistema. """
         if self.en_venta and not self.user.administrador:
             event.ignore()
             return

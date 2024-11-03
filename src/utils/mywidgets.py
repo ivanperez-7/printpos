@@ -12,7 +12,7 @@ from .myutils import unidecode, formatdate
 
 
 class ClickableIcon(QtWidgets.QPushButton):
-    """QPushButton con un stylesheet apropiado para eliminar bordes."""
+    """ QPushButton con un stylesheet apropiado para eliminar bordes. """
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -79,7 +79,7 @@ class StackPagos(QtWidgets.QStackedWidget):
         self.setCurrentIndex((self.currentIndex() + 1) % self.count())
 
     def agregarPago(self):
-        """Agrega widget de pago a la lista y regresa el widget."""
+        """ Agrega widget de pago a la lista y regresa el widget. """
         wdg = WidgetPago()
         wdg.ui.txtPago.textChanged.connect(lambda: self.cambio_pagos.emit())
         wdg.ui.buttonGroup.buttonClicked.connect(lambda: self.cambio_pagos.emit())
@@ -90,26 +90,26 @@ class StackPagos(QtWidgets.QStackedWidget):
         return wdg
 
     def quitarPago(self):
-        """Quitar el widget de pago actual."""
+        """ Quitar el widget de pago actual. """
         if self.count() > 1:
             self.removeWidget(self.currentWidget())
             self.cambio_pagos.emit()
 
     @property
     def restanteEnEfectivo(self):
-        """Residuo del total menos lo ya pagado con moneda electrónica."""
+        """ Residuo del total menos lo ya pagado con moneda electrónica. """
         return self.total - sum(wdg.montoPagado for wdg in self if wdg.metodoSeleccionado != 'Efectivo')
 
     @property
     def pagosValidos(self):
-        """Determinar que los pagos introducidos cumplan varios requisitos.
+        """ Determinar que los pagos introducidos cumplan varios requisitos.
         1. Si el monto debido es de cero, nunca aceptar.
         2. No puede haber pagos de cero pesos.
         3. No puede haber más de un pago en efectivo.
         4. Al haber uno de estos, verificar que sea necesario
            y que lo pagado sea igual o mayor que lo debido (es decir,
            permitir que el efectivo exceda lo necesario)
-        5. Al no haber efectivo, verificar que lo pagado sea exactamente lo debido."""
+        5. Al no haber efectivo, verificar que lo pagado sea exactamente lo debido. """
         montoPagado = sum(wdg.montoPagado for wdg in self)
         if self.permitir_nulo and self.total == montoPagado == 0.0 and self.count() == 1:
             return True
@@ -232,10 +232,10 @@ class TablaDatos(QtWidgets.QTableWidget):
         self.setStyleSheet(qs + color_qs)
 
     def configurarCabecera(self, resize_cols: Callable[[int], bool] = None, align_flags=None):
-        """Configurar tamaño de cabeceras de tabla. En particular,
+        """ Configurar tamaño de cabeceras de tabla. En particular,
         establece `ResizeToContents` en las columnas especificadas.
 
-        También se añaden banderas de alineación, si se desea."""
+        También se añaden banderas de alineación, si se desea. """
         header = self.horizontalHeader()
 
         if not resize_cols:
@@ -360,7 +360,7 @@ class TablaDatos(QtWidgets.QTableWidget):
 
 
 class NumberEdit(QtWidgets.QLineEdit):
-    """Widget QLineEdit para manejar cantidad monetarias de forma más fácil."""
+    """ Widget QLineEdit para manejar cantidad monetarias de forma más fácil. """
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -386,8 +386,8 @@ class NumberEdit(QtWidgets.QLineEdit):
 
 
 class LabelAdvertencia(QtWidgets.QLabel):
-    """Crea un label de advertencia para las tablas, ya que en Qt Designer no se puede.
-    Modifica métodos `resizeEvent` y `showEvent`."""
+    """ Crea un label de advertencia para las tablas, ya que en Qt Designer no se puede.
+    Modifica métodos `resizeEvent` y `showEvent`. """
 
     def __init__(self, parent: QtWidgets.QTableWidget, msj: str):
         super().__init__(parent)
@@ -509,8 +509,8 @@ class SpeechBubble(QtWidgets.QWidget):
         painter.drawPath(painter_path.simplified())
 
     def alternarDescuentos(self):
-        """Se llama a esta función al hacer click en la foto de perfil
-        del usuario. Anima el tamaño de la caja de notificaciones."""
+        """ Se llama a esta función al hacer click en la foto de perfil
+        del usuario. Anima el tamaño de la caja de notificaciones. """
         if not self.isVisible():
             # Create an animation to gradually change the height of the widget
             self.setVisible(True)

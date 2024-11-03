@@ -19,7 +19,7 @@ FirebirdError = fdb.Error
 ################## FACTORÍAS DE CONEXIÓN ##################
 @egg
 def conectar_firebird(usuario: str, psswd: str, rol: str = None) -> FirebirdConnection:
-    """Crea conexión a base de datos y regresa conexión a DB.
+    """ Crea conexión a base de datos y regresa conexión a DB.
     Levanta sql.FirebirdError, por lo que siempre se debe usar en un bloque `try-except`.
     """
     try:

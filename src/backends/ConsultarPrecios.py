@@ -5,8 +5,8 @@ from backends.shared_widgets import Base_VisualizarProductos
 
 
 class App_ConsultarPrecios(Base_VisualizarProductos):
-    """Backend para el módulo de consultar precios.
-    No se puede cerrar hasta cerrar por completo el sistema."""
+    """ Backend para el módulo de consultar precios.
+    No se puede cerrar hasta cerrar por completo el sistema. """
 
     def __init__(self):
         super().__init__()
