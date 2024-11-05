@@ -15,4 +15,6 @@ pyvenv.cfg
 .pytest_cache
 # carpetas generadas por nuitka
 PrintPOS.*/
-resources/db
+# carpeta de base de datos excepto scripts
+resources/db/*
+!resources/db/*.sql
