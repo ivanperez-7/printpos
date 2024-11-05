@@ -29,7 +29,7 @@ class Caja(Base):
     usuario = relationship('Usuarios', back_populates='cajas')
 
 
-class Clientes(Base):
+class Cliente(Base):
     __tablename__ = 'CLIENTES'
 
     id_clientes = Column(Integer, primary_key=True, autoincrement=True)
@@ -82,7 +82,7 @@ class MetodosPago(Base):
     )
 
 
-class Productos(Base):
+class Producto(Base):
     __tablename__ = 'PRODUCTOS'
 
     id_productos = Column(Integer, primary_key=True, autoincrement=True)
@@ -112,7 +112,7 @@ class ProductosGranFormato(Base):
     producto = relationship('Productos', back_populates='productos_gran_formato')
 
 
-class ProductosIntervalos(Base):
+class ProductoIntervalo(Base):
     __tablename__ = 'PRODUCTOS_INTERVALOS'
 
     id_productos = Column(Integer, ForeignKey('PRODUCTOS.id_productos'), primary_key=True)
@@ -138,7 +138,7 @@ class ProductosUtilizaInventario(Base):
     inventario = relationship('Inventario')
 
 
-class Usuarios(Base):
+class Usuario(Base):
     __tablename__ = 'USUARIOS'
 
     id_usuarios = Column(Integer, primary_key=True, autoincrement=True)
@@ -156,7 +156,7 @@ class Usuarios(Base):
     )
 
 
-class Ventas(Base):
+class Venta(Base):
     __tablename__ = 'VENTAS'
 
     id_ventas = Column(Integer, primary_key=True, autoincrement=True)
@@ -190,7 +190,7 @@ class VentasDetallado(Base):
     producto = relationship('Productos', back_populates='ventas_detallado')
 
 
-class VentasPagos(Base):
+class VentaPago(Base):
     __tablename__ = 'VENTAS_PAGOS'
 
     id_pago = Column(Integer, primary_key=True, autoincrement=True)
