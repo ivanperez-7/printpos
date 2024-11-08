@@ -120,7 +120,7 @@ def generarOrdenCompra(
         # crear variable para nuevo PDF y leer plantilla
         text_pdf = PdfReader(packet)
         # agregar trazados en el PDF de la plantilla
-        base_pdf = PdfReader('resources/pdf/orden_compra2023.pdf')
+        base_pdf = PdfReader(INI.ORDEN_PDF)
         base_page = base_pdf.pages[0]
         base_page.merge_page(text_pdf.pages[0])
 
