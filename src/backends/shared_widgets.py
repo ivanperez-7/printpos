@@ -119,14 +119,14 @@ class Base_PagarVenta(QtWidgets.QWidget):
 
         if res < 0.0 and (not n_efec or stack.restanteEnEfectivo <= 0.0):
             # sobra dinero y sin efectivo, o efectivo no necesario
-            style = 'color: red;'
+            restante_style = 'color: red;'
         else:  # recalcular restante, considerando que hay efectivo y necesario
             res = max(Moneda.cero, res)  # por el cambio a entregar
-            style = ''
+            restante_style = ''
         if stack.pagosValidos:  # todo bien
-            style = 'color: green;'
+            restante_style = 'color: green;'
 
-        self.ui.lbRestante.setStyleSheet(style)
+        self.ui.lbRestante.setStyleSheet(restante_style)
         self.ui.lbRestante.setText(f'Restante: ${res}')
 
         self.ui.btListo.setEnabled(stack.pagosValidos and 0.0 <= stack.total <= self.total)
@@ -139,7 +139,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
 
     def listo(self) -> None:
         """ Concluye la venta de la siguiente forma:
-        1. Inserta pagos en tabla ventas_pagos.
+        1. Inserta pagos en tabla ventas_pagos SIN HACER COMMIT.
         2. Si actualizarEstadoVenta, entonces dialogoExito. """
         manejadorVentas = ManejadorVentas(self.conn)
 
@@ -249,6 +249,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
     def _intercambiarDimensiones(
         self, alto_textbox, ancho_textbox, bt_alto_cm, bt_ancho_cm, bt_alto_m, bt_ancho_m,
     ):
+        """ Función burda para intercambiar textos de los widgets de dimensiones. """
         alto = alto_textbox.text()
         ancho = ancho_textbox.text()
         bt_alto = bt_alto_cm if bt_ancho_cm.isChecked() else bt_alto_m
