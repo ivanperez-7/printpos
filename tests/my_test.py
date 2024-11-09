@@ -87,7 +87,7 @@ class RandomTests(TestCase, ConnectionsMixin):
         self.assertIsNotNone(man.obtenerMovimientos())
 
         res1 = man.insertarMovimiento((450.0, 'abono venta no sé', 1, 1), commit=False)
-        res2 = man.insertarMovimiento((-35.0, 'pago renta xd', 1, 2), commit=False)
+        res2 = man.insertarMovimiento((-35.0, 'pago renta xd', 1, 3), commit=False)
         self.assertTrue(res1 and res2)
 
     def test_manejador_ventas(self):
