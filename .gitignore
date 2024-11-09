@@ -3,12 +3,6 @@
 # archivos .py de UI compilados
 src/ui/*
 !src/ui/__init__.py
-# módulos instalados por pip
-Lib/
-# scripts del entorno virtual
-Scripts/
-# configuración del entorno
-pyvenv.cfg
 # carpetas de configuración IDE
 .idea/
 .vscode/
