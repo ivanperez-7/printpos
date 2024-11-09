@@ -32,6 +32,7 @@ class _INIManager:
             _INIParser.add_section('DEBUG')
             _INIParser.set('RED', 'nombre_servidor', '127.0.0.1')
             _INIParser.set('RED', 'impresora', '')
+            _INIParser.set('SUCURSAL', 'orden_pdf', 'resources/pdf/orden_compra2023.pdf')
             _INIParser.set('SUCURSAL', 'calle_1', '')
             _INIParser.set('SUCURSAL', 'calle_2', '')
             _INIParser.set('SUCURSAL', 'telefono', '')
