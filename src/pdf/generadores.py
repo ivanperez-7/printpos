@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import datetime
 import io
-from typing import TYPE_CHECKING
 
 from reportlab.platypus import (
     Image,
@@ -22,10 +21,9 @@ from reportlab.lib.units import mm
 from pypdf import PdfReader, PdfWriter
 from PySide6.QtCore import QFile, QIODevice
 
-if TYPE_CHECKING:
-    from utils.mydataclasses import BaseItem, Caja
 from config import INI
 from core import Moneda
+from sql.models import Caja, Producto
 from utils.myutils import chunkify, formatdate, stringify_float
 
 __all__ = ['generarOrdenCompra', 'generarTicketPDF', 'generarCortePDF']
@@ -134,7 +132,7 @@ def generarOrdenCompra(
 
 
 def generarTicketPDF(
-    productos: list[BaseItem],
+    productos: list[Producto],
     vendedor: str,
     folio: int = None,
     total: float = None,

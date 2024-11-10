@@ -3,11 +3,6 @@ from PySide6.QtCore import Signal as _Signal, SignalInstance as _SignalInstance
 
 
 @base
-class IDatabaseConnection:
-    pass
-
-
-@base
 class IControllerWindow:
     def crear(self) -> None:
         raise NotImplementedError

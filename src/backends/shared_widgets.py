@@ -1,10 +1,10 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal, Qt
+from sqlalchemy import select
 
 from context import user_context
 from core import Moneda, NumeroDecimal, Runner
-from sql import ManejadorProductos, ManejadorVentas
-from utils.mydataclasses import ItemVenta, ItemGranFormato
+from sql.models import Producto, ProductoIntervalo, ProductoGranFormato
 from utils.mywidgets import LabelAdvertencia
 from utils.myutils import son_similar, formatdate
 
@@ -23,7 +23,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
         self.stack_pagos = self.ui.stackPagos
 
         # guardar conexión y usuario como atributos
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         if idx is None:
@@ -141,8 +141,6 @@ class Base_PagarVenta(QtWidgets.QWidget):
         """ Concluye la venta de la siguiente forma:
         1. Inserta pagos en tabla ventas_pagos SIN HACER COMMIT.
         2. Si actualizarEstadoVenta, entonces dialogoExito. """
-        manejadorVentas = ManejadorVentas(self.conn)
-
         # registrar pagos en tabla ventas_pagos
         for wdg in self.stack_pagos:
             if wdg.metodoSeleccionado == 'Efectivo':
@@ -181,10 +179,6 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
         LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
 
-        # guardar conexión, usuario y un manejador de DB como atributos
-        self.conn = user_context.conn
-        self.manejador = ManejadorProductos(self.conn)
-
         # eventos para widgets
         self.ui.searchBar.textChanged.connect(self.update_display)
         self.ui.groupFiltro.buttonClicked.connect(self.update_display)
@@ -212,9 +206,9 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         self.ui.tabla_granformato.setSortingEnabled(True)
 
         # evento para leer cambios en tabla PRODUCTOS
-        self.event_conduit = self.conn.event_conduit(['cambio_productos'])
-        self.event_reader = Runner(self.startEvents)
-        self.event_reader.start()
+        # self.event_conduit = self.session.event_conduit(['cambio_productos'])
+        # self.event_reader = Runner(self.startEvents)
+        # self.event_reader.start()
 
     def showEvent(self, event):
         self.rescan_display()
@@ -222,10 +216,10 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
     def closeEvent(self, event):
         # no recomendado generalmente para terminar hilos, sin embargo,
         # esta vez se puede hacer así al no ser una función crítica.
-        self.event_reader.terminate()
-        self.event_reader.wait(0)
-        self.event_reader.moveToThread(None)
-        self.event_conduit.close()
+        # self.event_reader.terminate()
+        # self.event_reader.wait(0)
+        # self.event_reader.moveToThread(None)
+        # self.event_conduit.close()
         event.accept()
 
     # ==================
@@ -326,7 +320,6 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
         # obtener información del producto
         codigo = selected[0].text()
-        manejador = ManejadorProductos(self.conn)
 
         idProducto = manejador.obtenerIdProducto(codigo)
         nombre_ticket = manejador.obtenerNombreParaTicket(codigo)
@@ -365,7 +358,6 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
         # obtener información del producto
         codigo = selected[0].text()
-        manejador = ManejadorProductos(self.conn)
 
         idProducto = manejador.obtenerIdProducto(codigo)
         nombre_ticket = manejador.obtenerNombreParaTicket(codigo)
@@ -395,8 +387,18 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
     def rescan_display(self):
         """ Lee de nuevo las tablas de productos y actualiza tablas. """
-        self.all_prod = self.manejador.obtener_vista('view_productos_simples')
-        self.all_gran = self.manejador.obtener_vista('view_gran_formato')
+        self.all_prod = (
+            select(ProductoIntervalo)
+            .join(ProductoIntervalo.producto)
+            .where(Producto.is_active==True)
+            .order_by(Producto.id_productos, ProductoIntervalo.desde, ProductoIntervalo.duplex)
+        )
+        self.all_gran = (
+            select(ProductoGranFormato)
+            .join(ProductoGranFormato.producto)
+            .where(Producto.is_active==True)
+            .order_by(Producto.id_productos)
+        )
         self.update_display()
 
     def update_display(self):
@@ -406,6 +408,7 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         txt_busqueda = self.ui.searchBar.text()
 
         # <tabla de productos normales>
+        breakpoint()
         if txt_busqueda:
             found = [
                 prod for prod in self.all_prod if prod[filtro] if son_similar(txt_busqueda, prod[filtro])

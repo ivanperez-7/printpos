@@ -20,7 +20,7 @@ class VentanaPrincipal(QMainWindow, IControllerWindow):  # TODO: clase App -> In
         self.setWindowTitle('PrintPOS')
         self.setWindowIcon(QIcon(':img/icon.ico'))
 
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         self.consultarPrecios = App_ConsultarPrecios()
@@ -56,7 +56,7 @@ class VentanaPrincipal(QMainWindow, IControllerWindow):  # TODO: clase App -> In
 
         for j in glob.glob('auto-*'):
             os.remove(j)
-        self.conn.close()
+        self.session.close()
 
         if self.consultarPrecios:
             self.consultarPrecios.close()

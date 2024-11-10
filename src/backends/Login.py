@@ -7,11 +7,10 @@ from PySide6.QtCore import Qt, QMutex, Signal
 from config import INI
 from context import user_context
 from core import IdFirebird
-from interfaces import IWarningLogger, IControllerWindow, IDatabaseConnection
+from interfaces import IWarningLogger, IControllerWindow
 import licensing
-from sql import ManejadorUsuarios
 from sql.core import conectar_firebird, FirebirdError
-from utils.mydataclasses import Usuario
+from sql.models import Usuario
 from utils.mydecorators import function_details, run_in_thread
 
 
@@ -25,7 +24,7 @@ class App_Login(QtWidgets.QWidget):
     """ Backend para la pantalla de inicio de sesión. """
 
     failure = Signal(licensing.Errores)
-    logged_in = Signal(IDatabaseConnection, Usuario)
+    logged_in = Signal(object, Usuario)
 
     @inject
     def __init__(self, ventana_principal: IControllerWindow, warning_logger: IWarningLogger):
@@ -122,11 +121,10 @@ class App_Login(QtWidgets.QWidget):
         self.ui.lbEstado.setStyleSheet('color: black;')
         self.ui.lbEstado.setText('Conectando al servidor...')
         try:
-            conn = conectar_firebird(usuario, psswd, rol)
-            manejador = ManejadorUsuarios(conn, handle_exceptions=False)
-            user = Usuario.generarUsuarioActivo(manejador)
+            session = conectar_firebird(usuario, psswd, rol)
+            user = session.query(Usuario).filter_by(usuario=usuario).first()
 
-            self.logged_in.emit(conn, user)  # crearVentanaPrincipal
+            self.logged_in.emit(session, user)  # crearVentanaPrincipal
         except AssertionError:
             self.ui.lbEstado.setStyleSheet('color: red;')
             self.ui.lbEstado.setText(f'¡Usuario sin permisos para {rol}!')
@@ -146,8 +144,8 @@ class App_Login(QtWidgets.QWidget):
         self.ui.lbEstado.clear()
         self.warning_logger.display('No se pudo acceder al servidor.', txt)
 
-    def crearVentanaPrincipal(self, conn, user):
-        user_context.conn = conn
+    def crearVentanaPrincipal(self, session, user):
+        user_context.session = session
         user_context.user = user
 
         self.ventana_principal.crear()

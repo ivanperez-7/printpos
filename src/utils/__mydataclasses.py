@@ -2,42 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import overload, Iterator, Iterable, TYPE_CHECKING
+from typing import overload, Iterator, Iterable
 
 from PySide6.QtCore import QDateTime
 
-if TYPE_CHECKING:
-    from sql import ManejadorUsuarios, ManejadorProductos
 from core import Moneda
-
-
-@dataclass
-class Usuario:
-    """ Clase para mantener registro de un usuario. """
-
-    id: int
-    usuario: str
-    nombre: str
-    permisos: str = 'Vendedor'
-    foto_perfil: bytes = None
-    rol: str = 'Vendedor'
-
-    def __post_init__(self):
-        self.usuario = self.usuario.upper()
-        self.permisos = self.permisos.upper()
-        self.rol = self.rol.upper()
-
-    @property
-    def administrador(self):
-        """ Regresa un booleano que dice si el usuario es administrador. """
-        return self.permisos == 'ADMINISTRADOR'
-
-    @classmethod
-    def generarUsuarioActivo(cls, manejador: ManejadorUsuarios):
-        """ Genera clase Usuario dada una conexión válida a la DB. """
-        usuario = manejador.usuarioActivo
-        result = manejador.obtenerUsuario(usuario)
-        return cls(*result, manejador.rolActivo)
 
 
 @dataclass
@@ -164,7 +133,7 @@ class Venta:
     def quitarProducto(self, idx: int):
         self._productos.pop(idx)
 
-    def reajustarPrecios(self, manejador: ManejadorProductos):
+    def reajustarPrecios(self):
         """ Algoritmo para reajustar precios de productos simples al haber cambios de cantidad.
         Por cada grupo de productos idénticos:
             1. Calcular cantidad de todos los productos y solo duplex.
@@ -172,6 +141,7 @@ class Venta:
             3. Obtener precio DUPLEX con la cantidad duplex correspondiente.
             4. A todos los productos del grupo, asignar el mínimo de los dos precios obtenidos.
         """
+        manejador = None
         for productos in self._obtenerGruposProductos():
             id_prod = productos[0].id
             cantidad = sum(p.cantidad for p in productos)

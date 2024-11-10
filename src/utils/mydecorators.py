@@ -6,8 +6,8 @@ from PySide6.QtWidgets import QWidget, QMessageBox, QDialog
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
-from sql import DatabaseManager
 from sql.core import conectar_firebird, FirebirdError
+from sql.models import Usuario
 
 __all__ = ['requiere_admin', 'run_in_thread', 'fondo_oscuro', 'function_details']
 
@@ -87,8 +87,8 @@ class Dialog_ObtenerAdmin(QDialog):
         if not (usuario and psswd):
             return
         try:
-            conn = conectar_firebird(usuario, psswd, 'ADMINISTRADOR')
-            manejador = DatabaseManager(conn)
+            session = conectar_firebird(usuario, psswd, 'ADMINISTRADOR')
+            session.query(Usuario).first()
         except (FirebirdError, AssertionError):
             self.close()
             wdg = QMessageBox(
@@ -100,8 +100,8 @@ class Dialog_ObtenerAdmin(QDialog):
             wdg.exec()
         else:
             self.close()
-            self.success.emit(conn)
-            conn.close()
+            self.success.emit(session)
+            session.close()
 
 
 def requiere_admin(func):

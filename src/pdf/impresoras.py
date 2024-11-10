@@ -12,7 +12,6 @@ from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 from .generadores import generarOrdenCompra, generarCortePDF, generarTicketPDF
 from config import INI
 from interfaces import IWarningLogger
-from sql import ManejadorVentas
 from utils.mydecorators import run_in_thread
 from utils.myutils import randFile
 
@@ -77,7 +76,7 @@ class ImpresoraOrdenes(ImpresoraPDF):
             return printer
 
     @run_in_thread
-    def imprimirOrdenCompra(self, idx: int, manejador: ManejadorVentas = None):
+    def imprimirOrdenCompra(self, idx: int):
         productos = manejador.obtenerTablaOrdenCompra(idx)
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
@@ -103,9 +102,7 @@ class ImpresoraTickets(ImpresoraPDF):
             return QPrinter(pInfo, QPrinter.HighResolution)
 
     @run_in_thread
-    def imprimirTicketCompra(
-        self, idx: int, nums: list[int] | slice = None, manejador: ManejadorVentas = None,
-    ):
+    def imprimirTicketCompra(self, idx: int, nums: list[int] | slice = None):
         """ Genera el ticket de compra a partir de un identificador en la base de datos.
         Recibe un arreglo de índices para imprimir pagos específicos. """
         # obtener datos de la compra, de la base de datos
