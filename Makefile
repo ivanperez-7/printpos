@@ -26,6 +26,7 @@ install:
 		--nofollow-import-to=setuptools \
 		--nofollow-import-to=tkinter \
 		--nofollow-import-to=pyreadline3 \
+		--include-package=src \
 		--force-stderr-spec={PROGRAM_BASE}.err.txt \
 		--force-stdout-spec={PROGRAM_BASE}.out.txt \
 		--windows-icon-from-ico=icon.ico \
