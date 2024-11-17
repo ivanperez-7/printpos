@@ -36,6 +36,8 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
 
         # VARIABLE DE LA VENTA ACTIVA ACTUAL
         self.ventaDatos = ventaDatos = Venta()
+        self.ventaDatos.fechaCreacion = QDateTime.currentDateTime()
+        self.ventaDatos.fechaEntrega = QDateTime(self.ventaDatos.fechaCreacion)
 
         # guardar conexión y usuarios como atributos
         self.conn = user_context.conn
@@ -576,24 +578,19 @@ class App_ConfirmarVenta(Base_PagarVenta):
     success = Signal()
 
     def __init__(self, ventaDatos: Venta, parent=None) -> None:
-        self.ventaDatos = ventaDatos  # <- aquí para que funcionen los métodos
-
-        super().__init__(None, parent)
-
-        # seleccionar método para WidgetPago
-        wdg = self.stack_pagos[0]
-        wdg.metodoSeleccionado = ventaDatos.metodo_pago
-
-        if ventaDatos.metodo_pago != 'Efectivo':
-            self._handleCounters()
-
-        # si la venta es directa, ocultar los widgets para apartados
         now = QDateTime.currentDateTime()
 
         if ventaDatos.esVentaDirecta:
             ventaDatos.fechaEntrega = now
-            self.setFixedHeight(759)
+            
+        ventaDatos.fechaCreacion = now  # tiene que ser después del if
+        self.ventaDatos = ventaDatos
 
+        super().__init__(None, parent)
+        
+        if self.ventaDatos.esVentaDirecta:
+            self.setFixedHeight(759)
+            # esconder widgets de ventas por pedido
             for w in [
                 self.ui.boxFechaEntrega,
                 self.ui.lbAnticipo1,
@@ -603,7 +600,12 @@ class App_ConfirmarVenta(Base_PagarVenta):
             ]:
                 w.hide()
 
-        ventaDatos.fechaCreacion = now  # tiene que ser después del if
+        # seleccionar método para WidgetPago
+        wdg = self.stack_pagos[0]
+        wdg.metodoSeleccionado = ventaDatos.metodo_pago
+
+        if ventaDatos.metodo_pago != 'Efectivo':
+            self._handleCounters()
 
         # llenar total y monto a pagar
         self.ui.lbCincuenta.setText(f'(${ventaDatos.total / 2})')

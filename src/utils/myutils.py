@@ -125,9 +125,7 @@ def exportarXlsx(rutaArchivo, titulos, datos):
 
 
 def enviarWhatsApp(phone_no: str, message: str):
-    """ Enviar mensaje por WhatsApp abriendo el navegador de internet.
-    TODO:
-        - open("https://web.whatsapp.com/accept?code=" + receiver)"""
+    """ Enviar mensaje por WhatsApp abriendo el navegador de internet. """
     if '+' not in phone_no:  # agregar código de país de México
         phone_no = '+52' + phone_no
     return web.open_new_tab(f'https://web.whatsapp.com/send?phone={phone_no}&text={quote(message)}')
