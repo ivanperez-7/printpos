@@ -377,7 +377,7 @@ class App_EditarProducto(Base_EditarProducto):
         self.idx = idx  # id del elemento a editar
 
         manejador = ManejadorProductos(self.conn)
-        _, codigo, descripcion, abreviado, categoria = manejador.obtenerProducto(idx)
+        _, codigo, descripcion, abreviado, categoria, _ = manejador.obtenerProducto(idx)
 
         self.ui.txtCodigo.setText(codigo)
         self.ui.txtDescripcion.setPlainText(descripcion)
