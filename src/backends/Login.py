@@ -24,7 +24,7 @@ class App_Login(QtWidgets.QWidget):
     """ Backend para la pantalla de inicio de sesión. """
 
     failure = Signal(licensing.Errores)
-    logged_in = Signal(object, Usuario)
+    logged_in = Signal(object, Usuario, str)
 
     @inject
     def __init__(self, ventana_principal: IControllerWindow, warning_logger: IWarningLogger):
@@ -124,7 +124,7 @@ class App_Login(QtWidgets.QWidget):
             session = conectar_firebird(usuario, psswd, rol)
             user = session.query(Usuario).filter_by(usuario=usuario).first()
 
-            self.logged_in.emit(session, user)  # crearVentanaPrincipal
+            self.logged_in.emit(session, user, rol)  # crearVentanaPrincipal
         except AssertionError:
             self.ui.lbEstado.setStyleSheet('color: red;')
             self.ui.lbEstado.setText(f'¡Usuario sin permisos para {rol}!')
@@ -144,9 +144,10 @@ class App_Login(QtWidgets.QWidget):
         self.ui.lbEstado.clear()
         self.warning_logger.display('No se pudo acceder al servidor.', txt)
 
-    def crearVentanaPrincipal(self, session, user):
+    def crearVentanaPrincipal(self, session, user, active_role):
         user_context.session = session
         user_context.user = user
+        user_context.active_role = active_role
 
         self.ventana_principal.crear()
         self.close()

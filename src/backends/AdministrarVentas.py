@@ -9,7 +9,6 @@ from backends.shared_widgets import Base_PagarVenta
 from context import user_context
 from interfaces import IModuloPrincipal
 from pdf import ImpresoraOrdenes, ImpresoraTickets
-from sql import ManejadorVentas
 from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
 from utils.myutils import chunkify, clamp, enviarWhatsApp, formatdate, son_similar
@@ -45,7 +44,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         self.all_pedidos = []
 
         # guardar conexión y usuario como atributos
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         # fechas por defecto
@@ -486,7 +485,7 @@ class App_ImprimirTickets(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
         self.setFixedSize(self.size())
 
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.idVenta = idVenta
 
         self.ui.btRegresar.clicked.connect(self.close)

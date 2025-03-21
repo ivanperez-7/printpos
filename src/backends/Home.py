@@ -3,10 +3,11 @@ from functools import partial
 from PySide6 import QtWidgets
 from PySide6.QtGui import QPixmap, QColor
 from PySide6.QtCore import QDate, Qt, QRect, QPropertyAnimation, QEasingCurve, Signal
+from sqlalchemy import select, func
 
 from context import user_context
 from interfaces import IModuloPrincipal
-from sql import ManejadorVentas, ManejadorInventario
+from sql.models import Inventario, Venta
 
 
 class App_Home(QtWidgets.QWidget, IModuloPrincipal):
@@ -20,7 +21,7 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
         self.ui = Ui_Home()
         self.ui.setupUi(self)
 
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         # foto de perfil del usuario
@@ -40,7 +41,7 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
         # configurar texto dinámico
         self.ui.fechaHoy.setDate(QDate.currentDate())
         self.ui.usuario.setText(self.user.nombre)
-        self.ui.tipo_usuario.setText(self.user.rol.capitalize())
+        self.ui.tipo_usuario.setText(user_context.active_role.capitalize())
 
         # deshabilita eventos del mouse para los textos en los botones
         for name, item in vars(self.ui).items():
@@ -48,7 +49,7 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
                 item.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         # deshabilitar funciones para usuarios normales
-        if self.user.rol != 'ADMINISTRADOR':
+        if user_context.active_role != 'ADMINISTRADOR':
             for w in [
                 self.ui.frameInventario,
                 self.ui.frameCaja,
@@ -127,19 +128,24 @@ class ListaNotificaciones(QtWidgets.QListWidget):
     def agregarNotificaciones(self):
         """ Llena la caja de notificaciones. """
         items = []
-        manejador = ManejadorVentas(user_context.conn)
+        query_pendientes = (
+            select(func.count())
+            .where(Venta.fecha_hora_creacion != Venta.fecha_hora_entrega)
+            .where(Venta.estado.like('Recibido%'))
+            .where(Venta.id_usuarios != user_context.user.id_usuarios)
+            .select_from(Venta)
+        )
 
-        numPendientes = manejador.obtenerNumPendientes(user_context.user.id)
+        if num_pendientes := user_context.session.scalar(query_pendientes):
+            items.append(f'Tiene {num_pendientes} pedidos pendientes.')
+        
+        # TODO: problema con @property
+        query_inventario = select(Inventario).where(Inventario.unidades_restantes // Inventario.tamano_lote < Inventario.minimo_lotes)
 
-        if numPendientes:
-            items.append(f'Tiene {numPendientes} pedidos pendientes.')
-
-        manejador = ManejadorInventario(user_context.conn)
-
-        for nombre, stock, minimo in manejador.obtenerInventarioFaltante():
+        for inv in user_context.session.execute(query_inventario).scalars():
             items.append(
-                f'¡Hay que surtir el material {nombre}! '
-                + f'Faltan {minimo - stock} lotes para cubrir el mínimo.'
+                f'¡Hay que surtir el material {inv}! '
+                + f'Faltan {inv.minimo_lotes - inv.unidades_restantes} lotes para cubrir el mínimo.'
             )
         items = items or ['¡No hay nuevas notificaciones!']
 

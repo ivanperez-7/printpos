@@ -5,7 +5,6 @@ from PySide6.QtCore import Qt, Signal, QMutex
 from context import user_context
 from core import ROJO, NumeroDecimal
 from interfaces import IModuloPrincipal
-from sql import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myutils import son_similar
 from utils.mywidgets import LabelAdvertencia
@@ -30,7 +29,7 @@ class App_AdministrarInventario(QtWidgets.QWidget, IModuloPrincipal):
         LabelAdvertencia(self.ui.tabla_inventario, '¡No se encontró ningún elemento!')
 
         # guardar conexión y usuarios como atributos
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         self.all = []
@@ -190,7 +189,7 @@ class Base_EditarInventario(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         # guardar conexión como atributo
-        self.conn = user_context.conn
+        self.session = user_context.session
 
         # validadores para datos numéricos
         validador = NumeroDecimal
@@ -390,7 +389,7 @@ class ExistenciasWidget(QtWidgets.QDialog):
         from PySide6 import QtCore
 
         super().__init__(parent)
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.idx = idx
 
         self.resize(340, 80)

@@ -387,18 +387,18 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
     def rescan_display(self):
         """ Lee de nuevo las tablas de productos y actualiza tablas. """
-        self.all_prod = (
-            select(ProductoIntervalo)
+        self.all_prod = user_context.session.execute(
+            select(ProductoIntervalo.id_productos)
             .join(ProductoIntervalo.producto)
             .where(Producto.is_active==True)
             .order_by(Producto.id_productos, ProductoIntervalo.desde, ProductoIntervalo.duplex)
-        )
-        self.all_gran = (
-            select(ProductoGranFormato)
+        ).all()
+        self.all_gran = user_context.session.execute(
+            select(ProductoGranFormato.id_productos)
             .join(ProductoGranFormato.producto)
             .where(Producto.is_active==True)
             .order_by(Producto.id_productos)
-        )
+        ).all()
         self.update_display()
 
     def update_display(self):
@@ -408,7 +408,6 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         txt_busqueda = self.ui.searchBar.text()
 
         # <tabla de productos normales>
-        breakpoint()
         if txt_busqueda:
             found = [
                 prod for prod in self.all_prod if prod[filtro] if son_similar(txt_busqueda, prod[filtro])

@@ -5,7 +5,6 @@ from PySide6.QtCore import Qt, Signal, QMutex
 from context import user_context
 from core import ROJO
 from interfaces import IModuloPrincipal
-from sql import ManejadorInventario, ManejadorProductos
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import son_similar
@@ -31,7 +30,7 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
         LabelAdvertencia(self.ui.tabla_productos, '¡No se encontró ningún producto!')
 
         # guardar conexión y usuario como atributos
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         self.all = []
@@ -167,7 +166,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         # guardar conexión y usuario como atributos
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         # formato tabla de precios

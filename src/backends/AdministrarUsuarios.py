@@ -5,7 +5,6 @@ from PySide6.QtCore import Qt, Signal
 from context import user_context
 from core import IdFirebird
 from interfaces import IModuloPrincipal
-from sql import ManejadorUsuarios
 from utils.mydecorators import fondo_oscuro
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import son_similar
@@ -33,7 +32,7 @@ class App_AdministrarUsuarios(QtWidgets.QWidget, IModuloPrincipal):
         LabelAdvertencia(self.ui.tabla_usuarios, '¡No se encontró ningún usuario!')
 
         # guardar conexión y usuario como atributos
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         # añadir menú de opciones al botón para filtrar
@@ -142,7 +141,7 @@ class Base_EditarUsuario(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         # guardar conexión como atributo
-        self.conn = user_context.conn
+        self.session = user_context.session
 
         # validador para nombre de usuario
         self.ui.txtUsuario.setValidator(IdFirebird)

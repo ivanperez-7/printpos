@@ -6,8 +6,6 @@ from context import user_context
 from core import Moneda, NumeroDecimal
 from interfaces import IModuloPrincipal
 from pdf import ImpresoraTickets
-from sql import ManejadorCaja
-from utils.mydataclasses import Caja
 from utils.mydecorators import run_in_thread
 from utils.myinterfaces import InterfazFechas
 from utils.mywidgets import LabelAdvertencia
@@ -33,7 +31,7 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
         LabelAdvertencia(self.ui.tabla_egresos, '¡No se encontró ningún movimiento!')
 
         # guardar conexión y usuario como atributos
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         self.all_movimientos = Caja()
@@ -184,7 +182,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         self.setWindowTitle(ttl)
 
         self.egreso = egreso
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         # validadores para datos numéricos

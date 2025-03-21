@@ -8,8 +8,7 @@ from context import user_context
 from core import Moneda, NumeroDecimal
 from interfaces import IModuloPrincipal
 from pdf import ImpresoraOrdenes, ImpresoraTickets
-from sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
-from utils.mydataclasses import Venta
+from sql.models import Venta
 from utils.mydecorators import fondo_oscuro, requiere_admin
 from utils.myutils import clamp, enviarWhatsApp, formatdate, son_similar
 from utils.mywidgets import LabelAdvertencia, SpeechBubble
@@ -40,7 +39,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         self.ventaDatos.fechaEntrega = QDateTime(self.ventaDatos.fechaCreacion)
 
         # guardar conexión y usuarios como atributos
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         # cuadro de texto para los descuentos del cliente
@@ -453,7 +452,7 @@ class App_AgregarDescuento(QtWidgets.QWidget):
 
         super().__init__(parent)
 
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
         self.ventaDatos = ventaDatos
 

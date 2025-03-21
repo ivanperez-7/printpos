@@ -7,7 +7,6 @@ from PySide6.QtCore import Qt, QDate, Signal, QMutex
 from core import ROJO
 from context import user_context
 from interfaces import IModuloPrincipal
-from sql import ManejadorClientes
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import daysTo, exportarXlsx, formatdate, son_similar
@@ -33,7 +32,7 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
         LabelAdvertencia(self.ui.tabla_clientes, '¡No se encontró ningún cliente!')
 
         # guardar conexión y usuarios como atributos
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         self.all = []
@@ -225,7 +224,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
         # guardar conexión y usuarios como atributos
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         # validador clave de país

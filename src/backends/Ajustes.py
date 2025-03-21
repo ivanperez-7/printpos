@@ -20,7 +20,7 @@ class App_Ajustes(QtWidgets.QWidget, IModuloPrincipal):
         self.ui = Ui_Ajustes()
         self.ui.setupUi(self)
 
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         self.ui.boxImpresoras.addItems(QtPrintSupport.QPrinterInfo.availablePrinterNames())

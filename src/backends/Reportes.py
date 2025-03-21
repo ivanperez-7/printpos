@@ -15,7 +15,6 @@ from PySide6.QtGui import QPainter, QPen
 
 from context import user_context
 from interfaces import IModuloPrincipal
-from sql import ManejadorReportes, ManejadorVentas
 from utils.myinterfaces import InterfazFechasReportes
 from utils.myutils import stringify_float
 
@@ -29,7 +28,7 @@ class App_Reportes(QtWidgets.QWidget, IModuloPrincipal):
         self.ui = Ui_Reportes()
         self.ui.setupUi(self)
 
-        self.conn = user_context.conn
+        self.session = user_context.session
         self.user = user_context.user
 
         for tbl in [

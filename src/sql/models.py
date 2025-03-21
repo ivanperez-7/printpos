@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 from core import Moneda
 
 __all__ = [
+    'Base',
     'Caja',
     'Cliente',
     'Inventario',
@@ -57,7 +58,7 @@ class Inventario(Base):
     tamano_lote = Column(Float, nullable=False)
     precio_lote = Column(Float, nullable=False)
     minimo_lotes = Column(Float, nullable=False)
-    unidades_restante = Column(Float, nullable=False)
+    unidades_restantes = Column(Float, nullable=False)
     
     @property
     def precio_unidad(self):
@@ -65,7 +66,7 @@ class Inventario(Base):
     
     @property
     def lotes_restantes(self): 
-        return self.unidades_restante // self.tamano_lote
+        return self.unidades_restantes // self.tamano_lote
 
 
 class MetodoPago(Base):

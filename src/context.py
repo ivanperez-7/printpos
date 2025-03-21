@@ -1,8 +1,14 @@
 import threading as _threading
 
+from sqlalchemy.orm import Session
 
-user_context = _threading.local()
-""" Contexto de objeto Connection y objeto Usuario. """
+from sql.models import Usuario
 
-user_context.session = None
-user_context.user = None
+
+class UserContext:
+    session: Session
+    user: Usuario
+    active_role: str
+
+user_context: UserContext = _threading.local()
+""" Contexto de objeto Session y objeto Usuario. """
