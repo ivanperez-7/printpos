@@ -12,3 +12,5 @@ PrintPOS.*/
 # carpeta de base de datos excepto scripts
 resources/db/*
 !resources/db/*.sql
+
+bypass.py
