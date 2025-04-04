@@ -661,7 +661,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         """ Parámetros para tabla ventas (datos generales). """
         return (
             self.ventaDatos.id_cliente,
-            self.user.id,
+            self.user.id_usuarios,
             self.ventaDatos.fechaCreacion.toPython(),
             self.ventaDatos.fechaEntrega.toPython(),
             self.ventaDatos.comentarios.strip(),

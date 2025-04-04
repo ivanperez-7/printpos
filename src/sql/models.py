@@ -217,6 +217,10 @@ class Usuario(Base):
     nombre = Column(String(100), nullable=False)
     permisos = Column(String(30))
     foto_perfil = Column(BLOB)
+    
+    @property
+    def es_administrador(self):
+        return self.permisos.upper() == 'ADMINISTRADOR'
 
 
 class Venta(Base):

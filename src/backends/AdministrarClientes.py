@@ -47,7 +47,7 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
         self.filtro.cambiado.connect(self.update_display)
 
         # restringir botón de eliminar cliente
-        if not self.user.rol == 'ADMINISTRADOR':
+        if not user_context.rol == 'ADMINISTRADOR':
             self.ui.btEliminar.hide()
 
         # añade eventos para los botones
@@ -237,7 +237,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
         self.ui.checkDescuentos.clicked.connect(lambda estado: self.ui.txtDescuentos.setEnabled(estado))
 
         # deshabilitar modificación de descuentos para usuarios normales
-        if not self.user.administrador:
+        if not self.user.es_administrador:
             self.ui.checkDescuentos.setEnabled(False)
             self.ui.txtDescuentos.setEnabled(False)
 

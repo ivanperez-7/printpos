@@ -204,7 +204,7 @@ class Dialog_Registrar(QtWidgets.QDialog):
         manejador = ManejadorCaja(self.conn, '¡No se pudo registrar el movimiento!')
         id_metodo = manejador.obtenerIdMetodoPago(self.metodo)
 
-        caja_db_parametros = (Moneda(monto), motivo, id_metodo, self.user.id)
+        caja_db_parametros = (Moneda(monto), motivo, id_metodo, self.user.id_usuarios)
         if manejador.insertarMovimiento(caja_db_parametros):
             self.close()
             QtWidgets.QMessageBox.information(self, 'Éxito', '¡Movimiento registrado!')

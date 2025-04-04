@@ -50,7 +50,7 @@ class VentanaPrincipal(QMainWindow, IControllerWindow):  # TODO: clase App -> In
 
     def closeEvent(self, event):
         """ En eventos específicos, restringimos el cerrado del sistema. """
-        if self.en_venta and not self.user.administrador:
+        if self.en_venta and not self.user.es_administrador:
             event.ignore()
             return
 

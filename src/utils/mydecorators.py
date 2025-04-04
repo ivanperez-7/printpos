@@ -135,7 +135,7 @@ def requiere_admin(func):
             parent = args[0]  # QWidget (módulo actual)
             assert parent.conn and parent.user
 
-            if parent.user.administrador:
+            if parent.user.es_administrador:
                 admin_func(parent.conn)
             else:
                 raise AttributeError

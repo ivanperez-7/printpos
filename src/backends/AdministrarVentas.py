@@ -140,7 +140,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         self.ui.lbContador.setText('Recuperando información...')
 
         manejador = ManejadorVentas(self.conn)
-        restrict = self.user.id if self.user.rol != 'ADMINISTRADOR' else None
+        restrict = self.user.id_usuarios if user_context.rol != 'ADMINISTRADOR' else None
         fechas = self.iFechas.rango_fechas
 
         self.all_directas = manejador.tablaVentas(fechas, restrict) or []

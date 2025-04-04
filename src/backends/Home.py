@@ -40,7 +40,7 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
         # configurar texto dinámico
         self.ui.fechaHoy.setDate(QDate.currentDate())
         self.ui.usuario.setText(self.user.nombre)
-        self.ui.tipo_usuario.setText(self.user.rol.capitalize())
+        self.ui.tipo_usuario.setText(user_context.rol.capitalize())
 
         # deshabilita eventos del mouse para los textos en los botones
         for name, item in vars(self.ui).items():
@@ -48,7 +48,7 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
                 item.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         # deshabilitar funciones para usuarios normales
-        if self.user.rol != 'ADMINISTRADOR':
+        if user_context.rol != 'ADMINISTRADOR':
             for w in [
                 self.ui.frameInventario,
                 self.ui.frameCaja,
@@ -129,7 +129,7 @@ class ListaNotificaciones(QtWidgets.QListWidget):
         items = []
         manejador = ManejadorVentas(user_context.conn)
 
-        numPendientes = manejador.obtenerNumPendientes(user_context.user.id)
+        numPendientes = manejador.obtenerNumPendientes(user_context.user.id_usuarios)
 
         if numPendientes:
             items.append(f'Tiene {numPendientes} pedidos pendientes.')

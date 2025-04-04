@@ -3,15 +3,16 @@ import socket
 from haps import inject
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt, QMutex, Signal
+from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 
 from config import INI
 from context import user_context
 from core import IdFirebird
 from interfaces import IWarningLogger, IControllerWindow, IDatabaseConnection
 import licensing
-from sql import ManejadorUsuarios
-from sql.core import conectar_firebird, FirebirdError
-from utils.mydataclasses import Usuario
+from sql.core import conectar_firebird_sqlalchemy
+from sql.models import Usuario
 from utils.mydecorators import function_details, run_in_thread
 
 
@@ -122,22 +123,21 @@ class App_Login(QtWidgets.QWidget):
         self.ui.lbEstado.setStyleSheet('color: black;')
         self.ui.lbEstado.setText('Conectando al servidor...')
         try:
-            conn = conectar_firebird(usuario, psswd, rol)
-            manejador = ManejadorUsuarios(conn, handle_exceptions=False)
-            user = Usuario.generarUsuarioActivo(manejador)
+            session = conectar_firebird_sqlalchemy(usuario, psswd, rol)
 
-            self.logged_in.emit(conn, user)  # crearVentanaPrincipal
-        except AssertionError:
+            stmt = select(Usuario).where(Usuario.usuario == usuario)
+            user = session.execute(stmt).scalar_one_or_none()
+            if not user:
+                raise AssertionError(f'¡Usuario "{usuario}" no encontrado!')
+
+            user_context.rol = rol.upper()
+            self.logged_in.emit(session, user)  # crearVentanaPrincipal
+        except AssertionError as err:
             self.ui.lbEstado.setStyleSheet('color: red;')
-            self.ui.lbEstado.setText(f'¡Usuario sin permisos para {rol}!')
-        except FirebirdError as err:
-            txt, sqlcode, gdscode = err.args
-            if gdscode in [335544472, 335544352]:
-                self.ui.lbEstado.setStyleSheet('color: red;')
-                self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
-            else:
-                self.crearWarningDialog(txt)
-        except Exception as err:  # arrojado por fdb al no encontrarse librería Firebird
+            self.ui.lbEstado.setText(str(err))
+        except SQLAlchemyError as err:
+            self.crearWarningDialog(f'Error de base de datos: {str(err)}')
+        except Exception as err:
             self.crearWarningDialog(str(err))
         finally:
             self.mutex.unlock()
@@ -146,10 +146,12 @@ class App_Login(QtWidgets.QWidget):
         self.ui.lbEstado.clear()
         self.warning_logger.display('No se pudo acceder al servidor.', txt)
 
-    def crearVentanaPrincipal(self, conn, user):
-        user_context.conn = conn
+    def crearVentanaPrincipal(self, session, user):
+        """ Configura el contexto del usuario y crea la ventana principal. """
+        user_context.conn = session.connection().connection
         user_context.user = user
-
+        user_context.session = session
+        
         self.ventana_principal.crear()
         self.close()
 
