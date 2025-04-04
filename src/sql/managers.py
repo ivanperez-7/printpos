@@ -6,6 +6,7 @@ from typing import overload
 
 from haps import Inject
 from PySide6.QtCore import QDate
+from sqlalchemy.orm import Session
 
 from core import DateRange, Moneda
 from interfaces import IWarningLogger, IDatabaseConnection
@@ -35,18 +36,18 @@ class DatabaseManager:
     warning_logger: IWarningLogger = Inject()
 
     def __init__(
-        self, conn: IDatabaseConnection, error_txt: str = None, *, handle_exceptions: bool = True,
+        self, conn: IDatabaseConnection | Session, error_txt: str = None, *, handle_exceptions: bool = True,
     ):
-        assert isinstance(conn, IDatabaseConnection), 'Conexión a DB no válida.'
-
         self._conn = conn
         self._error_txt = error_txt or 'Operación fallida en base de datos.'
         self._handle_exceptions = handle_exceptions
 
-        self._crsr = conn.cursor()
-        self._crsr.execute("SET TIME ZONE '-06:00';")  # <- tiempo local en UTC
-
-        assert self.rolActivo != 'NONE', 'Rol inválido para esta conexión.'
+        if not isinstance(conn, Session):
+            self._crsr = conn.cursor()
+            self._crsr.execute("SET TIME ZONE '-06:00';")  # <- tiempo local en UTC
+            assert self.rolActivo != 'NONE', 'Rol inválido para esta conexión.'
+        else:
+            self._crsr = None  # No se usa cursor con SQLAlchemy
 
     def _partial_execute(self, func, query: str, parameters=None, commit=False):
         try:

@@ -153,7 +153,7 @@ class Base_PagarVenta(QtWidgets.QWidget):
                 recibido = None
 
             if not manejadorVentas.insertarPago(
-                self.id_ventas, wdg.metodoSeleccionado, monto, recibido, self.user.id
+                self.id_ventas, wdg.metodoSeleccionado, monto, recibido, self.user.id_usuarios
             ):
                 return
 
