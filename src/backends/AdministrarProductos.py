@@ -1,11 +1,14 @@
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
+from sqlalchemy import String
+from sqlalchemy.orm import aliased
+from sqlalchemy.sql import func, case
 
 from context import user_context
 from core import ROJO
 from interfaces import IModuloPrincipal
-from sql import ManejadorInventario, ManejadorProductos
+from sql.models import Producto, ProductoGranFormato, ProductoIntervalo, ProductoUtilizaInventario, Inventario
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
 from utils.myutils import son_similar
@@ -33,6 +36,7 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
         # guardar conexión y usuario como atributos
         self.conn = user_context.conn
         self.user = user_context.user
+        self.session = user_context.session
 
         self.all = []
 
@@ -63,23 +67,74 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
     # ==================
     #  FUNCIONES ÚTILES
     # ==================
-    @run_in_thread
+    #@run_in_thread
     def rescan_update(self):
+        """ Actualiza la lista de productos desde la base de datos usando SQLAlchemy. """
         if not self.mutex.try_lock():
             return
 
         self.ui.lbContador.setText('Recuperando información...')
 
-        manejador = ManejadorProductos(self.conn)
-        self.all = manejador.obtener_vista('view_all_productos') or []
-        self.ui.lbContador.setText(f'{len(self.all)} productos en la base de datos.')
+        try:
+            P_Inv = aliased(ProductoIntervalo)
+            P_Gran = aliased(ProductoGranFormato)
 
-        self.rescanned.emit()
+            # Subquery for production cost
+            costo_produccion = (
+                self.session.query(
+                    Producto.id_productos,
+                    func.coalesce(func.sum(ProductoUtilizaInventario.utiliza_inventario * Inventario.precio_unidad), 0.0).label('costo')
+                )
+                .outerjoin(ProductoUtilizaInventario, Producto.id_productos == ProductoUtilizaInventario.id_productos)
+                .outerjoin(Inventario, ProductoUtilizaInventario.id_inventario == Inventario.id_inventario)
+                .group_by(Producto.id_productos)
+                .subquery()
+            )
+
+            # Main query
+            query = (
+                self.session.query(
+                    Producto.id_productos,
+                    Producto.codigo,
+                    case(
+                        (
+                            P_Inv.id_productos.isnot(None),
+                            Producto.descripcion
+                            + func.coalesce(
+                                ', desde ' + func.cast(func.round(P_Inv.desde, 0), String) + ' unidades ',
+                                ''
+                            )
+                            + func.coalesce(
+                                '[PRECIO DUPLEX]' if P_Inv.duplex else '',
+                                ''
+                            ),
+                        ),
+                        else_=Producto.descripcion
+                    ).label('descripcion'),
+                    Producto.abreviado,
+                    func.coalesce(P_Inv.precio_con_iva, P_Gran.precio_m2).label('precio_con_iva'),
+                    (func.coalesce(P_Inv.precio_con_iva, P_Gran.precio_m2) / 1.16).label('precio_sin_iva'),
+                    costo_produccion.c.costo.label('costo_prod'),
+                    (func.coalesce(P_Inv.precio_con_iva, P_Gran.precio_m2) - costo_produccion.c.costo).label('utilidad')
+                )
+                .outerjoin(P_Inv, Producto.id_productos == P_Inv.id_productos)
+                .outerjoin(P_Gran, Producto.id_productos == P_Gran.id_productos)
+                .join(costo_produccion, Producto.id_productos == costo_produccion.c.id_productos)
+                .filter(Producto.is_active.is_(True))
+                .order_by(Producto.id_productos.asc())
+            )
+
+            self.all = query.all()
+            self.ui.lbContador.setText(f'{len(self.all)} productos en la base de datos.')
+        except Exception as e:
+            self.ui.lbContador.setText('Error al recuperar información.')
+            QtWidgets.QMessageBox.critical(self, 'Error', f'Error al recuperar productos: {e}')
+        finally:
+            self.rescanned.emit()
+            self.mutex.unlock()
 
     def update_display(self):
-        """ Actualiza la tabla y el contador de productos.
-        Acepta una cadena de texto para la búsqueda de productos.
-        También lee de nuevo la tabla de productos, si se desea. """
+        """ Actualiza la tabla y el contador de productos. """
         tabla = self.ui.tabla_productos
         tabla.setRowCount(0)
 
@@ -87,7 +142,7 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
         bold.setBold(True)
 
         if txt_busqueda := self.ui.searchBar.text().strip():
-            found = [c for c in self.all if son_similar(txt_busqueda, c[self.filtro.idx])]
+            found = [c for c in self.all if son_similar(txt_busqueda, c.codigo) or son_similar(txt_busqueda, c.descripcion)]
         else:
             found = self.all
 
@@ -105,8 +160,8 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
 
             tabla.item(row, 1).setFont(bold)
 
-            # resaltar si la utilidad es nula o negativa
-            if item[-1] <= 0:
+            # Resaltar si la utilidad es nula o negativa
+            if item.utilidad <= 0:
                 color = QColor(ROJO)
                 tabla.item(row, 7).setBackground(color)
 
@@ -134,14 +189,22 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
             return
 
         qm = QtWidgets.QMessageBox
-        manejador = ManejadorProductos(self.conn, '¡No se pudo descontinuar el producto!')
+        
+        # Confirmar eliminación
+        ret = qm.question(self, 'Atención', '¿Desea descontinuar este producto?')
+        if ret != qm.Yes:
+            return
 
-        # abrir pregunta
-        ret = qm.question(self, 'Atención', '¿Desea descontinuar este producto?',)
-
-        if ret == qm.Yes and manejador.descontinuarProducto(id_productos):
+        try:
+            producto = self.session.query(Producto).filter_by(id_productos=id_productos).one_or_none()
+            producto.is_active = False
+            
+            self.session.commit()
             qm.information(self, 'Éxito', 'Se descontinuó el producto seleccionado.')
             self.rescan_update()
+        except Exception as e:
+            self.session.rollback()
+            qm.critical(self, 'Error', f'¡No se pudo descontinuar el producto!\n{e}')
 
 
 #################################
@@ -166,9 +229,8 @@ class Base_EditarProducto(QtWidgets.QWidget):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
-        # guardar conexión y usuario como atributos
-        self.conn = user_context.conn
-        self.user = user_context.user
+        # obtener sesión de base de datos desde user_context
+        self.session = user_context.session
 
         # formato tabla de precios
         header = self.ui.tabla_precios.horizontalHeader()
@@ -178,7 +240,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
 
         # eventos para botones
         self.ui.btAceptar.clicked.connect(self.done)
-        self.ui.btAgregar.clicked.connect(self.agregarProductoALista)
+        self.ui.btAgregar.clicked.connect(lambda: self.agregarProductoALista())
 
         self.ui.btAgregarIntervalo.clicked.connect(
             lambda: self.agregarIntervalo(row=self.ui.tabla_precios.rowCount())
@@ -224,14 +286,17 @@ class Base_EditarProducto(QtWidgets.QWidget):
         tabla.removeRow(row)
 
     def agregarProductoALista(self, nombre: str = '', cantidad: int = 1):
-        # crear widget y agregar a la lista
+        """ Agrega un producto a la lista usando datos del inventario. """
+        # Crear widget y agregar a la lista
         nuevo = WidgetElemento()
 
-        # llenar caja de opciones con elementos del inventario
-        manejador = ManejadorInventario(self.conn)
-        elementos = manejador.obtenerListaNombres()
+        try:
+            elementos = self.session.query(Inventario.nombre).all()
+            nuevo.boxElemento.addItems([nombre for nombre, in elementos])
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(self, 'Error', f'Error al cargar inventario: {e}')
+            return
 
-        nuevo.boxElemento.addItems([nombre for nombre, in elementos])
         nuevo.elementoSeleccionado = nombre
         nuevo.cantidadElemento = cantidad
 
@@ -239,30 +304,31 @@ class Base_EditarProducto(QtWidgets.QWidget):
 
     def obtenerParametrosProductos(self):
         """ Parámetros para la tabla productos. """
-        return tuple(
-            v or None
-            for v in (
-                self.ui.txtCodigo.text().strip(),
-                self.ui.txtDescripcion.toPlainText().strip(),
-                self.ui.txtNombre.text(),
-                self.categoriaActual,
-            )
-        )
+        return {
+            'codigo': self.ui.txtCodigo.text().strip(),
+            'descripcion': self.ui.txtDescripcion.toPlainText().strip(),
+            'abreviado': self.ui.txtNombre.text(),
+            'categoria': self.categoriaActual,
+        }
 
     def obtenerParametrosProdUtilizaInv(self):
         """ Parámetros para la tabla productos_utiliza_inventario. """
         wdg: list[WidgetElemento] = self.ui.scrollAreaLista.children()[1:]
 
         PUI_db_parametros = []
-        manejador = ManejadorInventario(self.conn)
 
         for elemento in wdg:
             nombre, cantidad = elemento.elementoSeleccionado, elemento.cantidadElemento
             if not nombre or cantidad < 1:
                 return None
 
-            (id_inventario,) = manejador.obtenerIdInventario(nombre)
-            PUI_db_parametros.append((id_inventario, cantidad))
+            # Buscar el inventario por nombre usando SQLAlchemy
+            inventario = self.session.query(Inventario).filter_by(nombre=nombre).one_or_none()
+            if not inventario:
+                QtWidgets.QMessageBox.warning(self, 'Atención', f'¡El inventario "{nombre}" no existe!')
+                return None
+
+            PUI_db_parametros.append((inventario.id_inventario, cantidad))
 
         return PUI_db_parametros
 
@@ -302,49 +368,59 @@ class Base_EditarProducto(QtWidgets.QWidget):
 
     def done(self):
         """ Función donde se registrará o actualizará producto. """
-        #### obtención de parámetros ####
-        productos_db_parametros = self.obtenerParametrosProductos()
-        PUI_db_parametros = self.obtenerParametrosProdUtilizaInv()
+        try:
+            # obtención de parámetros
+            producto_params = self.obtenerParametrosProductos()
+            inventario_params = self.obtenerParametrosProdUtilizaInv()
 
-        if self.categoriaActual == 'S':
-            precios_db_parametros = self.obtenerParametrosProdIntervalos()
-        else:
-            precios_db_parametros = self.obtenerParametrosProdGranFormato()
+            if self.categoriaActual == 'S':
+                precios_params = self.obtenerParametrosProdIntervalos()
+            else:
+                precios_params = self.obtenerParametrosProdGranFormato()
 
-        if any(
-            params is None for params in (productos_db_parametros, PUI_db_parametros, precios_db_parametros,)
-        ):
-            return
+            if any(params is None for params in (producto_params, inventario_params, precios_params)):
+                return
 
-        # ejecuta internamente un fetchone, por lo que se desempaca luego
-        result = self.insertar_o_modificar(productos_db_parametros)
-        if not result:
-            return
+            producto = self.insertar_o_modificar(producto_params)
 
-        (idx,) = result
-        manejador = ManejadorProductos(self.conn, self.MENSAJE_ERROR)
+            # actualizar relaciones
+            self.session.query(ProductoUtilizaInventario).filter_by(id_productos=producto.id_productos).delete()
+            for inv_id, cantidad in inventario_params:
+                self.session.add(ProductoUtilizaInventario(
+                    id_productos=producto.id_productos,
+                    id_inventario=inv_id,
+                    utiliza_inventario=cantidad
+                ))
 
-        # transacción principal, se checa si cada operación fue exitosa
-        if not (
-            manejador.eliminarProdUtilizaInv(idx)
-            and manejador.insertarProdUtilizaInv(idx, PUI_db_parametros)
-            and manejador.eliminarPrecios(idx)
-        ):
-            return
+            if self.categoriaActual == 'S':
+                self.session.query(ProductoIntervalo).filter_by(id_productos=producto.id_productos).delete()
+                for desde, precio, duplex in precios_params:
+                    self.session.add(ProductoIntervalo(
+                        id_productos=producto.id_productos,
+                        desde=desde,
+                        precio_con_iva=precio,
+                        duplex=duplex
+                    ))
+            else:
+                self.session.query(ProductoGranFormato).filter_by(id_productos=producto.id_productos).delete()
+                min_m2, precio = precios_params
+                self.session.add(ProductoGranFormato(
+                    id_productos=producto.id_productos,
+                    min_m2=min_m2,
+                    precio_m2=precio
+                ))
 
-        if self.categoriaActual == 'S':
-            result = manejador.insertarProductosIntervalos(idx, precios_db_parametros)
-        else:
-            result = manejador.insertarProductoGranFormato(idx, precios_db_parametros)
-
-        if result:
+            self.session.commit()
             QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)
             self.success.emit()
             self.close()
+        except Exception as e:
+            self.session.rollback()
+            QtWidgets.QMessageBox.critical(self, 'Error', f'{self.MENSAJE_ERROR}\n{e}')
 
-    def insertar_o_modificar(self, productos_db_parametros: tuple) -> tuple:
-        """ Devuelve tupla con índice del producto registrado o editado. """
-        raise NotImplementedError('BEIS CLASSSSSSS')
+    def insertar_o_modificar(self, producto_params):
+        """ Inserta o actualiza un producto en la base de datos. """
+        raise NotImplementedError('Debe ser implementado por las subclases.')
 
 
 class App_RegistrarProducto(Base_EditarProducto):
@@ -360,9 +436,11 @@ class App_RegistrarProducto(Base_EditarProducto):
         self.ui.btAceptar.setText(' Registrar producto')
         self.ui.btAceptar.setIcon(QIcon(':/img/resources/images/plus.png'))
 
-    def insertar_o_modificar(self, productos_db_parametros):
-        manejador = ManejadorProductos(self.conn, self.MENSAJE_ERROR)
-        return manejador.insertarProducto(productos_db_parametros)
+    def insertar_o_modificar(self, producto_params):
+        producto = Producto(**producto_params)
+        self.session.add(producto)
+        self.session.flush()  # Obtener el ID del producto recién insertado
+        return producto
 
 
 class App_EditarProducto(Base_EditarProducto):
@@ -376,36 +454,37 @@ class App_EditarProducto(Base_EditarProducto):
 
         self.idx = idx  # id del elemento a editar
 
-        manejador = ManejadorProductos(self.conn)
-        _, codigo, descripcion, abreviado, categoria, _ = manejador.obtenerProducto(idx)
+        producto = self.session.query(Producto).filter_by(id_productos=idx).one()
+        self.ui.txtCodigo.setText(producto.codigo)
+        self.ui.txtDescripcion.setPlainText(producto.descripcion)
+        self.ui.txtNombre.setText(producto.abreviado)
 
-        self.ui.txtCodigo.setText(codigo)
-        self.ui.txtDescripcion.setPlainText(descripcion)
-        self.ui.txtNombre.setText(abreviado)
-
-        if categoria == 'S':
+        if producto.categoria == 'S':
             self.ui.tabWidget.setCurrentIndex(0)
-
-            # agregar intervalos de precios a la tabla
-            precios = manejador.obtenerTablaPrecios(idx)
-
-            for row, (desde, precio, duplex) in enumerate(precios):
-                self.agregarIntervalo(row, desde, precio, duplex)
-        elif categoria == 'G':
+            for intervalo in producto.intervalos:
+                self.agregarIntervalo(
+                    row=self.ui.tabla_precios.rowCount(),
+                    desde=intervalo.desde,
+                    precio=intervalo.precio_con_iva,
+                    duplex=intervalo.duplex
+                )
+        elif producto.categoria == 'G':
             self.ui.tabWidget.setCurrentIndex(1)
+            gran_formato = producto.gran_formato[0]
+            self.ui.txtMinM2.setText(f'{gran_formato.min_m2:,.2f}')
+            self.ui.txtPrecio.setText(f'{gran_formato.precio_m2:,.2f}')
 
-            min_m2, precio = manejador.obtenerGranFormato(idx)
+        for utiliza in producto.utiliza_inventario:
+            self.agregarProductoALista(
+                nombre=utiliza.inventario.nombre,
+                cantidad=utiliza.utiliza_inventario
+            )
 
-            self.ui.txtMinM2.setText(f'{min_m2:,.2f}')
-            self.ui.txtPrecio.setText(f'{precio:,.2f}')
-
-        # agregar elementos de la segunda página
-        for nombre, cantidad in manejador.obtenerUtilizaInventario(idx):
-            self.agregarProductoALista(nombre, cantidad)
-
-    def insertar_o_modificar(self, productos_db_parametros):
-        manejador = ManejadorProductos(self.conn, self.MENSAJE_ERROR)
-        return manejador.editarProducto(self.idx, productos_db_parametros)
+    def insertar_o_modificar(self, producto_params):
+        producto = self.session.query(Producto).filter_by(id_productos=self.idx).one()
+        for key, value in producto_params.items():
+            setattr(producto, key, value)
+        return producto
 
 
 #########################################
