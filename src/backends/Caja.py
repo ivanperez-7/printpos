@@ -150,7 +150,7 @@ class App_Caja(QtWidgets.QWidget, IModuloPrincipal):
 
         if ret == qm.Yes:
             impresora = ImpresoraTickets(self.conn)
-            impresora.imprimirCorteCaja(self.all_movimientos, self.user.nombre)
+            impresora.imprimir_corte_caja(self.all_movimientos, self.user.nombre)
 
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES

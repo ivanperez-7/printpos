@@ -6,7 +6,7 @@ from core import Moneda, NumeroDecimal, Runner
 from sql import ManejadorProductos, ManejadorVentas
 from utils.mydataclasses import ItemVenta, ItemGranFormato
 from utils.mywidgets import LabelAdvertencia
-from utils.myutils import son_similar, formatdate
+from utils.myutils import son_similar, format_date
 
 
 class Base_PagarVenta(QtWidgets.QWidget):
@@ -42,8 +42,8 @@ class Base_PagarVenta(QtWidgets.QWidget):
         self.ui.txtCliente.setText(nombreCliente)
         self.ui.txtCorreo.setText(correo)
         self.ui.txtTelefono.setText(telefono)
-        self.ui.txtCreacion.setText(formatdate(fechaCreacion))
-        self.ui.txtEntrega.setText(formatdate(fechaEntrega))
+        self.ui.txtCreacion.setText(format_date(fechaCreacion))
+        self.ui.txtEntrega.setText(format_date(fechaEntrega))
         self.ui.lbFolio.setText(str(self.id_ventas))
 
         # configurar tabla de productos

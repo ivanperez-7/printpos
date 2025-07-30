@@ -8,7 +8,7 @@ from PySide6 import QtWidgets, QtCore, QtGui
 from PySide6.QtCore import Qt, Signal
 
 from core import Moneda, ROJO, VERDE, AMARILLO
-from .myutils import unidecode, formatdate
+from .myutils import unidecode, format_date
 
 
 class ClickableIcon(QtWidgets.QPushButton):
@@ -260,7 +260,7 @@ class TablaDatos(QtWidgets.QTableWidget):
                     cell = f'${dato:,.2f}'
                     sort_key = Moneda(dato)
                 elif isinstance(dato, datetime):
-                    cell = formatdate(dato)
+                    cell = format_date(dato)
                     sort_key = dato
                 else:
                     cell = str(dato or '')
@@ -303,7 +303,7 @@ class TablaDatos(QtWidgets.QTableWidget):
         for row, compra in enumerate(data):
             for col, dato in enumerate(compra):
                 if isinstance(dato, datetime):
-                    cell = formatdate(dato)
+                    cell = format_date(dato)
                 elif isinstance(dato, float):
                     cell = f'${dato:,.2f}'
                 else:
@@ -328,7 +328,7 @@ class TablaDatos(QtWidgets.QTableWidget):
         for row, compra in enumerate(data):
             for col, dato in enumerate(compra):
                 if isinstance(dato, datetime):
-                    cell = formatdate(dato)
+                    cell = format_date(dato)
                 elif isinstance(dato, float):
                     cell = f'${dato:,.2f}'
                 else:

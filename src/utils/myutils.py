@@ -14,14 +14,14 @@ from PySide6.QtCore import QDateTime, QLocale
 __all__ = [
     'clamp',
     'chunkify',
-    'daysTo',
+    'days_to',
     'unidecode',
-    'randFile',
+    'rand_file',
     'son_similar',
     'stringify_float',
-    'formatdate',
-    'exportarXlsx',
-    'enviarWhatsApp',
+    'format_date',
+    'exportar_xlsx',
+    'enviar_whatsapp',
 ]
 
 
@@ -37,7 +37,7 @@ def chunkify(array: list, size: int):
     return [array[x : x + size] for x in range(0, len(array), size)]
 
 
-def daysTo(num_days: int):
+def days_to(num_days: int):
     """ Dar formato a un número de días a 'hace {} días/semanas/años'. """
     if num_days < 0:
         return 'Invalid input'
@@ -61,7 +61,7 @@ def daysTo(num_days: int):
         return f"hace {years_ago} año{'s' if years_ago > 1 else ''}"
 
 
-def formatdate(date=None):
+def format_date(date=None):
     """ Da formato en texto a un dato QDateTime o datetime de Python.
     Ejemplo: 08 de febrero 2023, 4:56 p. m. """
     locale = QLocale(QLocale.Spanish, QLocale.Mexico)
@@ -77,7 +77,7 @@ def unidecode(input_str: str):
     return normalized.lower()
 
 
-def randFile(ext: str = ''):
+def rand_file(ext: str = ''):
     """ Genera archivo de extensión dada con nombre aleatorio. """
     ext = re.sub('[^a-zA-Z]*', '', ext)
     chars = string.ascii_letters + string.digits
@@ -103,7 +103,7 @@ def son_similar(obj1, obj2):
     return str1_clean in str2_clean
 
 
-def exportarXlsx(rutaArchivo, titulos, datos):
+def exportar_xlsx(rutaArchivo, titulos, datos):
     """ Exporta una lista de tuplas a un archivo MS Excel, con extensión xlsx.
     Requiere el nombre del archivo, una lista con los títulos para las
     columnas, y una lista de tuplas con los datos principales. """
@@ -124,7 +124,7 @@ def exportarXlsx(rutaArchivo, titulos, datos):
     wb.save(rutaArchivo)
 
 
-def enviarWhatsApp(phone_no: str, message: str):
+def enviar_whatsapp(phone_no: str, message: str):
     """ Enviar mensaje por WhatsApp abriendo el navegador de internet. """
     if '+' not in phone_no:  # agregar código de país de México
         phone_no = '+52' + phone_no

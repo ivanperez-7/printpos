@@ -12,7 +12,7 @@ from pdf import ImpresoraOrdenes, ImpresoraTickets
 from sql import ManejadorVentas
 from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
-from utils.myutils import chunkify, clamp, enviarWhatsApp, formatdate, son_similar
+from utils.myutils import chunkify, clamp, enviar_whatsapp, format_date, son_similar
 from utils.mywidgets import LabelAdvertencia
 
 
@@ -212,21 +212,21 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             '¡Esperamos verle pronto! 😊'
         ).format(nombre, id_venta, saldo)
 
-        enviarWhatsApp(celular, mensaje)
+        enviar_whatsapp(celular, mensaje)
 
     def terminarVenta(self):
         """ Pide confirmación para marcar como cancelada una venta. """
         if not (selected := self.tabla_actual.selectedItems()):
             return
 
-        idVenta = selected[0].text()
+        id_venta = selected[0].text()
         manejador = ManejadorVentas(self.conn)
 
-        if manejador.obtenerAnticipo(idVenta) is None:
+        if manejador.obtenerAnticipo(id_venta) is None:
             return
 
-        if manejador.obtenerSaldoRestante(idVenta):
-            widget = App_TerminarVenta(idVenta, self)
+        if manejador.obtenerSaldoRestante(id_venta):
+            widget = App_TerminarVenta(id_venta, self)
             widget.success.connect(self.rescan_update)
             return
 
@@ -237,7 +237,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             return
 
         # terminar venta directamente, al no tener saldo restante
-        if manejador.actualizarEstadoVenta(idVenta, 'Entregado por ' + self.user.nombre, commit=True):
+        if manejador.actualizarEstadoVenta(id_venta, 'Entregado por ' + self.user.nombre, commit=True):
             qm.information(self, 'Éxito', 'Se marcó como terminada la venta seleccionada.')
             self.rescan_update()
 
@@ -261,7 +261,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             self._cancelarVenta(selected[0].text())
 
     @requiere_admin
-    def _cancelarVenta(self, idVenta, conn):
+    def _cancelarVenta(self, id_venta, conn):
         # preguntar por devolución y manejar tabla ventas_pagos como corresponde
         ret = qm.question(
             self,
@@ -272,9 +272,9 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         manejador = ManejadorVentas(conn)
         estado = 'Cancelada por ' + manejador.nombreUsuarioActivo
 
-        if ret == qm.Yes and not manejador.anularPagos(idVenta, manejador.idUsuarioActivo):
+        if ret == qm.Yes and not manejador.anularPagos(id_venta, manejador.idUsuarioActivo):
             return
-        if manejador.actualizarEstadoVenta(idVenta, estado, commit=True):
+        if manejador.actualizarEstadoVenta(id_venta, estado, commit=True):
             qm.information(self, 'Éxito', 'Se marcó como cancelada la venta seleccionada.')
             self.rescan_update()
 
@@ -287,28 +287,28 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         if checar_estado(5) or checar_estado(6):
             return
 
-        idVenta = selected[0].text()
+        id_venta = selected[0].text()
         man = ManejadorVentas(self.conn)
 
-        if man.verificarPagos(idVenta) > 1:
-            wdg = App_ImprimirTickets(idVenta, self)
+        if man.verificarPagos(id_venta) > 1:
+            wdg = App_ImprimirTickets(id_venta, self)
             return
 
         # abrir pregunta
         ret = qm.question(
             self,
             'Atención',
-            'Se imprimirá el ticket de compra de la venta ' f'con folio {idVenta}. ¿Desea continuar?',
+            'Se imprimirá el ticket de compra de la venta ' f'con folio {id_venta}. ¿Desea continuar?',
         )
         if ret == qm.Yes:
             impresora = ImpresoraTickets()
-            impresora.imprimirTicketCompra(idVenta, manejador=ManejadorVentas(self.conn))
+            impresora.imprimir_ticket_compra(id_venta, manejador=ManejadorVentas(self.conn))
 
     def imprimirOrden(self):
         """ Imprime orden de compra de un pedido dado el folio de esta. """
         if (selected := self.tabla_actual.selectedItems()) and selected[6].text().startswith('Recibido'):
             impresora = ImpresoraOrdenes(self)
-            impresora.imprimirOrdenCompra(selected[0].text(), manejador=ManejadorVentas(self.conn))
+            impresora.imprimir_orden_compra(selected[0].text(), manejador=ManejadorVentas(self.conn))
 
 
 #################################
@@ -365,8 +365,8 @@ class App_DetallesVenta(QtWidgets.QWidget):
         self.ui.txtCliente.setText(nombreCliente)
         self.ui.txtCorreo.setText(correo)
         self.ui.txtTelefono.setText(telefono)
-        self.ui.txtCreacion.setText(formatdate(fechaCreacion))
-        self.ui.txtEntrega.setText(formatdate(fechaEntrega))
+        self.ui.txtCreacion.setText(format_date(fechaCreacion))
+        self.ui.txtEntrega.setText(format_date(fechaEntrega))
         self.ui.txtComentarios.setPlainText(comentarios)
         self.ui.txtVendedor.setText(nombreUsuario)
         self.ui.lbFolio.setText(str(idx))
@@ -463,7 +463,7 @@ class App_TerminarVenta(Base_PagarVenta):
         if ret == qm.Yes:
             slais = slice(-self.ui.stackPagos.count(), None)
             impresora = ImpresoraTickets()
-            impresora.imprimirTicketCompra(self.id_ventas, slais, manejador=ManejadorVentas(self.conn))
+            impresora.imprimir_ticket_compra(self.id_ventas, slais, manejador=ManejadorVentas(self.conn))
 
         self.success.emit()
         self.close()
@@ -476,7 +476,7 @@ class App_TerminarVenta(Base_PagarVenta):
 class App_ImprimirTickets(QtWidgets.QWidget):
     """ Backend para seleccionar tickets a imprimir de una venta/pedido. """
 
-    def __init__(self, idVenta: int, parent=None):
+    def __init__(self, id_venta: int, parent=None):
         from ui.Ui_ImprimirTickets import Ui_ImprimirTickets
 
         super().__init__(parent)
@@ -487,7 +487,7 @@ class App_ImprimirTickets(QtWidgets.QWidget):
         self.setFixedSize(self.size())
 
         self.conn = user_context.conn
-        self.idVenta = idVenta
+        self.id_venta = id_venta
 
         self.ui.btRegresar.clicked.connect(self.close)
         self.ui.btMarcar.clicked.connect(self.marcarTodo)
@@ -497,10 +497,10 @@ class App_ImprimirTickets(QtWidgets.QWidget):
         font = QFont()
         font.setPointSize(12)
 
-        pagos = ManejadorVentas(self.conn).obtenerPagosVenta(idVenta)
+        pagos = ManejadorVentas(self.conn).obtenerPagosVenta(id_venta)
 
         for i, (fecha, metodo, monto, r, v) in enumerate(pagos):
-            txt = f'  Pago {i + 1}: ${monto:.2f}, {metodo.lower()} ({formatdate(fecha)})'
+            txt = f'  Pago {i + 1}: ${monto:.2f}, {metodo.lower()} ({format_date(fecha)})'
             checkbox = QtWidgets.QCheckBox(txt)
             checkbox.setFont(font)
             checkbox.setChecked(True)
@@ -529,5 +529,5 @@ class App_ImprimirTickets(QtWidgets.QWidget):
 
         if idxs:
             impresora = ImpresoraTickets()
-            impresora.imprimirTicketCompra(self.idVenta, idxs, manejador=ManejadorVentas(self.conn))
+            impresora.imprimir_ticket_compra(self.id_venta, idxs, manejador=ManejadorVentas(self.conn))
             self.close()

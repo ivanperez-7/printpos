@@ -9,12 +9,12 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QImage
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 
-from .generadores import generarOrdenCompra, generarCortePDF, generarTicketPDF
+from .generadores import generar_orden_compra, generar_corte_pdf, generar_ticket_pdf
 from config import INI
 from interfaces import IWarningLogger
 from sql import ManejadorVentas
 from utils.mydecorators import run_in_thread
-from utils.myutils import randFile
+from utils.myutils import rand_file
 
 
 class ImpresoraPDF:
@@ -24,12 +24,12 @@ class ImpresoraPDF:
 
     def __init__(self, parent: QWidget = None):
         self.parent = parent
-        self.printer = self.obtenerImpresora()
+        self.printer = self.obtener_impresora()
 
-    def obtenerImpresora(self) -> QPrinter:
+    def obtener_impresora(self) -> QPrinter:
         return None
 
-    def enviarAImpresora(self, data: io.BytesIO):
+    def enviar_a_impresora(self, data: io.BytesIO):
         """ Convertir PDF a imagen y mandar a impresora. """
         assert self.printer, 'Impresora aún no inicializada.'
 
@@ -42,7 +42,7 @@ class ImpresoraPDF:
             pix: pymupdf.Pixmap = page.get_pixmap(dpi=300, alpha=False)
             image = QImage(pix.samples, pix.w, pix.h, pix.stride, QImage.Format_RGB888)
             if INI.SAVE_PNG:
-                image.save(randFile('jpg'))
+                image.save(rand_file('jpg'))
 
             rect = painter.viewport()
             qtImageScaled = image.scaled(rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -63,7 +63,7 @@ class ImpresoraOrdenes(ImpresoraPDF):
     """ Impresora para órdenes de compra.
     Siempre crea diálogo para escoger impresora. """
 
-    def obtenerImpresora(self):
+    def obtener_impresora(self):
         """ Diálogo para escoger impresora. En hilo principal. """
         printer = QPrinter(QPrinter.HighResolution)
 
@@ -77,22 +77,22 @@ class ImpresoraOrdenes(ImpresoraPDF):
             return printer
 
     @run_in_thread
-    def imprimirOrdenCompra(self, idx: int, manejador: ManejadorVentas = None):
+    def imprimir_orden_compra(self, idx: int, manejador: ManejadorVentas = None):
         productos = manejador.obtenerTablaOrdenCompra(idx)
         total = manejador.obtenerImporteTotal(idx)
         anticipo = manejador.obtenerAnticipo(idx)
         nombre, telefono = manejador.obtenerClienteAsociado(idx)
         creacion, entrega = manejador.obtenerFechas(idx)
 
-        data = generarOrdenCompra(productos, idx, nombre, telefono, total, anticipo, creacion, entrega)
-        self.enviarAImpresora(data)
+        data = generar_orden_compra(productos, idx, nombre, telefono, total, anticipo, creacion, entrega)
+        self.enviar_a_impresora(data)
 
 
 class ImpresoraTickets(ImpresoraPDF):
     """ Impresora para tickets.
     Intenta leer impresora por defecto del archivo config. """
 
-    def obtenerImpresora(self):
+    def obtener_impresora(self):
         """ Lee impresora de tickets en archivo config. En hilo principal. """
         pInfo = QPrinterInfo.printerInfo(INI.IMPRESORA)
 
@@ -103,7 +103,7 @@ class ImpresoraTickets(ImpresoraPDF):
             return QPrinter(pInfo, QPrinter.HighResolution)
 
     @run_in_thread
-    def imprimirTicketCompra(
+    def imprimir_ticket_compra(
         self, idx: int, nums: list[int] | slice = None, manejador: ManejadorVentas = None,
     ):
         """ Genera el ticket de compra a partir de un identificador en la base de datos.
@@ -127,17 +127,17 @@ class ImpresoraTickets(ImpresoraPDF):
             pagos = pagos[nums]
 
         for fecha, metodo, monto, pagado, vendedor in pagos:
-            data = generarTicketPDF(productos, vendedor, idx, monto, pagado, abrev[metodo], fecha)
-            self.enviarAImpresora(data)
+            data = generar_ticket_pdf(productos, vendedor, idx, monto, pagado, abrev[metodo], fecha)
+            self.enviar_a_impresora(data)
 
     @run_in_thread
-    def imprimirTicketPresupuesto(self, productos: list, vendedor: str):
+    def imprimir_ticket_presupuesto(self, productos: list, vendedor: str):
         """ Genera un ticket para el presupuesto de una compra. """
-        data = generarTicketPDF(productos, vendedor)
-        self.enviarAImpresora(data)
+        data = generar_ticket_pdf(productos, vendedor)
+        self.enviar_a_impresora(data)
 
     @run_in_thread
-    def imprimirCorteCaja(self, caja, responsable: str):
+    def imprimir_corte_caja(self, caja, responsable: str):
         """ Genera un ticket para el presupuesto de una compra. """
-        data = generarCortePDF(caja, responsable)
-        self.enviarAImpresora(data)
+        data = generar_corte_pdf(caja, responsable)
+        self.enviar_a_impresora(data)

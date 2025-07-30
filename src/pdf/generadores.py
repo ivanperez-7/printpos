@@ -26,12 +26,12 @@ if TYPE_CHECKING:
     from utils.mydataclasses import BaseItem, Caja
 from config import INI
 from core import Moneda
-from utils.myutils import chunkify, formatdate, stringify_float
+from utils.myutils import chunkify, format_date, stringify_float
 
-__all__ = ['generarOrdenCompra', 'generarTicketPDF', 'generarCortePDF']
+__all__ = ['generar_orden_compra', 'generar_ticket_pdf', 'generar_corte_pdf']
 
 
-def generarOrdenCompra(
+def generar_orden_compra(
     productos: list[tuple],
     folio: int,
     nombre: str,
@@ -74,12 +74,12 @@ def generarOrdenCompra(
         can.drawCentredString(353, 192, str(total))
 
         can.setFont('Helvetica', 12)
-        can.drawRightString(373, 546, formatdate(fecha_creacion))
+        can.drawRightString(373, 546, format_date(fecha_creacion))
 
         can.setFontSize(10)
         can.drawString(75, 493, nombre)
         can.drawString(75, 470, telefono)
-        can.drawString(150, 448, formatdate(fecha_entrega))
+        can.drawString(150, 448, format_date(fecha_entrega))
         can.drawCentredString(353, 148, str(total - anticipo))
         can.drawCentredString(353, 170, str(anticipo))
 
@@ -133,7 +133,7 @@ def generarOrdenCompra(
     return buffer
 
 
-def generarTicketPDF(
+def generar_ticket_pdf(
     productos: list[BaseItem],
     vendedor: str,
     folio: int = None,
@@ -252,7 +252,7 @@ def generarTicketPDF(
         Paragraph(titulo, styles['Center']),
         Paragraph('* ' * 40, styles['Center']),
         Paragraph(folio_str, styles['Left']),
-        Paragraph('<b>Fecha</b>: ' + formatdate(fecha_creacion), styles['Left']),
+        Paragraph('<b>Fecha</b>: ' + format_date(fecha_creacion), styles['Left']),
         Spacer(1, 10),
         tabla_productos,
         Spacer(1, 7),
@@ -279,7 +279,7 @@ def generarTicketPDF(
     return buffer
 
 
-def generarCortePDF(caja: Caja, responsable: str):
+def generar_corte_pdf(caja: Caja, responsable: str):
     """ Función para generar el corte de caja, comprendido entre fechas dadas.
     Contiene:
         - Realizado el: (fecha)
@@ -332,7 +332,7 @@ def generarCortePDF(caja: Caja, responsable: str):
         Paragraph('Resumen de movimientos de caja', styles['Heading1']),
         Spacer(1, 6),
         Paragraph('Realizado por: ' + responsable, styles['Left']),
-        Paragraph('Fecha y hora: ' + formatdate(), styles['Left']),
+        Paragraph('Fecha y hora: ' + format_date(), styles['Left']),
         Spacer(1, 6),
         Paragraph('Resumen de ingresos', styles['Heading3']),
         Paragraph(f'Efectivo: ${ingresos_efectivo}', styles['Left'], bulletText=' '),

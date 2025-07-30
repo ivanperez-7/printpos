@@ -10,7 +10,7 @@ from interfaces import IModuloPrincipal
 from sql import ManejadorClientes
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
-from utils.myutils import daysTo, exportarXlsx, formatdate, son_similar
+from utils.myutils import days_to, exportar_xlsx, format_date, son_similar
 from utils.mywidgets import LabelAdvertencia
 
 
@@ -119,7 +119,7 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
             for col, dato in enumerate(cliente):
                 if isinstance(dato, datetime):
                     delta = QDate(dato).daysTo(timestamp_now)
-                    cell = '{} ({})'.format(formatdate(dato), daysTo(delta))
+                    cell = '{} ({})'.format(format_date(dato), days_to(delta))
                 else:
                     cell = str(dato or '')
                 tabla.setItem(row, col, QtWidgets.QTableWidgetItem(cell))
@@ -158,13 +158,13 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
 
             for col, dato in enumerate(cliente):
                 if isinstance(dato, datetime):
-                    cell = formatdate(dato)
+                    cell = format_date(dato)
                 else:
                     cell = str(dato or '')
                 cliente[col] = cell
             datos.append(cliente)
 
-        exportarXlsx(fileName, titulos, datos)
+        exportar_xlsx(fileName, titulos, datos)
 
     # ====================================
     #  VENTANAS INVOCADAS POR LOS BOTONES

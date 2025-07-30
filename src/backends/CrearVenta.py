@@ -11,7 +11,7 @@ from pdf import ImpresoraOrdenes, ImpresoraTickets
 from sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
 from utils.mydataclasses import Venta
 from utils.mydecorators import fondo_oscuro, requiere_admin
-from utils.myutils import clamp, enviarWhatsApp, formatdate, son_similar
+from utils.myutils import clamp, enviar_whatsapp, format_date, son_similar
 from utils.mywidgets import LabelAdvertencia, SpeechBubble
 
 
@@ -49,7 +49,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
 
         # datos por defecto
         self.ui.txtVendedor.setText(self.user.nombre)
-        self.ui.lbFecha.setText(formatdate(ventaDatos.fechaEntrega))
+        self.ui.lbFecha.setText(format_date(ventaDatos.fechaEntrega))
         self.ui.btDeshacer.setVisible(False)
         self.ui.btDescuentosCliente.hide()
 
@@ -150,7 +150,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
 
     def cambiarFechaEntrega(self, fechaEntrega: QDateTime):
         self.ventaDatos.fechaEntrega = fechaEntrega
-        self.ui.lbFecha.setText(formatdate(fechaEntrega))
+        self.ui.lbFecha.setText(format_date(fechaEntrega))
         self.ui.btDeshacer.setVisible(not self.ventaDatos.esVentaDirecta)
 
     def agregarProducto(self, item):
@@ -550,7 +550,7 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
             '*COTIZACIÓN DE VENTA*',
             f'Cliente: *{self.txtCliente}*',
             '-------------------------------------------',
-            f'Fecha: *{formatdate()}*',
+            f'Fecha: *{format_date()}*',
             '-------------------------------------------',
         ]
 
@@ -562,12 +562,12 @@ class App_EnviarCotizacion(QtWidgets.QWidget):
         mensaje.append(f'*Total a pagar: ${self.ventaDatos.total}*')
         mensaje = '\n'.join(mensaje)
 
-        if enviarWhatsApp(self.txtTelefono, mensaje):
+        if enviar_whatsapp(self.txtTelefono, mensaje):
             self.close()
 
     def imprimirTicket(self):
         impresora = ImpresoraTickets()
-        impresora.imprimirTicketPresupuesto(list(self.ventaDatos), self.txtVendedor)
+        impresora.imprimir_ticket_presupuesto(list(self.ventaDatos), self.txtVendedor)
         self.close()
 
 
@@ -716,14 +716,14 @@ class App_ConfirmarVenta(Base_PagarVenta):
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
 
             impresora = ImpresoraOrdenes(self)
-            impresora.imprimirOrdenCompra(self.id_ventas, manejador=manejador)
+            impresora.imprimir_orden_compra(self.id_ventas, manejador=manejador)
         else:
             ret = qm.question(
                 self, 'Éxito', 'Venta terminada. ¡Recuerde ofrecer el ticket de compra! ¿Desea imprimirlo?',
             )
             if ret == qm.Yes:
                 impresora = ImpresoraTickets()
-                impresora.imprimirTicketCompra(self.id_ventas, manejador=manejador)
+                impresora.imprimir_ticket_compra(self.id_ventas, manejador=manejador)
         self.success.emit()
         self.close()
 
