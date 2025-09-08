@@ -6,7 +6,7 @@ from PySide6.QtCore import QDate, Qt, QRect, QPropertyAnimation, QEasingCurve, S
 
 from context import user_context
 from interfaces import IModuloPrincipal
-from sql import ManejadorVentas, ManejadorInventario
+from sql import ManejadorVentas, ManejadorInventario, ManejadorContadores
 
 
 class App_Home(QtWidgets.QWidget, IModuloPrincipal):
@@ -80,6 +80,11 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
             button.clicked.connect(partial(self.new_module.emit, modulo))
 
         self.ui.btSalir.clicked.connect(self.go_back.emit)
+        self.verificar_contadores()
+    
+    def verificar_contadores(self):
+        manejador = ManejadorContadores(self.conn)
+        print(manejador.obtener_contadores_hoy())
 
     def _create_pixmap(self, point: int):
         from PySide6 import QtCore, QtGui
