@@ -16,6 +16,7 @@ __all__ = [
     'DatabaseManager',
     'ManejadorCaja',
     'ManejadorClientes',
+    'ManejadorContadores',
     'ManejadorInventario',
     'ManejadorProductos',
     'ManejadorReportes',
@@ -252,6 +253,20 @@ class ManejadorClientes(DatabaseManager):
         ''',
             (idCliente,),
             commit=True,
+        )
+
+
+class ManejadorContadores(DatabaseManager):
+    """ Clase para manejar sentencias hacia/desde la tabla Contadores. """
+
+    def obtener_contadores_hoy(self):
+        return self.fetchone(
+            '''
+            SELECT  contador_inicial,
+                    contador_final
+            FROM    contadores
+            WHERE   fecha = CURRENT_DATE;
+        '''
         )
 
 
