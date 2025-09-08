@@ -60,5 +60,6 @@
     <file>resources/images/calendar.png</file>
     <file>resources/images/logo.png</file>
     <file>resources/images/user.png</file>
+    <file>resources/images/printer.png</file>
   </qresource>
 </RCC>

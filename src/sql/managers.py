@@ -17,6 +17,7 @@ __all__ = [
     'ManejadorCaja',
     'ManejadorClientes',
     'ManejadorContadores',
+    'ManejadorEquipos',
     'ManejadorInventario',
     'ManejadorProductos',
     'ManejadorReportes',
@@ -268,6 +269,30 @@ class ManejadorContadores(DatabaseManager):
             WHERE   fecha = CURRENT_DATE;
         '''
         )
+    
+    def registrar_contadores_iniciales(self, data: dict[int, int]):
+        return self.executemany(
+            '''
+            INSERT INTO contadores (
+                fecha, id_equipo, contador_inicial
+            )
+            VALUES
+                (CURRENT_DATE, ?, ?);
+        ''',
+            data.items(),
+            commit=True,
+        )
+
+
+class ManejadorEquipos(DatabaseManager):
+    """ Clase para manejar sentencias hacia/desde la tabla Equipos. """
+
+    def obtener_todos(self):
+        return self.fetchall('''
+            SELECT  id_equipo, marca, modelo 
+            FROM    Equipos
+            WHERE   activo = 'true';
+        ''')
 
 
 class ManejadorInventario(DatabaseManager):
