@@ -106,7 +106,8 @@ class Dialog_ObtenerAdmin(QDialog):
 
 def requiere_admin(func):
     """ Decorador para solicitar contraseña de administrador
-    antes de ejecutar alguna función.
+    antes de ejecutar alguna función. Requiere que el parent tenga atributos
+    `conn` y `user`, donde `user` debe tener atributo `administrador`.
 
     >>> @requiere_admin
     ... def abortar_venta():
