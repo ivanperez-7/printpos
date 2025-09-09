@@ -23,15 +23,15 @@ class TestUtilidades(unittest.TestCase):
 
     def test_daysTo(self):
         """ Test para la función daysTo """
-        self.assertEqual(daysTo(0), 'hoy')
-        self.assertEqual(daysTo(1), 'hace un día')
-        self.assertEqual(daysTo(3), 'hace 3 días')
-        self.assertEqual(daysTo(7), 'hace una semana')
-        self.assertEqual(daysTo(14), 'hace 2 semanas')
-        self.assertEqual(daysTo(30), 'hace 1 mes')
-        self.assertEqual(daysTo(365), 'hace 1 año')
-        self.assertEqual(daysTo(1000), 'hace 2 años')
-        self.assertEqual(daysTo(-1), 'Invalid input')
+        self.assertEqual(days_to(0), 'hoy')
+        self.assertEqual(days_to(1), 'hace un día')
+        self.assertEqual(days_to(3), 'hace 3 días')
+        self.assertEqual(days_to(7), 'hace una semana')
+        self.assertEqual(days_to(14), 'hace 2 semanas')
+        self.assertEqual(days_to(30), 'hace 1 mes')
+        self.assertEqual(days_to(365), 'hace 1 año')
+        self.assertEqual(days_to(1000), 'hace 2 años')
+        self.assertEqual(days_to(-1), 'Invalid input')
 
     def test_unidecode(self):
         """ Test para la función unidecode """
@@ -60,7 +60,7 @@ class TestUtilidades(unittest.TestCase):
         titulos = ['Nombre', 'Edad', 'Ciudad']
         datos = [('Juan', 30, 'México'), ('Ana', 28, 'Colombia')]
         
-        exportarXlsx(ruta, titulos, datos)
+        exportar_xlsx(ruta, titulos, datos)
 
         # Verifica que el archivo ha sido creado
         import os

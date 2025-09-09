@@ -4,7 +4,7 @@ import unittest
 
 from reportlab.pdfgen import canvas
 
-from pdf.generadores import generarOrdenCompra, generarTicketPDF, generarCortePDF
+from pdf.generadores import generar_orden_compra, generar_ticket_pdf, generar_corte_pdf
 from pdf.impresoras import ImpresoraPDF, ImpresoraTickets, ImpresoraOrdenes
 import PrintPOS
 from utils.mydataclasses import ItemVenta, Caja
@@ -26,7 +26,7 @@ class TestPDFGenerators(unittest.TestCase):
             (15, 'Product A', 'Spec A', 10.0, 0.0),
             (15, 'Product B', 'Spec B', 20.0, 0.0),
         ]
-        pdf_bytes = generarOrdenCompra(
+        pdf_bytes = generar_orden_compra(
             productos,
             self.folio,
             self.nombre,
@@ -40,7 +40,7 @@ class TestPDFGenerators(unittest.TestCase):
 
     def test_generarTicketPDF(self):
         productos = [ItemVenta(1, 'Product A', 'Spec A', 10.0, 0, 15, '')]
-        pdf_bytes = generarTicketPDF(
+        pdf_bytes = generar_ticket_pdf(
             productos,
             vendedor='Jane Doe',
             folio=self.folio,
@@ -53,7 +53,7 @@ class TestPDFGenerators(unittest.TestCase):
 
     def test_generarCortePDF(self):
         caja = Caja()  # Mock or create an instance of Caja as needed
-        pdf_bytes = generarCortePDF(caja, responsable='Manager')
+        pdf_bytes = generar_corte_pdf(caja, responsable='Manager')
         self.assertGreater(pdf_bytes.getbuffer().nbytes, 0, 'PDF should not be empty')
 
 
