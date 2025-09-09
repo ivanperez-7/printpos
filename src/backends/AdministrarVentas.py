@@ -1,7 +1,7 @@
 from math import ceil
 
 from PySide6 import QtWidgets
-from PySide6.QtWidgets import QMessageBox as qm
+from PySide6.QtWidgets import QMessageBox as qm, QFileDialog
 from PySide6.QtGui import QFont, QIcon
 from PySide6.QtCore import Qt, Signal, QMutex
 
@@ -9,6 +9,7 @@ from backends.shared_widgets import Base_PagarVenta
 from context import user_context
 from interfaces import IModuloPrincipal
 from pdf import ImpresoraOrdenes, ImpresoraTickets
+from pdf.exportadores import guardar_orden_compra
 from sql import ManejadorVentas
 from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
@@ -74,6 +75,8 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         self.ui.btCancelar.clicked.connect(self.cancelarVenta)
         self.ui.btOrden.clicked.connect(self.imprimirOrden)
         self.ui.btRecibo.clicked.connect(self.imprimirTicket)
+        self.ui.btPDF.clicked.connect(self.exportar_orden)
+        self.ui.btPDF.setIcon(QIcon(':/img/resources/images/export.png'))
         self.ui.searchBar.textChanged.connect(self.update_display)
 
         self.rescanned.connect(self.update_display)
@@ -309,6 +312,23 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         if (selected := self.tabla_actual.selectedItems()) and selected[6].text().startswith('Recibido'):
             impresora = ImpresoraOrdenes(self)
             impresora.imprimir_orden_compra(selected[0].text(), manejador=ManejadorVentas(self.conn))
+    
+    def exportar_orden(self):
+        """ Exporta la orden de compra de un pedido a PDF. """
+        if not (selected := self.tabla_actual.selectedItems()):
+            return
+        
+        idVenta = selected[0].text()
+        manejador = ManejadorVentas(self.conn)
+        ruta, _ = QFileDialog.getSaveFileName(
+            self,
+            "Guardar orden de compra",
+            f"Orden folio {idVenta}.pdf",
+            "Archivos PDF (*.pdf)"
+        )
+
+        if ruta and guardar_orden_compra(idVenta, manejador, ruta):
+            qm.information(self, "Éxito", f"Se exportó la orden de compra a:\n{ruta}")
 
 
 #################################
