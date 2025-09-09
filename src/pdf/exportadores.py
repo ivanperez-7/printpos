@@ -1,4 +1,4 @@
-from .generadores import generarOrdenCompra
+from .generadores import generar_orden_compra
 from sql import ManejadorVentas
 
 
@@ -14,7 +14,7 @@ def guardar_orden_compra(idx: int, manejador: ManejadorVentas, ruta: str):
     creacion, entrega = manejador.obtenerFechas(idx)
 
     # generar PDF en memoria
-    data = generarOrdenCompra(productos, idx, nombre, telefono, total, anticipo, creacion, entrega)
+    data = generar_orden_compra(productos, idx, nombre, telefono, total, anticipo, creacion, entrega)
 
     # guardar en archivo
     with open(ruta, "wb") as f:
