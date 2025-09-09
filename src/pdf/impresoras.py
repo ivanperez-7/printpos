@@ -3,7 +3,7 @@
 import io
 
 from haps import Inject
-import pymupdf
+import fitz
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QImage
@@ -37,9 +37,9 @@ class ImpresoraPDF:
         if not painter.begin(self.printer):
             raise RuntimeError(f"oops can't start {self.printer=}")
 
-        doc = pymupdf.open(stream=data)
+        doc = fitz.open(stream=data)
         for i, page in enumerate(doc):
-            pix: pymupdf.Pixmap = page.get_pixmap(dpi=300, alpha=False)
+            pix: fitz.Pixmap = page.get_pixmap(dpi=300, alpha=False)
             image = QImage(pix.samples, pix.w, pix.h, pix.stride, QImage.Format_RGB888)
             if INI.SAVE_PNG:
                 image.save(rand_file('jpg'))
