@@ -27,12 +27,13 @@ install:
 		--nofollow-import-to=tkinter \
 		--nofollow-import-to=pyreadline3 \
 		--include-package=src \
+		--include-package-data=resources.pdf \
+		--include-package-data=resources.translations \
 		--force-stderr-spec={PROGRAM_BASE}.err.txt \
 		--force-stdout-spec={PROGRAM_BASE}.out.txt \
 		--windows-icon-from-ico=icon.ico \
 		--assume-yes-for-downloads \
 		--remove-output
-#		--include-package-data=resources
 #		7za a -tzip .\printpos.zip .\$(EXEC).dist\*
 
 pip_reinstall:
