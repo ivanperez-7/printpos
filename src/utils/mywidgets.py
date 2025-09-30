@@ -529,3 +529,58 @@ class SpeechBubble(QtWidgets.QWidget):
             self.hide_animation.setEasingCurve(QtCore.QEasingCurve.InSine)
             self.hide_animation.finished.connect(lambda: self.setVisible(False))
             self.hide_animation.start()
+
+
+class PrinterFrame(QtWidgets.QFrame):
+    def __init__(self, marca_modelo: str, contador_inicial: int = None):
+        super().__init__()
+
+        self.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(10)
+        layout.setAlignment(Qt.AlignLeft)
+
+        # Ícono de impresora
+        icono = QtWidgets.QLabel()
+        pixmap = QtGui.QPixmap(":img/resources/images/printer.png").scaled(22, 22)
+        icono.setPixmap(pixmap)
+
+        # Contenedor vertical para texto (nombre + contador inicial opcional)
+        text_container = QtWidgets.QVBoxLayout()
+        text_container.setSpacing(2)
+        text_container.setContentsMargins(0, 0, 0, 0)
+
+        # Nombre de impresora
+        label = QtWidgets.QLabel(marca_modelo)
+        label.setFixedWidth(200)
+        font = label.font()
+        font.setPointSize(12)
+        label.setFont(font)
+        text_container.addWidget(label)
+
+        # Label opcional con contador inicial
+        if contador_inicial is not None:
+            contador_label = QtWidgets.QLabel(f"Contador inicial: {contador_inicial}")
+            font_small = contador_label.font()
+            font_small.setPointSize(9)
+            contador_label.setFont(font_small)
+            contador_label.setStyleSheet("color: gray;")
+            text_container.addWidget(contador_label)
+
+        # Cuadro de texto numérico
+        self.line_edit = QtWidgets.QLineEdit()
+        self.line_edit.setPlaceholderText("Contador inicial")
+        self.line_edit.setFixedWidth(150)
+        self.line_edit.setValidator(QtGui.QIntValidator(0, 999999))
+
+        layout.addWidget(icono)
+        layout.addLayout(text_container)
+        layout.addWidget(self.line_edit)
+
+    def contador(self):
+        """Devuelve el valor numérico del contador (int o None)."""
+        text = self.line_edit.text().strip()
+        return int(text) if text.isdigit() else None

@@ -1,13 +1,14 @@
 from functools import partial
 
 from PySide6 import QtWidgets
-from PySide6.QtGui import QPixmap, QColor, QIntValidator
+from PySide6.QtGui import QPixmap, QColor
 from PySide6.QtCore import QDate, Qt, QRect, QPropertyAnimation, QEasingCurve, Signal
 
 from context import user_context
 from interfaces import IModuloPrincipal
 from sql import ManejadorVentas, ManejadorInventario, ManejadorContadores, ManejadorEquipos
 from utils.mydecorators import fondo_oscuro, requiere_admin
+from utils.mywidgets import PrinterFrame
 
 
 class App_Home(QtWidgets.QWidget, IModuloPrincipal):
@@ -87,7 +88,8 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
         try:
             inicial, final = manejador.obtener_contadores_hoy()
         except TypeError:
-            App_ContadoresIniciales(self)
+            if ManejadorEquipos(self.conn).obtener_todos():
+                App_ContadoresIniciales(self)
         finally:
             return super().showEvent(event)
 
@@ -133,21 +135,22 @@ class App_ContadoresIniciales(QtWidgets.QWidget):
         self.ui.scrollArea.setWidgetResizable(True)
 
         self.ui.btListo.clicked.connect(self.confirmar)
-        self.ui.btIgnorar.clicked.connect(self.close_admin)
+        self.ui.btIgnorar.clicked.connect(self.close)
 
-        self.contadores = {}
+        self.contadores: dict[int, PrinterFrame] = {}
         self.cargar_impresoras()
 
         self.show()
 
     @requiere_admin
     def close_admin(self):
-        self.close()
+        super().close()
+    
+    close = close_admin
     
     def confirmar(self):
-        try:
-            data = {impresora: int(le.text()) for impresora, le in self.contadores.items()}
-        except ValueError:
+        data = {impresora: printer.contador() for impresora, printer in self.contadores.items()}
+        if None in data.values():
             QtWidgets.QMessageBox.warning(
                 self,
                 'Contadores iniciales',
@@ -155,57 +158,21 @@ class App_ContadoresIniciales(QtWidgets.QWidget):
             )
             return
         
-        if ManejadorContadores(user_context.conn).registrar_contadores_iniciales(data):
+        if ManejadorContadores(self.conn).registrar_contadores_iniciales(data):
+            self.close()
             QtWidgets.QMessageBox.information(
                 self,
                 'Contadores iniciales',
                 'Se han registrado los contadores iniciales correctamente.',
             )
-            self.close()
 
     def cargar_impresoras(self):
-        equipos = ManejadorEquipos(user_context.conn).obtener_todos()
-        for id_equipo, marca, modelo in equipos:
-            # Frame horizontal
-            frame = QtWidgets.QFrame()
-            frame.setFrameShape(QtWidgets.QFrame.NoFrame)
-            frame.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        equipos = ManejadorEquipos(self.conn).obtener_todos()
 
-            layout = QtWidgets.QHBoxLayout(frame)
-            layout.setContentsMargins(5, 5, 5, 5)
-            layout.setSpacing(10)
-            layout.setAlignment(Qt.AlignLeft)
-
-            # Ícono de impresora
-            icono = QtWidgets.QLabel()
-            pixmap = QPixmap(":img/resources/images/printer.png")
-            pixmap = pixmap.scaled(22, 22)
-            icono.setPixmap(pixmap)
-
-            # Nombre de impresora
-            label = QtWidgets.QLabel(f'{marca} {modelo}')
-            label.setFixedWidth(200)
-
-            font = label.font()
-            font.setPointSize(12)
-            label.setFont(font)
-
-            # Cuadro de texto numérico
-            line_edit = QtWidgets.QLineEdit()
-            line_edit.setPlaceholderText("Contador inicial")
-            line_edit.setFixedWidth(100)
-            line_edit.setValidator(QIntValidator(0, 999999))
-
-            # Agregar widgets al layout
-            layout.addWidget(icono)
-            layout.addWidget(label)
-            layout.addWidget(line_edit)
-
-            # Agregar frame al scroll area
+        for id_equipo, marca, modelo, _ in equipos:
+            frame = PrinterFrame(f"{marca} {modelo}")
             self.ui.layoutScroll.addWidget(frame, 0, Qt.AlignLeft)
-
-            # Guardar referencia para obtener valores después
-            self.contadores[id_equipo] = line_edit
+            self.contadores[id_equipo] = frame
 
 
 ########################

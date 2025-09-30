@@ -289,9 +289,16 @@ class ManejadorEquipos(DatabaseManager):
 
     def obtener_todos(self):
         return self.fetchall('''
-            SELECT  id_equipo, marca, modelo 
-            FROM    Equipos
-            WHERE   activo = 'true';
+            SELECT  DISTINCT
+                    E.id_equipo,
+                    marca,
+                    modelo,
+                    C.contador_inicial
+            FROM    Equipos E
+                    LEFT JOIN Contadores C
+                        ON C.id_equipo = E.id_equipo
+            WHERE   activo = 'true'
+                    AND C.fecha = CURRENT_DATE;
         ''')
 
 
