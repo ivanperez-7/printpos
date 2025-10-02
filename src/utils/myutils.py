@@ -7,9 +7,12 @@ import unicodedata
 from urllib.parse import quote
 import webbrowser as web
 
+import requests
 from openpyxl import Workbook
 from openpyxl.styles import Font
 from PySide6.QtCore import QDateTime, QLocale
+
+from context import user_context
 
 __all__ = [
     'clamp',
@@ -22,7 +25,15 @@ __all__ = [
     'format_date',
     'exportar_xlsx',
     'enviar_whatsapp',
+    'request_handler',
 ]
+
+
+def request_handler(url: str, method: str = 'GET', body: dict = None):
+    assert user_context.token is not None, 'No auth token exists.'
+    method = requests.get if method == 'GET' else requests.post
+    headers = {"Authorization": f"Bearer {user_context.token}"}
+    return method(url, data=body, headers=headers)
 
 
 def clamp(value, smallest, largest):

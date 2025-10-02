@@ -1,5 +1,6 @@
 import socket
 
+import requests
 from haps import inject
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt, QMutex, Signal
@@ -9,8 +10,7 @@ from context import user_context
 from core import IdFirebird
 from interfaces import IWarningLogger, IControllerWindow, IDatabaseConnection
 import licensing
-from sql import ManejadorUsuarios
-from sql.core import conectar_firebird, FirebirdError
+from urls import urls
 from utils.mydataclasses import Usuario
 from utils.mydecorators import function_details, run_in_thread
 
@@ -25,7 +25,7 @@ class App_Login(QtWidgets.QWidget):
     """ Backend para la pantalla de inicio de sesión. """
 
     failure = Signal(licensing.Errores)
-    logged_in = Signal(IDatabaseConnection, Usuario)
+    logged_in = Signal(dict)
 
     @inject
     def __init__(self, ventana_principal: IControllerWindow, warning_logger: IWarningLogger):
@@ -109,11 +109,8 @@ class App_Login(QtWidgets.QWidget):
         """ Verifica datos ingresados consultando la tabla Usuarios. """
         if not self.mutex.try_lock():
             return
-        usuario, psswd, rol = (
-            self.ui.inputUsuario.text().upper(),
-            self.ui.inputContrasenia.text(),
-            self.ui.groupRol.checkedButton().text().lower(),
-        )
+        usuario = self.ui.inputUsuario.text().lower()
+        psswd = self.ui.inputContrasenia.text()
 
         if not (usuario and psswd):
             self.mutex.unlock()
@@ -122,22 +119,14 @@ class App_Login(QtWidgets.QWidget):
         self.ui.lbEstado.setStyleSheet('color: black;')
         self.ui.lbEstado.setText('Conectando al servidor...')
         try:
-            conn = conectar_firebird(usuario, psswd, rol)
-            manejador = ManejadorUsuarios(conn, handle_exceptions=False)
-            user = Usuario.generarUsuarioActivo(manejador)
-
-            self.logged_in.emit(conn, user)  # crearVentanaPrincipal
-        except AssertionError:
+            req = requests.post(urls['login'], json={'username': usuario, 'password': psswd})
+            if req.status_code == 401:
+                raise ValueError
+            self.logged_in.emit(req.json())  # crearVentanaPrincipal
+        except ValueError:
             self.ui.lbEstado.setStyleSheet('color: red;')
-            self.ui.lbEstado.setText(f'¡Usuario sin permisos para {rol}!')
-        except FirebirdError as err:
-            txt, sqlcode, gdscode = err.args
-            if gdscode in [335544472, 335544352]:
-                self.ui.lbEstado.setStyleSheet('color: red;')
-                self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
-            else:
-                self.crearWarningDialog(txt)
-        except Exception as err:  # arrojado por fdb al no encontrarse librería Firebird
+            self.ui.lbEstado.setText('¡El usuario y contraseña no son válidos!')
+        except Exception as err:
             self.crearWarningDialog(str(err))
         finally:
             self.mutex.unlock()
@@ -146,9 +135,10 @@ class App_Login(QtWidgets.QWidget):
         self.ui.lbEstado.clear()
         self.warning_logger.display('No se pudo acceder al servidor.', txt)
 
-    def crearVentanaPrincipal(self, conn, user):
-        user_context.conn = conn
-        user_context.user = user
+    def crearVentanaPrincipal(self, data):
+        user_context.token = data['token']
+        user_context.is_admin = data['is_admin']
+        user_context.username = data['username']
 
         self.ventana_principal.crear()
         self.close()

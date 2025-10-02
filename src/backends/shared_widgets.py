@@ -4,9 +4,10 @@ from PySide6.QtCore import Signal, Qt
 from context import user_context
 from core import Moneda, NumeroDecimal, Runner
 from sql import ManejadorProductos, ManejadorVentas
+from urls import urls
 from utils.mydataclasses import ItemVenta, ItemGranFormato
 from utils.mywidgets import LabelAdvertencia
-from utils.myutils import son_similar, format_date
+from utils.myutils import request_handler, son_similar, format_date
 
 
 class Base_PagarVenta(QtWidgets.QWidget):
@@ -181,10 +182,6 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún producto!')
         LabelAdvertencia(self.ui.tabla_granformato, '¡No se encontró ningún producto!')
 
-        # guardar conexión, usuario y un manejador de DB como atributos
-        self.conn = user_context.conn
-        self.manejador = ManejadorProductos(self.conn)
-
         # eventos para widgets
         self.ui.searchBar.textChanged.connect(self.update_display)
         self.ui.groupFiltro.buttonClicked.connect(self.update_display)
@@ -211,22 +208,10 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
         self.ui.tabla_seleccionar.setSortingEnabled(True)
         self.ui.tabla_granformato.setSortingEnabled(True)
 
-        # evento para leer cambios en tabla PRODUCTOS
-        self.event_conduit = self.conn.event_conduit(['cambio_productos'])
-        self.event_reader = Runner(self.startEvents)
-        self.event_reader.start()
+        #! TODO: evento para leer cambios en tabla PRODUCTOS y refrescar tabla
 
     def showEvent(self, event):
         self.rescan_display()
-
-    def closeEvent(self, event):
-        # no recomendado generalmente para terminar hilos, sin embargo,
-        # esta vez se puede hacer así al no ser una función crítica.
-        self.event_reader.terminate()
-        self.event_reader.wait(0)
-        self.event_reader.moveToThread(None)
-        self.event_conduit.close()
-        event.accept()
 
     # ==================
     #  FUNCIONES ÚTILES
@@ -234,14 +219,6 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
     @property
     def tabla_actual(self):
         return [self.ui.tabla_seleccionar, self.ui.tabla_granformato][self.ui.tabWidget.currentIndex()]
-
-    def startEvents(self):  # async
-        # eventos de Firebird para escuchar cambios en tabla productos
-        self.event_conduit.begin()
-        while True:
-            self.event_conduit.wait()
-            self.dataChanged.emit()
-            self.event_conduit.flush()
 
     def medidasHandle(self):
         raise NotImplementedError('BEIS CLASSSSSSS')
@@ -395,8 +372,8 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
     def rescan_display(self):
         """ Lee de nuevo las tablas de productos y actualiza tablas. """
-        self.all_prod = self.manejador.obtener_vista('view_productos_simples')
-        self.all_gran = self.manejador.obtener_vista('view_gran_formato')
+        self.all_prod = request_handler(urls['get-tabla-precios-simples']).json()
+        self.all_gran = request_handler(urls['get-tabla-precios-simples']).json()
         self.update_display()
 
     def update_display(self):

@@ -20,9 +20,6 @@ class VentanaPrincipal(QMainWindow, IControllerWindow):  # TODO: clase App -> In
         self.setWindowTitle('PrintPOS')
         self.setWindowIcon(QIcon(':img/icon.ico'))
 
-        self.conn = user_context.conn
-        self.user = user_context.user
-
         self.consultarPrecios = App_ConsultarPrecios()
 
         self.go_home()
@@ -50,13 +47,12 @@ class VentanaPrincipal(QMainWindow, IControllerWindow):  # TODO: clase App -> In
 
     def closeEvent(self, event):
         """ En eventos específicos, restringimos el cerrado del sistema. """
-        if self.en_venta and not self.user.administrador:
+        if self.en_venta and not user_context.is_admin:
             event.ignore()
             return
 
         for j in glob.glob('auto-*'):
             os.remove(j)
-        self.conn.close()
 
         if self.consultarPrecios:
             self.consultarPrecios.close()

@@ -990,20 +990,6 @@ class ManejadorVentas(DatabaseManager):
             (id_venta,),
         )
 
-    def obtenerNumPendientes(self, id_usuario: int):
-        """ Obtener número de pedidos pendientes del usuario. """
-        if result := self.fetchone(
-            '''
-            SELECT	COUNT(*)
-            FROM	Ventas
-            WHERE	fecha_hora_creacion != fecha_hora_entrega
-                    AND estado LIKE 'Recibido%'
-                    AND id_usuarios = ?;
-        ''',
-            (id_usuario,),
-        ):
-            return result[0]
-
     def obtenerDatosGeneralesVenta(self, id_venta: int):
         """ Obtiene otros datos generales de una venta:
         nombre de cliente, correo, teléfono, fecha y hora de creación,

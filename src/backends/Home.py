@@ -7,6 +7,8 @@ from PySide6.QtCore import QDate, Qt, QRect, QPropertyAnimation, QEasingCurve, S
 from context import user_context
 from interfaces import IModuloPrincipal
 from sql import ManejadorVentas, ManejadorInventario
+from urls import urls
+from utils.myutils import request_handler
 
 
 class App_Home(QtWidgets.QWidget, IModuloPrincipal):
@@ -20,15 +22,8 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
         self.ui = Ui_Home()
         self.ui.setupUi(self)
 
-        self.conn = user_context.conn
-        self.user = user_context.user
-
         # foto de perfil del usuario
-        if self.user.foto_perfil:
-            qp = QPixmap()
-            qp.loadFromData(self.user.foto_perfil)
-        else:
-            qp = QPixmap(':/img/resources/images/user.png')
+        qp = QPixmap(':/img/resources/images/user.png')
 
         self.ui.btFotoPerfil.setIcon(qp)
 
@@ -39,8 +34,8 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
 
         # configurar texto dinámico
         self.ui.fechaHoy.setDate(QDate.currentDate())
-        self.ui.usuario.setText(self.user.nombre)
-        self.ui.tipo_usuario.setText(self.user.rol.capitalize())
+        self.ui.usuario.setText(user_context.username)
+        self.ui.tipo_usuario.setText('ADMINISTRADOR' if user_context.is_admin else 'VENDEDOR')
 
         # deshabilita eventos del mouse para los textos en los botones
         for name, item in vars(self.ui).items():
@@ -48,7 +43,7 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
                 item.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         # deshabilitar funciones para usuarios normales
-        if self.user.rol != 'ADMINISTRADOR':
+        if user_context.is_admin:
             for w in [
                 self.ui.frameInventario,
                 self.ui.frameCaja,
@@ -127,20 +122,16 @@ class ListaNotificaciones(QtWidgets.QListWidget):
     def agregarNotificaciones(self):
         """ Llena la caja de notificaciones. """
         items = []
-        manejador = ManejadorVentas(user_context.conn)
+        numPendientes = request_handler(urls['get-usuario-pendientes']).json()
 
-        numPendientes = manejador.obtenerNumPendientes(user_context.user.id)
+        if count := numPendientes['count']:
+            items.append(f'Tiene {count} pedidos pendientes.')
 
-        if numPendientes:
-            items.append(f'Tiene {numPendientes} pedidos pendientes.')
-
-        manejador = ManejadorInventario(user_context.conn)
-
-        for nombre, stock, minimo in manejador.obtenerInventarioFaltante():
-            items.append(
-                f'¡Hay que surtir el material {nombre}! '
-                + f'Faltan {minimo - stock} lotes para cubrir el mínimo.'
-            )
+        # for nombre, stock, minimo in manejador.obtenerInventarioFaltante():
+        #     items.append(
+        #         f'¡Hay que surtir el material {nombre}! '
+        #         + f'Faltan {minimo - stock} lotes para cubrir el mínimo.'
+        #     )
         items = items or ['¡No hay nuevas notificaciones!']
 
         for item in items:
