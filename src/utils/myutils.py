@@ -29,10 +29,13 @@ __all__ = [
 ]
 
 
-def request_handler(url: str, method: str = 'GET', body: dict = None):
-    assert user_context.token is not None, 'No auth token exists.'
-    method = requests.get if method == 'GET' else requests.post
-    headers = {"Authorization": f"Bearer {user_context.token}"}
+def request_handler(url: str, method: str = 'GET', body: dict = None, token = None):
+    assert token or user_context.token, 'No auth token exists.'
+    method = getattr(requests, method.lower())
+    try:
+        headers = {"Authorization": f"Bearer {user_context.token or token}"}
+    except AttributeError:
+        headers = {"Authorization": f"Bearer {token}"}
     return method(url, data=body, headers=headers)
 
 

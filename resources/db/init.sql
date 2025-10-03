@@ -29,21 +29,6 @@ SELECT  * FROM (
                    ON U.id_usuarios = C.id_usuarios)
 ORDER   BY 1 DESC;
 
-CREATE VIEW VIEW_ALL_CLIENTES (ID_CLIENTES, NOMBRE, TELEFONO, CORREO,
-    DIRECCION, RFC, ULTIMAVENTA)
-AS SELECT  C.id_clientes,
-        nombre,
-        telefono,
-        correo,
-        direccion,
-        RFC,
-        MAX(fecha_hora_creacion) AS ultimaVenta
-FROM    Clientes AS C
-        LEFT JOIN Ventas AS V
-               ON C.id_clientes = V.id_clientes
-GROUP   BY 1, 2, 3, 4, 5, 6
-ORDER   BY C.id_clientes;
-
 CREATE VIEW VIEW_ALL_USUARIOS (USUARIO, NOMBRE, PERMISOS, ULTIMAVENTA)
 AS SELECT  usuario,
         nombre,

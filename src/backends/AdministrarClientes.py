@@ -2,15 +2,16 @@ from datetime import datetime
 
 from PySide6 import QtWidgets
 from PySide6.QtGui import QFont, QColor, QIcon, QRegularExpressionValidator
-from PySide6.QtCore import Qt, QDate, Signal, QMutex
+from PySide6.QtCore import Qt, QDate, QDateTime, Signal, QMutex
 
 from core import ROJO
 from context import user_context
 from interfaces import IModuloPrincipal
 from sql import ManejadorClientes
+from urls import urls
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
-from utils.myutils import days_to, exportar_xlsx, format_date, son_similar
+from utils.myutils import days_to, exportar_xlsx, format_date, son_similar, request_handler
 from utils.mywidgets import LabelAdvertencia
 
 
@@ -32,22 +33,19 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
 
         LabelAdvertencia(self.ui.tabla_clientes, '¡No se encontró ningún cliente!')
 
-        # guardar conexión y usuarios como atributos
-        self.conn = user_context.conn
-        self.user = user_context.user
-
+        self.token = user_context.token
         self.all = []
 
         # añadir menú de opciones al botón para filtrar
         self.filtro = InterfazFiltro(
             self.ui.btFiltrar,
             self.ui.searchBar,
-            [('Nombre', 1), ('Teléfono', 2), ('Correo', 3), ('Dirección', 4), ('RFC', 5),],
+            [('Nombre', 'nombre'), ('Teléfono', 'telefono'), ('Correo', 'correo'), ('Dirección', 'direccion'), ('RFC', 'rfc'),],
         )
         self.filtro.cambiado.connect(self.update_display)
 
         # restringir botón de eliminar cliente
-        if not self.user.rol == 'ADMINISTRADOR':
+        if not user_context.is_admin:
             self.ui.btEliminar.hide()
 
         # añade eventos para los botones
@@ -87,8 +85,8 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
 
         self.ui.lbContador.setText('Recuperando información...')
 
-        manejador = ManejadorClientes(self.conn)
-        self.all = manejador.obtener_vista('view_all_clientes') or []
+        data = request_handler(urls['clientes'], token=self.token)
+        self.all = data.json()
         self.ui.lbContador.setText(f'{len(self.all)} clientes en la base de datos.')
 
         self.rescanned.emit()
@@ -116,7 +114,7 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
         tabla.setRowCount(len(found))
 
         for row, cliente in enumerate(found):
-            for col, dato in enumerate(cliente):
+            for col, dato in enumerate(cliente.values()):
                 if isinstance(dato, datetime):
                     delta = QDate(dato).daysTo(timestamp_now)
                     cell = '{} ({})'.format(format_date(dato), days_to(delta))
@@ -127,7 +125,7 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
             tabla.item(row, 1).setFont(bold)
 
             if self.ui.resaltarCheck.isChecked():
-                ultimaVisita = QDate(cliente[6])
+                ultimaVisita = QDateTime.fromString(cliente['ultima_venta'], Qt.ISODate).date()
 
                 if ultimaVisita and ultimaVisita.daysTo(timestamp_now) >= dias:
                     color = QColor(ROJO)
@@ -189,17 +187,22 @@ class App_AdministrarClientes(QtWidgets.QWidget, IModuloPrincipal):
 
         # abrir pregunta
         qm = QtWidgets.QMessageBox
-        manejador = ManejadorClientes(self.conn, '¡No se pudo eliminar el cliente!')
-
         ret = qm.question(
             self,
             'Atención',
             'Los clientes seleccionados se eliminarán de la base de datos. ¿Desea continuar?',
         )
 
-        if ret == qm.Yes and manejador.eliminarCliente(selected[0].text()):
+        if ret != qm.Yes:
+            return
+        
+        res = request_handler(urls['clientes'] + selected[0].text() + '/', 'PATCH', {'is_active': False})
+        if res.status_code == 200:
             qm.information(self, 'Éxito', 'Se eliminaron los clientes seleccionados.')
             self.rescan_update()
+        else:
+            mssg = res.json()['error']
+            qm.warning(self, 'Error', f'Error al eliminar cliente: {mssg}')
 
 
 #################################
