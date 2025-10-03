@@ -227,10 +227,6 @@ class Base_EditarCliente(QtWidgets.QWidget):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
-        # guardar conexión y usuarios como atributos
-        self.conn = user_context.conn
-        self.user = user_context.user
-
         # validador clave de país
         self.ui.txtLada.setValidator(QRegularExpressionValidator(r'[0-9]{1,}'))
 
@@ -240,7 +236,7 @@ class Base_EditarCliente(QtWidgets.QWidget):
         self.ui.checkDescuentos.clicked.connect(lambda estado: self.ui.txtDescuentos.setEnabled(estado))
 
         # deshabilitar modificación de descuentos para usuarios normales
-        if not self.user.administrador:
+        if not user_context.is_admin:
             self.ui.checkDescuentos.setEnabled(False)
             self.ui.txtDescuentos.setEnabled(False)
 
@@ -269,18 +265,16 @@ class Base_EditarCliente(QtWidgets.QWidget):
 
     def done(self):
         """ Método en el que se modificará o insertará un cliente. """
-        clientes_db_parametros = tuple(
-            db_param.strip() or None if isinstance(db_param, str) else db_param
-            for db_param in (
-                self.ui.txtNombre.text(),
-                self.numeroTelefono(),
-                self.ui.txtCorreo.text(),
-                self.ui.txtDireccion.toPlainText(),
-                self.ui.txtRFC.text(),
-                self.ui.checkDescuentos.isChecked(),
-                self.ui.txtDescuentos.toPlainText(),
-            )
-        )
+        clientes_db_parametros = {
+            "nombre": self.ui.txtNombre.text().strip() or None,
+            "telefono": self.numeroTelefono().strip() or None,
+            "correo": self.ui.txtCorreo.text().strip() or None,
+            "direccion": self.ui.txtDireccion.toPlainText().strip() or None,
+            "rfc": self.ui.txtRFC.text().strip() or None,
+            "cliente_especial": self.ui.checkDescuentos.isChecked(),
+            "descuentos": self.ui.txtDescuentos.toPlainText().strip() or None,
+            "is_active": True
+        }
 
         if self.insertar_o_modificar(clientes_db_parametros):
             QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)
@@ -315,8 +309,8 @@ class App_RegistrarCliente(Base_EditarCliente):
     ####################
     def insertar_o_modificar(self, clientes_db_parametros):
         """ Insertar nuevo cliente a la base de datos. """
-        manejador = ManejadorClientes(self.conn, self.MENSAJE_ERROR)
-        return manejador.insertarCliente(clientes_db_parametros)
+        req = request_handler(urls['clientes'], 'POST', clientes_db_parametros)
+        return req.status_code == 201
 
 
 class App_EditarCliente(Base_EditarCliente):
@@ -331,22 +325,22 @@ class App_EditarCliente(Base_EditarCliente):
         self.idx = idx  # id del cliente a editar
 
         # obtener datos del cliente
-        manejador = ManejadorClientes(self.conn)
-        cliente = manejador.obtenerCliente(idx)
+        req = request_handler(urls['clientes'] + str(idx))
+        cliente = req.json()
 
-        self.agregarDatosPorDefecto(cliente.nombre, cliente.telefono, cliente.correo)
+        self.agregarDatosPorDefecto(cliente['nombre'], cliente['telefono'], cliente['correo'])
 
-        self.ui.txtDireccion.setPlainText(cliente.direccion)
-        self.ui.txtRFC.setText(cliente.rfc)
+        self.ui.txtDireccion.setPlainText(cliente['direccion'])
+        self.ui.txtRFC.setText(cliente['rfc'])
 
-        self.ui.checkDescuentos.setChecked(cliente.cliente_especial)
-        self.ui.txtDescuentos.setEnabled(cliente.cliente_especial)
-        self.ui.txtDescuentos.setPlainText(cliente.descuentos)
+        self.ui.checkDescuentos.setChecked(cliente['cliente_especial'])
+        self.ui.txtDescuentos.setEnabled(cliente['cliente_especial'])
+        self.ui.txtDescuentos.setPlainText(cliente['descuentos'])
 
     ####################
     # FUNCIONES ÚTILES #
     ####################
     def insertar_o_modificar(self, clientes_db_parametros):
         """ Actualizar datos del cliente en la base de datos. """
-        manejador = ManejadorClientes(self.conn, self.MENSAJE_ERROR)
-        return manejador.actualizarCliente(self.idx, clientes_db_parametros)
+        req = request_handler(urls['clientes'] + str(self.idx) + '/', 'PATCH', clientes_db_parametros)
+        return req.status_code == 200
