@@ -43,7 +43,7 @@ class App_Home(QtWidgets.QWidget, IModuloPrincipal):
                 item.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         # deshabilitar funciones para usuarios normales
-        if user_context.is_admin:
+        if not user_context.is_admin:
             for w in [
                 self.ui.frameInventario,
                 self.ui.frameCaja,

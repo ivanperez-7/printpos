@@ -7,7 +7,8 @@ urls = {
     'clientes': f'{domain}/api/v1/clientes/',
 
     # Productos
-    'get-tabla-precios-simples': f'{domain}/api/v1/productos/get-tabla-precios-simples/',
+    'productos': f'{domain}/api/v1/productos/productos/',
+    'inventario': f'{domain}/api/v1/productos/inventario/',
 
     # Ventas
     'get-usuario-pendientes': f'{domain}/api/v1/ventas/get-usuario-pendientes/',

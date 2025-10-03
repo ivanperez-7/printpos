@@ -254,7 +254,7 @@ class TablaDatos(QtWidgets.QTableWidget):
     # ************************************* #
     def _llenar_default(self, data):
         for row, prod in enumerate(data):
-            for col, dato in enumerate(prod):
+            for col, dato in enumerate(prod.values()):
                 sort_key = None
                 if isinstance(dato, float):
                     cell = f'${dato:,.2f}'

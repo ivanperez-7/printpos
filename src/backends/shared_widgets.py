@@ -372,8 +372,9 @@ class Base_VisualizarProductos(QtWidgets.QWidget):
 
     def rescan_display(self):
         """ Lee de nuevo las tablas de productos y actualiza tablas. """
-        self.all_prod = request_handler(urls['get-tabla-precios-simples']).json()
-        self.all_gran = request_handler(urls['get-tabla-precios-simples']).json()
+        req = request_handler(urls['productos'])
+        self.all_prod = [prod for prod in req.json() if prod['categoria'] == 'S']
+        self.all_gran = [prod for prod in req.json() if prod['categoria'] == 'G']
         self.update_display()
 
     def update_display(self):

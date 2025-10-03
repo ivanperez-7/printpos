@@ -6,9 +6,10 @@ from context import user_context
 from core import ROJO
 from interfaces import IModuloPrincipal
 from sql import ManejadorInventario, ManejadorProductos
+from urls import urls
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro
-from utils.myutils import son_similar
+from utils.myutils import request_handler, son_similar
 from utils.mywidgets import LabelAdvertencia
 
 
@@ -30,10 +31,7 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
 
         LabelAdvertencia(self.ui.tabla_productos, '¡No se encontró ningún producto!')
 
-        # guardar conexión y usuario como atributos
-        self.conn = user_context.conn
-        self.user = user_context.user
-
+        self.token = user_context.token
         self.all = []
 
         # añadir menú de opciones al botón para filtrar
@@ -70,8 +68,8 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
 
         self.ui.lbContador.setText('Recuperando información...')
 
-        manejador = ManejadorProductos(self.conn)
-        self.all = manejador.obtener_vista('view_all_productos') or []
+        req = request_handler(urls['productos'], token=self.token)
+        self.all = req.json()
         self.ui.lbContador.setText(f'{len(self.all)} productos en la base de datos.')
 
         self.rescanned.emit()
@@ -94,7 +92,7 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
         tabla.setRowCount(len(found))
 
         for row, item in enumerate(found):
-            for col, dato in enumerate(item):
+            for col, dato in enumerate(item.values()):
                 if isinstance(dato, float):
                     cell = f'${dato:,.2f}'
                 else:
@@ -106,7 +104,7 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
             tabla.item(row, 1).setFont(bold)
 
             # resaltar si la utilidad es nula o negativa
-            if item[-1] <= 0:
+            if item['utilidad'] is not None and item['utilidad'] <= 0:
                 color = QColor(ROJO)
                 tabla.item(row, 7).setBackground(color)
 
@@ -134,14 +132,18 @@ class App_AdministrarProductos(QtWidgets.QWidget, IModuloPrincipal):
             return
 
         qm = QtWidgets.QMessageBox
-        manejador = ManejadorProductos(self.conn, '¡No se pudo descontinuar el producto!')
-
-        # abrir pregunta
         ret = qm.question(self, 'Atención', '¿Desea descontinuar este producto?',)
 
-        if ret == qm.Yes and manejador.descontinuarProducto(id_productos):
+        if ret != qm.Yes:
+            return
+        
+        res = request_handler(urls['productos'] + id_productos + '/', 'PATCH', {'is_active': False})
+        if res.status_code == 200:
             qm.information(self, 'Éxito', 'Se descontinuó el producto seleccionado.')
             self.rescan_update()
+        else:
+            mssg = res.json()['error']
+            qm.warning(self, 'Error', f'Error al descontinuar producto: {mssg}')
 
 
 #################################
@@ -166,19 +168,19 @@ class Base_EditarProducto(QtWidgets.QWidget):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
-        # guardar conexión y usuario como atributos
-        self.conn = user_context.conn
-        self.user = user_context.user
-
         # formato tabla de precios
         header = self.ui.tabla_precios.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.Fixed)
         header.setSectionResizeMode(1, QtWidgets.QHeaderView.Fixed)
         header.setSectionResizeMode(2, QtWidgets.QHeaderView.Fixed)
 
+        # obtener objetos de la tabla Inventario
+        req = request_handler(urls['inventario'])
+        self.elementos_inventario = req.json()
+
         # eventos para botones
         self.ui.btAceptar.clicked.connect(self.done)
-        self.ui.btAgregar.clicked.connect(self.agregarProductoALista)
+        self.ui.btAgregar.clicked.connect(lambda: self.agregarProductoALista())
 
         self.ui.btAgregarIntervalo.clicked.connect(
             lambda: self.agregarIntervalo(row=self.ui.tabla_precios.rowCount())
@@ -228,10 +230,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
         nuevo = WidgetElemento()
 
         # llenar caja de opciones con elementos del inventario
-        manejador = ManejadorInventario(self.conn)
-        elementos = manejador.obtenerListaNombres()
-
-        nuevo.boxElemento.addItems([nombre for nombre, in elementos])
+        nuevo.boxElemento.addItems([elem['nombre'] for elem in self.elementos_inventario])
         nuevo.elementoSeleccionado = nombre
         nuevo.cantidadElemento = cantidad
 
@@ -252,16 +251,16 @@ class Base_EditarProducto(QtWidgets.QWidget):
     def obtenerParametrosProdUtilizaInv(self):
         """ Parámetros para la tabla productos_utiliza_inventario. """
         wdg: list[WidgetElemento] = self.ui.scrollAreaLista.children()[1:]
+        breakpoint()
 
         PUI_db_parametros = []
-        manejador = ManejadorInventario(self.conn)
 
         for elemento in wdg:
             nombre, cantidad = elemento.elementoSeleccionado, elemento.cantidadElemento
             if not nombre or cantidad < 1:
                 return None
 
-            (id_inventario,) = manejador.obtenerIdInventario(nombre)
+            id_inventario = next((elem['id'] for elem in self.elementos_inventario if elem['nombre'] == nombre), None)
             PUI_db_parametros.append((id_inventario, cantidad))
 
         return PUI_db_parametros
