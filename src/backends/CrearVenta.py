@@ -9,9 +9,10 @@ from core import Moneda, NumeroDecimal
 from interfaces import IModuloPrincipal
 from pdf import ImpresoraOrdenes, ImpresoraTickets
 from sql import ManejadorClientes, ManejadorProductos, ManejadorVentas
+from urls import urls
 from utils.mydataclasses import Venta
 from utils.mydecorators import fondo_oscuro, requiere_admin
-from utils.myutils import clamp, enviar_whatsapp, format_date, son_similar
+from utils.myutils import clamp, enviar_whatsapp, format_date, request_handler, son_similar
 from utils.mywidgets import LabelAdvertencia, SpeechBubble
 
 
@@ -39,16 +40,12 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         self.ventaDatos.fechaCreacion = QDateTime.currentDateTime()
         self.ventaDatos.fechaEntrega = QDateTime(self.ventaDatos.fechaCreacion)
 
-        # guardar conexión y usuarios como atributos
-        self.conn = user_context.conn
-        self.user = user_context.user
-
         # cuadro de texto para los descuentos del cliente
         self.dialogoDescuentos = SpeechBubble(self)
         self.dialogoDescuentos.setVisible(False)
 
         # datos por defecto
-        self.ui.txtVendedor.setText(self.user.nombre)
+        self.ui.txtVendedor.setText(user_context.username)
         self.ui.lbFecha.setText(format_date(ventaDatos.fechaEntrega))
         self.ui.btDeshacer.setVisible(False)
         self.ui.btDescuentosCliente.hide()
@@ -133,14 +130,12 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         )
         modulo.success.connect(self.establecerCliente)
 
-    def seleccionarCliente(self, selected: list[QtWidgets.QTableWidgetItem]):
+    def seleccionarCliente(self, selected: dict):
         # recuérdese que Clientes(Nombre, Teléfono, Correo, Dirección, RFC)
         self.establecerCliente(
             nombre := selected[0].text(), telefono := selected[1].text(), selected[2].text(),
         )
 
-        # checar si el cliente es especial
-        manejador = ManejadorClientes(self.conn)
         cliente = manejador.obtenerCliente(nombre, telefono)
         self.ui.btDescuentosCliente.setVisible(cliente.cliente_especial)
 
@@ -352,8 +347,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
         LabelAdvertencia(self.ui.tabla_seleccionar, '¡No se encontró ningún cliente!')
 
         # llena la tabla con todos los clientes existentes
-        manejador = ManejadorClientes(user_context.conn)
-        self.all = [datos[1:] for datos in manejador.obtener_vista('view_all_clientes')]
+        self.all = request_handler(urls['clientes']).json()
 
         # añade eventos para los botones
         self.ui.btRegresar.clicked.connect(self.close)
@@ -382,7 +376,7 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
         Acepta una cadena de texto para la búsqueda de clientes.
         También lee de nuevo la tabla de clientes, si se desea. """
         if txt_busqueda:
-            found = [cliente for cliente in self.all if son_similar(txt_busqueda, cliente[0])]
+            found = [cliente for cliente in self.all if son_similar(txt_busqueda, cliente['nombre'])]
         else:
             found = self.all
 
@@ -392,8 +386,8 @@ class App_SeleccionarCliente(QtWidgets.QWidget):
 
     def done(self):
         """ Modifica datos de cliente en la ventana principal (CrearVenta). """
-        if selected := self.ui.tabla_seleccionar.selectedItems():
-            self.success.emit(selected)
+        if self.ui.tabla_seleccionar.selectedItems():
+            self.success.emit(self.all[self.ui.tabla_seleccionar.selectedIndexes()[0].row()])
             self.close()
 
 
@@ -454,7 +448,6 @@ class App_AgregarDescuento(QtWidgets.QWidget):
         super().__init__(parent)
 
         self.conn = user_context.conn
-        self.user = user_context.user
         self.ventaDatos = ventaDatos
 
         self.ui = Ui_AgregarDescuento()
@@ -661,7 +654,6 @@ class App_ConfirmarVenta(Base_PagarVenta):
         """ Parámetros para tabla ventas (datos generales). """
         return (
             self.ventaDatos.id_cliente,
-            self.user.id,
             self.ventaDatos.fechaCreacion.toPython(),
             self.ventaDatos.fechaEntrega.toPython(),
             self.ventaDatos.comentarios.strip(),
