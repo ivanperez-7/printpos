@@ -36,7 +36,7 @@ def request_handler(url: str, method: str = 'GET', body: dict = None, token = No
         headers = {"Authorization": f"Bearer {user_context.token or token}"}
     except AttributeError:
         headers = {"Authorization": f"Bearer {token}"}
-    return method(url, data=body, headers=headers)
+    return method(url, json=body, headers=headers)
 
 
 def clamp(value, smallest, largest):

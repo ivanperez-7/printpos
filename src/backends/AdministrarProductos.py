@@ -168,6 +168,8 @@ class Base_EditarProducto(QtWidgets.QWidget):
         self.setFixedSize(self.size())
         self.setWindowFlags(Qt.WindowType.CustomizeWindowHint | Qt.WindowType.Window)
 
+        self.idx = None
+
         # formato tabla de precios
         header = self.ui.tabla_precios.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.Fixed)
@@ -225,34 +227,30 @@ class Base_EditarProducto(QtWidgets.QWidget):
             row = tabla.rowCount() - 1
         tabla.removeRow(row)
 
-    def agregarProductoALista(self, nombre: str = '', cantidad: int = 1):
+    def agregarProductoALista(self, inventario_id: int = '', cantidad: int = 1):
         # crear widget y agregar a la lista
         nuevo = WidgetElemento()
 
         # llenar caja de opciones con elementos del inventario
         nuevo.boxElemento.addItems([elem['nombre'] for elem in self.elementos_inventario])
-        nuevo.elementoSeleccionado = nombre
+        nuevo.elementoSeleccionado = next((elem['nombre'] for elem in self.elementos_inventario if elem['id'] == inventario_id), None)
         nuevo.cantidadElemento = cantidad
 
         self.ui.layoutScroll.addWidget(nuevo)
 
     def obtenerParametrosProductos(self):
         """ Parámetros para la tabla productos. """
-        return tuple(
-            v or None
-            for v in (
-                self.ui.txtCodigo.text().strip(),
-                self.ui.txtDescripcion.toPlainText().strip(),
-                self.ui.txtNombre.text(),
-                self.categoriaActual,
-            )
-        )
+        return {
+            'codigo': self.ui.txtCodigo.text().strip() or None,
+            'descripcion': self.ui.txtDescripcion.toPlainText().strip() or None,
+            'abreviado': self.ui.txtNombre.text() or None,
+            'categoria': self.categoriaActual or None,
+            'is_active': True
+        }
 
     def obtenerParametrosProdUtilizaInv(self):
         """ Parámetros para la tabla productos_utiliza_inventario. """
         wdg: list[WidgetElemento] = self.ui.scrollAreaLista.children()[1:]
-        breakpoint()
-
         PUI_db_parametros = []
 
         for elemento in wdg:
@@ -261,7 +259,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
                 return None
 
             id_inventario = next((elem['id'] for elem in self.elementos_inventario if elem['nombre'] == nombre), None)
-            PUI_db_parametros.append((id_inventario, cantidad))
+            PUI_db_parametros.append({"inventario": id_inventario, "utiliza_inventario": cantidad})
 
         return PUI_db_parametros
 
@@ -280,7 +278,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
             duplex: ItemAuxiliar = tabla.cellWidget(row, 2)
 
             try:
-                Prod_db_parametros.append((float(desde), float(precio), duplex.isChecked))
+                Prod_db_parametros.append({'desde': float(desde), 'precio_con_iva': float(precio), 'duplex': duplex.isChecked})
             except ValueError:
                 QtWidgets.QMessageBox.warning(
                     self, 'Atención', '¡Verifique que los datos numéricos sean correctos!',
@@ -292,7 +290,7 @@ class Base_EditarProducto(QtWidgets.QWidget):
     def obtenerParametrosProdGranFormato(self):
         """ Parámetros para la tabla productos_gran_formato. """
         try:
-            return (float(self.ui.txtMinM2.text()), float(self.ui.txtPrecio.text()))
+            return {'min_m2': float(self.ui.txtMinM2.text()), 'precio_m2': float(self.ui.txtPrecio.text())}
         except ValueError:
             QtWidgets.QMessageBox.warning(
                 self, 'Atención', '¡Verifique que los datos numéricos sean correctos!'
@@ -306,40 +304,30 @@ class Base_EditarProducto(QtWidgets.QWidget):
         PUI_db_parametros = self.obtenerParametrosProdUtilizaInv()
 
         if self.categoriaActual == 'S':
-            precios_db_parametros = self.obtenerParametrosProdIntervalos()
+            intervalos = self.obtenerParametrosProdIntervalos()
+            gran_formato = None
         else:
-            precios_db_parametros = self.obtenerParametrosProdGranFormato()
+            intervalos = []
+            gran_formato = self.obtenerParametrosProdGranFormato()
 
-        if any(
-            params is None for params in (productos_db_parametros, PUI_db_parametros, precios_db_parametros,)
-        ):
-            return
-
-        # ejecuta internamente un fetchone, por lo que se desempaca luego
-        result = self.insertar_o_modificar(productos_db_parametros)
-        if not result:
-            return
-
-        (idx,) = result
-        manejador = ManejadorProductos(self.conn, self.MENSAJE_ERROR)
-
-        # transacción principal, se checa si cada operación fue exitosa
-        if not (
-            manejador.eliminarProdUtilizaInv(idx)
-            and manejador.insertarProdUtilizaInv(idx, PUI_db_parametros)
-            and manejador.eliminarPrecios(idx)
-        ):
-            return
-
-        if self.categoriaActual == 'S':
-            result = manejador.insertarProductosIntervalos(idx, precios_db_parametros)
+        # llamar a API
+        payload = productos_db_parametros | {
+            'inventarios': PUI_db_parametros,
+            'intervalos': intervalos,
+            'gran_formato': gran_formato
+        }
+        if self.idx:
+            res = request_handler(urls['productos']+str(self.idx)+'/', 'PATCH', payload)
         else:
-            result = manejador.insertarProductoGranFormato(idx, precios_db_parametros)
+            res = request_handler(urls['productos'], 'POST', payload)
 
-        if result:
+        if res.status_code in [200, 201]:
             QtWidgets.QMessageBox.information(self, 'Éxito', self.MENSAJE_EXITO)
             self.success.emit()
             self.close()
+        else:
+            mssg = res.json()['error']
+            QtWidgets.QMessageBox.warning(self, 'Error', f'Error al registrar producto: {mssg}')
 
     def insertar_o_modificar(self, productos_db_parametros: tuple) -> tuple:
         """ Devuelve tupla con índice del producto registrado o editado. """
@@ -359,10 +347,6 @@ class App_RegistrarProducto(Base_EditarProducto):
         self.ui.btAceptar.setText(' Registrar producto')
         self.ui.btAceptar.setIcon(QIcon(':/img/resources/images/plus.png'))
 
-    def insertar_o_modificar(self, productos_db_parametros):
-        manejador = ManejadorProductos(self.conn, self.MENSAJE_ERROR)
-        return manejador.insertarProducto(productos_db_parametros)
-
 
 class App_EditarProducto(Base_EditarProducto):
     """ Backend para la ventana para editar un producto de la base de datos. """
@@ -375,36 +359,27 @@ class App_EditarProducto(Base_EditarProducto):
 
         self.idx = idx  # id del elemento a editar
 
-        manejador = ManejadorProductos(self.conn)
-        _, codigo, descripcion, abreviado, categoria, _ = manejador.obtenerProducto(idx)
+        req = request_handler(urls['productos'] + str(idx))
+        producto = req.json()
 
-        self.ui.txtCodigo.setText(codigo)
-        self.ui.txtDescripcion.setPlainText(descripcion)
-        self.ui.txtNombre.setText(abreviado)
+        self.ui.txtCodigo.setText(producto['codigo'])
+        self.ui.txtDescripcion.setPlainText(producto['descripcion'])
+        self.ui.txtNombre.setText(producto['abreviado'])
 
-        if categoria == 'S':
+        if producto['categoria'] == 'S':
             self.ui.tabWidget.setCurrentIndex(0)
 
-            # agregar intervalos de precios a la tabla
-            precios = manejador.obtenerTablaPrecios(idx)
-
-            for row, (desde, precio, duplex) in enumerate(precios):
-                self.agregarIntervalo(row, desde, precio, duplex)
-        elif categoria == 'G':
+            for row, obj in enumerate(producto['intervalos']):
+                self.agregarIntervalo(row, obj['desde'], obj['precio_con_iva'], obj['duplex'])
+        elif producto['categoria'] == 'G':
             self.ui.tabWidget.setCurrentIndex(1)
 
-            min_m2, precio = manejador.obtenerGranFormato(idx)
-
-            self.ui.txtMinM2.setText(f'{min_m2:,.2f}')
-            self.ui.txtPrecio.setText(f'{precio:,.2f}')
+            self.ui.txtMinM2.setText(f'{producto["gran_formato"]["min_m2"]:,.2f}')
+            self.ui.txtPrecio.setText(f'{producto["gran_formato"]["precio_m2"]:,.2f}')
 
         # agregar elementos de la segunda página
-        for nombre, cantidad in manejador.obtenerUtilizaInventario(idx):
-            self.agregarProductoALista(nombre, cantidad)
-
-    def insertar_o_modificar(self, productos_db_parametros):
-        manejador = ManejadorProductos(self.conn, self.MENSAJE_ERROR)
-        return manejador.editarProducto(self.idx, productos_db_parametros)
+        for obj in producto['inventarios']:
+            self.agregarProductoALista(obj['inventario'], obj['utiliza_inventario'])
 
 
 #########################################
