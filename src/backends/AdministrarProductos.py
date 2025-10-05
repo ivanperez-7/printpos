@@ -5,7 +5,6 @@ from PySide6.QtCore import Qt, Signal, QMutex
 from context import user_context
 from core import ROJO
 from interfaces import IModuloPrincipal
-from sql import ManejadorInventario, ManejadorProductos
 from urls import urls
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro

@@ -34,6 +34,8 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         self.ui.setupUi(self)
 
         LabelAdvertencia(self.ui.tabla_productos, '¡Aún no hay productos!')
+        
+        req = request_handler(urls['ventas'], 'POST', {'cliente': 1, 'is_active': True})
 
         # VARIABLE DE LA VENTA ACTIVA ACTUAL
         self.ventaDatos = ventaDatos = Venta()
@@ -131,15 +133,10 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         modulo.success.connect(self.establecerCliente)
 
     def seleccionarCliente(self, selected: dict):
-        # recuérdese que Clientes(Nombre, Teléfono, Correo, Dirección, RFC)
-        self.establecerCliente(
-            nombre := selected[0].text(), telefono := selected[1].text(), selected[2].text(),
-        )
+        self.establecerCliente(selected['nombre'], selected['telefono'], selected['correo'])
+        self.ui.btDescuentosCliente.setVisible(selected['cliente_especial'])
 
-        cliente = manejador.obtenerCliente(nombre, telefono)
-        self.ui.btDescuentosCliente.setVisible(cliente.cliente_especial)
-
-        if cliente.descuentos is None or not (txt := cliente.descuentos.strip()):
+        if selected['descuentos'] is None or not (txt := selected['descuentos'].strip()):
             txt = 'El cliente aún no tiene descuentos.'
         self.dialogoDescuentos.setText(txt)
 
@@ -150,7 +147,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
 
     def agregarProducto(self, item):
         self.ventaDatos.agregarProducto(item)
-        self.ventaDatos.reajustarPrecios(ManejadorProductos(self.conn))
+        self.ventaDatos.reajustarPrecios(ManejadorProductos(conn))
         self.colorearActualizar()
 
     def quitarProducto(self):
@@ -168,7 +165,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         for row in sorted(selected, reverse=True):
             self.ventaDatos.quitarProducto(row)
 
-        man = ManejadorProductos(self.conn)
+        man = ManejadorProductos(conn)
         self.ventaDatos.reajustarPrecios(man)
         self.colorearActualizar()
 
@@ -195,7 +192,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
 
     def verificarCliente(self) -> int:
         # se confirma si existe el cliente en la base de datos
-        manejador = ManejadorClientes(self.conn)
+        manejador = ManejadorClientes(conn)
 
         nombre = self.ui.txtCliente.text().strip()
         telefono = self.ui.txtTelefono.text().strip()
@@ -332,7 +329,7 @@ class App_AgregarProducto(Base_VisualizarProductos):
 class App_SeleccionarCliente(QtWidgets.QWidget):
     """ Backend para la función de seleccionar un cliente de la base de datos. """
 
-    success = Signal(list)
+    success = Signal(dict)
 
     def __init__(self, parent=None):
         from ui.Ui_SeleccionarCliente import Ui_SeleccionarCliente
@@ -447,7 +444,6 @@ class App_AgregarDescuento(QtWidgets.QWidget):
 
         super().__init__(parent)
 
-        self.conn = user_context.conn
         self.ventaDatos = ventaDatos
 
         self.ui = Ui_AgregarDescuento()
@@ -623,7 +619,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
         return self.ventaDatos.total
 
     def obtenerDatosGenerales(self) -> tuple:
-        manejadorClientes = ManejadorClientes(self.conn)
+        manejadorClientes = ManejadorClientes(conn)
         cliente = manejadorClientes.obtenerCliente(self.ventaDatos.id_cliente)
 
         return (
@@ -640,7 +636,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
     def obtenerIdVenta(self) -> int:
         """ Registra datos principales de venta en DB
         y regresa folio de venta insertada. """
-        manejadorVentas = ManejadorVentas(self.conn)
+        manejadorVentas = ManejadorVentas(conn)
         ventas_db_parametros = self.obtenerParametrosVentas()
         ventas_detallado_db_parametros = self.obtenerParametrosVentasDetallado()
 
@@ -698,12 +694,12 @@ class App_ConfirmarVenta(Base_PagarVenta):
     def actualizarEstadoVenta(self) -> bool:
         """ Tras verificar todas las condiciones, finalizar venta y
         registrarla en la base de datos. """
-        manejadorVentas = ManejadorVentas(self.conn)
+        manejadorVentas = ManejadorVentas(conn)
         estado = 'Terminada' if self.ventaDatos.esVentaDirecta else f'Recibido ${self.para_pagar}'
         return manejadorVentas.actualizarEstadoVenta(self.id_ventas, estado, commit=True)
 
     def dialogoExito(self) -> None:
-        manejador = ManejadorVentas(self.conn)
+        manejador = ManejadorVentas(conn)
         if not self.ventaDatos.esVentaDirecta:
             qm.information(self, 'Éxito', 'Venta terminada. Se imprimirá ahora la orden de compra.')
 
@@ -727,7 +723,7 @@ class App_ConfirmarVenta(Base_PagarVenta):
 
     @requiere_admin
     def _abortar(self) -> None:
-        manejadorAdmin = ManejadorVentas(user_context.conn)
+        manejadorAdmin = ManejadorVentas(conn)
         estado = 'Cancelada por ' + manejadorAdmin.nombreUsuarioActivo
 
         if manejadorAdmin.actualizarEstadoVenta(self.id_ventas, estado, commit=True):

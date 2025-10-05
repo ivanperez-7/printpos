@@ -11,5 +11,6 @@ urls = {
     'inventario': f'{domain}/api/v1/productos/inventario/',
 
     # Ventas
+    'ventas': f'{domain}/api/v1/ventas/ventas/',
     'get-usuario-pendientes': f'{domain}/api/v1/ventas/get-usuario-pendientes/',
 }

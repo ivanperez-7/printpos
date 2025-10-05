@@ -7,7 +7,6 @@ from PySide6.QtCore import Qt, QDate, QDateTime, Signal, QMutex
 from core import ROJO
 from context import user_context
 from interfaces import IModuloPrincipal
-from sql import ManejadorClientes
 from urls import urls
 from utils.mydecorators import fondo_oscuro, run_in_thread
 from utils.myinterfaces import InterfazFiltro

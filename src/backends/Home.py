@@ -6,7 +6,6 @@ from PySide6.QtCore import QDate, Qt, QRect, QPropertyAnimation, QEasingCurve, S
 
 from context import user_context
 from interfaces import IModuloPrincipal
-from sql import ManejadorVentas, ManejadorInventario
 from urls import urls
 from utils.myutils import request_handler
 

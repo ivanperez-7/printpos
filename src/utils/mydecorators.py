@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QWidget, QMessageBox, QDialog
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QThreadPool, QRunnable, Signal
 
+from context import user_context
 from sql import DatabaseManager
 from sql.core import conectar_firebird, FirebirdError
 
@@ -132,11 +133,8 @@ def requiere_admin(func):
                 func(*args, **kwargs)
 
         try:
-            parent = args[0]  # QWidget (módulo actual)
-            assert parent.conn and parent.user
-
-            if parent.user.administrador:
-                admin_func(parent.conn)
+            if user_context.is_admin:
+                admin_func(None)
             else:
                 raise AttributeError
         except (IndexError, AttributeError):
