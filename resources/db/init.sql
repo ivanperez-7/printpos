@@ -1,34 +1,6 @@
 
 /********************* VIEWS **********************/
 
-CREATE VIEW MOVIMIENTOS_CAJA (FECHA_HORA, MONTO, DESCRIPCION, METODO, NOMBRE)
-AS SELECT  * FROM (
-    SELECT  fecha_hora,
-            monto,
-            TRIM(IIF(monto > 0, 'Pago', 'Devolución'))
-                || ' de venta con folio ' || VP.id_ventas AS descripcion,
-            MP.metodo,
-            U.nombre
-    FROM    ventas_pagos VP
-            LEFT JOIN metodos_pago MP
-                   ON MP.id_metodo_pago = VP.id_metodo_pago
-            LEFT JOIN usuarios U
-                   ON U.id_usuarios = VP.id_usuarios
-    WHERE   monto != 0)
-UNION   ALL
-SELECT  * FROM (
-    SELECT  fecha_hora,
-            monto,
-            descripcion,
-            MP.metodo,
-            U.nombre
-    FROM    caja C
-            LEFT JOIN metodos_pago MP
-                   ON MP.id_metodo_pago = C.id_metodo_pago
-            LEFT JOIN usuarios U
-                   ON U.id_usuarios = C.id_usuarios)
-ORDER   BY 1 DESC;
-
 CREATE VIEW VIEW_ALL_USUARIOS (USUARIO, NOMBRE, PERMISOS, ULTIMAVENTA)
 AS SELECT  usuario,
         nombre,
