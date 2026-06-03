@@ -478,12 +478,10 @@ class App_TerminarVenta(Base_PagarVenta):
         else:
             prompt = 'Pago(s) abonado(s) al pedido.'
 
-        ret = qm.question(self, 'Éxito', prompt + '\n¿Desea imprimir los tickets de los pagos?')
-
-        if ret == qm.Yes:
-            slais = slice(-self.ui.stackPagos.count(), None)
-            impresora = ImpresoraTickets()
-            impresora.imprimir_ticket_compra(self.id_ventas, slais, manejador=ManejadorVentas(self.conn))
+        qm.information(self, 'Éxito', prompt + '\nSe imprimirán los tickets de los pagos.')
+        slais = slice(-self.ui.stackPagos.count(), None)
+        impresora = ImpresoraTickets()
+        impresora.imprimir_ticket_compra(self.id_ventas, slais, manejador=ManejadorVentas(self.conn))
 
         self.success.emit()
         self.close()
