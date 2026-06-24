@@ -9,7 +9,7 @@ from backends.shared_widgets import Base_PagarVenta
 from context import user_context
 from interfaces import IModuloPrincipal
 from pdf import ImpresoraOrdenes, ImpresoraTickets
-from pdf.exportadores import guardar_orden_compra
+from pdf.exportadores import guardar_orden_compra, guardar_ticket_compra
 from sql import ManejadorVentas
 from utils.mydecorators import fondo_oscuro, requiere_admin, run_in_thread
 from utils.myinterfaces import InterfazFechas, InterfazFiltro, InterfazPaginas
@@ -77,6 +77,8 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         self.ui.btRecibo.clicked.connect(self.imprimirTicket)
         self.ui.btPDF.clicked.connect(self.exportar_orden)
         self.ui.btPDF.setIcon(QIcon(':/img/resources/images/export.png'))
+        self.ui.btPDFTicket.clicked.connect(self.exportar_ticket)
+        self.ui.btPDFTicket.setIcon(QIcon(':/img/resources/images/export.png'))
         self.ui.searchBar.textChanged.connect(self.update_display)
 
         self.rescanned.connect(self.update_display)
@@ -329,6 +331,28 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
 
         if ruta and guardar_orden_compra(idVenta, manejador, ruta):
             qm.information(self, "Éxito", f"Se exportó la orden de compra a:\n{ruta}")
+
+    def exportar_ticket(self):
+        """ Exporta el ticket de compra de una venta a PDF.
+        Si la venta tiene varios pagos, todos se combinan en un solo archivo. """
+        if not (selected := self.tabla_actual.selectedItems()):
+            return
+
+        checar_estado = lambda i: selected[i].text().startswith('Cancelada')
+        if checar_estado(6) or checar_estado(7):
+            return
+
+        idVenta = selected[0].text()
+        manejador = ManejadorVentas(self.conn)
+        ruta, _ = QFileDialog.getSaveFileName(
+            self,
+            "Guardar ticket de compra",
+            f"Ticket folio {idVenta}.pdf",
+            "Archivos PDF (*.pdf)"
+        )
+
+        if ruta and guardar_ticket_compra(idVenta, manejador, ruta):
+            qm.information(self, "Éxito", f"Se exportó el ticket de compra a:\n{ruta}")
 
 
 #################################
