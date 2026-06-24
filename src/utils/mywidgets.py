@@ -310,15 +310,15 @@ class TablaDatos(QtWidgets.QTableWidget):
                     cell = str(dato or '')
                 self.setItem(row, col, MyTableItem(cell))
 
-            self.item(row, 4).setFont(bold)
-            self.item(row, 5).setTextAlignment(Qt.AlignCenter)
+            self.item(row, 5).setFont(bold)
+            self.item(row, 6).setTextAlignment(Qt.AlignCenter)
 
-            estado = self.item(row, 5).text()
+            estado = self.item(row, 6).text()
 
             if estado.startswith('Cancelada'):
-                self.item(row, 5).setBackground(QtGui.QColor(ROJO))
+                self.item(row, 6).setBackground(QtGui.QColor(ROJO))
             elif estado.startswith('Terminada'):
-                self.item(row, 5).setBackground(QtGui.QColor(VERDE))
+                self.item(row, 6).setBackground(QtGui.QColor(VERDE))
 
     def _llenar_tabla_pedidos(self, data):
         bold = QtGui.QFont()
@@ -335,10 +335,10 @@ class TablaDatos(QtWidgets.QTableWidget):
                     cell = str(dato or '')
                 self.setItem(row, col, MyTableItem(cell))
 
-            self.item(row, 5).setFont(bold)
-            self.item(row, 6).setTextAlignment(Qt.AlignCenter)
+            self.item(row, 6).setFont(bold)
+            self.item(row, 7).setTextAlignment(Qt.AlignCenter)
 
-            estado_cell = self.item(row, 6)
+            estado_cell = self.item(row, 7)
             estado = estado_cell.text()
 
             if estado.startswith('Cancelada'):
@@ -352,11 +352,11 @@ class TablaDatos(QtWidgets.QTableWidget):
                 button_cell.setIcon(icon)
                 button_cell.setFlat(True)
 
-                self.setCellWidget(row, 8, button_cell)
+                self.setCellWidget(row, 9, button_cell)
 
                 # resaltar pedidos con fechas de entrega ya pasadas
-                if QtCore.QDateTime.currentDateTime() > compra[4]:
-                    self.item(row, 4).setBackground(QtGui.QColor(ROJO))
+                if QtCore.QDateTime.currentDateTime() > compra[5]:
+                    self.item(row, 5).setBackground(QtGui.QColor(ROJO))
 
 
 class NumberEdit(QtWidgets.QLineEdit):

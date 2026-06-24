@@ -382,6 +382,9 @@
                <string notr="true">color: rgb(0, 147, 220);</string>
               </property>
               <property name="text">
+               <string/>
+              </property>
+              <property name="placeholderText">
                <string>N/A</string>
               </property>
               <property name="frame">
@@ -407,31 +410,90 @@
              </widget>
             </item>
             <item row="1" column="4">
-             <widget class="QLineEdit" name="txtTelefono">
-              <property name="minimumSize">
-               <size>
-                <width>247</width>
-                <height>19</height>
-               </size>
+             <widget class="QFrame" name="frameTelefono">
+              <property name="frameShape">
+               <enum>QFrame::Shape::NoFrame</enum>
               </property>
-              <property name="font">
-               <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
-               </font>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">color: rgb(0, 147, 220);</string>
-              </property>
-              <property name="text">
-               <string>N/A</string>
-              </property>
-              <property name="frame">
-               <bool>true</bool>
-              </property>
-              <property name="clearButtonEnabled">
-               <bool>false</bool>
-              </property>
+              <layout class="QHBoxLayout" name="layoutTelefono">
+               <property name="spacing">
+                <number>4</number>
+               </property>
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_lada">
+                 <property name="font">
+                  <font>
+                   <family>Segoe UI</family>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>+</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="txtLada">
+                 <property name="maximumSize">
+                  <size>
+                   <width>40</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <family>Segoe UI</family>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">color: rgb(0, 147, 220);</string>
+                 </property>
+                 <property name="text">
+                  <string>52</string>
+                 </property>
+                 <property name="maxLength">
+                  <number>3</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="txtCelular">
+                 <property name="minimumSize">
+                  <size>
+                   <width>200</width>
+                   <height>19</height>
+                  </size>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <family>Segoe UI</family>
+                   <pointsize>11</pointsize>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">color: rgb(0, 147, 220);</string>
+                 </property>
+                 <property name="inputMask">
+                  <string>999 999 9999; </string>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </widget>
             </item>
             <item row="0" column="1">

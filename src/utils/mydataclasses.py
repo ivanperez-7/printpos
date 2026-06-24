@@ -140,6 +140,8 @@ class Venta:
     comentarios: str = ''
     id_cliente: int = 1
     metodo_pago: str = 'Efectivo'
+    nombre_cliente: str = ''
+    telefono_cliente: str = ''
 
     @property
     def total(self):

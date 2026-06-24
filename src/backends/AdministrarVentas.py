@@ -92,8 +92,8 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         self.paginado.pagina_cambiada.connect(self.update_display)
 
         # configurar y llenar tablas
-        self.ui.tabla_directas.configurarCabecera(lambda col: col in {0, 3, 4, 5})
-        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in {0, 3, 4, 5, 6})
+        self.ui.tabla_directas.configurarCabecera(lambda col: col in {0, 3, 4, 5, 6})
+        self.ui.tabla_pedidos.configurarCabecera(lambda col: col in {0, 3, 4, 5, 6, 7})
 
     def showEvent(self, event):
         self.rescan_update()
@@ -188,7 +188,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
         tabla.llenar(data)
 
         for r in range(tabla.rowCount()):
-            if bt := tabla.cellWidget(r, 8):
+            if bt := tabla.cellWidget(r, 9):
                 bt.clicked.connect(self.enviarRecordatorio)
 
     # ====================================
@@ -250,7 +250,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             return
 
         checar_estado = lambda i: selected[i].text().startswith('Cancelada')
-        if checar_estado(5) or checar_estado(6):
+        if checar_estado(6) or checar_estado(7):
             return
 
         # abrir pregunta
@@ -287,7 +287,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
             return
 
         checar_estado = lambda i: selected[i].text().startswith('Cancelada')
-        if checar_estado(5) or checar_estado(6):
+        if checar_estado(6) or checar_estado(7):
             return
 
         id_venta = selected[0].text()
@@ -309,7 +309,7 @@ class App_AdministrarVentas(QtWidgets.QWidget, IModuloPrincipal):
 
     def imprimirOrden(self):
         """ Imprime orden de compra de un pedido dado el folio de esta. """
-        if (selected := self.tabla_actual.selectedItems()) and selected[6].text().startswith('Recibido'):
+        if (selected := self.tabla_actual.selectedItems()) and selected[7].text().startswith('Recibido'):
             impresora = ImpresoraOrdenes(self)
             impresora.imprimir_orden_compra(selected[0].text(), manejador=ManejadorVentas(self.conn))
     

@@ -1,6 +1,7 @@
 from PySide6 import QtWidgets
 from PySide6.QtWidgets import QMessageBox as qm
-from PySide6.QtCore import QDate, QDateTime, Signal, Qt
+from PySide6.QtCore import QDate, QDateTime, QEvent, QTimer, Signal, Qt
+from PySide6.QtGui import QRegularExpressionValidator
 
 from backends.AdministrarClientes import App_RegistrarCliente, App_EditarCliente
 from backends.shared_widgets import Base_VisualizarProductos, Base_PagarVenta
@@ -53,6 +54,12 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         self.ui.btDeshacer.setVisible(False)
         self.ui.btDescuentosCliente.hide()
 
+        # validador para la clave de país del teléfono
+        self.ui.txtLada.setValidator(QRegularExpressionValidator(r'[0-9]{1,}'))
+
+        # forzar el cursor al inicio del campo de teléfono cuando está vacío
+        self.ui.txtCelular.installEventFilter(self)
+
         # crear eventos para los botones
         self.ui.btCalendario.clicked.connect(
             lambda: App_FechaEntrega(ventaDatos.fechaEntrega, self).success.connect(self.cambiarFechaEntrega)
@@ -70,7 +77,8 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
 
         self.ui.txtCliente.textChanged.connect(ocultar_boton)
         self.ui.txtCorreo.textChanged.connect(ocultar_boton)
-        self.ui.txtTelefono.textChanged.connect(ocultar_boton)
+        self.ui.txtLada.textChanged.connect(ocultar_boton)
+        self.ui.txtCelular.textChanged.connect(ocultar_boton)
 
         self.ui.tabla_productos.itemChanged.connect(self.item_changed)
         self.ui.btRegistrar.clicked.connect(self.insertarCliente)
@@ -98,10 +106,27 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         if item.column() == 2:
             self.ventaDatos[item.row()].notas = item.text()
 
+    def eventFilter(self, obj, event):
+        """ Al enfocar o hacer clic en el campo de teléfono vacío, coloca el cursor
+        al inicio para que el usuario siempre empiece a escribir desde el primer dígito. """
+        if obj is self.ui.txtCelular and event.type() in (
+            QEvent.Type.FocusIn, QEvent.Type.MouseButtonPress,
+        ):
+            if not any(c.isdigit() for c in self.ui.txtCelular.text()):
+                QTimer.singleShot(0, lambda: self.ui.txtCelular.home(False))
+        return super().eventFilter(obj, event)
+
+    def numeroTelefono(self) -> str:
+        """ Teléfono completo en formato '+{lada} {celular}'. """
+        return '+{} {}'.format(self.ui.txtLada.displayText(), self.ui.txtCelular.displayText())
+
     def establecerCliente(self, nombre: str, telefono: str, correo: str):
         """ Atajo para modificar datos del cliente seleccionado. """
         self.ui.txtCliente.setText(nombre)
-        self.ui.txtTelefono.setText(telefono)
+
+        celular = telefono.replace(' ', '')  # quitar espacios
+        self.ui.txtLada.setText(celular[1:-10] or '52')
+        self.ui.txtCelular.setText(celular[-10:])
         self.ui.txtCorreo.setText(correo)
 
     def colorearActualizar(self):
@@ -128,7 +153,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         modulo = App_RegistrarCliente(self)
         modulo.agregarDatosPorDefecto(
             nombre=self.ui.txtCliente.text(),
-            celular=self.ui.txtTelefono.text(),
+            celular=self.numeroTelefono(),
             correo=self.ui.txtCorreo.text(),
         )
         modulo.success.connect(self.establecerCliente)
@@ -186,7 +211,8 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
                     self.ui.btSeleccionar.setEnabled(False),
                     self.ui.txtCliente.setReadOnly(True),
                     self.ui.txtCorreo.setReadOnly(True),
-                    self.ui.txtTelefono.setReadOnly(True),
+                    self.ui.txtLada.setReadOnly(True),
+                    self.ui.txtCelular.setReadOnly(True),
                     self.colorearActualizar(),
                 )
             )
@@ -194,7 +220,7 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
     def enviarCotizacion(self):
         if not self.ventaDatos.ventaVacia:
             cliente = self.ui.txtCliente.text()
-            telefono = self.ui.txtTelefono.text()
+            telefono = self.numeroTelefono()
             vendedor = self.ui.txtVendedor.text()
             wdg = App_EnviarCotizacion(self.ventaDatos, cliente, telefono, vendedor, self)
 
@@ -203,10 +229,31 @@ class App_CrearVenta(QtWidgets.QWidget, IModuloPrincipal):
         manejador = ManejadorClientes(self.conn)
 
         nombre = self.ui.txtCliente.text().strip()
-        telefono = self.ui.txtTelefono.text().strip()
-        cliente = manejador.obtenerCliente(nombre, telefono)
+
+        # descartar el nombre por defecto, que no es un dato real
+        if nombre.casefold() in {'', 'público general'}:
+            nombre = ''
+
+        # teléfono: vacío si no se capturó ningún dígito (el inputMask muestra ceros)
+        celular_digitos = ''.join(c for c in self.ui.txtCelular.text() if c.isdigit())
+        telefono = self.numeroTelefono() if celular_digitos else ''
 
         warning = lambda txt: QtWidgets.QMessageBox.warning(self, '¡Atención!', txt)
+
+        # cliente libre: solo ventas directas sin factura, sin advertencias
+        if self.ventaDatos.esVentaDirecta and not self.ui.tickFacturaSi.isChecked():
+            if not (nombre or telefono):
+                warning('Ingrese al menos el nombre o el teléfono del cliente.')
+                return
+            self.ventaDatos.nombre_cliente = nombre
+            self.ventaDatos.telefono_cliente = telefono
+            # vínculo silencioso: si coincide un cliente registrado, se asocia;
+            # si no, se usa "Público general" (id 1) para satisfacer la llave foránea
+            cliente = manejador.obtenerCliente(nombre, telefono)
+            return cliente.id if cliente else 1
+
+        # pedidos o ventas con factura: se requiere cliente registrado
+        cliente = manejador.obtenerCliente(nombre, telefono)
 
         if not cliente:
             warning(
@@ -633,10 +680,18 @@ class App_ConfirmarVenta(Base_PagarVenta):
         manejadorClientes = ManejadorClientes(self.conn)
         cliente = manejadorClientes.obtenerCliente(self.ventaDatos.id_cliente)
 
+        # cliente libre (venta directa sin registro): usar datos crudos
+        if self.ventaDatos.nombre_cliente or self.ventaDatos.telefono_cliente:
+            nombre = self.ventaDatos.nombre_cliente or cliente.nombre
+            telefono = self.ventaDatos.telefono_cliente or cliente.telefono
+            correo = cliente.correo
+        else:
+            nombre, correo, telefono = cliente.nombre, cliente.correo, cliente.telefono
+
         return (
-            cliente.nombre,
-            cliente.correo,
-            cliente.telefono,
+            nombre,
+            correo,
+            telefono,
             self.ventaDatos.fechaCreacion,
             self.ventaDatos.fechaEntrega,
         )
@@ -667,6 +722,8 @@ class App_ConfirmarVenta(Base_PagarVenta):
             self.ventaDatos.comentarios.strip(),
             self.ventaDatos.requiere_factura,
             'No terminada',
+            self.ventaDatos.nombre_cliente or None,
+            self.ventaDatos.telefono_cliente or None,
         )
 
     def obtenerParametrosVentasDetallado(self) -> list[tuple]:

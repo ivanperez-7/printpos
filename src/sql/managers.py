@@ -937,7 +937,8 @@ class ManejadorVentas(DatabaseManager):
     query_all_ventas = '''
         SELECT  V.id_ventas,
                 U.nombre             AS nombre_vendedor,
-                C.nombre             AS nombre_cliente,
+                COALESCE(NULLIF(V.nombre_cliente_directo, ''), C.nombre) AS nombre_cliente,
+                COALESCE(NULLIF(V.telefono_cliente_directo, ''), C.telefono) AS telefono_cliente,
                 fecha_hora_creacion,
                 {col_fecha_entrega}
                 SUM(VD.importe)      AS total,
@@ -965,7 +966,7 @@ class ManejadorVentas(DatabaseManager):
             col_fecha_entrega='',
             fecha_where='=',
             restrict_user=f'U.id_usuarios = {restrict}' if restrict else 'true',
-            clausula_group='1, 2, 3, 4, 6, 7',
+            clausula_group='1, 2, 3, 4, 5, 7, 8',
         )
         return self.fetchall(query, (fechas.desde, fechas.hasta))
 
@@ -974,7 +975,7 @@ class ManejadorVentas(DatabaseManager):
             col_fecha_entrega='fecha_hora_entrega,',
             fecha_where='!=',
             restrict_user='true',
-            clausula_group='1, 2, 3, 4, 5, 7, 8',
+            clausula_group='1, 2, 3, 4, 5, 6, 8, 9',
         )
         return self.fetchall(query, (fechas.desde, fechas.hasta))
 
@@ -1010,9 +1011,9 @@ class ManejadorVentas(DatabaseManager):
         fecha y hora de entrega, comentarios generales, nombre de vendedor. """
         return self.fetchone(
             '''
-            SELECT  C.nombre,
+            SELECT  COALESCE(NULLIF(V.nombre_cliente_directo, ''), C.nombre),
                     C.correo,
-                    C.telefono,
+                    COALESCE(NULLIF(V.telefono_cliente_directo, ''), C.telefono),
                     fecha_hora_creacion,
                     fecha_hora_entrega,
                     comentarios,
@@ -1105,8 +1106,8 @@ class ManejadorVentas(DatabaseManager):
         """ Obtener nombre y teléfono de cliente asociado a la venta. """
         return self.fetchone(
             '''
-            SELECT  C.nombre,
-                    C.telefono
+            SELECT  COALESCE(NULLIF(V.nombre_cliente_directo, ''), C.nombre),
+                    COALESCE(NULLIF(V.telefono_cliente_directo, ''), C.telefono)
             FROM    Ventas AS V
                     LEFT JOIN Clientes AS C
                         ON V.id_clientes = C.id_clientes
@@ -1200,17 +1201,19 @@ class ManejadorVentas(DatabaseManager):
         regresar tupla con índice de venta recién insertada:
 
         id_clientes, id_usuarios, fecha_hora_creacion, fecha_hora_entrega,
-        comentarios, requiere_factura, estado.
+        comentarios, requiere_factura, estado, nombre_cliente_directo,
+        telefono_cliente_directo.
 
         No hace commit. """
         if result := self.fetchone(
             '''
             INSERT INTO ventas (
                 id_clientes, id_usuarios, fecha_hora_creacion, fecha_hora_entrega,
-                comentarios, requiere_factura, estado
-            ) 
-            VALUES 
-                (?,?,?,?,?,?,?)
+                comentarios, requiere_factura, estado,
+                nombre_cliente_directo, telefono_cliente_directo
+            )
+            VALUES
+                (?,?,?,?,?,?,?,?,?)
             RETURNING
                 id_ventas;
         ''',
